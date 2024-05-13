@@ -1,0 +1,73 @@
+
+local Library = loadstring(Game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/wizard"))()
+
+local PhantomForcesWindow = Library:NewWindow("Mandrak Club🎵")
+
+local KillingCheats = PhantomForcesWindow:NewSection("Opções")
+
+KillingCheats:CreateButton("SOM 100% ALTO📻", function()
+print("HI")local args = {
+    [1] = "ChangeVolume",
+    [2] = {
+        ["Volume"] = 100
+    }
+}
+
+game:GetService("ReplicatedStorage").Events.Func:InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("BOMBOX NA MÃO👊", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "Right hand",
+        ["Skin"] = "Normal"
+    }
+}
+
+game:GetService("ReplicatedStorage").Events.Func:InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateToggle("AUTO AFK💤", function(value)
+print(value)local Players = game:GetService("Players")
+local ReplicatedFirst = game:GetService("ReplicatedFirst")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.IgnoreGuiInset = true
+screenGui.Parent = playerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(1, 0, 1, 0)
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
+frame.Parent = screenGui
+
+ReplicatedFirst:RemoveDefaultLoadingScreen()
+
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+humanoid.WalkSpeed = 0
+end)
+
+local KillingCheats = PhantomForcesWindow:NewSection("Teleport")
+
+KillingCheats:CreateDropdown("DropDown", {"PRAIA🏖"}, 1, function(text)
+print(text)game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame =  CFrame.new(2.581535577774048, 5684.4951171875, -292.30084228515625)
+end)
+KillingCheats:CreateDropdown("DropDown", {"LOBBY⛲️"}, 1, function(text)
+print(text)game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame =  CFrame.new( -20.58591079711914, 5676.05908203125, 102.8166732788086)
+end)
+ 
+ KillingCheats = PhantomForcesWindow:NewSection("Nota")
+
+KillingCheats:CreateTextbox("🗒", function(text)
+        print(text)
+end)
+
+KillingCheats = PhantomForcesWindow:NewSection("By #Daniel1212ff")
