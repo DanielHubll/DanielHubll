@@ -1,0 +1,348 @@
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))() 
+local Window = OrionLib:MakeWindow({Name = "Zecada Hub [BETA]", HidePremium = false, SaveConfig = false, ConfigFolder = "OrionTest"})
+--[[
+Name = <string> - The name of the UI.
+HidePremium = <bool> - Whether or not the user details shows Premium status or not.
+SaveConfig = <bool> - Toggles the config saving in the UI.
+ConfigFolder = <string> - The name of the folder where the configs are saved.
+IntroEnabled = <bool> - Whether or not to show the intro animation.
+IntroText = <string> - Text to show in the intro animation.
+IntroIcon = <string> - URL to the image you want to use in the intro animation.
+Icon = "http://www.roblox.com/asset/?id=17687877090"
+CloseCallback = <function> - Function to execute when the window is closed.
+]]
+local Tab = Window:MakeTab({
+	Name = "Script",
+	Icon = "http://www.roblox.com/asset/?id=6031075938",
+	PremiumOnly = false
+})
+
+--[[
+Name = <string> - The name of the tab.
+Icon = <string> - The icon of the tab.
+PremiumOnly = <bool> - Makes the tab accessible to Sirus Premium users only.
+]]
+
+Tab:AddButton({
+	Name = "Mobile Fly",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Universal-Script-Mfly-9410"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Mobile Fly v3",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Universal-Script-FLY-GUI-V3-8031"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Fe VR R15 or R6",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Universal-Script-FE-Vr-Script-NO-VR-HEADSET-NEEDED-1538"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Esp Universal",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Universal-Script-Esp-Universal-open-source-10455"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Esp Universal Custom",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Universal-Script-ESP-Universal-5767"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Fling gui",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Universal-Script-Fling-gui-script-13229"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Fling gui v2",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Universal-Script-FE-fling-gui-13313"))()
+  	end    
+})
+
+--[[
+Name = <string> - The name of the button.
+Callback = <function> - The function of the button.
+]]
+
+Tab:AddToggle({
+	Name = "Anti AFK",
+	Default = false,
+	Callback = function(Value)
+		print(Value)
+	end    
+})
+-- CoolToggle:Set(true)  
+
+--[[
+Name = <string> - The name of the toggle.
+Default = <bool> - The default value of the toggle.
+Callback = <function> - The function of the toggle.
+]]
+
+Tab:AddColorpicker({
+	Name = "Colorpicker",
+	Default = Color3.fromRGB(255, 0, 0),
+	Callback = function(Value)
+		print(Value)
+	end	  
+})
+
+--[[
+Name = <string> - The name of the colorpicker.
+Default = <color3> - The default value of the colorpicker.
+Callback = <function> - The function of the colorpicker.
+]]
+Tab:AddSlider({
+	Name = "Slider",
+	Min = 16,
+	Max = 100,
+	Default = 16,
+	Color = Color3.fromRGB(255,255,255),
+	Increment = 1,
+	ValueName = "bananas",
+	Callback = function(Value)
+		print(Value)
+	end    
+})
+
+local Tab = Window:MakeTab({
+	Name = "Script Oficial",
+	Icon = "https://www.roblox.com/asset/?id=17688008370",
+	PremiumOnly = false
+})
+
+Tab:AddButton({
+	Name = "Zecada Executor v1",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://raw.githubusercontent.com/DanielHubll/DanielHubll/main/Executor%20Zecada%20v1"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Skybox Zecada",
+	Callback = function()
+      		print("button pressed")s = Instance.new("Sky")
+s.Name = "Sky"
+s.SkyboxBk = "https://www.roblox.com/asset/?id=17688008370"
+s.SkyboxDn = "https://www.roblox.com/asset/?id=17688008370"
+s.SkyboxFt = "https://www.roblox.com/asset/?id=17688008370"
+s.SkyboxLf = "https://www.roblox.com/asset/?id=17688008370"
+s.SkyboxRt = "https://www.roblox.com/asset/?id=17688008370"
+s.SkyboxUp = "https://www.roblox.com/asset/?id=17688008370"
+s.Parent = game.Lighting
+  	end    
+})
+
+local Tab = Window:MakeTab({
+	Name = "Games",
+	Icon = "http://www.roblox.com/asset/?id=6031075938",
+	PremiumOnly = false
+})
+
+Tab:AddButton({
+	Name = "Arsenal",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Arsenal-Autovent-V4-2444"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Brookhaven",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Universal-Script-Ice-Hub-6414"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Chaos",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://raw.githubusercontent.com/ApollyxnHashed/Chaos-Mobile-Scripts-Kit/main/Chaos%20KIT"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Doors",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Universal-Script-FFJ-HUB-12768"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Evade",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Evade-Elijah-Hub-13315"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Prison life",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Prison-Life-Tiger-admin-v3-13501"))()
+  	end    
+})
+
+local Tab = Window:MakeTab({
+	Name = "Admins",
+	Icon = "http://www.roblox.com/asset/?id=6031075938",
+	PremiumOnly = false
+})
+
+Tab:AddButton({
+	Name = "Infinite Yeild",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Universal-Script-Infinite-Yeild-8192"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Nameless v2",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Universal-Script-Nameless-Admin-no-byfron-ui-11288"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "QuirkyCMD",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://gist.github.com/someunknowndude/38cecea5be9d75cb743eac8b1eaf6758/raw"))()
+  	end    
+})
+
+local Tab = Window:MakeTab({
+	Name = "Hubs",
+	Icon = "http://www.roblox.com/asset/?id=6031075938",
+	PremiumOnly = false
+})
+
+Tab:AddButton({
+	Name = "Chips v4",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Universal-Script-Rochips-Panel-v4-13177"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "RedzHub",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://raw.githubusercontent.com/REDzHUB/REDzHUB/main/REDzHUB"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Phili Hub",
+	Callback = function()
+      		print("button pressed")loadstring(Game:HttpGet("https://pastebin.com/raw/Z7ipwMJ7"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Yarhm Hub",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Universal-Script-YARHM-12403"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Sky Hub",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Life-in-Paradise-Pardise-12364"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Shife Hub",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Legends-Of-Speed-Shife-Hub-10070"))()
+  	end    
+})
+
+Tab:AddButton({
+	Name = "Davi Hub",
+	Callback = function()
+      		print("button pressed")loadstring(game:HttpGet("https://scriptblox.com/raw/Universal-Script-Davi-Hub-v3-9978"))()
+  	end    
+})
+
+Slider:Set(18)
+
+--[[
+Name = <string> - The name of the slider.
+Min = <number> - The minimal value of the slider.
+Max = <number> - The maxium value of the slider.
+Increment = <number> - How much the slider will change value when dragging.
+Default = <number> - The default value of the slider.
+ValueName = <string> - The text after the value number.
+Callback = <function> - The function of the slider.
+]]
+Tab:AddLabel("Label")
+CoolLabel:Set("Label New!")
+Tab:AddParagraph("Paragraph","Paragraph Content")
+CoolParagraph:Set("Paragraph New!", "New Paragraph Content!")
+Tab:AddTextbox({
+	Name = "Textbox",
+	Default = "default box input",
+	TextDisappear = true,
+	Callback = function(Value)
+		print(Value)
+	end	  
+})
+
+--[[
+Name = <string> - The name of the textbox.
+Default = <string> - The default value of the textbox.
+TextDisappear = <bool> - Makes the text disappear in the textbox after losing focus.
+Callback = <function> - The function of the textbox.
+]]
+Tab:AddBind({
+	Name = "Bind",
+	Default = Enum.KeyCode.E,
+	Hold = false,
+	Callback = function()
+		print("press")
+	end    
+})
+
+--[[
+Name = <string> - The name of the bind.
+Default = <keycode> - The default value of the bind.
+Hold = <bool> - Makes the bind work like: Holding the key > The bind returns true, Not holding the key > Bind returns false.
+Callback = <function> - The function of the bind.
+]]
+Bind:Set(Enum.KeyCode.E)
+Tab:AddDropdown({
+	Name = "Dropdown",
+	Default = "1",
+	Options = {"1", "2"},
+	Callback = function(Value)
+		print(Value)
+	end    
+})
+
+--[[
+Name = <string> - The name of the dropdown.
+Default = <string> - The default value of the dropdown.
+Options = <table> - The options in the dropdown.
+Callback = <function> - The function of the dropdown.
+]]
+OrionLib:Init()
+--[[ Tab1:AddToggle({
+    Name = "Toggle",
+    Default = true,
+    Save = true,
+    Flag = "toggle"
+})
+
+print(OrionLib.Flags["toggle"].Value) -- prints the value of the toggle. ]]-- 
