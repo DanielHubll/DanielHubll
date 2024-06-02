@@ -1,11 +1,11 @@
 
 local Library = loadstring(Game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/wizard"))()
 
-local PhantomForcesWindow = Library:NewWindow("Mandrak Club🎵")
+local PhantomForcesWindow = Library:NewWindow("By Zecada Hub")
 
 local KillingCheats = PhantomForcesWindow:NewSection("Opções")
 
-KillingCheats:CreateButton("SOM 100% ALTO📻", function()
+KillingCheats:CreateButton("Som 100% Alto📻", function()
 print("HI")local args = {
     [1] = "ChangeVolume",
     [2] = {
@@ -16,7 +16,7 @@ print("HI")local args = {
 game:GetService("ReplicatedStorage").Events.Func:InvokeServer(unpack(args))
 end)
 
-KillingCheats:CreateButton("BOMBOX NA MÃO👊", function()
+KillingCheats:CreateButton("Bombox na Mão👊", function()
         print(HI)local args = {
     [1] = "PlaceToolOnBack",
     [2] = {
@@ -28,7 +28,7 @@ KillingCheats:CreateButton("BOMBOX NA MÃO👊", function()
 game:GetService("ReplicatedStorage").Events.Func:InvokeServer(unpack(args))
 end)
 
-KillingCheats:CreateToggle("AUTO AFK💤", function(value)
+KillingCheats:CreateToggle("Farm AFK💤", function(value)
 print(value)local Players = game:GetService("Players")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 
@@ -57,10 +57,10 @@ end)
 
 local KillingCheats = PhantomForcesWindow:NewSection("Teleport")
 
-KillingCheats:CreateDropdown("DropDown", {"PRAIA🏖"}, 1, function(text)
+KillingCheats:CreateDropdown("DropDown", {"Praia🏖"}, 1, function(text)
 print(text)game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame =  CFrame.new(2.581535577774048, 5684.4951171875, -292.30084228515625)
 end)
-KillingCheats:CreateDropdown("DropDown", {"LOBBY⛲️"}, 1, function(text)
+KillingCheats:CreateDropdown("DropDown", {"Lobby⛲️"}, 1, function(text)
 print(text)game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame =  CFrame.new( -20.58591079711914, 5676.05908203125, 102.8166732788086)
 end)
  
@@ -69,5 +69,3 @@ end)
 KillingCheats:CreateTextbox("🗒", function(text)
         print(text)
 end)
-
-KillingCheats = PhantomForcesWindow:NewSection("By #Daniel1212ff")
