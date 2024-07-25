@@ -1,0 +1,196 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+-- Função para criar a interface de configuração
+local function createConfigGui()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "ConfigGui"
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = UDim2.new(0.2, 0, 0.3, 0) -- Diminuído para 20% da largura e 30% da altura da tela
+    mainFrame.Position = UDim2.new(0.030, 0, 0.1, 0) -- Ajustado para centralizar
+    mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    mainFrame.BackgroundTransparency = 0.5
+    mainFrame.ZIndex = 2 -- Define o ZIndex do mainFrame
+    mainFrame.Parent = screenGui
+
+    -- Adiciona uma borda ao Frame
+    local uiStroke = Instance.new("UIStroke")
+    uiStroke.Color = Color3.fromRGB(255, 0, 0) -- Cor da borda
+    uiStroke.Thickness = 5 -- Espessura da borda reduzida
+    uiStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    uiStroke.Transparency = 0.8 -- Define a transparência da borda
+    uiStroke.Parent = mainFrame
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0.1, 0)
+    title.BackgroundTransparency = 1
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.Text = "Configurações"
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 12 -- Tamanho da fonte reduzido
+    title.TextStrokeTransparency = 0.5
+    title.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    title.ZIndex = 3 -- Define o ZIndex do title
+    title.Parent = mainFrame
+
+    local speedLabel = Instance.new("TextLabel")
+    speedLabel.Size = UDim2.new(0.4, 0, 0.1, 0)
+    speedLabel.Position = UDim2.new(0.04, 0, 0.15, 0)
+    speedLabel.BackgroundTransparency = 1
+    speedLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    speedLabel.Text = "Velocidade:"
+    speedLabel.Font = Enum.Font.Gotham
+    speedLabel.TextSize = 14 -- Tamanho da fonte reduzido
+    speedLabel.TextStrokeTransparency = 0.5
+    speedLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    speedLabel.ZIndex = 3 -- Define o ZIndex do speedLabel
+    speedLabel.Parent = mainFrame
+
+    local speedTextBox = Instance.new("TextBox")
+    speedTextBox.Size = UDim2.new(0.4, 0, 0.1, 0)
+    speedTextBox.Position = UDim2.new(0.55, 0, 0.15, 0)
+    speedTextBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    speedTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    speedTextBox.Text = tostring(humanoid.WalkSpeed)
+    speedTextBox.Font = Enum.Font.Gotham
+    speedTextBox.TextSize = 14 -- Tamanho da fonte reduzido
+    speedTextBox.ClearTextOnFocus = false
+    speedTextBox.ZIndex = 3 -- Define o ZIndex do speedTextBox
+    speedTextBox.Parent = mainFrame
+
+    local jumpLabel = Instance.new("TextLabel")
+    jumpLabel.Size = UDim2.new(0.4, 0, 0.1, 0)
+    jumpLabel.Position = UDim2.new(0.05, 0, 0.3, 0)
+    jumpLabel.BackgroundTransparency = 1
+    jumpLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    jumpLabel.Text = "Altura do Pulo:"
+    jumpLabel.Font = Enum.Font.Gotham
+    jumpLabel.TextSize = 14 -- Tamanho da fonte reduzido
+    jumpLabel.TextStrokeTransparency = 0.5
+    jumpLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    jumpLabel.ZIndex = 3 -- Define o ZIndex do jumpLabel
+    jumpLabel.Parent = mainFrame
+
+    local jumpTextBox = Instance.new("TextBox")
+    jumpTextBox.Size = UDim2.new(0.4, 0, 0.1, 0)
+    jumpTextBox.Position = UDim2.new(0.55, 0, 0.3, 0)
+    jumpTextBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    jumpTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    jumpTextBox.Text = tostring(humanoid.JumpPower)
+    jumpTextBox.Font = Enum.Font.Gotham
+    jumpTextBox.TextSize = 14 -- Tamanho da fonte reduzido
+    jumpTextBox.ClearTextOnFocus = false
+    jumpTextBox.ZIndex = 3 -- Define o ZIndex do jumpTextBox
+    jumpTextBox.Parent = mainFrame
+
+    local applyButton = Instance.new("TextButton")
+    applyButton.Size = UDim2.new(0.4, 0, 0.1, 0)
+    applyButton.Position = UDim2.new(0.3, 0, 0.55, 0)
+    applyButton.BackgroundColor3 = Color3.fromRGB(0, 128, 0)
+    applyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    applyButton.Text = "Aplicar"
+    applyButton.Font = Enum.Font.GothamBold
+    applyButton.TextScaled = true
+    applyButton.ZIndex = 3 -- Define o ZIndex do applyButton
+    applyButton.Parent = mainFrame
+
+    local closeButton = Instance.new("TextButton")
+    closeButton.Size = UDim2.new(0.1, 0, 0.1, 0)
+    closeButton.Position = UDim2.new(0.9, 0, 0, 0)
+    closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeButton.Text = "X"
+    closeButton.Font = Enum.Font.GothamBold
+    closeButton.TextSize = 16 -- Tamanho da fonte reduzido
+    closeButton.TextStrokeTransparency = 0.7
+    closeButton.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    closeButton.BorderSizePixel = 0
+    closeButton.BackgroundTransparency = 0.2
+    closeButton.ZIndex = 3 -- Define o ZIndex do closeButton
+    closeButton.Parent = mainFrame
+
+    -- Adiciona um efeito de hover
+    local function onHover()
+        closeButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    end
+
+    local function onUnhover()
+        closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    end
+
+    closeButton.MouseEnter:Connect(onHover)
+    closeButton.MouseLeave:Connect(onUnhover)
+
+    local function updateSettings()
+        local speed = tonumber(speedTextBox.Text)
+        local jumpPower = tonumber(jumpTextBox.Text)
+
+        if speed then
+            humanoid.WalkSpeed = speed
+        else
+            speedTextBox.Text = tostring(humanoid.WalkSpeed)
+        end
+
+        if jumpPower then
+            humanoid.JumpPower = jumpPower
+        else
+            jumpTextBox.Text = tostring(humanoid.JumpPower)
+        end
+    end
+
+    applyButton.MouseButton1Click:Connect(updateSettings)
+
+    closeButton.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
+    end)
+
+    -- Função para permitir mover a interface
+    local function makeDraggable(frame)
+        local dragging
+        local dragInput
+        local dragStart
+        local startPos
+
+        local function update(input)
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+
+        frame.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                dragStart = input.Position
+                startPos = frame.Position
+
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                    end
+                end)
+            end
+        end)
+
+        frame.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                dragInput = input
+            end
+        end)
+
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and input == dragInput then
+                update(input)
+            end
+        end)
+    end
+
+    makeDraggable(mainFrame)
+end
+
+createConfigGui()
