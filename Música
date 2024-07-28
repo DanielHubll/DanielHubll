@@ -1,0 +1,201 @@
+-- Criar o ScreenGui principal para a imagem
+local imageScreenGui = Instance.new("ScreenGui")
+imageScreenGui.Name = "ImageFrameGui"
+imageScreenGui.Parent = game.Players.LocalPlayer.PlayerGui
+
+-- Criar o Frame para a imagem
+local imageFrame = Instance.new("Frame")
+imageFrame.Name = "ImageFrame"
+imageFrame.Size = UDim2.new(0.49, 0, 0.5, 0)  -- Ajuste o tamanho conforme necessário
+imageFrame.Position = UDim2.new(0.50, 0, 0, 0)  -- Ajuste a posição conforme necessário
+imageFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+imageFrame.BackgroundTransparency = 1  -- Tornar o fundo transparente para ver apenas a imagem
+imageFrame.BorderSizePixel = 0
+imageFrame.Parent = imageScreenGui
+
+-- Adicionar o UICorner para arredondar os cantos do Frame
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0.2, 0)  -- Ajuste o valor para maior arredondamento
+uiCorner.Parent = imageFrame
+
+-- Adicionar o ImageLabel dentro do Frame
+local imageLabel = Instance.new("ImageLabel")
+imageLabel.Size = UDim2.new(1, 0, 2, 0)  -- Ajuste o tamanho para preencher o Frame
+imageLabel.BackgroundTransparency = 1
+imageLabel.Image = "rbxassetid://18694828395"  -- Substitua com o ID da sua imagem
+imageLabel.Parent = imageFrame
+
+-- Criar o ScreenGui principal para a música
+local musicScreenGui = Instance.new("ScreenGui")
+musicScreenGui.Name = "MusicScreenGui"
+musicScreenGui.Parent = imageFrame  -- Adiciona o ScreenGui de música dentro do Frame da imagem
+
+-- Criar o Frame principal para os controles de música
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0.21, 0, 0.92, 0)
+mainFrame.Position = UDim2.new(0.64, 0, 0.0250, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.BorderColor3 = Color3.fromRGB(60, 60, 60)
+mainFrame.BackgroundTransparency = 1
+mainFrame.Parent = musicScreenGui
+
+-- Adicionar o UICorner para arredondar os cantos do Frame principal
+local mainFrameCorner = Instance.new("UICorner")
+mainFrameCorner.CornerRadius = UDim.new(0.1, 0)  -- Ajuste o valor para maior arredondamento
+mainFrameCorner.Parent = mainFrame
+
+-- Criar a ImageLabel para a capa do álbum
+local albumArt = Instance.new("ImageLabel")
+albumArt.Size = UDim2.new(0.3, 0, 0.6, 0)
+albumArt.Position = UDim2.new(0.05, 0, 0.2, 0)
+albumArt.Image = "rbxassetid://1234567890"  -- Substitua com o ID da sua imagem de capa
+albumArt.BackgroundTransparency = 1
+albumArt.BorderSizePixel = 0
+albumArt.Parent = mainFrame
+
+-- Criar o TextLabel para o título da faixa
+local trackTitle = Instance.new("TextLabel")
+trackTitle.Size = UDim2.new(0.6, 0, 0.1, 0)
+trackTitle.Position = UDim2.new(0.2, 0, 0.1, 0)
+trackTitle.Text = "Nome da Faixa"
+trackTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+trackTitle.BackgroundTransparency = 1
+trackTitle.TextStrokeTransparency = 0.6
+trackTitle.TextScaled = true
+trackTitle.Font = Enum.Font.GothamBold
+trackTitle.Parent = mainFrame
+
+-- Criar o TextLabel para o artista
+local artistName = Instance.new("TextLabel")
+artistName.Size = UDim2.new(0.6, 0, 0.1, 0)
+artistName.Position = UDim2.new(0.2, 0, 0.2, 0)
+artistName.Text = "Nome do Artista"
+artistName.TextColor3 = Color3.fromRGB(180, 180, 180)
+artistName.BackgroundTransparency = 1
+artistName.TextStrokeTransparency = 0.6
+artistName.TextScaled = true
+artistName.Font = Enum.Font.Gotham
+artistName.Parent = mainFrame
+
+-- Criar o TextLabel para o nome do jogador
+local playerNameLabel = Instance.new("TextLabel")
+playerNameLabel.Size = UDim2.new(0.6, 0, 0.1, 0)
+playerNameLabel.Position = UDim2.new(100, 0, 0.3, 0)
+playerNameLabel.Text = "Nome do Jogador"
+playerNameLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+playerNameLabel.BackgroundTransparency = 1
+playerNameLabel.TextStrokeTransparency = 0.6
+playerNameLabel.TextScaled = true
+playerNameLabel.Font = Enum.Font.Gotham
+playerNameLabel.Parent = mainFrame
+
+-- Criar a barra de progresso
+local progressBarBackground = Instance.new("Frame")
+progressBarBackground.Size = UDim2.new(0.8, 0, 0.05, 0)
+progressBarBackground.Position = UDim2.new(0.1, 0, 0.8, 0)
+progressBarBackground.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+progressBarBackground.BorderSizePixel = 0
+progressBarBackground.Parent = mainFrame
+
+local progressBar = Instance.new("Frame")
+progressBar.Size = UDim2.new(0, 0, 1, 0)
+progressBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+progressBar.BorderSizePixel = 0
+progressBar.Parent = progressBarBackground
+
+-- Função para criar botões
+local function createButton(name, position)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0.1, 0, 0.1, 0)
+    button.Position = position
+    button.Text = name
+    button.Font = Enum.Font.Gotham
+    button.TextSize = 17
+    button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.BorderSizePixel = 0
+    button.BorderColor3 = Color3.fromRGB(60, 60, 60)
+    button.BackgroundTransparency = 1
+    button.Parent = mainFrame
+    return button
+end
+
+-- Criar botões de controle
+local playButton = createButton("Play", UDim2.new(0.1, 0, 0.85, 0))
+local pauseButton = createButton("Pause", UDim2.new(0.45, 0, 0.85, 0))
+local stopButton = createButton("Stop", UDim2.new(0.8, 0, 0.85, 0))
+
+-- Criar o TextBox para inserir o ID da música
+local idTextBox = Instance.new("TextBox")
+idTextBox.Size = UDim2.new(0.8, 0, 0.060, 0)
+idTextBox.Position = UDim2.new(0.1, 0, 0.7, 0)
+idTextBox.PlaceholderText = "Insira o ID da música"
+idTextBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+idTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+idTextBox.BorderSizePixel = 0
+idTextBox.TextStrokeTransparency = 0.6
+idTextBox.TextScaled = true
+idTextBox.Font = Enum.Font.Gotham
+idTextBox.Parent = mainFrame
+
+-- Criar o objeto Sound
+local sound = Instance.new("Sound")
+sound.SoundId = ""  -- Inicialmente vazio
+sound.Parent = workspace  -- Pode ser colocado em outro lugar conforme necessário
+
+-- Função para obter informações do áudio
+local function getTrackInfo(id)
+    local success, assetInfo = pcall(function()
+        return game:GetService("MarketplaceService"):GetProductInfo(id)
+    end)
+    
+    if success and assetInfo then
+        local title = assetInfo.Name or "Título Desconhecido"
+        local creator = assetInfo.Creator.Name or "Criador Desconhecido"
+        return { Title = title, Artist = creator }
+    else
+        return { Title = "Título Desconhecido", Artist = "Artista Desconhecido" }
+    end
+end
+
+-- Função para atualizar a barra de progresso
+local function updateProgressBar()
+    while sound.IsPlaying do
+        local progress = sound.TimePosition / sound.TimeLength
+        progressBar.Size = UDim2.new(progress, 0, 1, 0)
+        wait(1)  -- Atualiza a cada segundo
+    end
+end
+
+-- Adicionar eventos de clique aos botões
+playButton.MouseButton1Click:Connect(function()
+    if idTextBox.Text ~= "" then
+        local id = idTextBox.Text
+        sound.SoundId = "rbxassetid://" .. id
+        sound:Play()
+        progressBar.Size = UDim2.new(0, 0, 1, 0)  -- Redefine a barra de progresso ao iniciar a música
+        
+        local trackInfo = getTrackInfo(id)  -- Atualiza o título e artista da faixa
+        trackTitle.Text = trackInfo.Title
+        artistName.Text = trackInfo.Artist
+        playerNameLabel.Text = "Criado por: " .. game.Players.LocalPlayer.Name
+        print("Play clicado!")
+        
+        -- Atualizar a barra de progresso
+        spawn(updateProgressBar)
+    else
+        print("ID da música não inserido.")
+    end
+end)
+
+pauseButton.MouseButton1Click:Connect(function()
+    sound:Pause()
+    print("Pause clicado!")
+end)
+
+stopButton.MouseButton1Click:Connect(function()
+    sound:Stop()
+    progressBar.Size = UDim2.new(0, 0, 1, 0)  -- Redefine a barra de progresso
+    print("Stop clicado!")
+end)
