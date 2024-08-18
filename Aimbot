@@ -35,6 +35,8 @@ local function onKeyDown(input)
         RunService:UnbindFromRenderStep("FOVUpdate")
         FOVring:Remove()
         playerNameText:Remove()
+    elseif input.KeyCode == Enum.KeyCode.F5 then
+        toggleButton.Visible = not toggleButton.Visible
     end
 end
 
@@ -136,6 +138,26 @@ UserInputService.InputChanged:Connect(onDrag)
 
 toggleButton.MouseButton1Click:Connect(toggleAimbot)
 
+-- Adicionando um botão de fechamento (X) ao lado do botão Toggle
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Size = UDim2.new(0, 30, 0, 30) -- Tamanho do botão X
+closeButton.Position = UDim2.new(0, toggleButton.Size.X.Offset - 15, 0, -15) -- Posição inicial ao lado do ToggleButton
+closeButton.Text = "X" -- Texto do botão
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255) -- Cor do texto (branca)
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Cor de fundo (vermelha)
+closeButton.Parent = toggleButton
+
+-- Função para fechar ou esconder o ToggleButton e remover o FOVring e playerNameText
+local function closeToggleButton()
+    toggleButton.Visible = false
+    FOVring:Remove()
+    playerNameText:Remove()
+end
+
+-- Conectando a função ao evento de clique do botão de fechamento
+closeButton.MouseButton1Click:Connect(closeToggleButton)
+
 RunService.RenderStepped:Connect(function()
     if isAimbotActive then
         updateDrawings()
@@ -149,4 +171,3 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
-
