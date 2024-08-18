@@ -1,0 +1,150 @@
+]] Aimbot Mobile [[
+
+local fov = 100
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local Cam = game.Workspace.CurrentCamera
+
+local FOVring = Drawing.new("Circle")
+FOVring.Visible = true
+FOVring.Thickness = 2
+FOVring.Color = Color3.fromRGB(128, 0, 128) -- Purple color
+FOVring.Filled = false
+FOVring.Radius = fov
+FOVring.Position = Cam.ViewportSize / 2
+
+-- Criando o texto para exibir o nome do jogador
+local playerNameText = Drawing.new("Text")
+playerNameText.Visible = false
+playerNameText.Center = true
+playerNameText.Outline = true
+playerNameText.Color = Color3.fromRGB(255, 255, 255) -- Cor branca
+playerNameText.Size = 18
+playerNameText.Position = Vector2.new(FOVring.Position.X, FOVring.Position.Y - FOVring.Radius - 20) -- Posição inicial
+
+local function updateDrawings()
+    local camViewportSize = Cam.ViewportSize
+    FOVring.Position = camViewportSize / 2
+    playerNameText.Position = Vector2.new(FOVring.Position.X, FOVring.Position.Y - FOVring.Radius - 20)
+end
+
+local function onKeyDown(input)
+    if input.KeyCode == Enum.KeyCode.Delete then
+        RunService:UnbindFromRenderStep("FOVUpdate")
+        FOVring:Remove()
+        playerNameText:Remove()
+    end
+end
+
+UserInputService.InputBegan:Connect(onKeyDown)
+
+local function lookAt(target)
+    local lookVector = (target - Cam.CFrame.Position).unit
+    local newCFrame = CFrame.new(Cam.CFrame.Position, Cam.CFrame.Position + lookVector)
+    Cam.CFrame = newCFrame
+end
+
+local function getClosestPlayerInFOV(trg_part)
+    local nearest = nil
+    local last = math.huge
+    local playerMousePos = Cam.ViewportSize / 2
+    local localPlayerTeam = Players.LocalPlayer.Team
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer and player.Team ~= localPlayerTeam then
+            local part = player.Character and player.Character:FindFirstChild(trg_part)
+            if part then
+                local ePos, isVisible = Cam:WorldToViewportPoint(part.Position)
+                local distance = (Vector2.new(ePos.x, ePos.y) - playerMousePos).Magnitude
+
+                if distance < last and isVisible and distance < fov then
+                    last = distance
+                    nearest = player
+                end
+            end
+        end
+    end
+
+    return nearest
+end
+
+-- Criando o ScreenGui e o botão Toggle
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AimbotGui"
+screenGui.Parent = playerGui
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Name = "ToggleButton"
+toggleButton.Size = UDim2.new(0, 150, 0, 50) -- Tamanho do botão
+toggleButton.Position = UDim2.new(0.1, 0, 0.1, 0) -- Posição inicial na tela
+toggleButton.Text = "Ativar Aimbot" -- Texto inicial do botão
+toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Cor inicial (vermelha)
+toggleButton.Parent = screenGui
+
+local isAimbotActive = false
+local dragging = false
+local dragInput, dragStart, startPos
+
+-- Função para ativar ou desativar o aimbot
+local function toggleAimbot()
+    isAimbotActive = not isAimbotActive
+    if isAimbotActive then
+        toggleButton.Text = "Desativar Aimbot"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- Verde quando ativado
+        FOVring.Visible = true
+        playerNameText.Visible = true
+    else
+        toggleButton.Text = "Ativar Aimbot"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Vermelho quando desativado
+        FOVring.Visible = false
+        playerNameText.Visible = false
+    end
+end
+
+-- Funções para arrastar o botão
+local function updateInput(input)
+    local delta = input.Position - dragStart
+    toggleButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+local function onDragStart(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = toggleButton.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end
+
+local function onDrag(input)
+    if dragging then
+        updateInput(input)
+    end
+end
+
+UserInputService.InputBegan:Connect(onDragStart)
+UserInputService.InputChanged:Connect(onDrag)
+
+toggleButton.MouseButton1Click:Connect(toggleAimbot)
+
+RunService.RenderStepped:Connect(function()
+    if isAimbotActive then
+        updateDrawings()
+        local closest = getClosestPlayerInFOV("Head")
+        if closest and closest.Character:FindFirstChild("Head") then
+            lookAt(closest.Character.Head.Position)
+            playerNameText.Text = closest.Name
+            playerNameText.Visible = true
+        else
+            playerNameText.Visible = false
+        end
+    end
+end)
