@@ -1,0 +1,138 @@
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- ID do jogo esperado (PlaceId)
+local expectedPlaceId = 16830303803 -- Substitua pelo PlaceId do jogo esperado
+
+-- Função para criar o aviso
+local function createWarning()
+    local screenGui = Instance.new("ScreenGui")
+    local warningLabel = Instance.new("TextLabel")
+
+    -- Configura o ScreenGui
+    screenGui.Name = "WarningGui"
+    screenGui.Parent = playerGui
+
+    -- Configura o TextLabel de aviso
+    warningLabel.Name = "WarningLabel"
+    warningLabel.Text = "Este GUI não está disponível para o jogo atual."
+    warningLabel.Size = UDim2.new(1, 0, 1, 0)
+    warningLabel.Position = UDim2.new(0, 0, 0, 0)
+    warningLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    warningLabel.BackgroundTransparency = 0.5
+    warningLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+    warningLabel.Font = Enum.Font.SourceSansBold
+    warningLabel.TextSize = 30
+    warningLabel.TextStrokeTransparency = 0.5
+    warningLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    warningLabel.TextScaled = true
+    warningLabel.TextWrap = true
+    warningLabel.BackgroundTransparency = 1
+    warningLabel.Parent = screenGui
+end
+
+-- Função para criar o GUI
+local function createGui()
+    local screenGui = Instance.new("ScreenGui")
+    local frame = Instance.new("Frame")
+    local textLabel = Instance.new("TextLabel")
+    local button = Instance.new("TextButton")
+
+    -- Configura o ScreenGui
+    screenGui.Name = "FarmGui"
+    screenGui.Parent = playerGui
+
+    -- Configura o Frame
+    frame.Name = "FarmFrame"
+    frame.Size = UDim2.new(0.4, 0, 0.3, 0)
+    frame.Position = UDim2.new(0.3, 0, 0.35, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 128, 0)
+    frame.BackgroundTransparency = 0.2
+    frame.BorderSizePixel = 0
+    frame.ClipsDescendants = true
+    frame.Parent = screenGui
+
+    -- Adiciona um UICorner para bordas arredondadas
+    local frameUICorner = Instance.new("UICorner")
+    frameUICorner.CornerRadius = UDim.new(0, 15)
+    frameUICorner.Parent = frame
+
+    -- Configura o TextLabel
+    textLabel.Name = "FarmTextLabel"
+    textLabel.Text = "By ZecaDiv"
+    textLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    textLabel.Position = UDim2.new(0, 0, 0, 0)
+    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textLabel.Font = Enum.Font.SourceSansBold
+    textLabel.TextSize = 36
+    textLabel.TextStrokeTransparency = 0.5
+    textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    textLabel.TextScaled = true
+    textLabel.TextWrap = true
+    textLabel.BackgroundTransparency = 1
+    textLabel.Parent = frame
+
+    -- Configura o Button
+    button.Name = "FarmButton"
+    button.Text = "Click here"
+    button.Size = UDim2.new(0.6, 0, 0.3, 0)
+    button.Position = UDim2.new(0.2, 0, 0.55, 0)
+    button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    button.BackgroundTransparency = 0.2
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.SourceSansBold
+    button.TextSize = 20
+    button.TextStrokeTransparency = 0.5
+    button.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    button.AutoButtonColor = true
+    button.Parent = frame
+
+    -- Adiciona um UICorner ao botão para bordas arredondadas
+    local buttonUICorner = Instance.new("UICorner")
+    buttonUICorner.CornerRadius = UDim.new(0, 10)
+    buttonUICorner.Parent = button
+
+    -- Variáveis para arrastar
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
+
+    -- Função para começar o arrasto
+    local function onDragStart(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end
+
+    -- Função para arrastar
+    local function onDrag(input)
+        if dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end
+
+    -- Conectar os eventos
+    frame.InputBegan:Connect(onDragStart)
+    frame.InputChanged:Connect(onDrag)
+    
+    -- Adiciona um evento de clique ao botão
+    button.MouseButton1Click:Connect(function()
+        print("Botão clicado!")loadstring(game:HttpGet("https://raw.githubusercontent.com/DanielHubll/DanielHubll/main/Farm"))()  -- Isso será exibido no console quando o botão for clicado
+        -- Aqui você pode adicionar o código para a ação desejada quando o botão for clicado
+    end)
+end
+
+-- Verifica o PlaceId e cria o GUI ou o aviso
+if game.PlaceId == expectedPlaceId then
+    createGui()
+else
+    createWarning()
+end
