@@ -1,0 +1,33 @@
+-- LocalScript
+
+local player = game.Players.LocalPlayer
+local character = player.Character
+local humanoidRootPart = character and character:FindFirstChild("HumanoidRootPart")
+
+-- Defina as posições de teleporte
+local teleportPositions = {
+    CFrame.new(Vector3.new(-370.304138, 12.9431868, 489.070923, 8.16583633e-06, 2.32830644e-08, 1, -0.00573763112, 0.999983549, 2.32830644e-08, -0.999983549, -0.00573763112, 8.16583633e-06)),  -- Posição 1
+    CFrame.new(Vector3.new(-119.258972, 12.9710197, 571.722839, -1, 0, 0, 0, 1, 0, 0, 0, -1)), -- Posição 2
+    CFrame.new(Vector3.new(-190.788361, 12.9800539, 479.017731, 0, 0, -1, 0, 1, 0, 1, 0, 0)), -- Posição 3
+    CFrame.new(Vector3.new(475.553528, 7.28129482, 208.90654, 0, 0, -1, 0, 1, 0, 1, 0, 0)), -- Posição 4
+    CFrame.new(Vector3.new(-403.88681, 12.9800749, 802.220337, 1, 0, 0, 0, 1, 0, 0, 0, 1)), -- Posição 5
+    CFrame.new(Vector3.new(328.738037, 9.45030212, -222.741516, -1, 0, 0, 0, 1, 0, 0, 0, -1)),  -- Posição 6
+    CFrame.new(Vector3.new(-236.807175, 12.9799309, 737.455139, 0, 0, 1, 0, 1, -0, -1, 0, 0)), -- Posição 7
+    CFrame.new(Vector3.new(-268.371704, 15.1820469, 658.407227, 1, 0, 0, 0, 1, 0, 0, 0, 1)),  -- Posição 8 (nova posição)
+    CFrame.new(Vector3.new(-241.706253, 22.1519508, 487.499573, 0, 0, 1, 0, 1, -0, -1, 0, 0))  -- Posição 9 (nova posição)
+}
+
+-- Função para teleportar o jogador para uma posição com atraso
+local function teleportPlayerWithDelay()
+    if humanoidRootPart then
+        for _, position in ipairs(teleportPositions) do
+            humanoidRootPart.CFrame = position
+            wait(3)  -- Espera 3 segundos antes de teletransportar para a próxima posição
+        end
+    else
+        warn("HumanoidRootPart não encontrado!")
+    end
+end
+
+-- Chame a função para teleportar com atraso
+teleportPlayerWithDelay()
