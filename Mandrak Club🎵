@@ -28,6 +28,221 @@ KillingCheats:CreateButton("Bombox na Mão👊", function()
 game:GetService("ReplicatedStorage").Events.Func:InvokeServer(unpack(args))
 end)
 
+KillingCheats:CreateButton("Som 100% Alto📻", function()
+print("HI")local args = {
+    [1] = "ChangeVolume",
+    [2] = {
+        ["Volume"] = 100
+    }
+}
+
+game:GetService("ReplicatedStorage").Events.Func:InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("Rainbow outline", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "",
+        ["Skin"] = "Rainbow outline"
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Func"):InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("RainbowBoombox", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "",
+        ["Skin"] = "RainbowBoombox"
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Func"):InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("Rainbow Wings", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "",
+        ["Skin"] = "Rainbow Wings"
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Func"):InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("BoxEletrick", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "",
+        ["Skin"] = "BoxEletrick"
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Func"):InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("Eletric", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "",
+        ["Skin"] = "Eletric"
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Func"):InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("Yellow  Eletric", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "",
+        ["Skin"] = "Yellow  Eletric"
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Func"):InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("Pink Eletric", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "",
+        ["Skin"] = "Pink Eletric"
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Func"):InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("Red Eletric", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "",
+        ["Skin"] = "Red Eletric"
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Func"):InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("AboboxV2", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "",
+        ["Skin"] = "AboboxV2"
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Func"):InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("Abobox", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "",
+        ["Skin"] = "Abobox"
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Func"):InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("Red Jaspe Boombox", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "",
+        ["Skin"] = "Red Jaspe Boombox"
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Func"):InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("HallowBoxV2", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "",
+        ["Skin"] = "HallowBoxV2"
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Func"):InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("Black & Red", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "",
+        ["Skin"] = "Black & Red"
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Func"):InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("HallowBox", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "",
+        ["Skin"] = "HallowBox"
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Func"):InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("HallowBoxV2", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "",
+        ["Skin"] = "HallowBoxV2"
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Func"):InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("Boombox de Papelão", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "",
+        ["Skin"] = "Boombox de Papelão"
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Func"):InvokeServer(unpack(args))
+end)
+
+KillingCheats:CreateButton("CRC Boombox", function()
+        print(HI)local args = {
+    [1] = "PlaceToolOnBack",
+    [2] = {
+        ["Where"] = "",
+        ["Skin"] = "CRC Boombox"
+    }
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Func"):InvokeServer(unpack(args))
+end)
+
 KillingCheats:CreateToggle("Farm AFK💤", function(value)
 print(value)local Players = game:GetService("Players")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
