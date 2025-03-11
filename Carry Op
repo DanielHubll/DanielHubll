@@ -1,0 +1,100 @@
+--[[  
+    My Roblox Account: Vlg_daniel01  
+]]--
+
+local a = game:GetService("Players")
+local b = game:GetService("ReplicatedStorage")
+local c = a.LocalPlayer
+local d = b:WaitForChild("Events"):WaitForChild("Grab")
+
+local e = Instance.new("ScreenGui")
+e.ResetOnSpawn = false
+e.Parent = c:WaitForChild("PlayerGui")
+
+local f = Instance.new("ImageButton")
+f.Size = UDim2.new(0, 100, 0, 100)
+f.Position = UDim2.new(0.9, -60, 0.2, -50)
+f.BackgroundTransparency = 1
+f.Image = "rbxassetid://133273433469851"
+f.Parent = e
+
+local g = Instance.new("Frame")
+g.Size = UDim2.new(0, 200, 0, 40)
+g.Position = UDim2.new(0.5, -100, 0.1, 0)
+g.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+g.BackgroundTransparency = 0.4
+g.BorderSizePixel = 0
+g.Visible = false
+g.Parent = e
+
+local h = Instance.new("UIStroke")
+h.Color = Color3.fromRGB(255, 255, 255)
+h.Thickness = 2
+h.Parent = g
+
+local i = Instance.new("TextLabel")
+i.Size = UDim2.new(1, 0, 1, 0)
+i.BackgroundTransparency = 1
+i.TextColor3 = Color3.new(1, 1, 1)
+i.Font = Enum.Font.GothamBold
+i.TextSize = 14
+i.Text = ""
+i.Parent = g
+
+local function j(k, l)
+    i.Text = k
+    g.Visible = true
+    task.wait(l or 3)
+    g.Visible = false
+end
+
+local function m()
+    local n = c.Character
+    if not n then return end
+    
+    local o = n:FindFirstChild("HumanoidRootPart")
+    if not o then return end
+    
+    local p = nil
+    local q = math.huge
+
+    for _, r in pairs(a:GetPlayers()) do
+        if r ~= c and r.Character then
+            local s = r.Character:FindFirstChild("HumanoidRootPart")
+            if s then
+                local t = (o.Position - s.Position).Magnitude
+                if t < q and t < 10 then
+                    q = t
+                    p = r
+                end
+            end
+        end
+    end
+
+    return p
+end
+
+local function u()
+    local v = m()
+    if v and v.Character then
+        local w = v.Character:FindFirstChild("Head")
+        if w then
+            local x = {
+                [1] = w,
+                [2] = "Grab",
+                [3] = w.Position,
+                [4] = w.CFrame
+            }
+            d:FireServer(unpack(x))
+            j("Você pegou " .. v.Name .. "!", 3)
+        else
+            j("Nenhum jogador próximo!", 3)
+        end
+    else
+        j("Nenhum jogador próximo!", 3)
+    end
+end
+
+f.MouseButton1Click:Connect(u)
+
+j("By Vlg_daniel01🇧🇷", 3)
