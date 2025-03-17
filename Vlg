@@ -12,13 +12,14 @@ function Library:CreateWindow(title)
     MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     MainFrame.BackgroundTransparency = 0.2
     MainFrame.BorderSizePixel = 0
-    MainFrame.Visible = true -- Inicialmente visível
+    MainFrame.Visible = true
     MainFrame.Parent = ScreenGui
     
     local UICorner = Instance.new("UICorner")
     UICorner.CornerRadius = UDim.new(0, 15)
     UICorner.Parent = MainFrame
 
+    -- Criando a barra de título
     local TitleBar = Instance.new("TextLabel")
     TitleBar.Size = UDim2.new(1, 0, 0, 30)
     TitleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
@@ -27,14 +28,21 @@ function Library:CreateWindow(title)
     TitleBar.Font = Enum.Font.GothamBold
     TitleBar.TextSize = 16
     TitleBar.Parent = MainFrame
-    
+
+    -- Criando as abas
     local TabsFrame = Instance.new("Frame")
     TabsFrame.Size = UDim2.new(1, 0, 0, 40)
     TabsFrame.Position = UDim2.new(0, 0, 0, 30)
     TabsFrame.BackgroundTransparency = 1
     TabsFrame.Parent = MainFrame
 
-    -- Botão de Toggle para Mobile
+    local TabButtonContainer = Instance.new("Frame")
+    TabButtonContainer.Size = UDim2.new(1, 0, 0, 40)
+    TabButtonContainer.Position = UDim2.new(0, 0, 0, 30)
+    TabButtonContainer.BackgroundTransparency = 1
+    TabButtonContainer.Parent = MainFrame
+
+    -- Função de Toggle
     local ToggleButton = Instance.new("TextButton")
     ToggleButton.Size = UDim2.new(0, 50, 0, 50)
     ToggleButton.Position = UDim2.new(0, 10, 0, 10)
@@ -44,12 +52,31 @@ function Library:CreateWindow(title)
     ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     ToggleButton.Font = Enum.Font.GothamBold
     ToggleButton.Parent = ScreenGui
-    
-    local UICornerToggle = Instance.new("UICorner")
-    UICornerToggle.CornerRadius = UDim.new(1, 0)
-    UICornerToggle.Parent = ToggleButton
 
-    -- Função de Toggle
+    -- Função para mover a janela
+    local dragging = false
+    local dragInput, dragStart, startPos
+
+    TitleBar.MouseButton1Down:Connect(function(input)
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    -- Função de Toggle para Mobile
     local function ToggleUI()
         MainFrame.Visible = not MainFrame.Visible
     end
@@ -67,6 +94,7 @@ function Library:CreateWindow(title)
     return {
         MainFrame = MainFrame,
         TabsFrame = TabsFrame,
+        TabButtonContainer = TabButtonContainer,
         Tabs = {},
         TabFrames = {} -- Armazenar as janelas de cada aba
     }
@@ -81,14 +109,14 @@ function Library:CreateTab(window, name)
     TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     TabButton.Font = Enum.Font.Gotham
     TabButton.TextSize = 14
-    TabButton.Parent = window.TabsFrame
-    
+    TabButton.Parent = window.TabButtonContainer
+
     -- Criando a Frame para a aba
     local TabFrame = Instance.new("Frame")
     TabFrame.Size = UDim2.new(1, 0, 1, -70)
     TabFrame.Position = UDim2.new(0, 0, 0, 70)
     TabFrame.BackgroundTransparency = 1
-    TabFrame.Visible = false -- Inicialmente invisível
+    TabFrame.Visible = false
     TabFrame.Parent = window.MainFrame
 
     -- Adicionando à tabela de abas
