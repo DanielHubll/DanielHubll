@@ -12,6 +12,7 @@ function Library:CreateWindow(title)
     MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     MainFrame.BackgroundTransparency = 0.2
     MainFrame.BorderSizePixel = 0
+    MainFrame.Visible = true -- Inicialmente visível
     MainFrame.Parent = ScreenGui
     
     local UICorner = Instance.new("UICorner")
@@ -33,6 +34,36 @@ function Library:CreateWindow(title)
     TabsFrame.BackgroundTransparency = 1
     TabsFrame.Parent = MainFrame
 
+    -- Botão de Toggle para Mobile
+    local ToggleButton = Instance.new("TextButton")
+    ToggleButton.Size = UDim2.new(0, 50, 0, 50)
+    ToggleButton.Position = UDim2.new(0, 10, 0, 10)
+    ToggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    ToggleButton.Text = "☰"
+    ToggleButton.TextSize = 24
+    ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleButton.Font = Enum.Font.GothamBold
+    ToggleButton.Parent = ScreenGui
+    
+    local UICornerToggle = Instance.new("UICorner")
+    UICornerToggle.CornerRadius = UDim.new(1, 0)
+    UICornerToggle.Parent = ToggleButton
+
+    -- Função de Toggle
+    local function ToggleUI()
+        MainFrame.Visible = not MainFrame.Visible
+    end
+
+    -- Evento de clique no botão mobile
+    ToggleButton.MouseButton1Click:Connect(ToggleUI)
+
+    -- Evento de tecla no teclado
+    game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == Enum.KeyCode.RightShift then
+            ToggleUI()
+        end
+    end)
+
     return {
         MainFrame = MainFrame,
         TabsFrame = TabsFrame,
@@ -45,6 +76,10 @@ function Library:CreateTab(window, name)
     local TabButton = Instance.new("TextButton")
     TabButton.Size = UDim2.new(0, 100, 0, 30)
     TabButton.Text = name
+    TabButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TabButton.Font = Enum.Font.Gotham
+    TabButton.TextSize = 14
     TabButton.Parent = window.TabsFrame
     
     local TabFrame = Instance.new("Frame")
@@ -63,6 +98,10 @@ function Library:CreateButton(parent, text, callback)
     local Button = Instance.new("TextButton")
     Button.Size = UDim2.new(1, -10, 0, 40)
     Button.Position = UDim2.new(0, 5, 0, 5)
+    Button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.Font = Enum.Font.Gotham
+    Button.TextSize = 14
     Button.Text = text
     Button.Parent = parent
     
