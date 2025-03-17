@@ -67,7 +67,8 @@ function Library:CreateWindow(title)
     return {
         MainFrame = MainFrame,
         TabsFrame = TabsFrame,
-        Tabs = {}
+        Tabs = {},
+        TabFrames = {} -- Armazenar as janelas de cada aba
     }
 end
 
@@ -82,14 +83,28 @@ function Library:CreateTab(window, name)
     TabButton.TextSize = 14
     TabButton.Parent = window.TabsFrame
     
+    -- Criando a Frame para a aba
     local TabFrame = Instance.new("Frame")
     TabFrame.Size = UDim2.new(1, 0, 1, -70)
     TabFrame.Position = UDim2.new(0, 0, 0, 70)
     TabFrame.BackgroundTransparency = 1
+    TabFrame.Visible = false -- Inicialmente invisível
     TabFrame.Parent = window.MainFrame
-    TabFrame.Visible = false
 
+    -- Adicionando à tabela de abas
     window.Tabs[name] = { Button = TabButton, Frame = TabFrame }
+    window.TabFrames[name] = TabFrame
+    
+    -- Função de ativação da aba
+    TabButton.MouseButton1Click:Connect(function()
+        -- Torna todas as abas invisíveis
+        for _, tab in pairs(window.TabFrames) do
+            tab.Visible = false
+        end
+        -- Torna visível a aba clicada
+        TabFrame.Visible = true
+    end)
+
     return TabFrame
 end
 
