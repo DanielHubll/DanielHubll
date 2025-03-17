@@ -1,0 +1,76 @@
+local Library = {}
+
+-- Criando a UI Principal
+function Library:CreateWindow(title)
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "CustomUILibrary"
+    ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Size = UDim2.new(0, 400, 0, 300)
+    MainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    MainFrame.BackgroundTransparency = 0.2
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Parent = ScreenGui
+    
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 15)
+    UICorner.Parent = MainFrame
+
+    local TitleBar = Instance.new("TextLabel")
+    TitleBar.Size = UDim2.new(1, 0, 0, 30)
+    TitleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    TitleBar.Text = title
+    TitleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TitleBar.Font = Enum.Font.GothamBold
+    TitleBar.TextSize = 16
+    TitleBar.Parent = MainFrame
+    
+    local TabsFrame = Instance.new("Frame")
+    TabsFrame.Size = UDim2.new(1, 0, 0, 40)
+    TabsFrame.Position = UDim2.new(0, 0, 0, 30)
+    TabsFrame.BackgroundTransparency = 1
+    TabsFrame.Parent = MainFrame
+
+    return {
+        MainFrame = MainFrame,
+        TabsFrame = TabsFrame,
+        Tabs = {}
+    }
+end
+
+-- Criando Abas
+function Library:CreateTab(window, name)
+    local TabButton = Instance.new("TextButton")
+    TabButton.Size = UDim2.new(0, 100, 0, 30)
+    TabButton.Text = name
+    TabButton.Parent = window.TabsFrame
+    
+    local TabFrame = Instance.new("Frame")
+    TabFrame.Size = UDim2.new(1, 0, 1, -70)
+    TabFrame.Position = UDim2.new(0, 0, 0, 70)
+    TabFrame.BackgroundTransparency = 1
+    TabFrame.Parent = window.MainFrame
+    TabFrame.Visible = false
+
+    window.Tabs[name] = { Button = TabButton, Frame = TabFrame }
+    return TabFrame
+end
+
+-- Criando Botões
+function Library:CreateButton(parent, text, callback)
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(1, -10, 0, 40)
+    Button.Position = UDim2.new(0, 5, 0, 5)
+    Button.Text = text
+    Button.Parent = parent
+    
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 10)
+    UICorner.Parent = Button
+
+    Button.MouseButton1Click:Connect(callback)
+end
+
+return Library
