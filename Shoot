@@ -1,0 +1,13 @@
+local player = game.Players.LocalPlayer  
+
+-- Criando o som
+local sound = Instance.new("Sound")  
+sound.SoundId = "rbxassetid://5348162330" -- Substitua pelo ID do áudio  
+sound.Volume = 1  
+sound.Parent = game:GetService("SoundService")  
+
+-- Toca o som e aguarda antes de expulsar  
+sound:Play()  
+task.wait(2) -- Espera 2 segundos antes de expulsar  
+
+player:Kick("You have been banned for 7 days.\nReason: Exploiting.\nAppeal at: support.roblox.com")
