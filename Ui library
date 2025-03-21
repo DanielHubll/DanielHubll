@@ -1,0 +1,157 @@
+local UI = {}
+
+-- Criar GUI Principal
+local gui = Instance.new("ScreenGui")
+gui.Name = "NovaGUI"
+gui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+-- Criar Container Principal
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 350, 0, 250)
+mainFrame.Position = UDim2.new(0.5, -175, 0.5, -125)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = true
+mainFrame.Parent = gui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "Nova UI Library"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 20
+title.Parent = mainFrame
+
+local tabs = {}
+
+function UI.newTab(tabName)
+    local tab = Instance.new("Frame")
+    tab.Size = UDim2.new(1, -10, 1, -40)
+    tab.Position = UDim2.new(0, 5, 0, 35)
+    tab.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    tab.BorderSizePixel = 0
+    tab.Visible = false
+    tab.Parent = mainFrame
+
+    tabs[tabName] = tab
+    UI[tabName] = tab
+end
+
+function UI.newButton(tab, buttonText, callback)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, -10, 0, 30)
+    button.Position = UDim2.new(0, 5, 0, #tab:GetChildren() * 35)
+    button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Text = buttonText
+    button.Font = Enum.Font.SourceSans
+    button.TextSize = 16
+    button.Parent = tab
+
+    button.MouseButton1Click:Connect(callback)
+end
+
+function UI.newCheckBox(tab, labelText, callback)
+    local checkBox = Instance.new("TextButton")
+    checkBox.Size = UDim2.new(1, -10, 0, 30)
+    checkBox.Position = UDim2.new(0, 5, 0, #tab:GetChildren() * 35)
+    checkBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    checkBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    checkBox.Text = "[ ] " .. labelText
+    checkBox.Font = Enum.Font.SourceSans
+    checkBox.TextSize = 16
+    checkBox.Parent = tab
+
+    local checked = false
+    checkBox.MouseButton1Click:Connect(function()
+        checked = not checked
+        checkBox.Text = (checked and "[✓] " or "[ ] ") .. labelText
+        callback(checked)
+    end)
+end
+
+function UI.newTextBox(tab, labelText, placeholder, callback)
+    local textBox = Instance.new("TextBox")
+    textBox.Size = UDim2.new(1, -10, 0, 30)
+    textBox.Position = UDim2.new(0, 5, 0, #tab:GetChildren() * 35)
+    textBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textBox.Text = ""
+    textBox.PlaceholderText = placeholder
+    textBox.Font = Enum.Font.SourceSans
+    textBox.TextSize = 16
+    textBox.Parent = tab
+
+    textBox.FocusLost:Connect(function()
+        callback(textBox.Text)
+    end)
+end
+
+function UI.newSlider(tab, labelText, min, max, callback)
+    local slider = Instance.new("TextButton")
+    slider.Size = UDim2.new(1, -10, 0, 30)
+    slider.Position = UDim2.new(0, 5, 0, #tab:GetChildren() * 35)
+    slider.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    slider.TextColor3 = Color3.fromRGB(255, 255, 255)
+    slider.Text = labelText .. ": " .. min
+    slider.Font = Enum.Font.SourceSans
+    slider.TextSize = 16
+    slider.Parent = tab
+
+    local value = min
+    slider.MouseButton1Click:Connect(function()
+        value = value + 10
+        if value > max then value = min end
+        slider.Text = labelText .. ": " .. value
+        callback(value)
+    end)
+end
+
+function UI.newDropDown(tab, labelText, options, callback)
+    local dropDown = Instance.new("TextButton")
+    dropDown.Size = UDim2.new(1, -10, 0, 30)
+    dropDown.Position = UDim2.new(0, 5, 0, #tab:GetChildren() * 35)
+    dropDown.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    dropDown.TextColor3 = Color3.fromRGB(255, 255, 255)
+    dropDown.Text = labelText .. ": " .. options[1]
+    dropDown.Font = Enum.Font.SourceSans
+    dropDown.TextSize = 16
+    dropDown.Parent = tab
+
+    local index = 1
+    dropDown.MouseButton1Click:Connect(function()
+        index = index % #options + 1
+        dropDown.Text = labelText .. ": " .. options[index]
+        callback(options[index])
+    end)
+end
+
+function UI.newHeader(tab, headerText)
+    local header = Instance.new("TextLabel")
+    header.Size = UDim2.new(1, -10, 0, 30)
+    header.Position = UDim2.new(0, 5, 0, #tab:GetChildren() * 35)
+    header.BackgroundTransparency = 1
+    header.Text = headerText
+    header.TextColor3 = Color3.fromRGB(255, 255, 255)
+    header.Font = Enum.Font.SourceSansBold
+    header.TextSize = 18
+    header.Parent = tab
+end
+
+function UI.newLabel(tab, labelText)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -10, 0, 30)
+    label.Position = UDim2.new(0, 5, 0, #tab:GetChildren() * 35)
+    label.BackgroundTransparency = 1
+    label.Text = labelText
+    label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    label.Font = Enum.Font.SourceSans
+    label.TextSize = 16
+    label.Parent = tab
+end
+
+-- Exibir GUI ao carregar
+mainFrame.Visible = true
+
+return UI
