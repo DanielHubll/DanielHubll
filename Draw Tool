@@ -1,0 +1,209 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local backpack = player:FindFirstChildOfClass("Backpack")
+local playerGui = player:FindFirstChildOfClass("PlayerGui")
+
+-- Criar GUI principal
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = playerGui
+screenGui.Enabled = false
+
+-- Função de arrastar
+local function enableDragging(frame)
+    local dragging = false
+    local dragStart, startPos
+
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    frame.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+-- Criar Frame do menu
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0.25, 0, 0.35, 0)
+frame.Position = UDim2.new(0.375, 0, 0.1, 0)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BackgroundTransparency = 0.2
+frame.Parent = screenGui
+enableDragging(frame)
+
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0.1, 0)
+uiCorner.Parent = frame
+
+-- Criar Mini Mapa
+local miniMapFrame = Instance.new("Frame")
+miniMapFrame.Size = UDim2.new(0.2, 0, 0.2, 0)
+miniMapFrame.Position = UDim2.new(0.75, 0, 0.05, 0)
+miniMapFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+miniMapFrame.BackgroundTransparency = 0.2
+miniMapFrame.Parent = screenGui
+enableDragging(miniMapFrame)
+
+local miniCorner = Instance.new("UICorner")
+miniCorner.CornerRadius = UDim.new(0.1, 0)
+miniCorner.Parent = miniMapFrame
+
+-- Escolher cor do pincel
+local colors = {
+    Color3.new(1, 0, 0),  -- Vermelho
+    Color3.new(0, 1, 0),  -- Verde
+    Color3.new(0, 0, 1),  -- Azul
+    Color3.new(1, 1, 0),  -- Amarelo
+    Color3.new(1, 1, 1)   -- Branco
+}
+
+local selectedColor = Color3.new(1, 1, 1)
+
+-- Criando a ferramenta com Handle e Mesh
+local tool = Instance.new("Tool")
+tool.Name = "DrawTool"
+tool.RequiresHandle = true
+
+-- Criar o Handle da ferramenta
+local handle = Instance.new("Part")
+handle.Name = "Handle"
+handle.Size = Vector3.new(1, 1, 1)
+handle.Color = selectedColor
+handle.Material = Enum.Material.SmoothPlastic
+handle.Anchored = false
+handle.CanCollide = false
+handle.Parent = tool
+
+-- Criar o Mesh no Handle
+local mesh = Instance.new("SpecialMesh")
+mesh.MeshType = Enum.MeshType.FileMesh
+mesh.MeshId = "rbxassetid://2096450962"
+mesh.Scale = Vector3.new(0.040, 0.040, 0.040)
+mesh.Parent = handle
+
+tool.Parent = backpack
+
+for i, color in ipairs(colors) do
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0.15, 0, 0.15, 0)
+    button.Position = UDim2.new(0.1 + (i - 1) * 0.18, 0, 0.35, 0)
+    button.BackgroundColor3 = color
+    button.Text = ""
+    button.Parent = frame
+
+    button.MouseButton1Click:Connect(function()
+        selectedColor = color
+        handle.Color = selectedColor
+    end)
+
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(1, 0)
+    buttonCorner.Parent = button
+end
+
+-- Ajustar tamanho do pincel
+local sizeBox = Instance.new("TextBox")
+sizeBox.Size = UDim2.new(0.8, 0, 0.15, 0)
+sizeBox.Position = UDim2.new(0.1, 0, 0.1, 0)
+sizeBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+sizeBox.Text = "0.3"
+sizeBox.TextColor3 = Color3.new(1, 1, 1)
+sizeBox.Parent = frame
+
+local sizeCorner = Instance.new("UICorner")
+sizeCorner.CornerRadius = UDim.new(0.2, 0)
+sizeCorner.Parent = sizeBox
+
+-- Variáveis de controle para desenho
+local isDrawing = false
+local lastPosition = nil
+local drawParts = {}
+
+-- Atualizar Mini Mapa
+local function updateMiniMap(position)
+    local scaleX = (position.X + 500) / 1000
+    local scaleY = (position.Z + 500) / 1000
+
+    local point = Instance.new("Frame")
+    point.Size = UDim2.new(0.01, 0, 0.01, 0)
+    point.Position = UDim2.new(scaleX, 0, scaleY, 0)
+    point.BackgroundColor3 = selectedColor
+    point.Parent = miniMapFrame
+
+    local pointCorner = Instance.new("UICorner")
+    pointCorner.CornerRadius = UDim.new(1, 0)
+    pointCorner.Parent = point
+end
+
+-- Criar um ponto no chão
+local function createDrawPart(position)
+    local size = tonumber(sizeBox.Text) or 0.3
+    local part = Instance.new("Part")
+    part.Size = Vector3.new(size, 0.1, size)
+    part.Position = position
+    part.Anchored = true
+    part.CanCollide = false
+    part.Material = Enum.Material.SmoothPlastic
+    part.Color = selectedColor
+    part.Parent = workspace
+    table.insert(drawParts, part)
+    updateMiniMap(position)
+end
+
+-- Detecta o toque na tela para desenhar
+local function onTouch(input, gameProcessed)
+    if gameProcessed or not isDrawing then return end
+    if input.UserInputType == Enum.UserInputType.Touch then
+        local touchPosition = input.Position
+        local ray = workspace.CurrentCamera:ViewportPointToRay(touchPosition.X, touchPosition.Y, 0)
+        local result = workspace:Raycast(ray.Origin, ray.Direction * 100)
+        if result then
+            local hitPosition = result.Position
+            if not lastPosition or (hitPosition - lastPosition).Magnitude > 0.2 then
+                createDrawPart(hitPosition)
+                lastPosition = hitPosition
+            end
+        end
+    end
+end
+
+-- Ativar desenho e exibir GUI ao equipar a ferramenta
+tool.Equipped:Connect(function()
+    isDrawing = true
+    screenGui.Enabled = true
+    UserInputService.TouchMoved:Connect(onTouch)
+    UserInputService.TouchStarted:Connect(onTouch)
+end)
+
+-- Desativar desenho e esconder GUI ao dessequipar a ferramenta
+tool.Unequipped:Connect(function()
+    isDrawing = false
+    screenGui.Enabled = false
+end)
+
+-- Criar botão de deletar desenho
+local deleteButton = Instance.new("TextButton")
+deleteButton.Size = UDim2.new(0.8, 0, 0.15, 0)
+deleteButton.Position = UDim2.new(0.1, 0, 0.65, 0)
+deleteButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+deleteButton.Text = "Deletar Desenho"
+deleteButton.TextColor3 = Color3.new(1, 1, 1)
+deleteButton.Parent = frame
+
+local deleteCorner = Instance.new("UICorner")
+deleteCorner.CornerRadius = UDim.new(0.2, 0)
+deleteCorner.Parent = deleteButton
