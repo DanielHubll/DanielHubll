@@ -181,7 +181,6 @@ local function onTouch(input, gameProcessed)
     end
 end
 
--- Ativar desenho e exibir GUI ao equipar a ferramenta
 tool.Equipped:Connect(function()
     isDrawing = true
     screenGui.Enabled = true
@@ -189,13 +188,12 @@ tool.Equipped:Connect(function()
     UserInputService.TouchStarted:Connect(onTouch)
 end)
 
--- Desativar desenho e esconder GUI ao dessequipar a ferramenta
 tool.Unequipped:Connect(function()
     isDrawing = false
     screenGui.Enabled = false
 end)
 
--- Criar botão de deletar desenho
+-- BOTÃO DE DELETAR DESENHO (NO FINAL)
 local deleteButton = Instance.new("TextButton")
 deleteButton.Size = UDim2.new(0.8, 0, 0.15, 0)
 deleteButton.Position = UDim2.new(0.1, 0, 0.65, 0)
@@ -204,6 +202,8 @@ deleteButton.Text = "Deletar Desenho"
 deleteButton.TextColor3 = Color3.new(1, 1, 1)
 deleteButton.Parent = frame
 
-local deleteCorner = Instance.new("UICorner")
-deleteCorner.CornerRadius = UDim.new(0.2, 0)
-deleteCorner.Parent = deleteButton
+deleteButton.MouseButton1Click:Connect(function()
+    for _, part in ipairs(drawParts) do part:Destroy() end
+    drawParts = {}
+    for _, child in ipairs(miniMapFrame:GetChildren()) do child:Destroy() end
+end)
