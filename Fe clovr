@@ -11,8 +11,6 @@ local bodyTransparency = 0.9 --Change the transparency of your character (0 - 1)
 local bodyVelocity = {-17.7, 0, -17.7} --Change your body parts velocity. First number value is the X value. Second number value is the Y value. Third number value is the Z value.
 local hatVelocity = {-17.7, 0, -17.7} --Change your accessory's velocity. First number value is the X value. Second number value is the Y value. Third number value is the Z value.
 --Velocity is not recommended to be (-17.7, 0, -17.7) in R15 since body parts often fall in R15.
-if not game:GetService("ReplicatedStorage"):FindFirstChild("01_server") then return game:GetService("TeleportService"):Teleport(1758401491, game:GetService("Players").LocalPlayer) end
---[[--------------------------]]--
 
 local player1 = game.Players.LocalPlayer
 local character1 = player1.Character
