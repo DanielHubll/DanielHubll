@@ -1,0 +1,226 @@
+-- VMax Pro UI Library - Versão 1
+-- Super completa, responsiva, estilosa, com sistemas de botão, toggle, slider, dropdown, textbox e keybind
+
+local VMaxPro = {}
+
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+function VMaxPro:CreateWindow(title)
+	local ScreenGui = Instance.new("ScreenGui", game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"))
+	ScreenGui.Name = "VMaxProUI"
+	ScreenGui.ResetOnSpawn = false
+
+	local Main = Instance.new("Frame", ScreenGui)
+	Main.Size = UDim2.new(0, 450, 0, 320)
+	Main.Position = UDim2.new(0.5, -225, 0.5, -160)
+	Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+	Main.AnchorPoint = Vector2.new(0.5, 0.5)
+	Main.Active = true
+	Main.Draggable = true
+
+	local UICorner = Instance.new("UICorner", Main)
+	UICorner.CornerRadius = UDim.new(0, 8)
+
+	local Title = Instance.new("TextLabel", Main)
+	Title.Size = UDim2.new(1, 0, 0, 40)
+	Title.Text = "VMax Pro - " .. title
+	Title.TextColor3 = Color3.new(1, 1, 1)
+	Title.BackgroundTransparency = 1
+	Title.Font = Enum.Font.GothamBold
+	Title.TextSize = 18
+
+	local TabButtons = Instance.new("Frame", Main)
+	TabButtons.Size = UDim2.new(0, 120, 1, -40)
+	TabButtons.Position = UDim2.new(0, 0, 0, 40)
+	TabButtons.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	Instance.new("UICorner", TabButtons)
+
+	local Tabs = Instance.new("Folder", Main)
+	Tabs.Name = "Tabs"
+
+	local UIList = Instance.new("UIListLayout", TabButtons)
+	UIList.SortOrder = Enum.SortOrder.LayoutOrder
+	UIList.Padding = UDim.new(0, 6)
+
+	function VMaxPro:CreateTab(tabName)
+		local tabButton = Instance.new("TextButton", TabButtons)
+		tabButton.Size = UDim2.new(1, -10, 0, 32)
+		tabButton.Text = tabName
+		tabButton.Font = Enum.Font.Gotham
+		tabButton.TextColor3 = Color3.new(1, 1, 1)
+		tabButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+		Instance.new("UICorner", tabButton)
+
+		local tabFrame = Instance.new("ScrollingFrame", Tabs)
+		tabFrame.Name = tabName
+		tabFrame.Visible = false
+		tabFrame.Size = UDim2.new(1, -130, 1, -50)
+		tabFrame.Position = UDim2.new(0, 130, 0, 45)
+		tabFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+		tabFrame.ScrollBarThickness = 4
+		tabFrame.BackgroundTransparency = 1
+
+		local layout = Instance.new("UIListLayout", tabFrame)
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
+		layout.Padding = UDim.new(0, 6)
+
+		tabButton.MouseButton1Click:Connect(function()
+			for _, v in pairs(Tabs:GetChildren()) do
+				if v:IsA("ScrollingFrame") then v.Visible = false end
+			end
+			tabFrame.Visible = true
+		end)
+
+		return { Content = tabFrame }
+	end
+
+	return VMaxPro
+end
+
+function VMaxPro:CreateButton(tab, text, callback)
+	local btn = Instance.new("TextButton", tab.Content)
+	btn.Size = UDim2.new(1, -10, 0, 32)
+	btn.Text = text
+	btn.Font = Enum.Font.GothamBold
+	btn.TextColor3 = Color3.new(1, 1, 1)
+	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	Instance.new("UICorner", btn)
+	btn.MouseButton1Click:Connect(function()
+		pcall(callback)
+	end)
+end
+
+function VMaxPro:CreateToggle(tab, text, default, callback)
+	local toggle = Instance.new("TextButton", tab.Content)
+	toggle.Size = UDim2.new(1, -10, 0, 32)
+	toggle.Text = text .. ": " .. (default and "ON" or "OFF")
+	toggle.Font = Enum.Font.GothamBold
+	toggle.TextColor3 = Color3.new(1, 1, 1)
+	toggle.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	Instance.new("UICorner", toggle)
+	local state = default
+	toggle.MouseButton1Click:Connect(function()
+		state = not state
+		toggle.Text = text .. ": " .. (state and "ON" or "OFF")
+		pcall(callback, state)
+	end)
+end
+
+function VMaxPro:CreateSlider(tab, text, min, max, default, callback)
+	local frame = Instance.new("Frame", tab.Content)
+	frame.Size = UDim2.new(1, -10, 0, 38)
+	frame.BackgroundTransparency = 1
+
+	local label = Instance.new("TextLabel", frame)
+	label.Size = UDim2.new(1, 0, 0, 20)
+	label.Text = text .. ": " .. tostring(default)
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 14
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.BackgroundTransparency = 1
+
+	local slider = Instance.new("TextButton", frame)
+	slider.Position = UDim2.new(0, 0, 0, 20)
+	slider.Size = UDim2.new(1, 0, 0, 14)
+	slider.BackgroundColor3 = Color3.fromRGB(0, 255, 200)
+	slider.Text = ""
+	Instance.new("UICorner", slider)
+
+	local dragging = false
+	slider.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
+	end)
+	slider.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+	end)
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and input.Position then
+			local rel = (input.Position.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X
+			rel = math.clamp(rel, 0, 1)
+			local val = math.floor(((max - min) * rel + min) + 0.5)
+			label.Text = text .. ": " .. tostring(val)
+			pcall(callback, val)
+		end
+	end)
+end
+
+function VMaxPro:CreateDropdown(tab, text, options, callback)
+	local dropdown = Instance.new("TextButton", tab.Content)
+	dropdown.Size = UDim2.new(1, -10, 0, 32)
+	dropdown.Text = text .. ": [Select]"
+	dropdown.Font = Enum.Font.Gotham
+	dropdown.TextColor3 = Color3.new(1, 1, 1)
+	dropdown.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	local open = false
+	local container = Instance.new("Frame", tab.Content)
+	container.Size = UDim2.new(1, -10, 0, 0)
+	container.BackgroundTransparency = 1
+	container.ClipsDescendants = true
+	local list = Instance.new("UIListLayout", container)
+	list.SortOrder = Enum.SortOrder.LayoutOrder
+	dropdown.MouseButton1Click:Connect(function()
+		open = not open
+		container.Size = open and UDim2.new(1, -10, 0, #options * 26) or UDim2.new(1, -10, 0, 0)
+	end)
+	for _, opt in ipairs(options) do
+		local optBtn = Instance.new("TextButton", container)
+		optBtn.Size = UDim2.new(1, 0, 0, 24)
+		optBtn.Text = opt
+		optBtn.Font = Enum.Font.Gotham
+		optBtn.TextColor3 = Color3.new(1, 1, 1)
+		optBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		Instance.new("UICorner", optBtn)
+		optBtn.MouseButton1Click:Connect(function()
+			dropdown.Text = text .. ": " .. opt
+			open = false
+			container.Size = UDim2.new(1, -10, 0, 0)
+			pcall(callback, opt)
+		end)
+	end
+end
+
+function VMaxPro:CreateTextBox(tab, placeholder, callback)
+	local box = Instance.new("TextBox", tab.Content)
+	box.PlaceholderText = placeholder
+	box.Text = ""
+	box.Size = UDim2.new(1, -10, 0, 32)
+	box.Font = Enum.Font.Gotham
+	box.TextColor3 = Color3.new(1, 1, 1)
+	box.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	Instance.new("UICorner", box)
+	box.FocusLost:Connect(function(enter)
+		if enter then
+			pcall(callback, box.Text)
+		end
+	end)
+end
+
+function VMaxPro:CreateKeybind(tab, text, defaultKey, callback)
+	local btn = Instance.new("TextButton", tab.Content)
+	btn.Size = UDim2.new(1, -10, 0, 32)
+	btn.Text = text .. ": [" .. defaultKey.Name .. "]"
+	btn.Font = Enum.Font.GothamBold
+	btn.TextColor3 = Color3.new(1, 1, 1)
+	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	Instance.new("UICorner", btn)
+	local binding = defaultKey
+	btn.MouseButton1Click:Connect(function()
+		btn.Text = text .. ": [Press Key]"
+		local conn
+		conn = UserInputService.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.Keyboard then
+				binding = input.KeyCode
+				btn.Text = text .. ": [" .. binding.Name .. "]"
+				conn:Disconnect()
+			end
+		end)
+	end)
+	UserInputService.InputBegan:Connect(function(input)
+		if input.KeyCode == binding then
+			pcall(callback)
+		end
+	end)
+end
+
+return VMaxPro
