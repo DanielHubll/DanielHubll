@@ -5,279 +5,261 @@ local Players = game:GetService("Players")
 local Library = {}
 Library.__index = Library
 
-local Themes = {
-    Dark = {
-        Background = Color3.fromRGB(20, 20, 30),
-        Accent = Color3.fromRGB(50, 50, 100),
-        Text = Color3.fromRGB(255, 255, 255),
-        ButtonBackground = Color3.fromRGB(40, 40, 90),
-        CloseButton = Color3.fromRGB(70, 50, 150),
-    },
-    Light = {
-        Background = Color3.fromRGB(240, 240, 240),
-        Accent = Color3.fromRGB(100, 100, 200),
-        Text = Color3.fromRGB(0, 0, 0),
-        ButtonBackground = Color3.fromRGB(180, 180, 180),
-        CloseButton = Color3.fromRGB(200, 100, 100),
-    }
-}
-
-local CurrentTheme = Themes.Dark
-
-local function SetTheme(theme)
-    CurrentTheme = Themes[theme] or Themes.Dark
-end
-
 local function Roundify(obj, rad)
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, rad or 8)
-    corner.Parent = obj
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, rad or 8)
+corner.Parent = obj
 end
 
 local function MakeDraggable(frame)
-    local dragging, dragInput, dragStart, startPos = false
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = frame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            local delta = input.Position - dragStart
-            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
+local dragging, dragInput, dragStart, startPos = false
+frame.InputBegan:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 or input.Touch then
+dragging = true
+dragStart = input.Position
+startPos = frame.Position
+input.Changed:Connect(function()
+if input.UserInputState == Enum.UserInputState.End then
+dragging = false
+end
+end)
+end
+end)
+UserInputService.InputChanged:Connect(function(input)
+if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+local delta = input.Position - dragStart
+frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+end)
 end
 
 function Library:CreateWindow(settings)
-    settings = settings or {}
-    local WindowTitle = settings.Title or "Klx UI"
-    local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+settings = settings or {}
+local WindowTitle = settings.Title or "Klx UI"
+local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
-    local existing = playerGui:FindFirstChild("KlxUILibrary")
-    if existing then existing:Destroy() end
+local existing = playerGui:FindFirstChild("KlxUILibrary")  
+if existing then existing:Destroy() end  
 
-    local MainGui = Instance.new("ScreenGui", playerGui)
-    MainGui.Name = "KlxUILibrary"
-    MainGui.ResetOnSpawn = false
+local MainGui = Instance.new("ScreenGui", playerGui)  
+MainGui.Name = "KlxUILibrary"  
+MainGui.ResetOnSpawn = false  
 
-    local IntroFrame = Instance.new("Frame", MainGui)
-    IntroFrame.Size = UDim2.new(0, 300, 0, 80)
-    IntroFrame.Position = UDim2.new(0.5, -150, 0.5, -40)
-    IntroFrame.BackgroundTransparency = 1
-    Roundify(IntroFrame)
+local IntroFrame = Instance.new("Frame", MainGui)  
+IntroFrame.Size = UDim2.new(0, 300, 0, 80)  
+IntroFrame.Position = UDim2.new(0.5, -150, 0.5, -40)  
+IntroFrame.BackgroundTransparency = 1  
+Roundify(IntroFrame)  
 
-    local IntroText = Instance.new("TextLabel", IntroFrame)
-    IntroText.Size = UDim2.new(1, 0, 1, 0)
-    IntroText.BackgroundTransparency = 1
-    IntroText.Text = "KLX UI"
-    IntroText.TextColor3 = CurrentTheme.Text
-    IntroText.TextStrokeTransparency = 0.5
-    IntroText.Font = Enum.Font.GothamBlack
-    IntroText.TextScaled = true
-    IntroText.TextTransparency = 1
-    Roundify(IntroText)
-    TweenService:Create(IntroText, TweenInfo.new(1), { TextTransparency = 0 }):Play()
-    task.wait(2)
-    TweenService:Create(IntroText, TweenInfo.new(1), { TextTransparency = 1 }):Play()
-    task.wait(1)
-    IntroFrame:Destroy()
+local IntroText = Instance.new("TextLabel", IntroFrame)  
+IntroText.Size = UDim2.new(1, 0, 1, 0)  
+IntroText.BackgroundTransparency = 1  
+IntroText.Text = "KLX UI"  
+IntroText.TextColor3 = Color3.new(1, 1, 1)  
+IntroText.TextStrokeTransparency = 0.5  
+IntroText.Font = Enum.Font.GothamBlack  
+IntroText.TextScaled = true  
+IntroText.TextTransparency = 1  
+Roundify(IntroText)  
+TweenService:Create(IntroText, TweenInfo.new(1), { TextTransparency = 0 }):Play()  
+task.wait(2)  
+TweenService:Create(IntroText, TweenInfo.new(1), { TextTransparency = 1 }):Play()  
+task.wait(1)  
+IntroFrame:Destroy()  
 
-    local ToggleBtn = Instance.new("TextButton", MainGui)
-    ToggleBtn.Size = UDim2.new(0, 36, 0, 36)
-    ToggleBtn.Position = UDim2.new(0, 10, 0, 10)
-    ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 60)
-    ToggleBtn.Text = "Klx"
-    ToggleBtn.TextColor3 = CurrentTheme.Text
-    ToggleBtn.Font = Enum.Font.GothamSemibold
-    ToggleBtn.TextSize = 14
-    Roundify(ToggleBtn)
-    MakeDraggable(ToggleBtn)
+local ToggleBtn = Instance.new("TextButton", MainGui)  
+ToggleBtn.Size = UDim2.new(0, 36, 0, 36)  
+ToggleBtn.Position = UDim2.new(0, 10, 0, 10)  
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 60)  
+ToggleBtn.Text = "Klx"  
+ToggleBtn.TextColor3 = Color3.new(1, 1, 1)  
+ToggleBtn.Font = Enum.Font.GothamSemibold  
+ToggleBtn.TextSize = 14  
+Roundify(ToggleBtn)  
+MakeDraggable(ToggleBtn)  
 
-    local MainFrame = Instance.new("Frame", MainGui)
-    MainFrame.Size = UDim2.new(0, 400, 0, 260)
-    MainFrame.Position = UDim2.new(0.5, -200, 0.5, -130)
-    MainFrame.BackgroundColor3 = CurrentTheme.Background
-    MainFrame.BackgroundTransparency = 0.5
-    MainFrame.BorderSizePixel = 0
-    MainFrame.ClipsDescendants = true
-    MainFrame.Visible = false
-    Roundify(MainFrame, 12)
-    MakeDraggable(MainFrame)
+local MainFrame = Instance.new("Frame", MainGui)  
+MainFrame.Size = UDim2.new(0, 400, 0, 260)  
+MainFrame.Position = UDim2.new(0.5, -200, 0.5, -130)  
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)  
+MainFrame.BackgroundTransparency = 0.5  
+MainFrame.BorderSizePixel = 0  
+MainFrame.ClipsDescendants = true  
+MainFrame.Visible = false  
+Roundify(MainFrame, 12)  
+MakeDraggable(MainFrame)  
 
-    ToggleBtn.MouseButton1Click:Connect(function()
-        MainFrame.Visible = not MainFrame.Visible
-    end)
+ToggleBtn.MouseButton1Click:Connect(function()  
+	MainFrame.Visible = not MainFrame.Visible  
+end)  
 
-    local TopBar = Instance.new("Frame", MainFrame)
-    TopBar.Size = UDim2.new(1, 0, 0, 40)
-    TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
-    TopBar.BackgroundTransparency = 0.5
-    TopBar.BorderSizePixel = 0
-    Roundify(TopBar, 12)
+local TopBar = Instance.new("Frame", MainFrame)  
+TopBar.Size = UDim2.new(1, 0, 0, 40)  
+TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 25)  
+TopBar.BackgroundTransparency = 0.5  
+TopBar.BorderSizePixel = 0  
+Roundify(TopBar, 12)  
 
-    local content = Players:GetUserThumbnailAsync(Players.LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
-    local AvatarImage = Instance.new("ImageLabel", TopBar)
-    AvatarImage.Size = UDim2.new(0, 32, 0, 32)
-    AvatarImage.Position = UDim2.new(0, 8, 0.5, -16)
-    AvatarImage.BackgroundTransparency = 1
-    AvatarImage.Image = content
-    AvatarImage.ScaleType = Enum.ScaleType.Fit
-    Roundify(AvatarImage, 16)
+local content = Players:GetUserThumbnailAsync(Players.LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)  
+local AvatarImage = Instance.new("ImageLabel", TopBar)  
+AvatarImage.Size = UDim2.new(0, 32, 0, 32)  
+AvatarImage.Position = UDim2.new(0, 8, 0.5, -16)  
+AvatarImage.BackgroundTransparency = 1  
+AvatarImage.Image = content  
+AvatarImage.ScaleType = Enum.ScaleType.Fit  
+Roundify(AvatarImage, 16)  
 
-    local Title = Instance.new("TextLabel", TopBar)
-    Title.Text = WindowTitle
-    Title.Size = UDim2.new(1, -80, 1, 0)
-    Title.Position = UDim2.new(0, 50, 0, 0)
-    Title.BackgroundTransparency = 1
-    Title.TextColor3 = CurrentTheme.Text
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.Font = Enum.Font.GothamSemibold
-    Title.TextSize = 16
-    Roundify(Title)
+local Title = Instance.new("TextLabel", TopBar)  
+Title.Text = WindowTitle  
+Title.Size = UDim2.new(1, -80, 1, 0)  
+Title.Position = UDim2.new(0, 50, 0, 0)  
+Title.BackgroundTransparency = 1  
+Title.TextColor3 = Color3.new(1, 1, 1)  
+Title.TextXAlignment = Enum.TextXAlignment.Left  
+Title.Font = Enum.Font.GothamSemibold  
+Title.TextSize = 16  
+Roundify(Title)  
 
-    local CloseButton = Instance.new("TextButton", TopBar)
-    CloseButton.Text = "X"
-    CloseButton.Size = UDim2.new(0, 30, 0, 30)
-    CloseButton.Position = UDim2.new(1, -35, 0.5, -15)
-    CloseButton.BackgroundColor3 = CurrentTheme.CloseButton
-    CloseButton.TextColor3 = CurrentTheme.Text
-    CloseButton.Font = Enum.Font.Gotham
-    CloseButton.TextSize = 14
-    Roundify(CloseButton, 6)
-    CloseButton.MouseButton1Click:Connect(function()
-        TweenService:Create(MainFrame, TweenInfo.new(0.3), { Size = UDim2.new(0, 0, 0, 0) }):Play()
-        task.wait(0.3)
-        MainGui:Destroy()
-    end)
+local CloseButton = Instance.new("TextButton", TopBar)  
+CloseButton.Text = "X"  
+CloseButton.Size = UDim2.new(0, 30, 0, 30)  
+CloseButton.Position = UDim2.new(1, -35, 0.5, -15)  
+CloseButton.BackgroundColor3 = Color3.fromRGB(70, 50, 150)  
+CloseButton.TextColor3 = Color3.new(1, 1, 1)  
+CloseButton.Font = Enum.Font.Gotham  
+CloseButton.TextSize = 14  
+Roundify(CloseButton, 6)  
+CloseButton.MouseButton1Click:Connect(function()  
+	TweenService:Create(MainFrame, TweenInfo.new(0.3), { Size = UDim2.new(0, 0, 0, 0) }):Play()  
+	task.wait(0.3)  
+	MainGui:Destroy()  
+end)  
 
-    local TabList = Instance.new("Frame", MainFrame)
-    TabList.Size = UDim2.new(0, 90, 1, -40)
-    TabList.Position = UDim2.new(0, 0, 0, 40)
-    TabList.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
-    TabList.BackgroundTransparency = 0.5
-    TabList.BorderSizePixel = 0
-    Roundify(TabList)
+local TabList = Instance.new("Frame", MainFrame)  
+TabList.Size = UDim2.new(0, 90, 1, -40)  
+TabList.Position = UDim2.new(0, 0, 0, 40)  
+TabList.BackgroundColor3 = Color3.fromRGB(25, 25, 40)  
+TabList.BackgroundTransparency = 0.5  
+TabList.BorderSizePixel = 0  
+Roundify(TabList)  
 
-    local UIList = Instance.new("UIListLayout", TabList)
-    UIList.SortOrder = Enum.SortOrder.LayoutOrder
-    UIList.Padding = UDim.new(0, 4)
+local UIList = Instance.new("UIListLayout", TabList)  
+UIList.SortOrder = Enum.SortOrder.LayoutOrder  
+UIList.Padding = UDim.new(0, 4)  
 
-    local Tabs = {}
+local Tabs = {}
 
-    function Library:CreateTab(tabName)
-        local TabButton = Instance.new("TextButton", TabList)
-        TabButton.Size = UDim2.new(1, -10, 0, 30)
-        TabButton.Position = UDim2.new(0, 5, 0, 0)
-        TabButton.Text = tabName
-        TabButton.BackgroundColor3 = CurrentTheme.Accent
-        TabButton.TextColor3 = CurrentTheme.Text
-        TabButton.Font = Enum.Font.Gotham
-        TabButton.TextSize = 14
-        TabButton.BackgroundTransparency = 0.3
-        Roundify(TabButton, 6)
+function Library:CreateTab(tabName)
+local TabButton = Instance.new("TextButton", TabList)
+TabButton.Size = UDim2.new(1, -10, 0, 30)
+TabButton.Position = UDim2.new(0, 5, 0, 0)
+TabButton.Text = tabName
+TabButton.BackgroundColor3 = Color3.fromRGB(50, 50, 100)
+TabButton.TextColor3 = Color3.new(1, 1, 1)
+TabButton.Font = Enum.Font.Gotham
+TabButton.TextSize = 14
+TabButton.BackgroundTransparency = 0.3
+Roundify(TabButton, 6)
 
-        local TabFrame = nil
-        local ElementQueue = {}
+local TabFrame = nil  
+local ElementQueue = {}  
 
-        local function CreateFrame()
-            TabFrame = Instance.new("ScrollingFrame", MainFrame)
-            TabFrame.Size = UDim2.new(1, -110, 1, -50)
-            TabFrame.Position = UDim2.new(0, 105, 0, 45)
-            TabFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-            TabFrame.BackgroundColor3 = CurrentTheme.Background
-            TabFrame.BackgroundTransparency = 0.4
-            TabFrame.BorderSizePixel = 0
-            TabFrame.ScrollBarThickness = 6
-            TabFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-            Roundify(TabFrame, 8)
+local function CreateFrame()  
+	TabFrame = Instance.new("ScrollingFrame", MainFrame)  
+	TabFrame.Size = UDim2.new(1, -110, 1, -50)  
+	TabFrame.Position = UDim2.new(0, 105, 0, 45)  
+	TabFrame.CanvasSize = UDim2.new(0, 0, 0, 0)  
+	TabFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 50)  
+	TabFrame.BackgroundTransparency = 0.4  
+	TabFrame.BorderSizePixel = 0  
+	TabFrame.ScrollBarThickness = 6  
+	TabFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y  
+	Roundify(TabFrame, 8)  
 
-            local layout = Instance.new("UIListLayout", TabFrame)
-            layout.Padding = UDim.new(0, 6)
-            layout.SortOrder = Enum.SortOrder.LayoutOrder
+	local layout = Instance.new("UIListLayout", TabFrame)  
+	layout.Padding = UDim.new(0, 6)  
+	layout.SortOrder = Enum.SortOrder.LayoutOrder  
 
-            layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-                TabFrame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
-            end)
+	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()  
+		TabFrame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)  
+	end)  
 
-            for _, createFunc in ipairs(ElementQueue) do
-                createFunc(TabFrame)
-            end
-        end
+	-- Recriar elementos salvos  
+	for _, createFunc in ipairs(ElementQueue) do  
+		createFunc(TabFrame)  
+	end  
+end  
 
-        TabButton.MouseButton1Click:Connect(function()
-            for name, tab in pairs(Tabs) do
-                if tab.Frame then
-                    tab.Frame:Destroy()
-                    tab.Frame = nil
-                end
-            end
+TabButton.MouseButton1Click:Connect(function()  
+	-- Destroi todos os outros tabframes  
+	for name, tab in pairs(Tabs) do  
+		if tab.Frame then  
+			tab.Frame:Destroy()  
+			tab.Frame = nil  
+		end  
+	end  
 
-            CreateFrame()
-            Tabs[tabName].Frame = TabFrame
-        end)
+	-- Cria o frame e atualiza  
+	CreateFrame()  
+	Tabs[tabName].Frame = TabFrame  
+end)  
 
-        local tabObj = {}
+local tabObj = {}  
 
-        function tabObj:CreateSection(name)
-            local createFunc = function(parent)
-                local section = Instance.new("Frame", parent)
-                section.Size = UDim2.new(1, -10, 0, 30)
-                section.BackgroundColor3 = CurrentTheme.ButtonBackground
-                section.BackgroundTransparency = 0.3
-                section.BorderSizePixel = 0
-                Roundify(section, 6)
+function tabObj:CreateSection(name)  
+	local createFunc = function(parent)  
+		local section = Instance.new("Frame", parent)  
+		section.Size = UDim2.new(1, -10, 0, 30)  
+		section.BackgroundColor3 = Color3.fromRGB(40, 40, 90)  
+		section.BackgroundTransparency = 0.3  
+		section.BorderSizePixel = 0  
+		Roundify(section, 6)  
 
-                local title = Instance.new("TextLabel", section)
-                title.Text = name
-                title.Size = UDim2.new(1, -10, 1, 0)
-                title.Position = UDim2.new(0, 5, 0, 0)
-                title.TextColor3 = CurrentTheme.Text
-                title.TextXAlignment = Enum.TextXAlignment.Left
-                title.Font = Enum.Font.GothamBold
-                title.TextSize = 14
-                title.BackgroundTransparency = 1
-            end
-            table.insert(ElementQueue, createFunc)
-            if TabFrame then createFunc(TabFrame) end
-        end
+		local title = Instance.new("TextLabel", section)  
+		title.Text = name  
+		title.Size = UDim2.new(1, -10, 1, 0)  
+		title.Position = UDim2.new(0, 5, 0, 0)  
+		title.TextColor3 = Color3.new(1, 1, 1)  
+		title.TextXAlignment = Enum.TextXAlignment.Left  
+		title.Font = Enum.Font.GothamBold  
+		title.TextSize = 14  
+		title.BackgroundTransparency = 1  
+	end  
+	table.insert(ElementQueue, createFunc)  
+	if TabFrame then createFunc(TabFrame) end  
+end  
 
-        function tabObj:CreateButton(text, callback)
-            local createFunc = function(parent)
-                local button = Instance.new("TextButton", parent)
-                button.Size = UDim2.new(1, -10, 0, 30)
-                button.BackgroundColor3 = CurrentTheme.Accent
-                button.TextColor3 = CurrentTheme.Text
-                button.Text = text
-                button.Font = Enum.Font.Gotham
-                button.TextSize = 14
-                button.BorderSizePixel = 0
-                button.BackgroundTransparency = 0.2
-                Roundify(button, 6)
-                button.MouseButton1Click:Connect(function()
-                    if callback then callback() end
-                end)
-            end
-            table.insert(ElementQueue, createFunc)
-            if TabFrame then createFunc(TabFrame) end
-        end
+function tabObj:CreateButton(text, callback)  
+	local createFunc = function(parent)  
+		local button = Instance.new("TextButton", parent)  
+		button.Size = UDim2.new(1, -10, 0, 30)  
+		button.BackgroundColor3 = Color3.fromRGB(50, 50, 120)  
+		button.TextColor3 = Color3.new(1, 1, 1)  
+		button.Text = text  
+		button.Font = Enum.Font.Gotham  
+		button.TextSize = 14  
+		button.BorderSizePixel = 0  
+		button.BackgroundTransparency = 0.2  
+		Roundify(button, 6)  
+		button.MouseButton1Click:Connect(function()  
+			if callback then callback() end  
+		end)  
+	end  
+	table.insert(ElementQueue, createFunc)  
+	if TabFrame then createFunc(TabFrame) end  
+end  
 
-        Tabs[tabName] = {
-            Button = TabButton,
-            Frame = nil,
-        }
+Tabs[tabName] = {  
+	Button = TabButton,  
+	Frame = nil,  
+}  
 
-        return tabObj
-    end
+return tabObj
 
-    return Library
 end
 
 return Library
+
+end
+
+return Library:CreateWindow({ Title = "Klx UI" })
