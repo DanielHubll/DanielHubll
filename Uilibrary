@@ -37,7 +37,33 @@ local function MakeDraggable(frame)
 	end)
 end
 
--- Criar janela principal
+local Themes = {
+	Dark = {
+		Background = Color3.fromRGB(30, 30, 30),
+		TopBar = Color3.fromRGB(25, 25, 25),
+		Tab = Color3.fromRGB(35, 35, 35),
+		Button = Color3.fromRGB(50, 50, 50),
+		TextColor = Color3.new(1, 1, 1),
+		Accent = Color3.fromRGB(200, 50, 50)
+	},
+	White = {
+		Background = Color3.fromRGB(245, 245, 245),
+		TopBar = Color3.fromRGB(230, 230, 230),
+		Tab = Color3.fromRGB(220, 220, 220),
+		Button = Color3.fromRGB(200, 200, 200),
+		TextColor = Color3.new(0, 0, 0),
+		Accent = Color3.fromRGB(255, 100, 100)
+	},
+	["3D"] = {
+		Background = Color3.fromRGB(60, 60, 60),
+		TopBar = Color3.fromRGB(45, 45, 45),
+		Tab = Color3.fromRGB(50, 50, 50),
+		Button = Color3.fromRGB(70, 70, 70),
+		TextColor = Color3.new(1, 1, 1),
+		Accent = Color3.fromRGB(255, 70, 70)
+	}
+}
+
 function Library:CreateWindow(settings)
 	settings = settings or {}
 	local WindowTitle = settings.Title or "Klx UI"
@@ -45,17 +71,43 @@ function Library:CreateWindow(settings)
 	MainGui.Name = "KlxUILibrary"
 	MainGui.ResetOnSpawn = false
 
-	local Intro = Instance.new("TextLabel", MainGui)
-	Intro.Size = UDim2.new(1, 0, 1, 0)
-	Intro.BackgroundTransparency = 1
-	Intro.Text = "Carregando Klx UI..."
-	Intro.TextColor3 = Color3.new(1, 1, 1)
-	Intro.Font = Enum.Font.GothamBlack
-	Intro.TextScaled = true
-	Intro.ZIndex = 1000
+	for _, gui in ipairs(game.Players.LocalPlayer.PlayerGui:GetChildren()) do
+		if gui:IsA("ScreenGui") and gui.Name == "KlxUILibrary" and gui ~= MainGui then
+			gui:Destroy()
+		end
+	end
 
+	-- Elementos para controle de tema
+	local elements = {
+		Main = nil,
+		TopBar = nil,
+		CloseButton = nil,
+		Tabs = {},
+		Buttons = {},
+		Texts = {}
+	}
+
+	-- Intro animada
+	local IntroFrame = Instance.new("Frame", MainGui)
+	IntroFrame.Size = UDim2.new(0, 300, 0, 80)
+	IntroFrame.Position = UDim2.new(0.5, -150, 0.5, -40)
+	IntroFrame.BackgroundTransparency = 1
+
+	local IntroText = Instance.new("TextLabel", IntroFrame)
+	IntroText.Size = UDim2.new(1, 0, 1, 0)
+	IntroText.BackgroundTransparency = 1
+	IntroText.Text = "KLX UI"
+	IntroText.TextColor3 = Color3.new(1, 1, 1)
+	IntroText.TextStrokeTransparency = 0.5
+	IntroText.Font = Enum.Font.GothamBlack
+	IntroText.TextScaled = true
+	IntroText.TextTransparency = 1
+
+	TweenService:Create(IntroText, TweenInfo.new(1), { TextTransparency = 0 }):Play()
 	task.wait(2)
-	Intro:Destroy()
+	TweenService:Create(IntroText, TweenInfo.new(1), { TextTransparency = 1 }):Play()
+	task.wait(1)
+	IntroFrame:Destroy()
 
 	local ToggleBtn = Instance.new("TextButton", MainGui)
 	ToggleBtn.Size = UDim2.new(0, 100, 0, 35)
@@ -76,19 +128,20 @@ function Library:CreateWindow(settings)
 	MainFrame.ClipsDescendants = true
 	Roundify(MainFrame, 12)
 	MainFrame.Visible = false
-
 	MakeDraggable(MainFrame)
 
 	ToggleBtn.MouseButton1Click:Connect(function()
 		MainFrame.Visible = not MainFrame.Visible
 	end)
 
-	-- Top Bar
+	elements.Main = MainFrame
+
 	local TopBar = Instance.new("Frame", MainFrame)
 	TopBar.Size = UDim2.new(1, 0, 0, 40)
 	TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 	TopBar.BorderSizePixel = 0
 	Roundify(TopBar, 12)
+	elements.TopBar = TopBar
 
 	local Title = Instance.new("TextLabel", TopBar)
 	Title.Text = WindowTitle
@@ -99,6 +152,7 @@ function Library:CreateWindow(settings)
 	Title.TextXAlignment = Enum.TextXAlignment.Left
 	Title.Font = Enum.Font.GothamSemibold
 	Title.TextSize = 16
+	table.insert(elements.Texts, Title)
 
 	local CloseButton = Instance.new("TextButton", TopBar)
 	CloseButton.Text = "X"
@@ -109,6 +163,8 @@ function Library:CreateWindow(settings)
 	CloseButton.Font = Enum.Font.Gotham
 	CloseButton.TextSize = 14
 	Roundify(CloseButton, 6)
+	elements.CloseButton = CloseButton
+	table.insert(elements.Texts, CloseButton)
 
 	CloseButton.MouseButton1Click:Connect(function()
 		TweenService:Create(MainFrame, TweenInfo.new(0.3), { Size = UDim2.new(0, 0, 0, 0) }):Play()
@@ -116,7 +172,6 @@ function Library:CreateWindow(settings)
 		MainGui:Destroy()
 	end)
 
-	-- Tabs
 	local TabList = Instance.new("Frame", MainFrame)
 	TabList.Size = UDim2.new(0, 100, 1, -40)
 	TabList.Position = UDim2.new(0, 0, 0, 40)
@@ -138,6 +193,8 @@ function Library:CreateWindow(settings)
 		TabButton.Font = Enum.Font.Gotham
 		TabButton.TextSize = 14
 		Roundify(TabButton, 4)
+		table.insert(elements.Buttons, TabButton)
+		table.insert(elements.Texts, TabButton)
 
 		local TabFrame = Instance.new("ScrollingFrame", MainFrame)
 		TabFrame.Size = UDim2.new(1, -110, 1, -50)
@@ -147,6 +204,7 @@ function Library:CreateWindow(settings)
 		TabFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 		TabFrame.BorderSizePixel = 0
 		TabFrame.ScrollBarThickness = 6
+		table.insert(elements.Tabs, TabFrame)
 
 		local layout = Instance.new("UIListLayout", TabFrame)
 		layout.Padding = UDim.new(0, 6)
@@ -167,26 +225,6 @@ function Library:CreateWindow(settings)
 
 		local tabObj = {}
 
-		function tabObj:CreateSection(name)
-			local section = Instance.new("Frame", TabFrame)
-			section.Size = UDim2.new(1, -10, 0, 30)
-			section.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-			section.BorderSizePixel = 0
-			Roundify(section, 6)
-
-			local title = Instance.new("TextLabel", section)
-			title.Text = name
-			title.Size = UDim2.new(1, -10, 1, 0)
-			title.Position = UDim2.new(0, 5, 0, 0)
-			title.TextColor3 = Color3.new(1, 1, 1)
-			title.TextXAlignment = Enum.TextXAlignment.Left
-			title.Font = Enum.Font.GothamBold
-			title.TextSize = 14
-			title.BackgroundTransparency = 1
-
-			return section
-		end
-
 		function tabObj:CreateButton(text, callback)
 			local button = Instance.new("TextButton", TabFrame)
 			button.Size = UDim2.new(1, -10, 0, 30)
@@ -197,6 +235,8 @@ function Library:CreateWindow(settings)
 			button.TextSize = 14
 			button.BorderSizePixel = 0
 			Roundify(button, 6)
+			table.insert(elements.Buttons, button)
+			table.insert(elements.Texts, button)
 
 			button.MouseButton1Click:Connect(function()
 				if callback then callback() end
@@ -208,8 +248,41 @@ function Library:CreateWindow(settings)
 		return tabObj
 	end
 
+	function Library:SetTheme(themeName)
+		local theme = Themes[themeName]
+		if not theme then return end
+
+		elements.Main.BackgroundColor3 = theme.Background
+		if elements.TopBar then elements.TopBar.BackgroundColor3 = theme.TopBar end
+		if elements.CloseButton then
+			elements.CloseButton.BackgroundColor3 = theme.Accent
+			elements.CloseButton.TextColor3 = theme.TextColor
+		end
+
+		for _, tab in ipairs(elements.Tabs) do
+			tab.BackgroundColor3 = theme.Tab
+		end
+		for _, btn in ipairs(elements.Buttons) do
+			btn.BackgroundColor3 = theme.Button
+		end
+		for _, text in ipairs(elements.Texts) do
+			text.TextColor3 = theme.TextColor
+		end
+	end
+
+	local configTab = Library:CreateTab("Config")
+	configTab:CreateButton("Tema Dark", function()
+		Library:SetTheme("Dark")
+	end)
+	configTab:CreateButton("Tema White", function()
+		Library:SetTheme("White")
+	end)
+	configTab:CreateButton("Tema 3D", function()
+		Library:SetTheme("3D")
+	end)
+
+	Library:SetTheme("Dark")
 	return Library
 end
 
--- Auto criar janela se chamado via loadstring
 return Library:CreateWindow({ Title = "Klx UI" })
