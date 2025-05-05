@@ -41,46 +41,33 @@ end
 function Library:CreateWindow(settings)
 	settings = settings or {}
 	local WindowTitle = settings.Title or "Klx UI"
-	local Player = game.Players.LocalPlayer
-	local MainGui = Instance.new("ScreenGui", Player:WaitForChild("PlayerGui"))
-	MainGui.Name = "KlxUILib"
+	local MainGui = Instance.new("ScreenGui", game.Players.LocalPlayer:WaitForChild("PlayerGui"))
+	MainGui.Name = "KlxUILibrary"
 	MainGui.ResetOnSpawn = false
 
-	-- Intro animada
-	local IntroFrame = Instance.new("Frame", MainGui)
-	IntroFrame.Size = UDim2.new(0, 300, 0, 80)
-	IntroFrame.Position = UDim2.new(0.5, -150, 0.5, -40)
-	IntroFrame.BackgroundTransparency = 1
+	local Intro = Instance.new("TextLabel", MainGui)
+	Intro.Size = UDim2.new(1, 0, 1, 0)
+	Intro.BackgroundTransparency = 1
+	Intro.Text = "Carregando Klx UI..."
+	Intro.TextColor3 = Color3.new(1, 1, 1)
+	Intro.Font = Enum.Font.GothamBlack
+	Intro.TextScaled = true
+	Intro.ZIndex = 1000
 
-	local IntroText = Instance.new("TextLabel", IntroFrame)
-	IntroText.Size = UDim2.new(1, 0, 1, 0)
-	IntroText.BackgroundTransparency = 1
-	IntroText.Text = "KLX UI"
-	IntroText.TextColor3 = Color3.new(1, 1, 1)
-	IntroText.TextStrokeTransparency = 0.5
-	IntroText.Font = Enum.Font.GothamBlack
-	IntroText.TextScaled = true
-	IntroText.TextTransparency = 1
-
-	TweenService:Create(IntroText, TweenInfo.new(1), { TextTransparency = 0 }):Play()
 	task.wait(2)
-	TweenService:Create(IntroText, TweenInfo.new(1), { TextTransparency = 1 }):Play()
-	task.wait(1)
-	IntroFrame:Destroy()
+	Intro:Destroy()
 
-	-- Toggle para abrir/fechar
 	local ToggleBtn = Instance.new("TextButton", MainGui)
-	ToggleBtn.Size = UDim2.new(0, 40, 0, 40)
+	ToggleBtn.Size = UDim2.new(0, 100, 0, 35)
 	ToggleBtn.Position = UDim2.new(0, 10, 0, 10)
 	ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-	ToggleBtn.Text = "Abrir"
+	ToggleBtn.Text = "Abrir Klx UI"
 	ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
 	ToggleBtn.Font = Enum.Font.Gotham
 	ToggleBtn.TextSize = 14
-	Roundify(ToggleBtn, 6)
+	Roundify(ToggleBtn, 8)
 	MakeDraggable(ToggleBtn)
 
-	-- Janela principal
 	local MainFrame = Instance.new("Frame", MainGui)
 	MainFrame.Size = UDim2.new(0, 500, 0, 320)
 	MainFrame.Position = UDim2.new(0.5, -250, 0.5, -160)
@@ -88,20 +75,15 @@ function Library:CreateWindow(settings)
 	MainFrame.BorderSizePixel = 0
 	MainFrame.ClipsDescendants = true
 	Roundify(MainFrame, 12)
-	MakeDraggable(MainFrame)
 	MainFrame.Visible = false
 
-	local open = false
+	MakeDraggable(MainFrame)
+
 	ToggleBtn.MouseButton1Click:Connect(function()
-		open = not open
-		ToggleBtn.Text = open and "Fechar" or "Abrir"
-		MainFrame.Visible = true
-		local goal = open and UDim2.new(0, 500, 0, 320) or UDim2.new(0, 0, 0, 0)
-		TweenService:Create(MainFrame, TweenInfo.new(0.3), { Size = goal }):Play()
-		if not open then task.wait(0.3) MainFrame.Visible = false end
+		MainFrame.Visible = not MainFrame.Visible
 	end)
 
-	-- Topo
+	-- Top Bar
 	local TopBar = Instance.new("Frame", MainFrame)
 	TopBar.Size = UDim2.new(1, 0, 0, 40)
 	TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
@@ -170,6 +152,10 @@ function Library:CreateWindow(settings)
 		layout.Padding = UDim.new(0, 6)
 		layout.SortOrder = Enum.SortOrder.LayoutOrder
 
+		layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			TabFrame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+		end)
+
 		TabButton.MouseButton1Click:Connect(function()
 			for _, tab in pairs(Tabs) do
 				tab.Frame.Visible = false
@@ -225,4 +211,5 @@ function Library:CreateWindow(settings)
 	return Library
 end
 
-return Library:CreateWindow({ Title = "KLX UI" })
+-- Auto criar janela se chamado via loadstring
+return Library:CreateWindow({ Title = "Klx UI" })
