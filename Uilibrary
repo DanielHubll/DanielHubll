@@ -48,7 +48,7 @@ local function CreateTooltip(button, tooltipText)
     tooltip.TextSize = 12
     tooltip.TextTransparency = 0.8
     tooltip.BackgroundTransparency = 0.6
-    tooltip.Position = UDim2.new(0, 0, 0, -35) -- Posiciona acima do botão
+    tooltip.Position = UDim2.new(0, button.Size.X.Offset + 10, 0, -15)  -- Ajustado para à direita do botão
     tooltip.Visible = false
     tooltip.Parent = button
 
