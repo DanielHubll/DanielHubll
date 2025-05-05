@@ -107,7 +107,22 @@ function Library:CreateWindow(settings)
 	TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 	TopBar.BorderSizePixel = 0
 	Roundify(TopBar, 12)
+ 
+  local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+local thumbType = Enum.ThumbnailType.HeadShot
+local thumbSize = Enum.ThumbnailSize.Size48x48
 
+local content, isReady = Players:GetUserThumbnailAsync(localPlayer.UserId, thumbType, thumbSize)
+
+local AvatarImage = Instance.new("ImageLabel", TopBar)
+AvatarImage.Size = UDim2.new(0, 32, 0, 32)
+AvatarImage.Position = UDim2.new(0.240, -70, 0.4, -16)
+AvatarImage.BackgroundTransparency = 1
+AvatarImage.Image = content
+AvatarImage.ScaleType = Enum.ScaleType.Fit
+Roundify(AvatarImage, 16)
+ 
 	local Title = Instance.new("TextLabel", TopBar)
 	Title.Text = WindowTitle
 	Title.Size = UDim2.new(1, -80, 1, 0)
