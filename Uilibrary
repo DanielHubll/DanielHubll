@@ -49,7 +49,6 @@ function Library:CreateWindow(settings)
 	IntroFrame.Size = UDim2.new(0, 300, 0, 80)
 	IntroFrame.Position = UDim2.new(0.5, -150, 0.5, -40)
 	IntroFrame.BackgroundTransparency = 1
-	Roundify(IntroFrame)
 
 	local IntroText = Instance.new("TextLabel", IntroFrame)
 	IntroText.Size = UDim2.new(1, 0, 1, 0)
@@ -60,7 +59,6 @@ function Library:CreateWindow(settings)
 	IntroText.Font = Enum.Font.GothamBlack
 	IntroText.TextScaled = true
 	IntroText.TextTransparency = 1
-	Roundify(IntroText)
 	TweenService:Create(IntroText, TweenInfo.new(1), { TextTransparency = 0 }):Play()
 	task.wait(2)
 	TweenService:Create(IntroText, TweenInfo.new(1), { TextTransparency = 1 }):Play()
@@ -75,7 +73,7 @@ function Library:CreateWindow(settings)
 	ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
 	ToggleBtn.Font = Enum.Font.GothamSemibold
 	ToggleBtn.TextSize = 14
-	Roundify(ToggleBtn)
+	Roundify(ToggleBtn, 8)
 	MakeDraggable(ToggleBtn)
 
 	local MainFrame = Instance.new("Frame", MainGui)
@@ -85,8 +83,8 @@ function Library:CreateWindow(settings)
 	MainFrame.BackgroundTransparency = 0.5
 	MainFrame.BorderSizePixel = 0
 	MainFrame.ClipsDescendants = true
-	MainFrame.Visible = false
 	Roundify(MainFrame, 12)
+	MainFrame.Visible = false
 	MakeDraggable(MainFrame)
 
 	ToggleBtn.MouseButton1Click:Connect(function()
@@ -100,7 +98,8 @@ function Library:CreateWindow(settings)
 	TopBar.BorderSizePixel = 0
 	Roundify(TopBar, 12)
 
-	local content = Players:GetUserThumbnailAsync(Players.LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
+	local localPlayer = Players.LocalPlayer
+	local content = Players:GetUserThumbnailAsync(localPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
 	local AvatarImage = Instance.new("ImageLabel", TopBar)
 	AvatarImage.Size = UDim2.new(0, 32, 0, 32)
 	AvatarImage.Position = UDim2.new(0, 8, 0.5, -16)
@@ -118,7 +117,6 @@ function Library:CreateWindow(settings)
 	Title.TextXAlignment = Enum.TextXAlignment.Left
 	Title.Font = Enum.Font.GothamSemibold
 	Title.TextSize = 16
-	Roundify(Title)
 
 	local CloseButton = Instance.new("TextButton", TopBar)
 	CloseButton.Text = "X"
@@ -141,7 +139,6 @@ function Library:CreateWindow(settings)
 	TabList.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
 	TabList.BackgroundTransparency = 0.5
 	TabList.BorderSizePixel = 0
-	Roundify(TabList)
 
 	local UIList = Instance.new("UIListLayout", TabList)
 	UIList.SortOrder = Enum.SortOrder.LayoutOrder
@@ -162,14 +159,12 @@ function Library:CreateWindow(settings)
 		local TabFrame = Instance.new("ScrollingFrame", MainFrame)
 		TabFrame.Size = UDim2.new(1, -100, 1, -50)
 		TabFrame.Position = UDim2.new(0, 95, 0, 45)
-		TabFrame.Visible = false
-		TabFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 		TabFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 45)
 		TabFrame.BackgroundTransparency = 1
 		TabFrame.BorderSizePixel = 0
 		TabFrame.ScrollBarThickness = 6
 		TabFrame.ScrollBarImageColor3 = Color3.fromRGB(70, 130, 180)
-		Roundify(TabFrame)
+		TabFrame.Visible = true
 
 		local layout = Instance.new("UIListLayout", TabFrame)
 		layout.Padding = UDim.new(0, 6)
@@ -181,8 +176,6 @@ function Library:CreateWindow(settings)
 
 		TabButton.MouseButton1Click:Connect(function()
 			for _, tab in pairs(Tabs) do
-				tab.Frame.Visible = false
-				tab.Frame.BackgroundTransparency = 1
 				for _, d in ipairs(tab.Frame:GetDescendants()) do
 					if d:IsA("TextLabel") or d:IsA("TextButton") then
 						d.TextTransparency = 1
@@ -190,10 +183,9 @@ function Library:CreateWindow(settings)
 						d.BackgroundTransparency = 1
 					end
 				end
+				tab.Frame.BackgroundTransparency = 1
 			end
 
-			TabFrame.Visible = true
-			TabFrame.BackgroundTransparency = 0.5
 			for _, d in ipairs(TabFrame:GetDescendants()) do
 				if d:IsA("TextLabel") or d:IsA("TextButton") then
 					d.TextTransparency = 0
@@ -201,6 +193,7 @@ function Library:CreateWindow(settings)
 					d.BackgroundTransparency = 0.3
 				end
 			end
+			TabFrame.BackgroundTransparency = 0.5
 		end)
 
 		Tabs[tabName] = { Button = TabButton, Frame = TabFrame }
@@ -224,7 +217,6 @@ function Library:CreateWindow(settings)
 			title.Font = Enum.Font.GothamBold
 			title.TextSize = 14
 			title.BackgroundTransparency = 1
-			Roundify(title)
 
 			return section
 		end
