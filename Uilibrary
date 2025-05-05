@@ -1,72 +1,17 @@
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 
 local Library = {}
 Library.__index = Library
 
--- Tema atual e elementos registrados
-local Theme = "Dark"
-local Elements = {}
-
-local Themes = {
-	Dark = {
-		Main = Color3.fromRGB(30, 30, 30),
-		TopBar = Color3.fromRGB(25, 25, 25),
-		Section = Color3.fromRGB(40, 40, 40),
-		Button = Color3.fromRGB(50, 50, 50),
-		Text = Color3.new(1, 1, 1),
-		Accent = Color3.fromRGB(200, 50, 50),
-	},
-	White = {
-		Main = Color3.fromRGB(240, 240, 240),
-		TopBar = Color3.fromRGB(220, 220, 220),
-		Section = Color3.fromRGB(230, 230, 230),
-		Button = Color3.fromRGB(210, 210, 210),
-		Text = Color3.new(0, 0, 0),
-		Accent = Color3.fromRGB(255, 100, 100),
-	},
-	Rainbow = {} -- será animado
-}
-
--- Atualizar todos os elementos visuais
-function Library:ApplyTheme()
-	local current = Themes[Theme]
-	for _, item in pairs(Elements) do
-		if typeof(item[2]) == "Color3" then
-			item[1][item[3]] = item[2]
-		elseif typeof(item[2]) == "string" and current[item[2]] then
-			item[1][item[3]] = current[item[2]]
-		end
-	end
-end
-
--- Alterar tema
-function Library:SetTheme(name)
-	Theme = name
-	if Theme == "Rainbow" then
-		RunService:UnbindFromRenderStep("RainbowTheme")
-		RunService:BindToRenderStep("RainbowTheme", Enum.RenderPriority.First.Value, function()
-			local t = tick()
-			local color = Color3.fromHSV((t % 5) / 5, 1, 1)
-			for _, item in pairs(Elements) do
-				if item[2] == "Text" or item[2] == "Accent" or item[2] == "Main" or item[2] == "Button" then
-					item[1][item[3]] = color
-				end
-			end
-		end)
-	else
-		RunService:UnbindFromRenderStep("RainbowTheme")
-		Library:ApplyTheme()
-	end
-end
-
+-- Arredondamento
 local function Roundify(obj, rad)
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, rad or 8)
 	corner.Parent = obj
 end
 
+-- Draggable
 local function MakeDraggable(frame)
 	local dragging = false
 	local dragInput, dragStart, startPos
@@ -92,30 +37,23 @@ local function MakeDraggable(frame)
 	end)
 end
 
-function AddStyled(obj, themeKey, prop)
-	table.insert(Elements, {obj, themeKey, prop or "BackgroundColor3"})
-end
-
-function AddTextStyled(obj)
-	table.insert(Elements, {obj, "Text", "TextColor3"})
-end
-
-function AddAccentStyled(obj)
-	table.insert(Elements, {obj, "Accent", "BackgroundColor3"})
-end
-
+-- Criar janela principal
 function Library:CreateWindow(settings)
 	settings = settings or {}
 	local WindowTitle = settings.Title or "Klx UI"
-	local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
+	-- Verifica e remove uma interface antiga
+	local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 	local existing = playerGui:FindFirstChild("KlxUILibrary")
-	if existing then existing:Destroy() end
+	if existing then
+		existing:Destroy()
+	end
 
 	local MainGui = Instance.new("ScreenGui", playerGui)
 	MainGui.Name = "KlxUILibrary"
 	MainGui.ResetOnSpawn = false
 
+	-- Intro animada
 	local IntroFrame = Instance.new("Frame", MainGui)
 	IntroFrame.Size = UDim2.new(0, 300, 0, 80)
 	IntroFrame.Position = UDim2.new(0.5, -150, 0.5, -40)
@@ -138,55 +76,57 @@ function Library:CreateWindow(settings)
 	IntroFrame:Destroy()
 
 	local ToggleBtn = Instance.new("TextButton", MainGui)
-	ToggleBtn.Size = UDim2.new(0, 100, 0, 35)
+	ToggleBtn.Size = UDim2.new(0, 40, 0, 40)
 	ToggleBtn.Position = UDim2.new(0, 10, 0, 10)
-	ToggleBtn.Text = "Abrir Klx UI"
-	ToggleBtn.Font = Enum.Font.Gotham
+	ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	ToggleBtn.Text = "Klx UI"
+	ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
+	ToggleBtn.Font = Enum.Font.GothamSemibold
 	ToggleBtn.TextSize = 14
 	Roundify(ToggleBtn, 8)
 	MakeDraggable(ToggleBtn)
-	AddStyled(ToggleBtn, "Button")
-	AddTextStyled(ToggleBtn)
 
 	local MainFrame = Instance.new("Frame", MainGui)
 	MainFrame.Size = UDim2.new(0, 500, 0, 320)
 	MainFrame.Position = UDim2.new(0.5, -250, 0.5, -160)
+	MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 	MainFrame.BorderSizePixel = 0
 	MainFrame.ClipsDescendants = true
-	MainFrame.Visible = false
 	Roundify(MainFrame, 12)
+	MainFrame.Visible = false
+
 	MakeDraggable(MainFrame)
-	AddStyled(MainFrame, "Main")
 
 	ToggleBtn.MouseButton1Click:Connect(function()
 		MainFrame.Visible = not MainFrame.Visible
 	end)
 
+	-- Top Bar
 	local TopBar = Instance.new("Frame", MainFrame)
 	TopBar.Size = UDim2.new(1, 0, 0, 40)
+	TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 	TopBar.BorderSizePixel = 0
 	Roundify(TopBar, 12)
-	AddStyled(TopBar, "TopBar")
 
 	local Title = Instance.new("TextLabel", TopBar)
 	Title.Text = WindowTitle
 	Title.Size = UDim2.new(1, -80, 1, 0)
 	Title.Position = UDim2.new(0, 10, 0, 0)
 	Title.BackgroundTransparency = 1
+	Title.TextColor3 = Color3.new(1, 1, 1)
 	Title.TextXAlignment = Enum.TextXAlignment.Left
 	Title.Font = Enum.Font.GothamSemibold
 	Title.TextSize = 16
-	AddTextStyled(Title)
 
 	local CloseButton = Instance.new("TextButton", TopBar)
 	CloseButton.Text = "X"
 	CloseButton.Size = UDim2.new(0, 30, 0, 30)
 	CloseButton.Position = UDim2.new(1, -35, 0.5, -15)
+	CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+	CloseButton.TextColor3 = Color3.new(1, 1, 1)
 	CloseButton.Font = Enum.Font.Gotham
 	CloseButton.TextSize = 14
 	Roundify(CloseButton, 6)
-	AddAccentStyled(CloseButton)
-	AddTextStyled(CloseButton)
 
 	CloseButton.MouseButton1Click:Connect(function()
 		TweenService:Create(MainFrame, TweenInfo.new(0.3), { Size = UDim2.new(0, 0, 0, 0) }):Play()
@@ -194,11 +134,12 @@ function Library:CreateWindow(settings)
 		MainGui:Destroy()
 	end)
 
+	-- Tabs
 	local TabList = Instance.new("Frame", MainFrame)
 	TabList.Size = UDim2.new(0, 100, 1, -40)
 	TabList.Position = UDim2.new(0, 0, 0, 40)
+	TabList.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 	TabList.BorderSizePixel = 0
-	AddStyled(TabList, "TopBar")
 
 	local UIList = Instance.new("UIListLayout", TabList)
 	UIList.SortOrder = Enum.SortOrder.LayoutOrder
@@ -210,19 +151,20 @@ function Library:CreateWindow(settings)
 		local TabButton = Instance.new("TextButton", TabList)
 		TabButton.Size = UDim2.new(1, 0, 0, 30)
 		TabButton.Text = tabName
+		TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+		TabButton.TextColor3 = Color3.new(1, 1, 1)
 		TabButton.Font = Enum.Font.Gotham
 		TabButton.TextSize = 14
 		Roundify(TabButton, 4)
-		AddStyled(TabButton, "Button")
-		AddTextStyled(TabButton)
 
 		local TabFrame = Instance.new("ScrollingFrame", MainFrame)
 		TabFrame.Size = UDim2.new(1, -110, 1, -50)
 		TabFrame.Position = UDim2.new(0, 105, 0, 45)
 		TabFrame.Visible = false
 		TabFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+		TabFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+		TabFrame.BorderSizePixel = 0
 		TabFrame.ScrollBarThickness = 6
-		AddStyled(TabFrame, "TopBar")
 
 		local layout = Instance.new("UIListLayout", TabFrame)
 		layout.Padding = UDim.new(0, 6)
@@ -246,19 +188,19 @@ function Library:CreateWindow(settings)
 		function tabObj:CreateSection(name)
 			local section = Instance.new("Frame", TabFrame)
 			section.Size = UDim2.new(1, -10, 0, 30)
+			section.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 			section.BorderSizePixel = 0
 			Roundify(section, 6)
-			AddStyled(section, "Section")
 
 			local title = Instance.new("TextLabel", section)
 			title.Text = name
 			title.Size = UDim2.new(1, -10, 1, 0)
 			title.Position = UDim2.new(0, 5, 0, 0)
+			title.TextColor3 = Color3.new(1, 1, 1)
 			title.TextXAlignment = Enum.TextXAlignment.Left
 			title.Font = Enum.Font.GothamBold
 			title.TextSize = 14
 			title.BackgroundTransparency = 1
-			AddTextStyled(title)
 
 			return section
 		end
@@ -266,13 +208,13 @@ function Library:CreateWindow(settings)
 		function tabObj:CreateButton(text, callback)
 			local button = Instance.new("TextButton", TabFrame)
 			button.Size = UDim2.new(1, -10, 0, 30)
+			button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+			button.TextColor3 = Color3.new(1, 1, 1)
+			button.Text = text
 			button.Font = Enum.Font.Gotham
 			button.TextSize = 14
 			button.BorderSizePixel = 0
-			button.Text = text
 			Roundify(button, 6)
-			AddStyled(button, "Button")
-			AddTextStyled(button)
 
 			button.MouseButton1Click:Connect(function()
 				if callback then callback() end
@@ -284,9 +226,8 @@ function Library:CreateWindow(settings)
 		return tabObj
 	end
 
-	self:ApplyTheme()
-
-	return self
+	return Library
 end
 
-return Library
+-- Auto criar janela se chamado via loadstring
+return Library:CreateWindow({ Title = "Klx UI" })
