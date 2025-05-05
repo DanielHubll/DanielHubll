@@ -6,225 +6,223 @@ Library.__index = Library
 
 -- Arredondamento
 local function Roundify(obj, rad)
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, rad or 8)
-    corner.Parent = obj
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, rad or 8)
+	corner.Parent = obj
 end
 
 -- Draggable
 local function MakeDraggable(frame)
-    local dragging = false
-    local dragInput, dragStart, startPos
+	local dragging = false
+	local dragInput, dragStart, startPos
 
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = frame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
+	frame.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = frame.Position
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
 
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            local delta = input.Position - dragStart
-            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local delta = input.Position - dragStart
+			frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
 end
 
 -- Criar janela principal
 function Library:CreateWindow(settings)
-    settings = settings or {}
-    local WindowTitle = settings.Title or "My UI"
-    local MainGui = Instance.new("ScreenGui", game.Players.LocalPlayer:WaitForChild("PlayerGui"))
-    MainGui.Name = "CustomUILib"
-    MainGui.ResetOnSpawn = false
+	settings = settings or {}
+	local WindowTitle = settings.Title or "Klx UI"
+	local Player = game.Players.LocalPlayer
+	local MainGui = Instance.new("ScreenGui", Player:WaitForChild("PlayerGui"))
+	MainGui.Name = "KlxUILib"
+	MainGui.ResetOnSpawn = false
 
-    local MainFrame = Instance.new("Frame", MainGui)
-    MainFrame.Size = UDim2.new(0, 500, 0, 320)
-    MainFrame.Position = UDim2.new(0.5, -250, 0.5, -160)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    MainFrame.BorderSizePixel = 0
-    MainFrame.ClipsDescendants = true
-    Roundify(MainFrame, 12)
+	-- Intro animada
+	local IntroFrame = Instance.new("Frame", MainGui)
+	IntroFrame.Size = UDim2.new(0, 300, 0, 80)
+	IntroFrame.Position = UDim2.new(0.5, -150, 0.5, -40)
+	IntroFrame.BackgroundTransparency = 1
 
-    MakeDraggable(MainFrame)
+	local IntroText = Instance.new("TextLabel", IntroFrame)
+	IntroText.Size = UDim2.new(1, 0, 1, 0)
+	IntroText.BackgroundTransparency = 1
+	IntroText.Text = "KLX UI"
+	IntroText.TextColor3 = Color3.new(1, 1, 1)
+	IntroText.TextStrokeTransparency = 0.5
+	IntroText.Font = Enum.Font.GothamBlack
+	IntroText.TextScaled = true
+	IntroText.TextTransparency = 1
 
-    -- Top Bar
-    local TopBar = Instance.new("Frame", MainFrame)
-    TopBar.Size = UDim2.new(1, 0, 0, 40)
-    TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    TopBar.BorderSizePixel = 0
-    Roundify(TopBar, 12)
+	TweenService:Create(IntroText, TweenInfo.new(1), { TextTransparency = 0 }):Play()
+	task.wait(2)
+	TweenService:Create(IntroText, TweenInfo.new(1), { TextTransparency = 1 }):Play()
+	task.wait(1)
+	IntroFrame:Destroy()
 
-    local Title = Instance.new("TextLabel", TopBar)
-    Title.Text = WindowTitle
-    Title.Size = UDim2.new(1, -80, 1, 0)
-    Title.Position = UDim2.new(0, 10, 0, 0)
-    Title.BackgroundTransparency = 1
-    Title.TextColor3 = Color3.new(1, 1, 1)
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.Font = Enum.Font.GothamSemibold
-    Title.TextSize = 16
+	-- Toggle para abrir/fechar
+	local ToggleBtn = Instance.new("TextButton", MainGui)
+	ToggleBtn.Size = UDim2.new(0, 40, 0, 40)
+	ToggleBtn.Position = UDim2.new(0, 10, 0, 10)
+	ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	ToggleBtn.Text = "Abrir"
+	ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
+	ToggleBtn.Font = Enum.Font.Gotham
+	ToggleBtn.TextSize = 14
+	Roundify(ToggleBtn, 6)
+	MakeDraggable(ToggleBtn)
 
-    local CloseButton = Instance.new("TextButton", TopBar)
-    CloseButton.Text = "X"
-    CloseButton.Size = UDim2.new(0, 30, 0, 30)
-    CloseButton.Position = UDim2.new(1, -35, 0.5, -15)
-    CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    CloseButton.TextColor3 = Color3.new(1, 1, 1)
-    CloseButton.Font = Enum.Font.Gotham
-    CloseButton.TextSize = 14
-    Roundify(CloseButton, 6)
+	-- Janela principal
+	local MainFrame = Instance.new("Frame", MainGui)
+	MainFrame.Size = UDim2.new(0, 500, 0, 320)
+	MainFrame.Position = UDim2.new(0.5, -250, 0.5, -160)
+	MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	MainFrame.BorderSizePixel = 0
+	MainFrame.ClipsDescendants = true
+	Roundify(MainFrame, 12)
+	MakeDraggable(MainFrame)
+	MainFrame.Visible = false
 
-    CloseButton.MouseButton1Click:Connect(function()
-        TweenService:Create(MainFrame, TweenInfo.new(0.3), { Size = UDim2.new(0, 0, 0, 0) }):Play()
-        task.wait(0.3)
-        MainGui:Destroy()
-    end)
+	local open = false
+	ToggleBtn.MouseButton1Click:Connect(function()
+		open = not open
+		ToggleBtn.Text = open and "Fechar" or "Abrir"
+		MainFrame.Visible = true
+		local goal = open and UDim2.new(0, 500, 0, 320) or UDim2.new(0, 0, 0, 0)
+		TweenService:Create(MainFrame, TweenInfo.new(0.3), { Size = goal }):Play()
+		if not open then task.wait(0.3) MainFrame.Visible = false end
+	end)
 
-    -- Tabs
-    local TabList = Instance.new("Frame", MainFrame)
-    TabList.Size = UDim2.new(0, 100, 1, -40)
-    TabList.Position = UDim2.new(0, 0, 0, 40)
-    TabList.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    TabList.BorderSizePixel = 0
+	-- Topo
+	local TopBar = Instance.new("Frame", MainFrame)
+	TopBar.Size = UDim2.new(1, 0, 0, 40)
+	TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+	TopBar.BorderSizePixel = 0
+	Roundify(TopBar, 12)
 
-    local UIList = Instance.new("UIListLayout", TabList)
-    UIList.SortOrder = Enum.SortOrder.LayoutOrder
-    UIList.Padding = UDim.new(0, 4)
+	local Title = Instance.new("TextLabel", TopBar)
+	Title.Text = WindowTitle
+	Title.Size = UDim2.new(1, -80, 1, 0)
+	Title.Position = UDim2.new(0, 10, 0, 0)
+	Title.BackgroundTransparency = 1
+	Title.TextColor3 = Color3.new(1, 1, 1)
+	Title.TextXAlignment = Enum.TextXAlignment.Left
+	Title.Font = Enum.Font.GothamSemibold
+	Title.TextSize = 16
 
-    local Tabs = {}
+	local CloseButton = Instance.new("TextButton", TopBar)
+	CloseButton.Text = "X"
+	CloseButton.Size = UDim2.new(0, 30, 0, 30)
+	CloseButton.Position = UDim2.new(1, -35, 0.5, -15)
+	CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+	CloseButton.TextColor3 = Color3.new(1, 1, 1)
+	CloseButton.Font = Enum.Font.Gotham
+	CloseButton.TextSize = 14
+	Roundify(CloseButton, 6)
 
-    function Library:CreateTab(tabName)
-        local TabButton = Instance.new("TextButton", TabList)
-        TabButton.Size = UDim2.new(1, 0, 0, 30)
-        TabButton.Text = tabName
-        TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        TabButton.TextColor3 = Color3.new(1, 1, 1)
-        TabButton.Font = Enum.Font.Gotham
-        TabButton.TextSize = 14
-        Roundify(TabButton, 4)
+	CloseButton.MouseButton1Click:Connect(function()
+		TweenService:Create(MainFrame, TweenInfo.new(0.3), { Size = UDim2.new(0, 0, 0, 0) }):Play()
+		task.wait(0.3)
+		MainGui:Destroy()
+	end)
 
-        local TabFrame = Instance.new("ScrollingFrame", MainFrame)
-        TabFrame.Size = UDim2.new(1, -110, 1, -50)
-        TabFrame.Position = UDim2.new(0, 105, 0, 45)
-        TabFrame.Visible = false
-        TabFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-        TabFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-        TabFrame.BorderSizePixel = 0
-        TabFrame.ScrollBarThickness = 6
+	-- Tabs
+	local TabList = Instance.new("Frame", MainFrame)
+	TabList.Size = UDim2.new(0, 100, 1, -40)
+	TabList.Position = UDim2.new(0, 0, 0, 40)
+	TabList.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	TabList.BorderSizePixel = 0
 
-        local layout = Instance.new("UIListLayout", TabFrame)
-        layout.Padding = UDim.new(0, 6)
-        layout.SortOrder = Enum.SortOrder.LayoutOrder
+	local UIList = Instance.new("UIListLayout", TabList)
+	UIList.SortOrder = Enum.SortOrder.LayoutOrder
+	UIList.Padding = UDim.new(0, 4)
 
-        TabButton.MouseButton1Click:Connect(function()
-            for _, tab in pairs(Tabs) do
-                tab.Frame.Visible = false
-            end
-            TabFrame.Visible = true
-        end)
+	local Tabs = {}
 
-        Tabs[tabName] = { Button = TabButton, Frame = TabFrame }
+	function Library:CreateTab(tabName)
+		local TabButton = Instance.new("TextButton", TabList)
+		TabButton.Size = UDim2.new(1, 0, 0, 30)
+		TabButton.Text = tabName
+		TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+		TabButton.TextColor3 = Color3.new(1, 1, 1)
+		TabButton.Font = Enum.Font.Gotham
+		TabButton.TextSize = 14
+		Roundify(TabButton, 4)
 
-        local tabObj = {}
+		local TabFrame = Instance.new("ScrollingFrame", MainFrame)
+		TabFrame.Size = UDim2.new(1, -110, 1, -50)
+		TabFrame.Position = UDim2.new(0, 105, 0, 45)
+		TabFrame.Visible = false
+		TabFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+		TabFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+		TabFrame.BorderSizePixel = 0
+		TabFrame.ScrollBarThickness = 6
 
-        function tabObj:CreateSection(name)
-            local section = Instance.new("Frame", TabFrame)
-            section.Size = UDim2.new(1, -10, 0, 30)
-            section.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-            section.BorderSizePixel = 0
-            Roundify(section, 6)
+		local layout = Instance.new("UIListLayout", TabFrame)
+		layout.Padding = UDim.new(0, 6)
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
 
-            local title = Instance.new("TextLabel", section)
-            title.Text = name
-            title.Size = UDim2.new(1, -10, 1, 0)
-            title.Position = UDim2.new(0, 5, 0, 0)
-            title.TextColor3 = Color3.new(1, 1, 1)
-            title.TextXAlignment = Enum.TextXAlignment.Left
-            title.Font = Enum.Font.GothamBold
-            title.TextSize = 14
-            title.BackgroundTransparency = 1
+		TabButton.MouseButton1Click:Connect(function()
+			for _, tab in pairs(Tabs) do
+				tab.Frame.Visible = false
+			end
+			TabFrame.Visible = true
+		end)
 
-            return section
-        end
+		Tabs[tabName] = { Button = TabButton, Frame = TabFrame }
 
-        function tabObj:CreateButton(text, callback)
-            local button = Instance.new("TextButton", TabFrame)
-            button.Size = UDim2.new(1, -10, 0, 30)
-            button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            button.TextColor3 = Color3.new(1, 1, 1)
-            button.Text = text
-            button.Font = Enum.Font.Gotham
-            button.TextSize = 14
-            button.BorderSizePixel = 0
-            Roundify(button, 6)
+		local tabObj = {}
 
-            button.MouseButton1Click:Connect(function()
-                if callback then callback() end
-            end)
+		function tabObj:CreateSection(name)
+			local section = Instance.new("Frame", TabFrame)
+			section.Size = UDim2.new(1, -10, 0, 30)
+			section.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+			section.BorderSizePixel = 0
+			Roundify(section, 6)
 
-            return button
-        end
+			local title = Instance.new("TextLabel", section)
+			title.Text = name
+			title.Size = UDim2.new(1, -10, 1, 0)
+			title.Position = UDim2.new(0, 5, 0, 0)
+			title.TextColor3 = Color3.new(1, 1, 1)
+			title.TextXAlignment = Enum.TextXAlignment.Left
+			title.Font = Enum.Font.GothamBold
+			title.TextSize = 14
+			title.BackgroundTransparency = 1
 
-        function tabObj:CreateToggle(text, callback)
-            local toggle = Instance.new("TextButton", TabFrame)
-            toggle.Size = UDim2.new(1, -10, 0, 30)
-            toggle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            toggle.TextColor3 = Color3.new(1, 1, 1)
-            toggle.Text = text
-            toggle.Font = Enum.Font.Gotham
-            toggle.TextSize = 14
-            toggle.BorderSizePixel = 0
-            Roundify(toggle, 6)
+			return section
+		end
 
-            local isOn = false
-            toggle.MouseButton1Click:Connect(function()
-                isOn = not isOn
-                if callback then callback(isOn) end
-            end)
+		function tabObj:CreateButton(text, callback)
+			local button = Instance.new("TextButton", TabFrame)
+			button.Size = UDim2.new(1, -10, 0, 30)
+			button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+			button.TextColor3 = Color3.new(1, 1, 1)
+			button.Text = text
+			button.Font = Enum.Font.Gotham
+			button.TextSize = 14
+			button.BorderSizePixel = 0
+			Roundify(button, 6)
 
-            return toggle
-        end
+			button.MouseButton1Click:Connect(function()
+				if callback then callback() end
+			end)
 
-        function tabObj:CreateSlider(text, min, max, callback)
-            local slider = Instance.new("TextLabel", TabFrame)
-            slider.Size = UDim2.new(1, -10, 0, 30)
-            slider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            slider.TextColor3 = Color3.new(1, 1, 1)
-            slider.Text = text
-            slider.Font = Enum.Font.Gotham
-            slider.TextSize = 14
-            slider.BorderSizePixel = 0
-            Roundify(slider, 6)
+			return button
+		end
 
-            local sliderValue = min
-            local sliderButton = Instance.new("TextButton", slider)
-            sliderButton.Size = UDim2.new(0, 200, 0, 20)
-            sliderButton.Position = UDim2.new(0, 5, 1, -25)
-            sliderButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-            Roundify(sliderButton, 5)
+		return tabObj
+	end
 
-            sliderButton.MouseButton1Drag:Connect(function()
-                local delta = math.clamp(mouse.X - slider.Position.X.Offset, 0, 200)
-                sliderValue = math.floor(((delta / 200) * (max - min)) + min)
-                if callback then callback(sliderValue) end
-            end)
-
-            return slider
-        end
-
-        return tabObj
-    end
-
-    return Library
+	return Library
 end
 
--- Auto criar janela se chamado via loadstring
-return Library:CreateWindow({ Title = "Minha UI" })
+return Library:CreateWindow({ Title = "KLX UI" })
