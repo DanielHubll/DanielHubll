@@ -37,6 +37,32 @@ local function MakeDraggable(frame)
     end)
 end
 
+-- Função para criar o Tooltip com texto personalizado
+local function CreateTooltip(button, tooltipText)
+    local tooltip = Instance.new("TextLabel")
+    tooltip.Size = UDim2.new(0, 100, 0, 30)
+    tooltip.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    tooltip.TextColor3 = Color3.new(1, 1, 1)
+    tooltip.Text = tooltipText
+    tooltip.Font = Enum.Font.Gotham
+    tooltip.TextSize = 12
+    tooltip.TextTransparency = 0.8
+    tooltip.BackgroundTransparency = 0.6
+    tooltip.Position = UDim2.new(0, 0, 0, -35) -- Posiciona acima do botão
+    tooltip.Visible = false
+    tooltip.Parent = button
+
+    -- Lógica para mostrar o Tooltip
+    button.MouseEnter:Connect(function()
+        tooltip.Visible = true
+    end)
+
+    -- Lógica para esconder o Tooltip
+    button.MouseLeave:Connect(function()
+        tooltip.Visible = false
+    end)
+end
+
 -- Criar janela principal
 function Library:CreateWindow(settings)
     settings = settings or {}
@@ -75,7 +101,6 @@ function Library:CreateWindow(settings)
     task.wait(1)
     IntroFrame:Destroy()
 
-    -- Botão de toggle
     local ToggleBtn = Instance.new("TextButton", MainGui)
     ToggleBtn.Size = UDim2.new(0, 40, 0, 40)
     ToggleBtn.Position = UDim2.new(0, 10, 0, 10)
@@ -87,7 +112,6 @@ function Library:CreateWindow(settings)
     Roundify(ToggleBtn, 8)
     MakeDraggable(ToggleBtn)
 
-    -- Janela principal
     local MainFrame = Instance.new("Frame", MainGui)
     MainFrame.Size = UDim2.new(0, 500, 0, 320)
     MainFrame.Position = UDim2.new(0.5, -250, 0.5, -160)
@@ -151,7 +175,7 @@ function Library:CreateWindow(settings)
         MainGui:Destroy()
     end)
 
-    -- Funcionalidade de Tabs
+    -- Tabs
     local TabList = Instance.new("Frame", MainFrame)
     TabList.Size = UDim2.new(0, 100, 1, -40)
     TabList.Position = UDim2.new(0, 0, 0, 40)
@@ -164,7 +188,6 @@ function Library:CreateWindow(settings)
 
     local Tabs = {}
 
-    -- Criando uma Tab
     function Library:CreateTab(tabName)
         local TabButton = Instance.new("TextButton", TabList)
         TabButton.Size = UDim2.new(1, 0, 0, 30)
@@ -203,7 +226,6 @@ function Library:CreateWindow(settings)
 
         local tabObj = {}
 
-        -- Criando Section
         function tabObj:CreateSection(name)
             local section = Instance.new("Frame", TabFrame)
             section.Size = UDim2.new(1, -10, 0, 30)
@@ -224,8 +246,8 @@ function Library:CreateWindow(settings)
             return section
         end
 
-        -- Criando Button
-        function tabObj:CreateButton(text, callback)
+        -- Modificação para o botão com Tooltip
+        function tabObj:CreateButton(text, tooltipText, callback)
             local button = Instance.new("TextButton", TabFrame)
             button.Size = UDim2.new(1, -10, 0, 30)
             button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -235,6 +257,9 @@ function Library:CreateWindow(settings)
             button.TextSize = 14
             button.BorderSizePixel = 0
             Roundify(button, 6)
+
+            -- Adiciona o Tooltip ao botão com o texto customizado
+            CreateTooltip(button, tooltipText)
 
             button.MouseButton1Click:Connect(function()
                 if callback then callback() end
