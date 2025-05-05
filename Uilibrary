@@ -1,26 +1,38 @@
--- Adicionar o botão de Toggle
-local function CreateToggleButton(MainGui, MainFrame)
-	local ToggleButton = Instance.new("TextButton", MainGui)
-	ToggleButton.Size = UDim2.new(0, 40, 0, 40)
-	ToggleButton.Position = UDim2.new(1, -50, 0.5, -20)
-	ToggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-	ToggleButton.Text = ""
-	ToggleButton.TextColor3 = Color3.new(1, 1, 1)
-	ToggleButton.Font = Enum.Font.Gotham
-	ToggleButton.TextSize = 14
-	Roundify(ToggleButton, 10)
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
-	-- Ações do botão toggle
-	local isOpen = false
-	ToggleButton.MouseButton1Click:Connect(function()
-		isOpen = not isOpen
-		if isOpen then
-			MainFrame.Visible = true
-			TweenService:Create(MainFrame, TweenInfo.new(0.3), { Size = UDim2.new(0, 500, 0, 320) }):Play()
-		else
-			TweenService:Create(MainFrame, TweenInfo.new(0.3), { Size = UDim2.new(0, 0, 0, 0) }):Play()
-			task.wait(0.3)
-			MainFrame.Visible = false
+local Library = {}
+Library.__index = Library
+
+-- Arredondamento
+local function Roundify(obj, rad)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, rad or 8)
+	corner.Parent = obj
+end
+
+-- Draggable
+local function MakeDraggable(frame)
+	local dragging = false
+	local dragInput, dragStart, startPos
+
+	frame.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = frame.Position
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local delta = input.Position - dragStart
+			frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 		end
 	end)
 end
@@ -75,9 +87,6 @@ function Library:CreateWindow(settings)
 		task.wait(0.3)
 		MainGui:Destroy()
 	end)
-
-	-- Criar o botão toggle
-	CreateToggleButton(MainGui, MainFrame)
 
 	-- Tabs
 	local TabList = Instance.new("Frame", MainFrame)
