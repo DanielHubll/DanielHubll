@@ -200,47 +200,89 @@ function Library:CreateWindow(settings)
 
 		local tabObj = {}
 
-		function tabObj:CreateSection(name)
-			local section = Instance.new("Frame", TabFrame)
-			section.Size = UDim2.new(1, -10, 0, 30)
-			section.BackgroundColor3 = Color3.fromRGB(30, 30, 60)
-			section.BackgroundTransparency = 0.3
-			section.BorderSizePixel = 0
-			Roundify(section, 6)
+		function Library:CreateTab(tabName)
+	local TabButton = Instance.new("TextButton", TabList)
+	TabButton.Size = UDim2.new(1, 0, 0, 28)
+	TabButton.Text = tabName
+	TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 70)
+	TabButton.TextColor3 = Color3.new(1, 1, 1)
+	TabButton.Font = Enum.Font.Gotham
+	TabButton.TextSize = 14
+	Roundify(TabButton, 4)
 
-			local title = Instance.new("TextLabel", section)
-			title.Text = name
-			title.Size = UDim2.new(1, -10, 1, 0)
-			title.Position = UDim2.new(0, 5, 0, 0)
-			title.TextColor3 = Color3.new(1, 1, 1)
-			title.TextXAlignment = Enum.TextXAlignment.Left
-			title.Font = Enum.Font.GothamBold
-			title.TextSize = 14
-			title.BackgroundTransparency = 1
+	local TabFrame = Instance.new("ScrollingFrame", MainFrame)
+	TabFrame.Size = UDim2.new(1, -100, 1, -50)
+	TabFrame.Position = UDim2.new(0, 95, 0, 45)
+	TabFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 45)
+	TabFrame.BackgroundTransparency = 0.5
+	TabFrame.BorderSizePixel = 0
+	TabFrame.ScrollBarThickness = 6
+	TabFrame.ScrollBarImageColor3 = Color3.fromRGB(70, 130, 180)
+	TabFrame.Visible = false
 
-			return section
+	local layout = Instance.new("UIListLayout", TabFrame)
+	layout.Padding = UDim.new(0, 6)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		TabFrame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+	end)
+
+	TabButton.MouseButton1Click:Connect(function()
+		-- Ocultar todos os tabs
+		for _, tab in pairs(Tabs) do
+			tab.Frame.Visible = false
 		end
 
-		function tabObj:CreateButton(text, callback)
-			local button = Instance.new("TextButton", TabFrame)
-			button.Size = UDim2.new(1, -10, 0, 30)
-			button.BackgroundColor3 = Color3.fromRGB(50, 50, 100)
-			button.TextColor3 = Color3.new(1, 1, 1)
-			button.Text = text
-			button.Font = Enum.Font.Gotham
-			button.TextSize = 14
-			button.BorderSizePixel = 0
-			Roundify(button, 6)
+		-- Mostrar o tab atual
+		TabFrame.Visible = true
+	end)
 
-			button.MouseButton1Click:Connect(function()
-				if callback then callback() end
-			end)
+	Tabs[tabName] = { Button = TabButton, Frame = TabFrame }
 
-			return button
-		end
+	local tabObj = {}
 
-		return tabObj
+	function tabObj:CreateSection(name)
+		local section = Instance.new("Frame", TabFrame)
+		section.Size = UDim2.new(1, -10, 0, 30)
+		section.BackgroundColor3 = Color3.fromRGB(30, 30, 60)
+		section.BackgroundTransparency = 0.3
+		section.BorderSizePixel = 0
+		Roundify(section, 6)
+
+		local title = Instance.new("TextLabel", section)
+		title.Text = name
+		title.Size = UDim2.new(1, -10, 1, 0)
+		title.Position = UDim2.new(0, 5, 0, 0)
+		title.TextColor3 = Color3.new(1, 1, 1)
+		title.TextXAlignment = Enum.TextXAlignment.Left
+		title.Font = Enum.Font.GothamBold
+		title.TextSize = 14
+		title.BackgroundTransparency = 1
+
+		return section
 	end
+
+	function tabObj:CreateButton(text, callback)
+		local button = Instance.new("TextButton", TabFrame)
+		button.Size = UDim2.new(1, -10, 0, 30)
+		button.BackgroundColor3 = Color3.fromRGB(50, 50, 100)
+		button.TextColor3 = Color3.new(1, 1, 1)
+		button.Text = text
+		button.Font = Enum.Font.Gotham
+		button.TextSize = 14
+		button.BorderSizePixel = 0
+		Roundify(button, 6)
+
+		button.MouseButton1Click:Connect(function()
+			if callback then callback() end
+		end)
+
+		return button
+	end
+
+	return tabObj
+end
 
 	return Library
 end
