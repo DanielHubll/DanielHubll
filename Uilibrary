@@ -1,6 +1,5 @@
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local Players = game:GetService("Players")
 
 local Library = {}
 Library.__index = Library
@@ -14,7 +13,7 @@ end
 local function MakeDraggable(frame)
 	local dragging, dragInput, dragStart, startPos = false
 	frame.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.Touch then
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			dragging = true
 			dragStart = input.Position
 			startPos = frame.Position
@@ -25,6 +24,7 @@ local function MakeDraggable(frame)
 			end)
 		end
 	end)
+
 	UserInputService.InputChanged:Connect(function(input)
 		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 			local delta = input.Position - dragStart
@@ -36,14 +36,15 @@ end
 function Library:CreateWindow(settings)
 	settings = settings or {}
 	local WindowTitle = settings.Title or "Klx UI"
-	local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
+	local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 	local existing = playerGui:FindFirstChild("KlxUILibrary")
 	if existing then existing:Destroy() end
 
 	local MainGui = Instance.new("ScreenGui", playerGui)
 	MainGui.Name = "KlxUILibrary"
 	MainGui.ResetOnSpawn = false
+	MainGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 	local IntroFrame = Instance.new("Frame", MainGui)
 	IntroFrame.Size = UDim2.new(0, 300, 0, 80)
@@ -59,6 +60,7 @@ function Library:CreateWindow(settings)
 	IntroText.Font = Enum.Font.GothamBlack
 	IntroText.TextScaled = true
 	IntroText.TextTransparency = 1
+
 	TweenService:Create(IntroText, TweenInfo.new(1), { TextTransparency = 0 }):Play()
 	task.wait(2)
 	TweenService:Create(IntroText, TweenInfo.new(1), { TextTransparency = 1 }):Play()
@@ -66,20 +68,21 @@ function Library:CreateWindow(settings)
 	IntroFrame:Destroy()
 
 	local ToggleBtn = Instance.new("TextButton", MainGui)
-	ToggleBtn.Size = UDim2.new(0, 36, 0, 36)
+	ToggleBtn.Size = UDim2.new(0, 40, 0, 40)
 	ToggleBtn.Position = UDim2.new(0, 10, 0, 10)
-	ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 60)
+	ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 90)
 	ToggleBtn.Text = "Klx"
 	ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
 	ToggleBtn.Font = Enum.Font.GothamSemibold
 	ToggleBtn.TextSize = 14
+	ToggleBtn.BackgroundTransparency = 0.5
 	Roundify(ToggleBtn, 8)
 	MakeDraggable(ToggleBtn)
 
 	local MainFrame = Instance.new("Frame", MainGui)
-	MainFrame.Size = UDim2.new(0, 400, 0, 260)
-	MainFrame.Position = UDim2.new(0.5, -200, 0.5, -130)
-	MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+	MainFrame.Size = UDim2.new(0, 500, 0, 320)
+	MainFrame.Position = UDim2.new(0.5, -250, 0.5, -160)
+	MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 60)
 	MainFrame.BackgroundTransparency = 0.5
 	MainFrame.BorderSizePixel = 0
 	MainFrame.ClipsDescendants = true
@@ -93,16 +96,18 @@ function Library:CreateWindow(settings)
 
 	local TopBar = Instance.new("Frame", MainFrame)
 	TopBar.Size = UDim2.new(1, 0, 0, 40)
-	TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
-	TopBar.BackgroundTransparency = 0.5
+	TopBar.BackgroundColor3 = Color3.fromRGB(35, 35, 80)
+	TopBar.BackgroundTransparency = 0.4
 	TopBar.BorderSizePixel = 0
 	Roundify(TopBar, 12)
 
+	local Players = game:GetService("Players")
 	local localPlayer = Players.LocalPlayer
 	local content = Players:GetUserThumbnailAsync(localPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
+
 	local AvatarImage = Instance.new("ImageLabel", TopBar)
 	AvatarImage.Size = UDim2.new(0, 32, 0, 32)
-	AvatarImage.Position = UDim2.new(0, 8, 0.5, -16)
+	AvatarImage.Position = UDim2.new(0.240, -70, 0.4, -16)
 	AvatarImage.BackgroundTransparency = 1
 	AvatarImage.Image = content
 	AvatarImage.ScaleType = Enum.ScaleType.Fit
@@ -111,7 +116,7 @@ function Library:CreateWindow(settings)
 	local Title = Instance.new("TextLabel", TopBar)
 	Title.Text = WindowTitle
 	Title.Size = UDim2.new(1, -80, 1, 0)
-	Title.Position = UDim2.new(0, 50, 0, 0)
+	Title.Position = UDim2.new(0, 10, 0, 0)
 	Title.BackgroundTransparency = 1
 	Title.TextColor3 = Color3.new(1, 1, 1)
 	Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -122,11 +127,12 @@ function Library:CreateWindow(settings)
 	CloseButton.Text = "X"
 	CloseButton.Size = UDim2.new(0, 30, 0, 30)
 	CloseButton.Position = UDim2.new(1, -35, 0.5, -15)
-	CloseButton.BackgroundColor3 = Color3.fromRGB(70, 50, 150)
+	CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 	CloseButton.TextColor3 = Color3.new(1, 1, 1)
 	CloseButton.Font = Enum.Font.Gotham
 	CloseButton.TextSize = 14
 	Roundify(CloseButton, 6)
+
 	CloseButton.MouseButton1Click:Connect(function()
 		TweenService:Create(MainFrame, TweenInfo.new(0.3), { Size = UDim2.new(0, 0, 0, 0) }):Play()
 		task.wait(0.3)
@@ -134,11 +140,12 @@ function Library:CreateWindow(settings)
 	end)
 
 	local TabList = Instance.new("Frame", MainFrame)
-	TabList.Size = UDim2.new(0, 90, 1, -40)
+	TabList.Size = UDim2.new(0, 100, 1, -40)
 	TabList.Position = UDim2.new(0, 0, 0, 40)
-	TabList.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
+	TabList.BackgroundColor3 = Color3.fromRGB(30, 30, 70)
 	TabList.BackgroundTransparency = 0.5
 	TabList.BorderSizePixel = 0
+	Roundify(TabList, 8)
 
 	local UIList = Instance.new("UIListLayout", TabList)
 	UIList.SortOrder = Enum.SortOrder.LayoutOrder
@@ -146,25 +153,32 @@ function Library:CreateWindow(settings)
 
 	local Tabs = {}
 
-	function Library:CreateTab(tabName)
-		local TabButton = Instance.new("TextButton", TabList)
-		TabButton.Size = UDim2.new(1, 0, 0, 28)
-		TabButton.Text = tabName
-		TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 70)
-		TabButton.TextColor3 = Color3.new(1, 1, 1)
-		TabButton.Font = Enum.Font.Gotham
-		TabButton.TextSize = 14
-		Roundify(TabButton, 4)
+function Library:CreateTab(tabName)
+	local TabButton = Instance.new("TextButton", TabList)
+	TabButton.Size = UDim2.new(1, -10, 0, 30)
+	TabButton.Position = UDim2.new(0, 5, 0, 0)
+	TabButton.Text = tabName
+	TabButton.BackgroundColor3 = Color3.fromRGB(50, 50, 100)
+	TabButton.TextColor3 = Color3.new(1, 1, 1)
+	TabButton.Font = Enum.Font.Gotham
+	TabButton.TextSize = 14
+	TabButton.BackgroundTransparency = 0.3
+	Roundify(TabButton, 6)
 
-		local TabFrame = Instance.new("ScrollingFrame", MainFrame)
-		TabFrame.Size = UDim2.new(1, -100, 1, -50)
-		TabFrame.Position = UDim2.new(0, 95, 0, 45)
-		TabFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 45)
-		TabFrame.BackgroundTransparency = 1
+	local TabFrame = nil
+	local ElementQueue = {}
+
+	local function CreateFrame()
+		TabFrame = Instance.new("ScrollingFrame", MainFrame)
+		TabFrame.Size = UDim2.new(1, -110, 1, -50)
+		TabFrame.Position = UDim2.new(0, 105, 0, 45)
+		TabFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+		TabFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 50)
+		TabFrame.BackgroundTransparency = 0.4
 		TabFrame.BorderSizePixel = 0
 		TabFrame.ScrollBarThickness = 6
-		TabFrame.ScrollBarImageColor3 = Color3.fromRGB(70, 130, 180)
-		TabFrame.Visible = true
+		TabFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+		Roundify(TabFrame, 8)
 
 		local layout = Instance.new("UIListLayout", TabFrame)
 		layout.Padding = UDim.new(0, 6)
@@ -174,112 +188,75 @@ function Library:CreateWindow(settings)
 			TabFrame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
 		end)
 
-		TabButton.MouseButton1Click:Connect(function()
-			for _, tab in pairs(Tabs) do
-				for _, d in ipairs(tab.Frame:GetDescendants()) do
-					if d:IsA("TextLabel") or d:IsA("TextButton") then
-						d.TextTransparency = 1
-					elseif d:IsA("Frame") then
-						d.BackgroundTransparency = 1
-					end
-				end
-				tab.Frame.BackgroundTransparency = 1
-			end
-
-			for _, d in ipairs(TabFrame:GetDescendants()) do
-				if d:IsA("TextLabel") or d:IsA("TextButton") then
-					d.TextTransparency = 0
-				elseif d:IsA("Frame") then
-					d.BackgroundTransparency = 0.3
-				end
-			end
-			TabFrame.BackgroundTransparency = 0.5
-		end)
-
-		Tabs[tabName] = { Button = TabButton, Frame = TabFrame }
-
-		local tabObj = {}
-
-		function Library:CreateTab(tabName)
-	local TabButton = Instance.new("TextButton", TabList)
-	TabButton.Size = UDim2.new(1, 0, 0, 28)
-	TabButton.Text = tabName
-	TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 70)
-	TabButton.TextColor3 = Color3.new(1, 1, 1)
-	TabButton.Font = Enum.Font.Gotham
-	TabButton.TextSize = 14
-	Roundify(TabButton, 4)
-
-	local TabFrame = Instance.new("ScrollingFrame", MainFrame)
-	TabFrame.Size = UDim2.new(1, -100, 1, -50)
-	TabFrame.Position = UDim2.new(0, 95, 0, 45)
-	TabFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 45)
-	TabFrame.BackgroundTransparency = 0.5
-	TabFrame.BorderSizePixel = 0
-	TabFrame.ScrollBarThickness = 6
-	TabFrame.ScrollBarImageColor3 = Color3.fromRGB(70, 130, 180)
-	TabFrame.Visible = false
-
-	local layout = Instance.new("UIListLayout", TabFrame)
-	layout.Padding = UDim.new(0, 6)
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-
-	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		TabFrame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
-	end)
+		-- Recriar elementos salvos
+		for _, createFunc in ipairs(ElementQueue) do
+			createFunc(TabFrame)
+		end
+	end
 
 	TabButton.MouseButton1Click:Connect(function()
-		-- Ocultar todos os tabs
-		for _, tab in pairs(Tabs) do
-			tab.Frame.Visible = false
+		-- Destroi todos os outros tabframes
+		for name, tab in pairs(Tabs) do
+			if tab.Frame then
+				tab.Frame:Destroy()
+				tab.Frame = nil
+			end
 		end
 
-		-- Mostrar o tab atual
-		TabFrame.Visible = true
+		-- Cria o frame e atualiza
+		CreateFrame()
+		Tabs[tabName].Frame = TabFrame
 	end)
-
-	Tabs[tabName] = { Button = TabButton, Frame = TabFrame }
 
 	local tabObj = {}
 
 	function tabObj:CreateSection(name)
-		local section = Instance.new("Frame", TabFrame)
-		section.Size = UDim2.new(1, -10, 0, 30)
-		section.BackgroundColor3 = Color3.fromRGB(30, 30, 60)
-		section.BackgroundTransparency = 0.3
-		section.BorderSizePixel = 0
-		Roundify(section, 6)
+		local createFunc = function(parent)
+			local section = Instance.new("Frame", parent)
+			section.Size = UDim2.new(1, -10, 0, 30)
+			section.BackgroundColor3 = Color3.fromRGB(40, 40, 90)
+			section.BackgroundTransparency = 0.3
+			section.BorderSizePixel = 0
+			Roundify(section, 6)
 
-		local title = Instance.new("TextLabel", section)
-		title.Text = name
-		title.Size = UDim2.new(1, -10, 1, 0)
-		title.Position = UDim2.new(0, 5, 0, 0)
-		title.TextColor3 = Color3.new(1, 1, 1)
-		title.TextXAlignment = Enum.TextXAlignment.Left
-		title.Font = Enum.Font.GothamBold
-		title.TextSize = 14
-		title.BackgroundTransparency = 1
-
-		return section
+			local title = Instance.new("TextLabel", section)
+			title.Text = name
+			title.Size = UDim2.new(1, -10, 1, 0)
+			title.Position = UDim2.new(0, 5, 0, 0)
+			title.TextColor3 = Color3.new(1, 1, 1)
+			title.TextXAlignment = Enum.TextXAlignment.Left
+			title.Font = Enum.Font.GothamBold
+			title.TextSize = 14
+			title.BackgroundTransparency = 1
+		end
+		table.insert(ElementQueue, createFunc)
+		if TabFrame then createFunc(TabFrame) end
 	end
 
 	function tabObj:CreateButton(text, callback)
-		local button = Instance.new("TextButton", TabFrame)
-		button.Size = UDim2.new(1, -10, 0, 30)
-		button.BackgroundColor3 = Color3.fromRGB(50, 50, 100)
-		button.TextColor3 = Color3.new(1, 1, 1)
-		button.Text = text
-		button.Font = Enum.Font.Gotham
-		button.TextSize = 14
-		button.BorderSizePixel = 0
-		Roundify(button, 6)
-
-		button.MouseButton1Click:Connect(function()
-			if callback then callback() end
-		end)
-
-		return button
+		local createFunc = function(parent)
+			local button = Instance.new("TextButton", parent)
+			button.Size = UDim2.new(1, -10, 0, 30)
+			button.BackgroundColor3 = Color3.fromRGB(50, 50, 120)
+			button.TextColor3 = Color3.new(1, 1, 1)
+			button.Text = text
+			button.Font = Enum.Font.Gotham
+			button.TextSize = 14
+			button.BorderSizePixel = 0
+			button.BackgroundTransparency = 0.2
+			Roundify(button, 6)
+			button.MouseButton1Click:Connect(function()
+				if callback then callback() end
+			end)
+		end
+		table.insert(ElementQueue, createFunc)
+		if TabFrame then createFunc(TabFrame) end
 	end
+
+	Tabs[tabName] = {
+		Button = TabButton,
+		Frame = nil,
+	}
 
 	return tabObj
 end
