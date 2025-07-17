@@ -1,0 +1,2465 @@
+-- GUI Maker Advanced Pro - Continuação Completa
+-- By RealMidia0800
+-- Sistema Completo de Criação de Interface para Mobile
+    -- GUI Maker Advanced Pro
+-- By RealMidia0800
+-- Sistema Completo de Criação de Interface para Mobile
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Remover GUI anterior se existir
+if playerGui:FindFirstChild("GuiMakerPro") then
+    playerGui:FindFirstChild("GuiMakerPro"):Destroy()
+end
+
+-- ===== CONFIGURAÇÕES =====
+local CONFIG = {
+    tema = "Branco", -- Branco, Preto, Azul
+    gridSize = 10,
+    animationSpeed = 0.25,
+    soundEnabled = true,
+    snapToGrid = true,
+    showGrid = true
+}
+
+local TEMAS = {
+    Branco = {
+        bg = Color3.fromRGB(248, 248, 248),
+        bgSecundario = Color3.fromRGB(255, 255, 255),
+        bgTerciario = Color3.fromRGB(240, 240, 240),
+        txt = Color3.fromRGB(30, 30, 30),
+        txtSecundario = Color3.fromRGB(100, 100, 100),
+        accent = Color3.fromRGB(0, 120, 255),
+        success = Color3.fromRGB(0, 180, 50),
+        error = Color3.fromRGB(220, 50, 50),
+        warning = Color3.fromRGB(255, 150, 0),
+        border = Color3.fromRGB(200, 200, 200),
+        shadow = Color3.fromRGB(0, 0, 0, 0.1)
+    },
+    Preto = {
+        bg = Color3.fromRGB(25, 25, 25),
+        bgSecundario = Color3.fromRGB(35, 35, 35),
+        bgTerciario = Color3.fromRGB(45, 45, 45),
+        txt = Color3.fromRGB(255, 255, 255),
+        txtSecundario = Color3.fromRGB(180, 180, 180),
+        accent = Color3.fromRGB(0, 150, 255),
+        success = Color3.fromRGB(0, 255, 100),
+        error = Color3.fromRGB(255, 80, 80),
+        warning = Color3.fromRGB(255, 200, 0),
+        border = Color3.fromRGB(60, 60, 60),
+        shadow = Color3.fromRGB(0, 0, 0, 0.3)
+    },
+    Azul = {
+        bg = Color3.fromRGB(20, 35, 60),
+        bgSecundario = Color3.fromRGB(30, 45, 75),
+        bgTerciario = Color3.fromRGB(40, 55, 90),
+        txt = Color3.fromRGB(255, 255, 255),
+        txtSecundario = Color3.fromRGB(200, 220, 255),
+        accent = Color3.fromRGB(100, 180, 255),
+        success = Color3.fromRGB(0, 255, 150),
+        error = Color3.fromRGB(255, 100, 100),
+        warning = Color3.fromRGB(255, 220, 100),
+        border = Color3.fromRGB(80, 100, 130),
+        shadow = Color3.fromRGB(0, 0, 0, 0.2)
+    }
+}
+
+-- ===== COMPONENTES DISPONÍVEIS =====
+local COMPONENTES = {
+    {
+        nome = "Frame",
+        icone = "⬜",
+        tipo = "Frame",
+        propriedades = {
+            Size = UDim2.new(0.3, 0, 0.2, 0),
+            BackgroundColor3 = Color3.fromRGB(100, 100, 100),
+            BorderSizePixel = 0
+        }
+    },
+    {
+        nome = "TextLabel",
+        icone = "📝",
+        tipo = "TextLabel",
+        propriedades = {
+            Size = UDim2.new(0.25, 0, 0.08, 0),
+            BackgroundTransparency = 1,
+            Text = "Texto",
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            Font = Enum.Font.Gotham,
+            TextSize = 18
+        }
+    },
+    {
+        nome = "TextButton",
+        icone = "🔘",
+        tipo = "TextButton",
+        propriedades = {
+            Size = UDim2.new(0.3, 0, 0.08, 0),
+            BackgroundColor3 = Color3.fromRGB(0, 120, 255),
+            Text = "Botão",
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            Font = Enum.Font.GothamSemibold,
+            TextSize = 16,
+            BorderSizePixel = 0
+        }
+    },
+    {
+        nome = "TextBox",
+        icone = "📄",
+        tipo = "TextBox",
+        propriedades = {
+            Size = UDim2.new(0.4, 0, 0.08, 0),
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            Text = "",
+            PlaceholderText = "Digite aqui...",
+            TextColor3 = Color3.fromRGB(30, 30, 30),
+            Font = Enum.Font.Gotham,
+            TextSize = 16,
+            BorderSizePixel = 1,
+            BorderColor3 = Color3.fromRGB(200, 200, 200)
+        }
+    },
+    {
+        nome = "ImageLabel",
+        icone = "🖼️",
+        tipo = "ImageLabel",
+        propriedades = {
+            Size = UDim2.new(0.2, 0, 0.15, 0),
+            BackgroundTransparency = 1,
+            Image = "rbxasset://textures/ui/GuiImagePlaceholder.png",
+            ScaleType = Enum.ScaleType.Fit
+        }
+    },
+    {
+        nome = "ScrollingFrame",
+        icone = "📜",
+        tipo = "ScrollingFrame",
+        propriedades = {
+            Size = UDim2.new(0.4, 0, 0.5, 0),
+            BackgroundColor3 = Color3.fromRGB(240, 240, 240),
+            BorderSizePixel = 1,
+            BorderColor3 = Color3.fromRGB(200, 200, 200),
+            ScrollBarThickness = 8,
+            CanvasSize = UDim2.new(0, 0, 2, 0)
+        }
+    },
+    {
+        nome = "ImageButton",
+        icone = "🖱️",
+        tipo = "ImageButton",
+        propriedades = {
+            Size = UDim2.new(0.15, 0, 0.1, 0),
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            Image = "rbxasset://textures/ui/GuiImagePlaceholder.png",
+            BorderSizePixel = 0
+        }
+    },
+    {
+        nome = "ViewportFrame",
+        icone = "🔍",
+        tipo = "ViewportFrame",
+        propriedades = {
+            Size = UDim2.new(0.3, 0, 0.3, 0),
+            BackgroundColor3 = Color3.fromRGB(50, 50, 50),
+            BorderSizePixel = 0
+        }
+    }
+}
+
+-- ===== VARIÁVEIS GLOBAIS =====
+local screenGui = Instance.new("ScreenGui", playerGui)
+screenGui.Name = "GuiMakerPro"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local menuAberto = false
+local elementoSelecionado = nil
+local elementosCanvas = {}
+local historicoAcoes = {}
+local indiceFuturo = 1
+local arrastandoElemento = false
+local redimensionandoElemento = false
+local conexaoArrastar = nil
+local conexaoRedimensionar = nil
+
+-- ===== FUNÇÕES UTILITÁRIAS =====
+local function playSound(soundType)
+    if not CONFIG.soundEnabled then return end
+    
+    local soundIds = {
+        click = "rbxasset://sounds/electronicpingshort.wav",
+        hover = "rbxasset://sounds/button-hover.wav",
+        success = "rbxasset://sounds/action_get_out_of_seat.mp3",
+        error = "rbxasset://sounds/action_health_down.mp3"
+    }
+    
+    local sound = Instance.new("Sound")
+    sound.SoundId = soundIds[soundType] or soundIds.click
+    sound.Volume = 0.3
+    sound.Parent = workspace
+    sound:Play()
+    
+    sound.Ended:Connect(function()
+        sound:Destroy()
+    end)
+end
+
+local function criarAnimacao(objeto, propriedades, tempo, estilo)
+    local tweenInfo = TweenInfo.new(
+        tempo or CONFIG.animationSpeed,
+        estilo or Enum.EasingStyle.Quad,
+        Enum.EasingDirection.Out
+    )
+    local tween = TweenService:Create(objeto, tweenInfo, propriedades)
+    tween:Play()
+    return tween
+end
+
+local function mostrarNotificacao(texto, cor, tempo)
+    local tema = TEMAS[CONFIG.tema]
+    
+    local notif = Instance.new("Frame", screenGui)
+    notif.Size = UDim2.new(0.8, 0, 0.08, 0)
+    notif.Position = UDim2.new(0.1, 0, -0.1, 0)
+    notif.BackgroundColor3 = cor or tema.accent
+    notif.BorderSizePixel = 0
+    notif.ZIndex = 1000
+    
+    local corner = Instance.new("UICorner", notif)
+    corner.CornerRadius = UDim.new(0, 8)
+    
+    local sombra = Instance.new("Frame", notif)
+    sombra.Size = UDim2.new(1, 4, 1, 4)
+    sombra.Position = UDim2.new(0, -2, 0, 2)
+    sombra.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    sombra.BackgroundTransparency = 0.8
+    sombra.BorderSizePixel = 0
+    sombra.ZIndex = 999
+    
+    local cornerSombra = Instance.new("UICorner", sombra)
+    cornerSombra.CornerRadius = UDim.new(0, 10)
+    
+    local label = Instance.new("TextLabel", notif)
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = texto
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.Font = Enum.Font.GothamSemibold
+    label.TextSize = 16
+    label.TextScaled = true
+    label.ZIndex = 1001
+    
+    criarAnimacao(notif, {Position = UDim2.new(0.1, 0, 0.02, 0)}, 0.3)
+    criarAnimacao(sombra, {Position = UDim2.new(0, -2, 0, 2)}, 0.3)
+    
+    game:GetService("Debris"):AddItem(notif, tempo or 3)
+    game:GetService("Debris"):AddItem(sombra, tempo or 3)
+    
+    spawn(function()
+        wait((tempo or 3) - 0.3)
+        if notif.Parent then
+            criarAnimacao(notif, {Position = UDim2.new(0.1, 0, -0.1, 0)}, 0.3)
+            criarAnimacao(sombra, {Position = UDim2.new(0, -2, 0, -2)}, 0.3)
+        end
+    end)
+end
+
+local function aplicarTema()
+    local tema = TEMAS[CONFIG.tema]
+    
+    if frameMain then
+        frameMain.BackgroundColor3 = tema.bg
+        barraSuperior.BackgroundColor3 = tema.bgSecundario
+        tituloLabel.TextColor3 = tema.txt
+        
+        -- Aplicar tema aos painéis
+        painelComponentes.BackgroundColor3 = tema.bgSecundario
+        painelPropriedades.BackgroundColor3 = tema.bgSecundario
+        canvasFrame.BackgroundColor3 = tema.bgTerciario
+        
+        -- Aplicar tema aos botões
+        for _, botao in pairs(barraBotoes:GetChildren()) do
+            if botao:IsA("TextButton") then
+                botao.BackgroundColor3 = tema.accent
+                botao.TextColor3 = tema.bg
+            end
+        end
+    end
+end
+
+local function snapToGrid(posicao)
+    if not CONFIG.snapToGrid then return posicao end
+    
+    local x = math.floor(posicao.X.Scale * 1000 / CONFIG.gridSize) * CONFIG.gridSize / 1000
+    local y = math.floor(posicao.Y.Scale * 1000 / CONFIG.gridSize) * CONFIG.gridSize / 1000
+    
+    return UDim2.new(x, posicao.X.Offset, y, posicao.Y.Offset)
+end
+
+-- ===== INTERFACE PRINCIPAL =====
+
+-- Frame principal
+local frameMain = Instance.new("Frame", screenGui)
+frameMain.Name = "MainFrame"
+frameMain.Size = UDim2.new(0.98, 0, 0.95, 0)
+frameMain.Position = UDim2.new(0.01, 0, 0.025, 0)
+frameMain.BackgroundColor3 = TEMAS[CONFIG.tema].bg
+frameMain.BorderSizePixel = 0
+frameMain.Visible = false
+frameMain.ZIndex = 10
+
+local cornerMain = Instance.new("UICorner", frameMain)
+cornerMain.CornerRadius = UDim.new(0, 12)
+
+-- Barra superior
+local barraSuperior = Instance.new("Frame", frameMain)
+barraSuperior.Size = UDim2.new(1, 0, 0.08, 0)
+barraSuperior.BackgroundColor3 = TEMAS[CONFIG.tema].bgSecundario
+barraSuperior.BorderSizePixel = 0
+barraSuperior.ZIndex = 11
+
+local cornerBarra = Instance.new("UICorner", barraSuperior)
+cornerBarra.CornerRadius = UDim.new(0, 12)
+
+-- Título
+local tituloLabel = Instance.new("TextLabel", barraSuperior)
+tituloLabel.Size = UDim2.new(0.6, 0, 1, 0)
+tituloLabel.Position = UDim2.new(0.02, 0, 0, 0)
+tituloLabel.BackgroundTransparency = 1
+tituloLabel.Text = "🎨 GUI Maker Pro - By RealMidia0800"
+tituloLabel.TextColor3 = TEMAS[CONFIG.tema].txt
+tituloLabel.Font = Enum.Font.GothamBold
+tituloLabel.TextSize = 16
+tituloLabel.TextXAlignment = Enum.TextXAlignment.Left
+tituloLabel.ZIndex = 12
+
+-- Botões da barra superior
+local barraBotoes = Instance.new("Frame", barraSuperior)
+barraBotoes.Size = UDim2.new(0.35, 0, 0.8, 0)
+barraBotoes.Position = UDim2.new(0.63, 0, 0.1, 0)
+barraBotoes.BackgroundTransparency = 1
+barraBotoes.ZIndex = 12
+
+local layoutBarraBotoes = Instance.new("UIListLayout", barraBotoes)
+layoutBarraBotoes.FillDirection = Enum.FillDirection.Horizontal
+layoutBarraBotoes.HorizontalAlignment = Enum.HorizontalAlignment.Right
+layoutBarraBotoes.VerticalAlignment = Enum.VerticalAlignment.Center
+layoutBarraBotoes.Padding = UDim.new(0, 5)
+
+local function criarBotaoBarra(texto, cor, callback)
+    local botao = Instance.new("TextButton", barraBotoes)
+    botao.Size = UDim2.new(0, 60, 1, 0)
+    botao.BackgroundColor3 = cor
+    botao.Text = texto
+    botao.TextColor3 = TEMAS[CONFIG.tema].bg
+    botao.Font = Enum.Font.GothamSemibold
+    botao.TextSize = 12
+    botao.BorderSizePixel = 0
+    botao.ZIndex = 13
+    
+    local corner = Instance.new("UICorner", botao)
+    corner.CornerRadius = UDim.new(0, 6)
+    
+    -- Efeitos hover
+    botao.MouseEnter:Connect(function()
+        criarAnimacao(botao, {Size = UDim2.new(0, 65, 1.1, 0)}, 0.2)
+        playSound("hover")
+    end)
+    
+    botao.MouseLeave:Connect(function()
+        criarAnimacao(botao, {Size = UDim2.new(0, 60, 1, 0)}, 0.2)
+    end)
+    
+    botao.MouseButton1Click:Connect(function()
+        playSound("click")
+        criarAnimacao(botao, {Size = UDim2.new(0, 55, 0.9, 0)}, 0.1)
+        wait(0.1)
+        criarAnimacao(botao, {Size = UDim2.new(0, 60, 1, 0)}, 0.1)
+        callback()
+    end)
+    
+    return botao
+end
+
+-- Botões da barra
+criarBotaoBarra("▶️ Rodar", TEMAS[CONFIG.tema].success, function()
+    gerarCodigo()
+end)
+
+criarBotaoBarra("📋 Copiar", TEMAS[CONFIG.tema].accent, function()
+    copiarCodigo()
+end)
+
+criarBotaoBarra("🎨 Tema", TEMAS[CONFIG.tema].warning, function()
+    alternarTema()
+end)
+
+criarBotaoBarra("✕ Fechar", TEMAS[CONFIG.tema].error, function()
+    fecharMenu()
+end)
+
+-- ===== PAINEL DE COMPONENTES =====
+
+local painelComponentes = Instance.new("Frame", frameMain)
+painelComponentes.Size = UDim2.new(0.2, 0, 0.92, 0)
+painelComponentes.Position = UDim2.new(0, 0, 0.08, 0)
+painelComponentes.BackgroundColor3 = TEMAS[CONFIG.tema].bgSecundario
+painelComponentes.BorderSizePixel = 0
+painelComponentes.ZIndex = 11
+
+local cornerPainelComp = Instance.new("UICorner", painelComponentes)
+cornerPainelComp.CornerRadius = UDim.new(0, 8)
+
+-- Título do painel
+local tituloComponentes = Instance.new("TextLabel", painelComponentes)
+tituloComponentes.Size = UDim2.new(1, 0, 0.08, 0)
+tituloComponentes.BackgroundTransparency = 1
+tituloComponentes.Text = "🧩 Componentes"
+tituloComponentes.TextColor3 = TEMAS[CONFIG.tema].txt
+tituloComponentes.Font = Enum.Font.GothamBold
+tituloComponentes.TextSize = 14
+tituloComponentes.ZIndex = 12
+
+-- Scroll de componentes
+local scrollComponentes = Instance.new("ScrollingFrame", painelComponentes)
+scrollComponentes.Size = UDim2.new(1, 0, 0.92, 0)
+scrollComponentes.Position = UDim2.new(0, 0, 0.08, 0)
+scrollComponentes.BackgroundTransparency = 1
+scrollComponentes.ScrollBarThickness = 4
+scrollComponentes.ZIndex = 12
+
+local layoutComponentes = Instance.new("UIListLayout", scrollComponentes)
+layoutComponentes.SortOrder = Enum.SortOrder.LayoutOrder
+layoutComponentes.Padding = UDim.new(0, 2)
+
+-- Criar botões de componentes
+for i, componente in ipairs(COMPONENTES) do
+    local botaoComp = Instance.new("TextButton", scrollComponentes)
+    botaoComp.Size = UDim2.new(1, -8, 0, 40)
+    botaoComp.BackgroundColor3 = TEMAS[CONFIG.tema].bgTerciario
+    botaoComp.Text = componente.icone .. " " .. componente.nome
+    botaoComp.TextColor3 = TEMAS[CONFIG.tema].txt
+    botaoComp.Font = Enum.Font.Gotham
+    botaoComp.TextSize = 12
+    botaoComp.TextXAlignment = Enum.TextXAlignment.Left
+    botaoComp.BorderSizePixel = 0
+    botaoComp.ZIndex = 13
+    
+    local cornerComp = Instance.new("UICorner", botaoComp)
+    cornerComp.CornerRadius = UDim.new(0, 6)
+    
+    -- Padding interno
+    local paddingComp = Instance.new("UIPadding", botaoComp)
+    paddingComp.PaddingLeft = UDim.new(0, 10)
+    
+    -- Efeitos hover
+    botaoComp.MouseEnter:Connect(function()
+        criarAnimacao(botaoComp, {BackgroundColor3 = TEMAS[CONFIG.tema].accent}, 0.2)
+        criarAnimacao(botaoComp, {TextColor3 = TEMAS[CONFIG.tema].bg}, 0.2)
+        playSound("hover")
+    end)
+    
+    botaoComp.MouseLeave:Connect(function()
+        criarAnimacao(botaoComp, {BackgroundColor3 = TEMAS[CONFIG.tema].bgTerciario}, 0.2)
+        criarAnimacao(botaoComp, {TextColor3 = TEMAS[CONFIG.tema].txt}, 0.2)
+    end)
+    
+    botaoComp.MouseButton1Click:Connect(function()
+        playSound("click")
+        criarElementoNoCanvas(componente)
+    end)
+end
+
+-- Ajustar tamanho do canvas do scroll
+scrollComponentes.CanvasSize = UDim2.new(0, 0, 0, #COMPONENTES * 42)
+
+-- ===== CANVAS DE TRABALHO =====
+
+local canvasFrame = Instance.new("Frame", frameMain)
+canvasFrame.Size = UDim2.new(0.6, 0, 0.92, 0)
+canvasFrame.Position = UDim2.new(0.2, 0, 0.08, 0)
+canvasFrame.BackgroundColor3 = TEMAS[CONFIG.tema].bgTerciario
+canvasFrame.BorderSizePixel = 1
+canvasFrame.BorderColor3 = TEMAS[CONFIG.tema].border
+canvasFrame.ZIndex = 11
+
+local cornerCanvas = Instance.new("UICorner", canvasFrame)
+cornerCanvas.CornerRadius = UDim.new(0, 8)
+
+-- Grade do canvas
+local function criarGrade()
+    if not CONFIG.showGrid then return end
+    
+    -- Remove grade anterior
+    for _, child in pairs(canvasFrame:GetChildren()) do
+        if child.Name == "GradeLinha" then
+            child:Destroy()
+        end
+    end
+    
+    -- Criar linhas da grade
+    for x = 0, 1, 0.1 do
+        local linha = Instance.new("Frame", canvasFrame)
+        linha.Name = "GradeLinha"
+        linha.Size = UDim2.new(0, 1, 1, 0)
+        linha.Position = UDim2.new(x, 0, 0, 0)
+        linha.BackgroundColor3 = TEMAS[CONFIG.tema].border
+        linha.BackgroundTransparency = 0.8
+        linha.BorderSizePixel = 0
+        linha.ZIndex = 5
+    end
+    
+    for y = 0, 1, 0.1 do
+        local linha = Instance.new("Frame", canvasFrame)
+        linha.Name = "GradeLinha"
+        linha.Size = UDim2.new(1, 0, 0, 1)
+        linha.Position = UDim2.new(0, 0, y, 0)
+        linha.BackgroundColor3 = TEMAS[CONFIG.tema].border
+        linha.BackgroundTransparency = 0.8
+        linha.BorderSizePixel = 0
+        linha.ZIndex = 5
+    end
+end
+
+criarGrade()
+
+-- ===== PAINEL DE PROPRIEDADES =====
+
+local painelPropriedades = Instance.new("Frame", frameMain)
+painelPropriedades.Size = UDim2.new(0.2, 0, 0.92, 0)
+painelPropriedades.Position = UDim2.new(0.8, 0, 0.08, 0)
+painelPropriedades.BackgroundColor3 = TEMAS[CONFIG.tema].bgSecundario
+painelPropriedades.BorderSizePixel = 0
+painelPropriedades.ZIndex = 11
+
+local cornerPainelProp = Instance.new("UICorner", painelPropriedades)
+cornerPainelProp.CornerRadius = UDim.new(0, 8)
+
+-- Título do painel
+local tituloPropriedades = Instance.new("TextLabel", painelPropriedades)
+tituloPropriedades.Size = UDim2.new(1, 0, 0.08, 0)
+tituloPropriedades.BackgroundTransparency = 1
+tituloPropriedades.Text = "⚙️ Propriedades"
+tituloPropriedades.TextColor3 = TEMAS[CONFIG.tema].txt
+tituloPropriedades.Font = Enum.Font.GothamBold
+tituloPropriedades.TextSize = 14
+tituloPropriedades.ZIndex = 12
+
+-- Scroll de propriedades
+local scrollPropriedades = Instance.new("ScrollingFrame", painelPropriedades)
+scrollPropriedades.Size = UDim2.new(1, 0, 0.92, 0)
+scrollPropriedades.Position = UDim2.new(0, 0, 0.08, 0)
+scrollPropriedades.BackgroundTransparency = 1
+scrollPropriedades.ScrollBarThickness = 4
+scrollPropriedades.ZIndex = 12
+
+local layoutPropriedades = Instance.new("UIListLayout", scrollPropriedades)
+layoutPropriedades.SortOrder = Enum.SortOrder.LayoutOrder
+layoutPropriedades.Padding = UDim.new(0, 5)
+
+-- ===== SISTEMA DE SELEÇÃO E MANIPULAÇÃO =====
+
+local function criarHandlesSelecao(elemento)
+    -- Remove handles anteriores
+    for _, child in pairs(canvasFrame:GetChildren()) do
+        if child.Name == "SelectionHandle" then
+            child:Destroy()
+        end
+    end
+    
+    -- Cria handles de seleção
+    local handles = {}
+    local posicoes = {
+        {UDim2.new(0, -5, 0, -5), "nw-resize"}, -- Top-left
+        {UDim2.new(0.5, -5, 0, -5), "n-resize"}, -- Top-center
+        {UDim2.new(1, -5, 0, -5), "ne-resize"}, -- Top-right
+        {UDim2.new(0, -5, 0.5, -5), "w-resize"}, -- Middle-left
+        {UDim2.new(1, -5, 0.5, -5), "e-resize"}, -- Middle-right
+        {UDim2.new(0, -5, 1, -5), "sw-resize"}, -- Bottom-left
+        {UDim2.new(0.5, -5, 1, -5), "s-resize"}, -- Bottom-center
+        {UDim2.new(1, -5, 1, -5), "se-resize"} -- Bottom-right
+    }
+    
+    for i, dados in ipairs(posicoes) do
+        local handle = Instance.new("Frame", canvasFrame)
+        handle.Name = "SelectionHandle"
+        handle.Size = UDim2.new(0, 10, 0, 10)
+        handle.Position = elemento.Position + dados[1]
+        handle.BackgroundColor3 = TEMAS[CONFIG.tema].accent
+        handle.BorderSizePixel = 1
+        handle.BorderColor3 = TEMAS[CONFIG.tema].bg
+        handle.ZIndex = 100
+        
+        local cornerHandle = Instance.new("UICorner", handle)
+        cornerHandle.CornerRadius = UDim.new(0, 2)
+        
+        -- Eventos de redimensionamento
+        handle.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+               input.UserInputType == Enum.UserInputType.Touch then
+                redimensionandoElemento = true
+                
+                local startPos = input.Position
+                local startSize = elemento.Size
+                local startElementPos = elemento.Position
+                
+                conexaoRedimensionar = UserInputService.InputChanged:Connect(function(inputChanged)
+                    if inputChanged.UserInputType == Enum.UserInputType.MouseMovement or 
+                       inputChanged.UserInputType == Enum.UserInputType.Touch then
+                        
+                        local delta = inputChanged.Position - startPos
+                        local newSize = startSize
+                        local newPos = startElementPos
+                        
+                        -- Lógica de redimensionamento baseada na direção do handle
+                        if dados[2] == "se-resize" then
+                            newSize = UDim2.new(
+                                startSize.X.Scale + delta.X / canvasFrame.AbsoluteSize.X,
+                                startSize.X.Offset,
+                                startSize.Y.Scale + delta.Y / canvasFrame.AbsoluteSize.Y,
+                                startSize.Y.Offset
+                            )
+                        elseif dados[2] == "nw-resize" then
+                            newSize = UDim2.new(
+                                startSize.X.Scale - delta.X / canvasFrame.AbsoluteSize.X,
+                                startSize.X.Offset,
+                                startSize.Y.Scale - delta.Y / canvasFrame.AbsoluteSize.Y,
+                                startSize.Y.Offset
+                            )
+                            newPos = UDim2.new(
+                                startElementPos.X.Scale + delta.X / canvasFrame.AbsoluteSize.X,
+                                startElementPos.X.Offset,
+                                startElementPos.Y.Scale + delta.Y / canvasFrame.AbsoluteSize.Y,
+                                startElementPos.Y.Offset
+                            )
+                        elseif dados[2] == "ne-resize" then
+                            newSize = UDim2.new(
+                                startSize.X.Scale + delta.X / canvasFrame.AbsoluteSize.X,
+                                startSize.X.Offset,
+                                startSize.Y.Scale - delta.Y / canvasFrame.AbsoluteSize.Y,
+                                startSize.Y.Offset
+                            )
+                            newPos = UDim2.new(
+                                startElementPos.X.Scale,
+                                startElementPos.X.Offset,
+                                startElementPos.Y.Scale + delta.Y / canvasFrame.AbsoluteSize.Y,
+                                startElementPos.Y.Offset
+                            )
+                        elseif dados[2] == "sw-resize" then
+                            newSize = UDim2.new(
+                                startSize.X.Scale - delta.X / canvasFrame.AbsoluteSize.X,
+                                startSize.X.Offset,
+                                startSize.Y.Scale + delta.Y / canvasFrame.AbsoluteSize.Y,
+                                startSize.Y.Offset
+                            )
+                            newPos = UDim2.new(
+                                startElementPos.X.Scale + delta.X / canvasFrame.AbsoluteSize.X,
+                                startElementPos.X.Offset,
+                                startElementPos.Y.Scale,
+                                startElementPos.Y.Offset
+                            )
+                        elseif dados[2] == "e-resize" then
+                            newSize = UDim2.new(
+                                startSize.X.Scale + delta.X / canvasFrame.AbsoluteSize.X,
+                                startSize.X.Offset,
+                                startSize.Y.Scale,
+                                startSize.Y.Offset
+                            )
+                        elseif dados[2] == "w-resize" then
+                            newSize = UDim2.new(
+                                startSize.X.Scale - delta.X / canvasFrame.AbsoluteSize.X,
+                                startSize.X.Offset,
+                                startSize.Y.Scale,
+                                startSize.Y.Offset
+                            )
+                            newPos = UDim2.new(
+                                startElementPos.X.Scale + delta.X / canvasFrame.AbsoluteSize.X,
+                                startElementPos.X.Offset,
+                                startElementPos.Y.Scale,
+                                startElementPos.Y.Offset
+                            )
+                        elseif dados[2] == "n-resize" then
+                            newSize = UDim2.new(
+                                startSize.X.Scale,
+                                startSize.X.Offset,
+                                startSize.Y.Scale - delta.Y / canvasFrame.AbsoluteSize.Y,
+                                startSize.Y.Offset
+                            )
+                            newPos = UDim2.new(
+                                startElementPos.X.Scale,
+                                startElementPos.X.Offset,
+                                startElementPos.Y.Scale + delta.Y / canvasFrame.AbsoluteSize.Y,
+                                startElementPos.Y.Offset
+                            )
+                        elseif dados[2] == "s-resize" then
+                            newSize = UDim2.new(
+                                startSize.X.Scale,
+                                startSize.X.Offset,
+                                startSize.Y.Scale + delta.Y / canvasFrame.AbsoluteSize.Y,
+                                startSize.Y.Offset
+                            )
+                        end
+                        
+                        -- Aplicar tamanho mínimo
+                        if newSize.X.Scale < 0.02 then newSize = UDim2.new(0.02, 0, newSize.Y.Scale, newSize.Y.Offset) end
+                        if newSize.Y.Scale < 0.02 then newSize = UDim2.new(newSize.X.Scale, newSize.X.Offset, 0.02, 0) end
+                        
+                        elemento.Size = newSize
+                        elemento.Position = newPos
+                        
+                        -- Atualizar handles
+                        for j, handle in pairs(handles) do
+                            if handle and handle.Parent then
+                                handle.Position = elemento.Position + posicoes[j][1]
+                            end
+                        end
+                    end
+                end)
+                
+                local conexaoFinalizar = UserInputService.InputEnded:Connect(function(inputEnded)
+                    if inputEnded.UserInputType == Enum.UserInputType.MouseButton1 or 
+                       inputEnded.UserInputType == Enum.UserInputType.Touch then
+                        redimensionandoElemento = false
+                        conexaoRedimensionar:Disconnect()
+                        conexaoFinalizar:Disconnect()
+                        playSound("success")
+                    end
+                end)
+            end
+        end)
+        
+        table.insert(handles, handle)
+    end
+    
+    return handles
+end
+
+local function selecionarElemento(elemento)
+    elementoSelecionado = elemento
+    
+    -- Destacar elemento selecionado
+    for _, elem in pairs(elementosCanvas) do
+        if elem.frame.Name == "HighlightBorder" then
+            elem.frame:Destroy()
+        end
+    end
+    
+    -- Criar borda de seleção
+    local border = Instance.new("Frame", canvasFrame)
+    border.Name = "HighlightBorder"
+    border.Size = elemento.Size + UDim2.new(0, 4, 0, 4)
+    border.Position = elemento.Position - UDim2.new(0, 2, 0, 2)
+    border.BackgroundTransparency = 1
+    border.BorderSizePixel = 2
+    border.BorderColor3 = TEMAS[CONFIG.tema].accent
+    border.ZIndex = 99
+    
+    local cornerBorder = Instance.new("UICorner", border)
+    cornerBorder.CornerRadius = UDim.new(0, 6)
+    
+    -- Criar handles de redimensionamento
+    criarHandlesSelecao(elemento)
+    
+    -- Atualizar painel de propriedades
+    atualizarPainelPropriedades(elemento)
+    
+    -- Animar seleção
+    criarAnimacao(border, {BackgroundTransparency = 0.9}, 0.2)
+    wait(0.2)
+    criarAnimacao(border, {BackgroundTransparency = 1}, 0.2)
+end
+
+local function criarElementoNoCanvas(componente)
+    local elemento = Instance.new(componente.tipo, canvasFrame)
+    elemento.Name = componente.nome .. "_" .. #elementosCanvas + 1
+    elemento.ZIndex = 50
+    
+    -- Aplicar propriedades padrão
+    for prop, valor in pairs(componente.propriedades) do
+        if prop ~= "CornerRadius" then
+            elemento[prop] = valor
+        end
+    end
+    
+    -- Posição inicial (centro do canvas)
+    elemento.Position = UDim2.new(0.4, 0, 0.4, 0)
+    
+    -- Adicionar corner radius se for um Frame ou Button
+    if componente.tipo == "Frame" or componente.tipo == "TextButton" or componente.tipo == "TextBox" then
+        local corner = Instance.new("UICorner", elemento)
+        corner.CornerRadius = UDim.new(0, 8)
+    end
+    
+    -- Eventos de interação
+    elemento.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+           input.UserInputType == Enum.UserInputType.Touch then
+            
+            if not redimensionandoElemento then
+                selecionarElemento(elemento)
+                arrastandoElemento = true
+                
+                local startPos = input.Position
+                local startElementPos = elemento.Position
+                
+                conexaoArrastar = UserInputService.InputChanged:Connect(function(inputChanged)
+                    if inputChanged.UserInputType == Enum.UserInputType.MouseMovement or 
+                       inputChanged.UserInputType == Enum.UserInputType.Touch then
+                        
+                        local delta = inputChanged.Position - startPos
+                        local newPos = UDim2.new(
+                            startElementPos.X.Scale + delta.X / canvasFrame.AbsoluteSize.X,
+                            startElementPos.X.Offset,
+                            startElementPos.Y.Scale + delta.Y / canvasFrame.AbsoluteSize.Y,
+                            startElementPos.Y.Offset
+                        )
+                        
+                        -- Aplicar snap to grid
+                        newPos = snapToGrid(newPos)
+                        
+                        -- Limitar aos bounds do canvas
+                        if newPos.X.Scale < 0 then newPos = UDim2.new(0, 0, newPos.Y.Scale, newPos.Y.Offset) end
+                        if newPos.Y.Scale < 0 then newPos = UDim2.new(newPos.X.Scale, newPos.X.Offset, 0, 0) end
+                        if newPos.X.Scale > 1 - elemento.Size.X.Scale then 
+                            newPos = UDim2.new(1 - elemento.Size.X.Scale, 0, newPos.Y.Scale, newPos.Y.Offset) 
+                        end
+                        if newPos.Y.Scale > 1 - elemento.Size.Y.Scale then 
+                            newPos = UDim2.new(newPos.X.Scale, newPos.X.Offset, 1 - elemento.Size.Y.Scale, 0) 
+                        end
+                        
+                        elemento.Position = newPos
+                        
+                        -- Atualizar borda e handles
+                        local border = canvasFrame:FindFirstChild("HighlightBorder")
+                        if border then
+                            border.Position = elemento.Position - UDim2.new(0, 2, 0, 2)
+                        end
+                        
+                        for _, handle in pairs(canvasFrame:GetChildren()) do
+                            if handle.Name == "SelectionHandle" then
+                                handle:Destroy()
+                            end
+                        end
+                        criarHandlesSelecao(elemento)
+                    end
+                end)
+                
+                local conexaoFinalizar = UserInputService.InputEnded:Connect(function(inputEnded)
+                    if inputEnded.UserInputType == Enum.UserInputType.MouseButton1 or 
+                       inputEnded.UserInputType == Enum.UserInputType.Touch then
+                        arrastandoElemento = false
+                        conexaoArrastar:Disconnect()
+                        conexaoFinalizar:Disconnect()
+                        playSound("success")
+                    end
+                end)
+            end
+        end
+    end)
+    
+    -- Adicionar à lista de elementos
+    table.insert(elementosCanvas, {
+        frame = elemento,
+        tipo = componente.tipo,
+        propriedades = componente.propriedades
+    })
+    
+    mostrarNotificacao("✅ " .. componente.nome .. " adicionado!", TEMAS[CONFIG.tema].success)
+    selecionarElemento(elemento)
+end
+
+-- ===== SISTEMA DE PROPRIEDADES =====
+
+local function criarCampoPropriedade(nome, valor, callback)
+    local container = Instance.new("Frame", scrollPropriedades)
+    container.Size = UDim2.new(1, -10, 0, 50)
+    container.BackgroundTransparency = 1
+    container.ZIndex = 13
+    
+    local label = Instance.new("TextLabel", container)
+    label.Size = UDim2.new(1, 0, 0.4, 0)
+    label.BackgroundTransparency = 1
+    label.Text = nome
+    label.TextColor3 = TEMAS[CONFIG.tema].txt
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 12
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.ZIndex = 14
+    
+    local input = Instance.new("TextBox", container)
+    input.Size = UDim2.new(1, 0, 0.6, 0)
+    input.Position = UDim2.new(0, 0, 0.4, 0)
+    input.BackgroundColor3 = TEMAS[CONFIG.tema].bgTerciario
+    input.BorderSizePixel = 1
+    input.BorderColor3 = TEMAS[CONFIG.tema].border
+    input.Text = tostring(valor)
+    input.TextColor3 = TEMAS[CONFIG.tema].txt
+    input.Font = Enum.Font.Gotham
+    input.TextSize = 11
+    input.ZIndex = 14
+    
+    local cornerInput = Instance.new("UICorner", input)
+    cornerInput.CornerRadius = UDim.new(0, 4)
+    
+    local paddingInput = Instance.new("UIPadding", input)
+    paddingInput.PaddingLeft = UDim.new(0, 8)
+    paddingInput.PaddingRight = UDim.new(0, 8)
+    
+    -- Eventos
+    input.FocusLost:Connect(function()
+        callback(input.Text)
+    end)
+    
+    input.Focused:Connect(function()
+        criarAnimacao(input, {BorderColor3 = TEMAS[CONFIG.tema].accent}, 0.2)
+    end)
+    
+    input.FocusLost:Connect(function()
+        criarAnimacao(input, {BorderColor3 = TEMAS[CONFIG.tema].border}, 0.2)
+    end)
+    
+    return container
+end
+
+local function atualizarPainelPropriedades(elemento)
+    -- Limpar painel
+    for _, child in pairs(scrollPropriedades:GetChildren()) do
+        if child:IsA("Frame") then
+            child:Destroy()
+        end
+    end
+    
+    if not elemento then return end
+    
+    -- Propriedades básicas
+    criarCampoPropriedade("Nome", elemento.Name, function(valor)
+        elemento.Name = valor
+    end)
+    
+    criarCampoPropriedade("Posição X", elemento.Position.X.Scale, function(valor)
+        local num = tonumber(valor)
+        if num then
+            elemento.Position = UDim2.new(num, elemento.Position.X.Offset, elemento.Position.Y.Scale, elemento.Position.Y.Offset)
+        end
+    end)
+    
+    criarCampoPropriedade("Posição Y", elemento.Position.Y.Scale, function(valor)
+        local num = tonumber(valor)
+        if num then
+            elemento.Position = UDim2.new(elemento.Position.X.Scale, elemento.Position.X.Offset, num, elemento.Position.Y.Offset)
+        end
+    end)
+    
+    criarCampoPropriedade("Tamanho X", elemento.Size.X.Scale, function(valor)
+        local num = tonumber(valor)
+        if num then
+            elemento.Size = UDim2.new(num, elemento.Size.X.Offset, elemento.Size.Y.Scale, elemento.Size.Y.Offset)
+        end
+    end)
+    
+    criarCampoPropriedade("Tamanho Y", elemento.Size.Y.Scale, function(valor)
+        local num = tonumber(valor)
+        if num then
+            elemento.Size = UDim2.new(elemento.Size.X.Scale, elemento.Size.X.Offset, num, elemento.Size.Y.Offset)
+        end
+    end)
+    
+    -- Propriedades específicas do tipo
+    if elemento:IsA("TextLabel") or elemento:IsA("TextButton") or elemento:IsA("TextBox") then
+        criarCampoPropriedade("Texto", elemento.Text, function(valor)
+            elemento.Text = valor
+        end)
+        
+        criarCampoPropriedade("Tamanho do Texto", elemento.TextSize, function(valor)
+            local num = tonumber(valor)
+            if num then
+                elemento.TextSize = num
+            end
+        end)
+    end
+    
+    if elemento:IsA("TextBox") then
+        criarCampoPropriedade("Placeholder", elemento.PlaceholderText, function(valor)
+            elemento.PlaceholderText = valor
+        end)
+    end
+    
+    if elemento:IsA("ImageLabel") or elemento:IsA("ImageButton") then
+        criarCampoPropriedade("Imagem ID", elemento.Image, function(valor)
+            elemento.Image = valor
+        end)
+    end
+    
+    -- Atualizar canvas size
+    scrollPropriedades.CanvasSize = UDim2.new(0, 0, 0, #scrollPropriedades:GetChildren() * 55)
+end
+
+-- ===== SISTEMA DE GERAÇÃO DE CÓDIGO =====
+
+local function gerarCodigoElemento(elemento, indentacao)
+    indentacao = indentacao or 0
+    local espacos = string.rep("    ", indentacao)
+    local codigo = {}
+    
+    -- Tipo do elemento
+    table.insert(codigo, espacos .. "local " .. elemento.Name .. " = Instance.new(\"" .. elemento.ClassName .. "\", parent)")
+    
+    -- Propriedades
+    if elemento.Size then
+        table.insert(codigo, espacos .. elemento.Name .. ".Size = UDim2.new(" .. 
+            elemento.Size.X.Scale .. ", " .. elemento.Size.X.Offset .. ", " .. 
+            elemento.Size.Y.Scale .. ", " .. elemento.Size.Y.Offset .. ")")
+    end
+    
+    if elemento.Position then
+        table.insert(codigo, espacos .. elemento.Name .. ".Position = UDim2.new(" .. 
+            elemento.Position.X.Scale .. ", " .. elemento.Position.X.Offset .. ", " .. 
+            elemento.Position.Y.Scale .. ", " .. elemento.Position.Y.Offset .. ")")
+    end
+    
+    if elemento.BackgroundColor3 then
+        local cor = elemento.BackgroundColor3
+        table.insert(codigo, espacos .. elemento.Name .. ".BackgroundColor3 = Color3.fromRGB(" .. 
+            math.floor(cor.R * 255) .. ", " .. math.floor(cor.G * 255) .. ", " .. math.floor(cor.B * 255) .. ")")
+    end
+    
+    if elemento.BackgroundTransparency and elemento.BackgroundTransparency > 0 then
+        table.insert(codigo, espacos .. elemento.Name .. ".BackgroundTransparency = " .. elemento.BackgroundTransparency)
+    end
+    
+    if elemento.BorderSizePixel and elemento.BorderSizePixel > 0 then
+        table.insert(codigo, espacos .. elemento.Name .. ".BorderSizePixel = " .. elemento.BorderSizePixel)
+    end
+    
+    -- Propriedades específicas de texto
+    if elemento:IsA("TextLabel") or elemento:IsA("TextButton") or elemento:IsA("TextBox") then
+        if elemento.Text and elemento.Text ~= "" then
+            table.insert(codigo, espacos .. elemento.Name .. ".Text = \"" .. elemento.Text .. "\"")
+        end
+        
+        if elemento.TextColor3 then
+            local cor = elemento.TextColor3
+            table.insert(codigo, espacos .. elemento.Name .. ".TextColor3 = Color3.fromRGB(" .. 
+                math.floor(cor.R * 255) .. ", " .. math.floor(cor.G * 255) .. ", " .. math.floor(cor.B * 255) .. ")")
+        end
+        
+        if elemento.Font then
+            table.insert(codigo, espacos .. elemento.Name .. ".Font = Enum.Font." .. tostring(elemento.Font):match("Enum%.Font%.(.*)"))
+        end
+        
+        if elemento.TextSize then
+            table.insert(codigo, espacos .. elemento.Name .. ".TextSize = " .. elemento.TextSize)
+        end
+    end
+    
+    -- Propriedades específicas de TextBox
+    if elemento:IsA("TextBox") then
+        if elemento.PlaceholderText and elemento.PlaceholderText ~= "" then
+            table.insert(codigo, espacos .. elemento.Name .. ".PlaceholderText = \"" .. elemento.PlaceholderText .. "\"")
+        end
+    end
+    
+    -- Propriedades específicas de imagem
+    if elemento:IsA("ImageLabel") or elemento:IsA("ImageButton") then
+        if elemento.Image and elemento.Image ~= "" then
+            table.insert(codigo, espacos .. elemento.Name .. ".Image = \"" .. elemento.Image .. "\"")
+        end
+    end
+    
+    -- Corner radius
+    if elemento:FindFirstChild("UICorner") then
+        table.insert(codigo, espacos .. "local corner" .. elemento.Name .. " = Instance.new(\"UICorner\", " .. elemento.Name .. ")")
+        table.insert(codigo, espacos .. "corner" .. elemento.Name .. ".CornerRadius = UDim.new(0, " .. elemento.UICorner.CornerRadius.Offset .. ")")
+    end
+    
+    table.insert(codigo, "")
+    
+    return table.concat(codigo, "\n")
+end
+
+function gerarCodigo()
+    local codigo = {}
+    
+    -- Cabeçalho
+    table.insert(codigo, "-- Código gerado pelo GUI Maker Pro")
+    table.insert(codigo, "-- By RealMidia0800")
+    table.insert(codigo, "")
+    table.insert(codigo, "local Players = game:GetService(\"Players\")")
+    table.insert(codigo, "local player = Players.LocalPlayer")
+    table.insert(codigo, "local playerGui = player:WaitForChild(\"PlayerGui\")")
+    table.insert(codigo, "")
+    table.insert(codigo, "local screenGui = Instance.new(\"ScreenGui\", playerGui)")
+    table.insert(codigo, "screenGui.Name = \"GeneratedGui\"")
+    table.insert(codigo, "screenGui.ResetOnSpawn = false")
+    table.insert(codigo, "")
+    table.insert(codigo, "local parent = screenGui")
+    table.insert(codigo, "")
+    
+    -- Elementos
+    for _, elemData in pairs(elementosCanvas) do
+        table.insert(codigo, gerarCodigoElemento(elemData.frame))
+    end
+    
+    -- Executar o código
+    local codigoCompleto = table.concat(codigo, "\n")
+    
+    local success, erro = pcall(function()
+        loadstring(codigoCompleto)()
+    end)
+    
+    if success then
+        mostrarNotificacao("✅ GUI executada com sucesso!", TEMAS[CONFIG.tema].success)
+        playSound("success")
+    else
+        mostrarNotificacao("❌ Erro ao executar: " .. tostring(erro), TEMAS[CONFIG.tema].error)
+        playSound("error")
+    end
+end
+
+function copiarCodigo()
+    local codigo = {}
+    
+    -- Cabeçalho
+    table.insert(codigo, "-- Código gerado pelo GUI Maker Pro")
+    table.insert(codigo, "-- By RealMidia0800")
+    table.insert(codigo, "")
+    table.insert(codigo, "local Players = game:GetService(\"Players\")")
+    table.insert(codigo, "local player = Players.LocalPlayer")
+    table.insert(codigo, "local playerGui = player:WaitForChild(\"PlayerGui\")")
+    table.insert(codigo, "")
+    table.insert(codigo, "local screenGui = Instance.new(\"ScreenGui\", playerGui)")
+    table.insert(codigo, "screenGui.Name = \"GeneratedGui\"")
+    table.insert(codigo, "screenGui.ResetOnSpawn = false")
+    table.insert(codigo, "")
+    table.insert(codigo, "local parent = screenGui")
+    table.insert(codigo, "")
+    
+    -- Elementos
+    for _, elemData in pairs(elementosCanvas) do
+        table.insert(codigo, gerarCodigoElemento(elemData.frame))
+    end
+    
+    local codigoCompleto = table.concat(codigo, "\n")
+    
+    -- Copiar para clipboard (simulado)
+    setclipboard(codigoCompleto)
+    mostrarNotificacao("📋 Código copiado para clipboard!", TEMAS[CONFIG.tema].success)
+    playSound("success")
+end
+
+-- ===== SISTEMA DE TEMAS =====
+
+function alternarTema()
+    local temas = {"Branco", "Preto", "Azul"}
+    local indiceAtual = 1
+    
+    for i, tema in ipairs(temas) do
+        if tema == CONFIG.tema then
+            indiceAtual = i
+            break
+        end
+    end
+    
+    local proximoIndice = (indiceAtual % #temas) + 1
+    CONFIG.tema = temas[proximoIndice]
+    
+    aplicarTema()
+    criarGrade()
+    
+    mostrarNotificacao("🎨 Tema alterado para: " .. CONFIG.tema, TEMAS[CONFIG.tema].accent)
+    playSound("success")
+end
+
+-- ===== MENU PRINCIPAL =====
+
+local function criarMenuPrincipal()
+    local menuFrame = Instance.new("Frame", screenGui)
+    menuFrame.Size = UDim2.new(0.8, 0, 0.6, 0)
+    menuFrame.Position = UDim2.new(0.1, 0, 0.2, 0)
+    menuFrame.BackgroundColor3 = TEMAS[CONFIG.tema].bg
+    menuFrame.BorderSizePixel = 0
+    menuFrame.ZIndex = 5
+    
+    local cornerMenu = Instance.new("UICorner", menuFrame)
+    cornerMenu.CornerRadius = UDim.new(0, 15)
+    
+    -- Título
+    local titulo = Instance.new("TextLabel", menuFrame)
+    titulo.Size = UDim2.new(1, 0, 0.2, 0)
+    titulo.BackgroundTransparency = 1
+    titulo.Text = "🎨 GUI Maker Advanced Pro"
+    titulo.TextColor3 = TEMAS[CONFIG.tema].txt
+    titulo.Font = Enum.Font.GothamBold
+    titulo.TextSize = 24
+    titulo.ZIndex = 6
+    
+    -- Subtítulo
+    local subtitulo = Instance.new("TextLabel", menuFrame)
+    subtitulo.Size = UDim2.new(1, 0, 0.1, 0)
+    subtitulo.Position = UDim2.new(0, 0, 0.2, 0)
+    subtitulo.BackgroundTransparency = 1
+    subtitulo.Text = "By RealMidia0800 - Sistema Completo de Criação de GUI"
+    subtitulo.TextColor3 = TEMAS[CONFIG.tema].txtSecundario
+    subtitulo.Font = Enum.Font.Gotham
+    subtitulo.TextSize = 14
+    subtitulo.ZIndex = 6
+    
+    -- Botão para abrir editor
+    local botaoAbrir = Instance.new("TextButton", menuFrame)
+    botaoAbrir.Size = UDim2.new(0.6, 0, 0.15, 0)
+    botaoAbrir.Position = UDim2.new(0.2, 0, 0.4, 0)
+    botaoAbrir.BackgroundColor3 = TEMAS[CONFIG.tema].accent
+    botaoAbrir.Text = "🚀 Abrir Editor"
+    botaoAbrir.TextColor3 = TEMAS[CONFIG.tema].bg
+    botaoAbrir.Font = Enum.Font.GothamBold
+    botaoAbrir.TextSize = 18
+    botaoAbrir.BorderSizePixel = 0
+    botaoAbrir.ZIndex = 6
+    
+    local cornerBotao = Instance.new("UICorner", botaoAbrir)
+    cornerBotao.CornerRadius = UDim.new(0, 10)
+    
+    -- Efeitos do botão
+    botaoAbrir.MouseEnter:Connect(function()
+        criarAnimacao(botaoAbrir, {Size = UDim2.new(0.65, 0, 0.17, 0)}, 0.2)
+        playSound("hover")
+    end)
+    
+    botaoAbrir.MouseLeave:Connect(function()
+        criarAnimacao(botaoAbrir, {Size = UDim2.new(0.6, 0, 0.15, 0)}, 0.2)
+    end)
+    
+    botaoAbrir.MouseButton1Click:Connect(function()
+        playSound("click")
+        criarAnimacao(botaoAbrir, {Size = UDim2.new(0.55, 0, 0.13, 0)}, 0.1)
+        wait(0.1)
+        criarAnimacao(botaoAbrir, {Size = UDim2.new(0.6, 0, 0.15, 0)}, 0.1)
+        abrirMenu()
+        menuFrame:Destroy()
+    end)
+
+    -- Informações
+    local info = Instance.new("TextLabel", menuFrame)
+    info.Size = UDim2.new(1, 0, 0.2, 0)
+    info.Position = UDim2.new(0, 0, 0.7, 0)
+    info.BackgroundTransparency = 1
+    info.Text = "✨ Crie interfaces incríveis com facilidade!\n🎯 Arrastar e soltar • 🎨 Temas personalizados • 📱 Otimizado para mobile"
+    info.TextColor3 = TEMAS[CONFIG.tema].txtSecundario
+    info.Font = Enum.Font.Gotham
+    info.TextSize = 12
+    info.TextXAlignment = Enum.TextXAlignment.Center
+    info.TextYAlignment = Enum.TextYAlignment.Center
+    info.ZIndex = 6
+    
+    -- Animação de entrada
+    menuFrame.Size = UDim2.new(0, 0, 0, 0)
+    menuFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    criarAnimacao(menuFrame, {
+        Size = UDim2.new(0.8, 0, 0.6, 0),
+        Position = UDim2.new(0.1, 0, 0.2, 0)
+    }, 0.5)
+end
+
+-- ===== SISTEMA DE ATALHOS =====
+
+local function configurarAtalhos()
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        
+        if input.KeyCode == Enum.KeyCode.Delete and elementoSelecionado then
+            -- Deletar elemento selecionado
+            for i, elemData in ipairs(elementosCanvas) do
+                if elemData.frame == elementoSelecionado then
+                    elemData.frame:Destroy()
+                    table.remove(elementosCanvas, i)
+                    break
+                end
+            end
+            
+            -- Limpar seleção
+            elementoSelecionado = nil
+            for _, child in pairs(canvasFrame:GetChildren()) do
+                if child.Name == "HighlightBorder" or child.Name == "SelectionHandle" then
+                    child:Destroy()
+                end
+            end
+            
+            atualizarPainelPropriedades(nil)
+            mostrarNotificacao("🗑️ Elemento deletado!", TEMAS[CONFIG.tema].error)
+            playSound("error")
+            
+        elseif input.KeyCode == Enum.KeyCode.R and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Executar código (Ctrl+R)
+            gerarCodigo()
+            
+        elseif input.KeyCode == Enum.KeyCode.C and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Copiar código (Ctrl+C)
+            copiarCodigo()
+            
+        elseif input.KeyCode == Enum.KeyCode.T and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Alterar tema (Ctrl+T)
+            alternarTema()
+            
+        elseif input.KeyCode == Enum.KeyCode.G and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Alternar grade (Ctrl+G)
+            CONFIG.grade = not CONFIG.grade
+            criarGrade()
+            mostrarNotificacao("📐 Grade " .. (CONFIG.grade and "ativada" or "desativada"), TEMAS[CONFIG.tema].accent)
+            playSound("success")
+            
+        elseif input.KeyCode == Enum.KeyCode.S and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Salvar projeto (Ctrl+S)
+            salvarProjeto()
+            
+        elseif input.KeyCode == Enum.KeyCode.O and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Abrir projeto (Ctrl+O)
+            carregarProjeto()
+            
+        elseif input.KeyCode == Enum.KeyCode.N and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Novo projeto (Ctrl+N)
+            novoProjeto()
+        end
+    end)
+end
+
+-- ===== SISTEMA DE TEMPLATES =====
+
+local TEMPLATES = {
+    {
+        nome = "Login Screen",
+        icone = "🔐",
+        elementos = {
+            {
+                tipo = "Frame",
+                nome = "LoginFrame",
+                propriedades = {
+                    Size = UDim2.new(0.8, 0, 0.6, 0),
+                    Position = UDim2.new(0.1, 0, 0.2, 0),
+                    BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+                    BorderSizePixel = 0
+                }
+            },
+            {
+                tipo = "TextLabel",
+                nome = "TitleLabel",
+                propriedades = {
+                    Size = UDim2.new(1, 0, 0.2, 0),
+                    Position = UDim2.new(0, 0, 0.1, 0),
+                    BackgroundTransparency = 1,
+                    Text = "Login",
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    Font = Enum.Font.GothamBold,
+                    TextSize = 24
+                }
+            },
+            {
+                tipo = "TextBox",
+                nome = "UsernameBox",
+                propriedades = {
+                    Size = UDim2.new(0.8, 0, 0.15, 0),
+                    Position = UDim2.new(0.1, 0, 0.35, 0),
+                    BackgroundColor3 = Color3.fromRGB(45, 45, 45),
+                    BorderSizePixel = 0,
+                    PlaceholderText = "Username",
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    Font = Enum.Font.Gotham,
+                    TextSize = 14
+                }
+            },
+            {
+                tipo = "TextBox",
+                nome = "PasswordBox",
+                propriedades = {
+                    Size = UDim2.new(0.8, 0, 0.15, 0),
+                    Position = UDim2.new(0.1, 0, 0.55, 0),
+                    BackgroundColor3 = Color3.fromRGB(45, 45, 45),
+                    BorderSizePixel = 0,
+                    PlaceholderText = "Password",
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    Font = Enum.Font.Gotham,
+                    TextSize = 14
+                }
+            },
+            {
+                tipo = "TextButton",
+                nome = "LoginButton",
+                propriedades = {
+                    Size = UDim2.new(0.8, 0, 0.12, 0),
+                    Position = UDim2.new(0.1, 0, 0.75, 0),
+                    BackgroundColor3 = Color3.fromRGB(0, 120, 215),
+                    BorderSizePixel = 0,
+                    Text = "Login",
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    Font = Enum.Font.GothamBold,
+                    TextSize = 16
+                }
+            }
+        }
+    },
+    {
+        nome = "Main Menu",
+        icone = "🏠",
+        elementos = {
+            {
+                tipo = "Frame",
+                nome = "MenuFrame",
+                propriedades = {
+                    Size = UDim2.new(1, 0, 0.1, 0),
+                    Position = UDim2.new(0, 0, 0, 0),
+                    BackgroundColor3 = Color3.fromRGB(25, 25, 25),
+                    BorderSizePixel = 0
+                }
+            },
+            {
+                tipo = "TextLabel",
+                nome = "TitleLabel",
+                propriedades = {
+                    Size = UDim2.new(0.5, 0, 1, 0),
+                    Position = UDim2.new(0.02, 0, 0, 0),
+                    BackgroundTransparency = 1,
+                    Text = "Main Menu",
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    Font = Enum.Font.GothamBold,
+                    TextSize = 20,
+                    TextXAlignment = Enum.TextXAlignment.Left
+                }
+            },
+            {
+                tipo = "TextButton",
+                nome = "Button1",
+                propriedades = {
+                    Size = UDim2.new(0.2, 0, 0.6, 0),
+                    Position = UDim2.new(0.1, 0, 0.2, 0),
+                    BackgroundColor3 = Color3.fromRGB(0, 162, 232),
+                    BorderSizePixel = 0,
+                    Text = "Play",
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    Font = Enum.Font.GothamBold,
+                    TextSize = 16
+                }
+            },
+            {
+                tipo = "TextButton",
+                nome = "Button2",
+                propriedades = {
+                    Size = UDim2.new(0.2, 0, 0.6, 0),
+                    Position = UDim2.new(0.35, 0, 0.2, 0),
+                    BackgroundColor3 = Color3.fromRGB(34, 139, 34),
+                    BorderSizePixel = 0,
+                    Text = "Settings",
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    Font = Enum.Font.GothamBold,
+                    TextSize = 16
+                }
+            },
+            {
+                tipo = "TextButton",
+                nome = "Button3",
+                propriedades = {
+                    Size = UDim2.new(0.2, 0, 0.6, 0),
+                    Position = UDim2.new(0.6, 0, 0.2, 0),
+                    BackgroundColor3 = Color3.fromRGB(220, 20, 60),
+                    BorderSizePixel = 0,
+                    Text = "Exit",
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    Font = Enum.Font.GothamBold,
+                    TextSize = 16
+                }
+            }
+        }
+    },
+    {
+        nome = "Inventory",
+        icone = "🎒",
+        elementos = {
+            {
+                tipo = "Frame",
+                nome = "InventoryFrame",
+                propriedades = {
+                    Size = UDim2.new(0.9, 0, 0.8, 0),
+                    Position = UDim2.new(0.05, 0, 0.1, 0),
+                    BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+                    BorderSizePixel = 0
+                }
+            },
+            {
+                tipo = "TextLabel",
+                nome = "InventoryTitle",
+                propriedades = {
+                    Size = UDim2.new(1, 0, 0.1, 0),
+                    Position = UDim2.new(0, 0, 0, 0),
+                    BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+                    BorderSizePixel = 0,
+                    Text = "Inventory",
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    Font = Enum.Font.GothamBold,
+                    TextSize = 20
+                }
+            },
+            {
+                tipo = "Frame",
+                nome = "ItemSlot1",
+                propriedades = {
+                    Size = UDim2.new(0.18, 0, 0.25, 0),
+                    Position = UDim2.new(0.05, 0, 0.15, 0),
+                    BackgroundColor3 = Color3.fromRGB(60, 60, 60),
+                    BorderSizePixel = 1,
+                    BorderColor3 = Color3.fromRGB(100, 100, 100)
+                }
+            },
+            {
+                tipo = "Frame",
+                nome = "ItemSlot2",
+                propriedades = {
+                    Size = UDim2.new(0.18, 0, 0.25, 0),
+                    Position = UDim2.new(0.26, 0, 0.15, 0),
+                    BackgroundColor3 = Color3.fromRGB(60, 60, 60),
+                    BorderSizePixel = 1,
+                    BorderColor3 = Color3.fromRGB(100, 100, 100)
+                }
+            },
+            {
+                tipo = "Frame",
+                nome = "ItemSlot3",
+                propriedades = {
+                    Size = UDim2.new(0.18, 0, 0.25, 0),
+                    Position = UDim2.new(0.47, 0, 0.15, 0),
+                    BackgroundColor3 = Color3.fromRGB(60, 60, 60),
+                    BorderSizePixel = 1,
+                    BorderColor3 = Color3.fromRGB(100, 100, 100)
+                }
+            },
+            {
+                tipo = "Frame",
+                nome = "ItemSlot4",
+                propriedades = {
+                    Size = UDim2.new(0.18, 0, 0.25, 0),
+                    Position = UDim2.new(0.68, 0, 0.15, 0),
+                    BackgroundColor3 = Color3.fromRGB(60, 60, 60),
+                    BorderSizePixel = 1,
+                    BorderColor3 = Color3.fromRGB(100, 100, 100)
+                }
+            }
+        }
+    },
+    {
+        nome = "Settings Panel",
+        icone = "⚙️",
+        elementos = {
+            {
+                tipo = "Frame",
+                nome = "SettingsFrame",
+                propriedades = {
+                    Size = UDim2.new(0.7, 0, 0.8, 0),
+                    Position = UDim2.new(0.15, 0, 0.1, 0),
+                    BackgroundColor3 = Color3.fromRGB(35, 35, 35),
+                    BorderSizePixel = 0
+                }
+            },
+            {
+                tipo = "TextLabel",
+                nome = "SettingsTitle",
+                propriedades = {
+                    Size = UDim2.new(1, 0, 0.12, 0),
+                    Position = UDim2.new(0, 0, 0, 0),
+                    BackgroundColor3 = Color3.fromRGB(25, 25, 25),
+                    BorderSizePixel = 0,
+                    Text = "Settings",
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    Font = Enum.Font.GothamBold,
+                    TextSize = 22
+                }
+            },
+            {
+                tipo = "TextLabel",
+                nome = "VolumeLabel",
+                propriedades = {
+                    Size = UDim2.new(0.3, 0, 0.08, 0),
+                    Position = UDim2.new(0.05, 0, 0.2, 0),
+                    BackgroundTransparency = 1,
+                    Text = "Volume:",
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    Font = Enum.Font.Gotham,
+                    TextSize = 16,
+                    TextXAlignment = Enum.TextXAlignment.Left
+                }
+            },
+            {
+                tipo = "TextButton",
+                nome = "VolumeSlider",
+                propriedades = {
+                    Size = UDim2.new(0.5, 0, 0.06, 0),
+                    Position = UDim2.new(0.4, 0, 0.205, 0),
+                    BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+                    BorderSizePixel = 0,
+                    Text = "50%",
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    Font = Enum.Font.Gotham,
+                    TextSize = 14
+                }
+            },
+            {
+                tipo = "TextLabel",
+                nome = "GraphicsLabel",
+                propriedades = {
+                    Size = UDim2.new(0.3, 0, 0.08, 0),
+                    Position = UDim2.new(0.05, 0, 0.35, 0),
+                    BackgroundTransparency = 1,
+                    Text = "Graphics:",
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    Font = Enum.Font.Gotham,
+                    TextSize = 16,
+                    TextXAlignment = Enum.TextXAlignment.Left
+                }
+            },
+            {
+                tipo = "TextButton",
+                nome = "GraphicsButton",
+                propriedades = {
+                    Size = UDim2.new(0.5, 0, 0.06, 0),
+                    Position = UDim2.new(0.4, 0, 0.355, 0),
+                    BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+                    BorderSizePixel = 0,
+                    Text = "High",
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    Font = Enum.Font.Gotham,
+                    TextSize = 14
+                }
+            },
+            {
+                tipo = "TextButton",
+                nome = "ApplyButton",
+                propriedades = {
+                    Size = UDim2.new(0.3, 0, 0.1, 0),
+                    Position = UDim2.new(0.35, 0, 0.8, 0),
+                    BackgroundColor3 = Color3.fromRGB(0, 162, 232),
+                    BorderSizePixel = 0,
+                    Text = "Apply",
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    Font = Enum.Font.GothamBold,
+                    TextSize = 16
+                }
+            }
+        }
+    }
+}
+
+local function criarPainelTemplates()
+    local templateFrame = Instance.new("Frame", scrollComponentes)
+    templateFrame.Size = UDim2.new(1, -10, 0, 40)
+    templateFrame.BackgroundColor3 = TEMAS[CONFIG.tema].bgSecundario
+    templateFrame.BorderSizePixel = 0
+    templateFrame.ZIndex = 11
+    
+    local cornerTemplate = Instance.new("UICorner", templateFrame)
+    cornerTemplate.CornerRadius = UDim.new(0, 8)
+    
+    local titleTemplate = Instance.new("TextLabel", templateFrame)
+    titleTemplate.Size = UDim2.new(1, 0, 1, 0)
+    titleTemplate.BackgroundTransparency = 1
+    titleTemplate.Text = "📋 TEMPLATES"
+    titleTemplate.TextColor3 = TEMAS[CONFIG.tema].txt
+    titleTemplate.Font = Enum.Font.GothamBold
+    titleTemplate.TextSize = 16
+    titleTemplate.ZIndex = 12
+    
+    -- Criar botões de template
+    for i, template in ipairs(TEMPLATES) do
+        local botaoTemplate = Instance.new("TextButton", scrollComponentes)
+        botaoTemplate.Size = UDim2.new(1, -10, 0, 50)
+        botaoTemplate.BackgroundColor3 = TEMAS[CONFIG.tema].bgTerciario
+        botaoTemplate.BorderSizePixel = 0
+        botaoTemplate.Text = template.icone .. " " .. template.nome
+        botaoTemplate.TextColor3 = TEMAS[CONFIG.tema].txt
+        botaoTemplate.Font = Enum.Font.Gotham
+        botaoTemplate.TextSize = 14
+        botaoTemplate.ZIndex = 11
+        
+        local cornerBotao = Instance.new("UICorner", botaoTemplate)
+        cornerBotao.CornerRadius = UDim.new(0, 6)
+        
+        -- Efeitos hover
+        botaoTemplate.MouseEnter:Connect(function()
+            criarAnimacao(botaoTemplate, {BackgroundColor3 = TEMAS[CONFIG.tema].accent}, 0.2)
+            criarAnimacao(botaoTemplate, {TextColor3 = TEMAS[CONFIG.tema].bg}, 0.2)
+            playSound("hover")
+        end)
+        
+        botaoTemplate.MouseLeave:Connect(function()
+            criarAnimacao(botaoTemplate, {BackgroundColor3 = TEMAS[CONFIG.tema].bgTerciario}, 0.2)
+            criarAnimacao(botaoTemplate, {TextColor3 = TEMAS[CONFIG.tema].txt}, 0.2)
+        end)
+        
+        -- Evento de clique
+        botaoTemplate.MouseButton1Click:Connect(function()
+            playSound("click")
+            
+            -- Limpar canvas
+            novoProjeto()
+            
+            -- Criar elementos do template
+            for _, elemData in ipairs(template.elementos) do
+                local elemento = Instance.new(elemData.tipo, canvasFrame)
+                elemento.Name = elemData.nome
+                elemento.ZIndex = 50
+                
+                -- Aplicar propriedades
+                for prop, valor in pairs(elemData.propriedades) do
+                    elemento[prop] = valor
+                end
+                
+                -- Adicionar corner radius se necessário
+                if elemData.tipo == "Frame" or elemData.tipo == "TextButton" or elemData.tipo == "TextBox" then
+                    local corner = Instance.new("UICorner", elemento)
+                    corner.CornerRadius = UDim.new(0, 8)
+                end
+                
+                -- Configurar interações
+                elemento.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+                       input.UserInputType == Enum.UserInputType.Touch then
+                        
+                        if not redimensionandoElemento then
+                            selecionarElemento(elemento)
+                            -- Adicionar lógica de arrastar aqui...
+                        end
+                    end
+                end)
+                
+                -- Adicionar à lista
+                table.insert(elementosCanvas, {
+                    frame = elemento,
+                    tipo = elemData.tipo,
+                    propriedades = elemData.propriedades
+                })
+            end
+            
+            mostrarNotificacao("✅ Template " .. template.nome .. " aplicado!", TEMAS[CONFIG.tema].success)
+        end)
+    end
+end
+
+-- ===== SISTEMA DE EXPORTAÇÃO =====
+
+local function exportarProjeto()
+    local dadosExportacao = {
+        nome = "Projeto_" .. os.date("%Y%m%d_%H%M%S"),
+        versao = "1.0",
+        tema = CONFIG.tema,
+        elementos = {}
+    }
+    
+    -- Exportar elementos
+    for _, elemData in pairs(elementosCanvas) do
+        local elemento = elemData.frame
+        local dadosElemento = {
+            tipo = elemento.ClassName,
+            nome = elemento.Name,
+            propriedades = {
+                Size = {elemento.Size.X.Scale, elemento.Size.X.Offset, elemento.Size.Y.Scale, elemento.Size.Y.Offset},
+                Position = {elemento.Position.X.Scale, elemento.Position.X.Offset, elemento.Position.Y.Scale, elemento.Position.Y.Offset},
+                BackgroundColor3 = {elemento.BackgroundColor3.R, elemento.BackgroundColor3.G, elemento.BackgroundColor3.B},
+                BackgroundTransparency = elemento.BackgroundTransparency,
+                BorderSizePixel = elemento.BorderSizePixel
+            }
+        }
+        
+        -- Propriedades específicas
+        if elemento:IsA("TextLabel") or elemento:IsA("TextButton") or elemento:IsA("TextBox") then
+            dadosElemento.propriedades.Text = elemento.Text
+            dadosElemento.propriedades.TextColor3 = {elemento.TextColor3.R, elemento.TextColor3.G, elemento.TextColor3.B}
+            dadosElemento.propriedades.TextSize = elemento.TextSize
+            dadosElemento.propriedades.Font = tostring(elemento.Font)
+        end
+        
+        if elemento:IsA("TextBox") then
+            dadosElemento.propriedades.PlaceholderText = elemento.PlaceholderText
+        end
+        
+        if elemento:IsA("ImageLabel") or elemento:IsA("ImageButton") then
+            dadosElemento.propriedades.Image = elemento.Image
+        end
+        
+        table.insert(dadosExportacao.elementos, dadosElemento)
+    end
+    
+    -- Converter para JSON (simulado)
+    local jsonData = game:GetService("HttpService"):JSONEncode(dadosExportacao)
+    
+    -- Salvar no clipboard
+    setclipboard(jsonData)
+    
+    mostrarNotificacao("📤 Projeto exportado para clipboard!", TEMAS[CONFIG.tema].success)
+    playSound("success")
+end
+
+local function importarProjeto()
+    -- Simulação de importação
+    local success, dadosImportacao = pcall(function()
+        local clipboard = getclipboard()
+        return game:GetService("HttpService"):JSONDecode(clipboard)
+    end)
+    
+    if not success then
+        mostrarNotificacao("❌ Erro ao importar projeto!", TEMAS[CONFIG.tema].error)
+        playSound("error")
+        return
+    end
+    
+    -- Limpar canvas
+    novoProjeto()
+    
+    -- Aplicar tema
+    if dadosImportacao.tema then
+        CONFIG.tema = dadosImportacao.tema
+        aplicarTema()
+    end
+    
+    -- Criar elementos
+    for _, elemData in ipairs(dadosImportacao.elementos) do
+        local elemento = Instance.new(elemData.tipo, canvasFrame)
+        elemento.Name = elemData.nome
+        elemento.ZIndex = 50
+        
+        -- Aplicar propriedades
+        local props = elemData.propriedades
+        if props.Size then
+            elemento.Size = UDim2.new(props.Size[1], props.Size[2], props.Size[3], props.Size[4])
+        end
+        if props.Position then
+            elemento.Position = UDim2.new(props.Position[1], props.Position[2], props.Position[3], props.Position[4])
+        end
+        if props.BackgroundColor3 then
+            elemento.BackgroundColor3 = Color3.new(props.BackgroundColor3[1], props.BackgroundColor3[2], props.BackgroundColor3[3])
+        end
+        if props.BackgroundTransparency then
+            elemento.BackgroundTransparency = props.BackgroundTransparency
+        end
+        if props.BorderSizePixel then
+            elemento.BorderSizePixel = props.BorderSizePixel
+        end
+        if props.Text then
+            elemento.Text = props.Text
+        end
+        if props.TextColor3 then
+            elemento.TextColor3 = Color3.new(props.TextColor3[1], props.TextColor3[2], props.TextColor3[3])
+        end
+        if props.TextSize then
+            elemento.TextSize = props.TextSize
+        end
+        if props.PlaceholderText then
+            elemento.PlaceholderText = props.PlaceholderText
+        end
+        if props.Image then
+            elemento.Image = props.Image
+        end
+        
+        -- Adicionar corner radius
+        if elemData.tipo == "Frame" or elemData.tipo == "TextButton" or elemData.tipo == "TextBox" then
+            local corner = Instance.new("UICorner", elemento)
+            corner.CornerRadius = UDim.new(0, 8)
+        end
+        
+        -- Configurar interações
+        elemento.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+               input.UserInputType == Enum.UserInputType.Touch then
+                
+                if not redimensionandoElemento then
+                    selecionarElemento(elemento)
+                    -- Adicionar lógica de arrastar...
+                end
+            end
+        end)
+        
+        -- Adicionar à lista
+        table.insert(elementosCanvas, {
+            frame = elemento,
+            tipo = elemData.tipo,
+            propriedades = props
+        })
+    end
+    
+    mostrarNotificacao("📥 Projeto importado com sucesso!", TEMAS[CONFIG.tema].success)
+    playSound("success")
+end
+
+-- ===== SISTEMA DE LAYERS =====
+
+local function criarPainelLayers()
+    local layerFrame = Instance.new("Frame", scrollComponentes)
+    layerFrame.Size = UDim2.new(1, -10, 0, 40)
+    layerFrame.BackgroundColor3 = TEMAS[CONFIG.tema].bgSecundario
+    layerFrame.BorderSizePixel = 0
+    layerFrame.ZIndex = 11
+    
+    local cornerLayer = Instance.new("UICorner", layerFrame)
+    cornerLayer.CornerRadius = UDim.new(0, 8)
+    
+    local titleLayer = Instance.new("TextLabel", layerFrame)
+    titleLayer.Size = UDim2.new(1, 0, 1, 0)
+    titleLayer.BackgroundTransparency = 1
+    titleLayer.Text = "🧱 LAYERS"
+    titleLayer.TextColor3 = TEMAS[CONFIG.tema].txt
+    titleLayer.Font = Enum.Font.GothamBold
+    titleLayer.TextSize = 16
+    titleLayer.ZIndex = 12
+    
+    -- Lista de elementos
+    for i, elemData in ipairs(elementosCanvas) do
+        local layerItem = Instance.new("TextButton", scrollComponentes)
+        layerItem.Size = UDim2.new(1, -10, 0, 35)
+        layerItem.BackgroundColor3 = TEMAS[CONFIG.tema].bgTerciario
+        layerItem.BorderSizePixel = 0
+        layerItem.Text = elemData.tipo .. " - " .. elemData.frame.Name
+        layerItem.TextColor3 = TEMAS[CONFIG.tema].txt
+        layerItem.Font = Enum.Font.Gotham
+        layerItem.TextSize = 12
+        layerItem.ZIndex = 11
+        layerItem.TextXAlignment = Enum.TextXAlignment.Left
+        
+        local cornerLayerItem = Instance.new("UICorner", layerItem)
+        cornerLayerItem.CornerRadius = UDim.new(0, 6)
+        
+        -- Botões de controle
+        local upButton = Instance.new("TextButton", layerItem)
+        upButton.Size = UDim2.new(0, 20, 0, 15)
+        upButton.Position = UDim2.new(1, -70, 0.1, 0)
+        upButton.BackgroundColor3 = TEMAS[CONFIG.tema].accent
+        upButton.BorderSizePixel = 0
+        upButton.Text = "↑"
+        upButton.TextColor3 = TEMAS[CONFIG.tema].bg
+        upButton.Font = Enum.Font.GothamBold
+        upButton.TextSize = 12
+        upButton.ZIndex = 12
+        
+        local downButton = Instance.new("TextButton", layerItem)
+        downButton.Size = UDim2.new(0, 20, 0, 15)
+        downButton.Position = UDim2.new(1, -45, 0.1, 0)
+        downButton.BackgroundColor3 = TEMAS[CONFIG.tema].accent
+        downButton.BorderSizePixel = 0
+        downButton.Text = "↓"
+        downButton.TextColor3 = TEMAS[CONFIG.tema].bg
+        downButton.Font = Enum.Font.GothamBold
+        downButton.TextSize = 12
+        downButton.ZIndex = 12
+        
+        local deleteButton = Instance.new("TextButton", layerItem)
+        deleteButton.Size = UDim2.new(0, 20, 0, 15)
+        deleteButton.Position = UDim2.new(1, -20, 0.1, 0)
+        deleteButton.BackgroundColor3 = TEMAS[CONFIG.tema].error
+        deleteButton.BorderSizePixel = 0
+        deleteButton.Text = "✕"
+        deleteButton.TextColor3 = TEMAS[CONFIG.tema].bg
+        deleteButton.Font = Enum.Font.GothamBold
+        deleteButton.TextSize = 12
+        deleteButton.ZIndex = 12
+        
+        -- Eventos
+        layerItem.MouseButton1Click:Connect(function()
+            selecionarElemento(elemData.frame)
+            playSound("click")
+        end)
+        
+        upButton.MouseButton1Click:Connect(function()
+            if i > 1 then
+                elemData.frame.ZIndex = elemData.frame.ZIndex + 1
+                mostrarNotificacao("📤 Layer movido para cima", TEMAS[CONFIG.tema].success)
+                playSound("success")
+            end
+        end)
+        
+        downButton.MouseButton1Click:Connect(function()
+            if i < #elementosCanvas then
+                elemData.frame.ZIndex = elemData.frame.ZIndex - 1
+                mostrarNotificacao("📥 Layer movido para baixo", TEMAS[CONFIG.tema].success)
+                playSound("success")
+            end
+        end)
+        
+        deleteButton.MouseButton1Click:Connect(function()
+            elemData.frame:Destroy()
+            table.remove(elementosCanvas, i)
+            mostrarNotificacao("🗑️ Elemento deletado", TEMAS[CONFIG.tema].error)
+            playSound("error")
+            atualizarComponentes()
+        end)
+    end
+end
+
+-- ===== SISTEMA DE ANIMAÇÕES AVANÇADAS =====
+
+local function criarPainelAnimacoes()
+    local animFrame = Instance.new("Frame", scrollComponentes)
+    animFrame.Size = UDim2.new(1, -10, 0, 40)
+    animFrame.BackgroundColor3 = TEMAS[CONFIG.tema].bgSecundario
+    animFrame.BorderSizePixel = 0
+    animFrame.ZIndex = 11
+    
+    local cornerAnim = Instance.new("UICorner", animFrame)
+    cornerAnim.CornerRadius = UDim.new(0, 8)
+    
+    local titleAnim = Instance.new("TextLabel", animFrame)
+    titleAnim.Size = UDim2.new(1, 0, 1, 0)
+    titleAnim.BackgroundTransparency = 1
+    titleAnim.Text = "✨ ANIMAÇÕES"
+    titleAnim.TextColor3 = TEMAS[CONFIG.tema].txt
+    titleAnim.Font = Enum.Font.GothamBold
+    titleAnim.TextSize = 16
+    titleAnim.ZIndex = 12
+    
+    local animacoes = {
+        {nome = "Fade In", icone = "📄", codigo = "elemento.BackgroundTransparency = 1\ncriarAnimacao(elemento, {BackgroundTransparency = 0}, 0.5)"},
+        {nome = "Slide Up", icone = "📈", codigo = "elemento.Position = elemento.Position + UDim2.new(0, 0, 0, 50)\ncriarAnimacao(elemento, {Position = elemento.Position - UDim2.new(0, 0, 0, 50)}, 0.5)"},
+        {nome = "Scale In", icone = "🔍", codigo = "elemento.Size = UDim2.new(0, 0, 0, 0)\ncriarAnimacao(elemento, {Size = UDim2.new(0.2, 0, 0.1, 0)}, 0.5)"},
+        {nome = "Bounce", icone = "🏀", codigo = "criarAnimacao(elemento, {Size = elemento.Size * 1.1}, 0.2)\nwait(0.2)\ncriarAnimacao(elemento, {Size = elemento.Size / 1.1}, 0.2)"},
+        {nome = "Pulse", icone = "💓", codigo = "for i = 1, 3 do\n    criarAnimacao(elemento, {BackgroundColor3 = Color3.new(1, 1, 1)}, 0.1)\n    wait(0.1)\n    criarAnimacao(elemento, {BackgroundColor3 = Color3.new(0.5, 0.5, 0.5)}, 0.1)\n    wait(0.1)\nend"},
+        {nome = "Rotate", icone = "🔄", codigo = "criarAnimacao(elemento, {Rotation = 360}, 1.0)"}
+    }
+    
+    for _, anim in ipairs(animacoes) do
+        local botaoAnim = Instance.new("TextButton", scrollComponentes)
+        botaoAnim.Size = UDim2.new(1, -10, 0, 35)
+        botaoAnim.BackgroundColor3 = TEMAS[CONFIG.tema].bgTerciario
+        botaoAnim.BorderSizePixel = 0
+        botaoAnim.Text = anim.icone .. " " .. anim.nome
+        botaoAnim.TextColor3 = TEMAS[CONFIG.tema].txt
+        botaoAnim.Font = Enum.Font.Gotham
+        botaoAnim.TextSize = 14
+        botaoAnim.ZIndex = 11
+        
+        local cornerBotaoAnim = Instance.new("UICorner", botaoAnim)
+        cornerBotaoAnim.CornerRadius = UDim.new(0, 6)
+        
+        botaoAnim.MouseEnter:Connect(function()
+            criarAnimacao(botaoAnim, {BackgroundColor3 = TEMAS[CONFIG.tema].accent}, 0.2)
+            playSound("hover")
+        end)
+        
+        botaoAnim.MouseLeave:Connect(function()
+            criarAnimacao(botaoAnim, {BackgroundColor3 = TEMAS[CONFIG.tema].bgTerciario}, 0.2)
+        end)
+        
+        botaoAnim.MouseButton1Click:Connect(function()
+            if elementoSelecionado then
+                -- Aplicar animação
+                local elemento = elementoSelecionado
+                local codigo = anim.codigo:gsub("elemento", "elementoSelecionado")
+                
+                local success, erro = pcall(function()
+                    loadstring(codigo)()
+                end)
+                
+                if success then
+                    mostrarNotificacao("✨ Animação " .. anim.nome .. " aplicada!", TEMAS[CONFIG.tema].success)
+                    playSound("success")
+                else
+                    mostrarNotificacao("❌ Erro ao aplicar animação!", TEMAS[CONFIG.tema].error)
+                    playSound("error")
+                end
+            else
+                mostrarNotificacao("⚠️ Selecione um elemento primeiro!", TEMAS[CONFIG.tema].warning)
+                playSound("warning")
+            end
+        end)
+    end
+end
+
+-- ===== SISTEMA DE FERRAMENTAS AVANÇADAS =====
+
+local function criarFerramentasAvancadas()
+    local ferrFrame = Instance.new("Frame", scrollComponentes)
+    ferrFrame.Size = UDim2.new(1, -10, 0, 40)
+    ferrFrame.BackgroundColor3 = TEMAS[CONFIG.tema].bgSecundario
+    ferrFrame.BorderSizePixel = 0
+    ferrFrame.ZIndex = 11
+    
+    local cornerFerr = Instance.new("UICorner", ferrFrame)
+    cornerFerr.CornerRadius = UDim.new(0, 8)
+    
+    local titleFerr = Instance.new("TextLabel", ferrFrame)
+    titleFerr.Size = UDim2.new(1, 0, 1, 0)
+    titleFerr.BackgroundTransparency = 1
+    titleFerr.Text = "🔧 FERRAMENTAS"
+    titleFerr.TextColor3 = TEMAS[CONFIG.tema].txt
+    titleFerr.Font = Enum.Font.GothamBold
+    titleFerr.TextSize = 16
+    titleFerr.ZIndex = 12
+    
+    local ferramentas = {
+        {nome = "Alinhar Esquerda", icone = "⬅️", funcao = function()
+            if elementoSelecionado then
+                criarAnimacao(elementoSelecionado, {Position = UDim2.new(0, 0, elementoSelecionado.Position.Y.Scale, elementoSelecionado.Position.Y.Offset)}, 0.3)
+            end
+        end},
+        {nome = "Alinhar Centro", icone = "📍", funcao = function()
+            if elementoSelecionado then
+                criarAnimacao(elementoSelecionado, {Position = UDim2.new(0.5, -elementoSelecionado.AbsoluteSize.X/2, elementoSelecionado.Position.Y.Scale, elementoSelecionado.Position.Y.Offset)}, 0.3)
+            end
+        end},
+        {nome = "Alinhar Direita", icone = "➡️", funcao = function()
+            if elementoSelecionado then
+                criarAnimacao(elementoSelecionado, {Position = UDim2.new(1, -elementoSelecionado.AbsoluteSize.X, elementoSelecionado.Position.Y.Scale, elementoSelecionado.Position.Y.Offset)}, 0.3)
+            end
+        end},
+        {nome = "Duplicar", icone = "📋", funcao = function()
+            if elementoSelecionado then
+                local clone = elementoSelecionado:Clone()
+                clone.Parent = canvasFrame
+                clone.Position = elementoSelecionado.Position + UDim2.new(0, 20, 0, 20)
+                clone.ZIndex = 50
+                
+                -- Adicionar à lista
+                table.insert(elementosCanvas, {
+                    frame = clone,
+                    tipo = clone.ClassName,
+                    propriedades = {}
+                })
+                
+                selecionarElemento(clone)
+                mostrarNotificacao("📋 Elemento duplicado!", TEMAS[CONFIG.tema].success)
+            end
+        end},
+        {nome = "Enviar para Frente", icone = "📤", funcao = function()
+            if elementoSelecionado then
+                elementoSelecionado.ZIndex = elementoSelecionado.ZIndex + 10
+                mostrarNotificacao("📤 Elemento enviado para frente!", TEMAS[CONFIG.tema].success)
+            end
+        end},
+        {nome = "Enviar para Trás", icone = "📥", funcao = function()
+            if elementoSelecionado then
+                elementoSelecionado.ZIndex = math.max(50, elementoSelecionado.ZIndex - 10)
+                mostrarNotificacao("📥 Elemento enviado para trás!", TEMAS[CONFIG.tema].success)
+            end
+        end}
+    }
+    
+    for _, ferr in ipairs(ferramentas) do
+        local botaoFerr = Instance.new("TextButton", scrollComponentes)
+        botaoFerr.Size = UDim2.new(1, -10, 0, 35)
+        botaoFerr.BackgroundColor3 = TEMAS[CONFIG.tema].bgTerciario
+        botaoFerr.BorderSizePixel = 0
+        botaoFerr.Text = ferr.icone .. " " .. ferr.nome
+        botaoFerr.TextColor3 = TEMAS[CONFIG.tema].txt
+        botaoFerr.Font = Enum.Font.Gotham
+        botaoFerr.TextSize = 14
+        botaoFerr.ZIndex = 11
+        
+        local cornerBotaoFerr = Instance.new("UICorner", botaoFerr)
+        cornerBotaoFerr.CornerRadius = UDim.new(0, 6)
+        
+        botaoFerr.MouseEnter:Connect(function()
+            criarAnimacao(botaoFerr, {BackgroundColor3 = TEMAS[CONFIG.tema].accent}, 0.2)
+            playSound("hover")
+        end)
+        
+        botaoFerr.MouseLeave:Connect(function()
+            criarAnimacao(botaoFerr, {BackgroundColor3 = TEMAS[CONFIG.tema].bgTerciario}, 0.2)
+        end)
+        
+        botaoFerr.MouseButton1Click:Connect(function()
+            if elementoSelecionado then
+                ferr.funcao()
+                playSound("success")
+            else
+                mostrarNotificacao("⚠️ Selecione um elemento primeiro!", TEMAS[CONFIG.tema].warning)
+                playSound("warning")
+            end
+        end)
+    end
+end
+
+-- ===== SISTEMA DE BACKUP AUTOMÁTICO =====
+
+local function sistemaBackup()
+    spawn(function()
+        while true do
+            wait(60) -- Backup a cada 60 segundos
+            
+            if #elementosCanvas > 0 then
+                local backup = {
+                    timestamp = tick(),
+                    elementos = elementosCanvas,
+                    tema = CONFIG.tema
+                }
+                
+                -- Salvar backup (simulado)
+                CONFIG.backup = backup
+                
+                -- Mostrar notificação discreta
+                local notif = Instance.new("Frame", gui)
+                notif.Size = UDim2.new(0, 200, 0, 30)
+                notif.Position = UDim2.new(1, -210, 0, 10)
+                notif.BackgroundColor3 = TEMAS[CONFIG.tema].success
+                notif.BorderSizePixel = 0
+                notif.ZIndex = 999
+                
+                local corner = Instance.new("UICorner", notif)
+                corner.CornerRadius = UDim.new(0, 8)
+                
+                local texto = Instance.new("TextLabel", notif)
+                texto.Size = UDim2.new(1, 0, 1, 0)
+                texto.BackgroundTransparency = 1
+                texto.Text = "💾 Backup automático realizado"
+                texto.TextColor3 = TEMAS[CONFIG.tema].bg
+                texto.Font = Enum.Font.Gotham
+                texto.TextSize = 12
+                texto.ZIndex = 1000
+                
+                -- Animação de entrada
+                notif.Size = UDim2.new(0, 0, 0, 0)
+                criarAnimacao(notif, {Size = UDim2.new(0, 200, 0, 30)}, 0.3)
+                
+                -- Remover após 3 segundos
+                wait(3)
+                criarAnimacao(notif, {Size = UDim2.new(0, 0, 0, 0)}, 0.3)
+                wait(0.3)
+                notif:Destroy()
+            end
+        end
+    end)
+end
+
+-- ===== SISTEMA DE HISTÓRICO =====
+
+local historico = {}
+local indiceHistorico = 0
+
+local function adicionarAoHistorico(acao)
+    -- Remover ações futuras se estivermos no meio do histórico
+    for i = indiceHistorico + 1, #historico do
+        table.remove(historico, i)
+    end
+    
+    -- Adicionar nova ação
+    table.insert(historico, {
+        acao = acao,
+        timestamp = tick(),
+        elementosState = {}
+    })
+    
+    -- Copiar estado atual dos elementos
+    for i, elem in ipairs(elementosCanvas) do
+        historico[#historico].elementosState[i] = {
+            frame = elem.frame:Clone(),
+            tipo = elem.tipo,
+            propriedades = elem.propriedades
+        }
+    end
+    
+    indiceHistorico = #historico
+    
+    -- Limitar tamanho do histórico
+    if #historico > 50 then
+        table.remove(historico, 1)
+        indiceHistorico = indiceHistorico - 1
+    end
+end
+
+local function desfazer()
+    if indiceHistorico > 1 then
+        indiceHistorico = indiceHistorico - 1
+        local estado = historico[indiceHistorico]
+        
+        -- Limpar canvas
+        for _, elem in ipairs(elementosCanvas) do
+            elem.frame:Destroy()
+        end
+        elementosCanvas = {}
+        
+        -- Restaurar estado
+        for _, elemState in ipairs(estado.elementosState) do
+            local novoElemento = elemState.frame:Clone()
+            novoElemento.Parent = canvasFrame
+            novoElemento.ZIndex = 50
+            
+            table.insert(elementosCanvas, {
+                frame = novoElemento,
+                tipo = elemState.tipo,
+                propriedades = elemState.propriedades
+            })
+        end
+        
+        mostrarNotificacao("↶ Ação desfeita", TEMAS[CONFIG.tema].success)
+        playSound("success")
+    else
+        mostrarNotificacao("⚠️ Nenhuma ação para desfazer", TEMAS[CONFIG.tema].warning)
+        playSound("warning")
+    end
+end
+
+local function refazer()
+    if indiceHistorico < #historico then
+        indiceHistorico = indiceHistorico + 1
+        local estado = historico[indiceHistorico]
+        
+        -- Limpar canvas
+        for _, elem in ipairs(elementosCanvas) do
+            elem.frame:Destroy()
+        end
+        elementosCanvas = {}
+        
+        -- Restaurar estado
+        for _, elemState in ipairs(estado.elementosState) do
+            local novoElemento = elemState.frame:Clone()
+            novoElemento.Parent = canvasFrame
+            novoElemento.ZIndex = 50
+            
+            table.insert(elementosCanvas, {
+                frame = novoElemento,
+                tipo = elemState.tipo,
+                propriedades = elemState.propriedades
+            })
+        end
+        
+        mostrarNotificacao("↷ Ação refeita", TEMAS[CONFIG.tema].success)
+        playSound("success")
+    else
+        mostrarNotificacao("⚠️ Nenhuma ação para refazer", TEMAS[CONFIG.tema].warning)
+        playSound("warning")
+    end
+end
+
+-- ===== FINALIZAÇÃO E INICIALIZAÇÃO =====
+
+local function inicializarSistema()
+    -- Criar interface principal
+    criarInterface()
+    
+    -- Configurar atalhos
+    configurarAtalhos()
+    
+    -- Aplicar tema inicial
+    aplicarTema()
+    
+    -- Criar grade inicial
+    criarGrade()
+    
+    -- Inicializar sistema de backup
+    sistemaBackup()
+    
+    -- Criar componentes avançados
+    criarPainelTemplates()
+    criarPainelLayers()
+    criarPainelAnimacoes()
+    criarFerramentasAvancadas()
+    
+    -- Adicionar estado inicial ao histórico
+    adicionarAoHistorico("Inicialização")
+    
+    -- Mostrar mensagem de boas-vindas
+    wait(1)
+    mostrarNotificacao("🎉 GUI Maker Advanced Pro carregado!", TEMAS[CONFIG.tema].success)
+    playSound("success")
+    
+    -- Animação de entrada do menu
+    criarMenuInicial()
+    
+    print("GUI Maker Advanced Pro - Versão 2.0")
+    print("Por RealMidia0800")
+    print("Sistema completo de criação de interfaces para mobile")
+    print("Recursos: Arrastar e Soltar, Templates, Animações, Temas, Backup Automático")
+    print("Atalhos: Ctrl+R (Executar), Ctrl+C (Copiar), Ctrl+T (Tema), Ctrl+G (Grade)")
+    print("Atalhos: Ctrl+S (Salvar), Ctrl+O (Abrir), Ctrl+N (Novo), Delete (Deletar)")
+    print("Atalhos: Ctrl+Z (Desfazer), Ctrl+Y (Refazer)")
+end
+
+-- ===== ATUALIZAÇÃO DA FUNÇÃO DE ATALHOS =====
+
+local function configurarAtalhos()
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        
+        if input.KeyCode == Enum.KeyCode.Delete and elementoSelecionado then
+            -- Deletar elemento selecionado
+            adicionarAoHistorico("Deletar elemento")
+            for i, elemData in ipairs(elementosCanvas) do
+                if elemData.frame == elementoSelecionado then
+                    elemData.frame:Destroy()
+                    table.remove(elementosCanvas, i)
+                    break
+                end
+            end
+            
+            -- Limpar seleção
+            elementoSelecionado = nil
+            for _, child in pairs(canvasFrame:GetChildren()) do
+                if child.Name == "HighlightBorder" or child.Name == "SelectionHandle" then
+                    child:Destroy()
+                end
+            end
+            
+            atualizarPainelPropriedades(nil)
+            mostrarNotificacao("🗑️ Elemento deletado!", TEMAS[CONFIG.tema].error)
+            playSound("error")
+            
+        elseif input.KeyCode == Enum.KeyCode.R and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Executar código (Ctrl+R)
+            gerarCodigo()
+            
+        elseif input.KeyCode == Enum.KeyCode.C and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Copiar código (Ctrl+C)
+            copiarCodigo()
+            
+        elseif input.KeyCode == Enum.KeyCode.T and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Alterar tema (Ctrl+T)
+            alternarTema()
+            
+        elseif input.KeyCode == Enum.KeyCode.G and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Alternar grade (Ctrl+G)
+            CONFIG.grade = not CONFIG.grade
+            criarGrade()
+            mostrarNotificacao("📐 Grade " .. (CONFIG.grade and "ativada" or "desativada"), TEMAS[CONFIG.tema].accent)
+            playSound("success")
+            
+        elseif input.KeyCode == Enum.KeyCode.S and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Salvar projeto (Ctrl+S)
+            salvarProjeto()
+            
+        elseif input.KeyCode == Enum.KeyCode.O and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Abrir projeto (Ctrl+O)
+            carregarProjeto()
+            
+        elseif input.KeyCode == Enum.KeyCode.N and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Novo projeto (Ctrl+N)
+            novoProjeto()
+            
+        elseif input.KeyCode == Enum.KeyCode.Z and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Desfazer (Ctrl+Z)
+            desfazer()
+            
+        elseif input.KeyCode == Enum.KeyCode.Y and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Refazer (Ctrl+Y)
+            refazer()
+            
+        elseif input.KeyCode == Enum.KeyCode.E and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Exportar projeto (Ctrl+E)
+            exportarProjeto()
+            
+        elseif input.KeyCode == Enum.KeyCode.I and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            -- Importar projeto (Ctrl+I)
+            importarProjeto()
+        end
+    end)
+end
+
+-- ===== INICIALIZAÇÃO FINAL =====
+
+-- Inicializar o sistema
+inicializarSistema()
+
+-- Mensagem final
+print("✅ GUI Maker Advanced Pro inicializado com sucesso!")
+print("📱 Sistema otimizado para dispositivos móveis")
+print("🎨 Interface moderna e intuitiva")
+print("⚡ Performance otimizada")
+print("🔧 Recursos profissionais")
+print("💾 Backup automático ativo")
+print("🌟 Pronto para criar interfaces incríveis!")
