@@ -1,106 +1,101 @@
--- Script criado por RealMidia0800
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 local slidRemote = ReplicatedStorage:WaitForChild("SlidRemote")
-
--- Configurações
+ 
 local animationId = "rbxassetid://28442712"
-local duracaoAnimacao = 1.2
-local slideDistance = 20
-local slideDuration = 1
-
-local function criarAnimacaoEslide(humanoid)
-    if not humanoid or not humanoid.Parent then return end
-
-    local character = humanoid.Parent
-    local torso = character:FindFirstChild("Torso")
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
-    if not torso or not rootPart then return end
-
-    local leftHip = torso:FindFirstChild("Left Hip")
-    local rightHip = torso:FindFirstChild("Right Hip")
-    local leftShoulder = torso:FindFirstChild("Left Shoulder")
-    local rightShoulder = torso:FindFirstChild("Right Shoulder")
-    local neck = torso:FindFirstChild("Neck")
-    local rootJoint = rootPart:FindFirstChild("RootJoint")
-
-    if not (leftHip and rightHip and leftShoulder and rightShoulder and neck and rootJoint) then return end
-
-    local originalC0 = {
-        leftHip = leftHip.C0,
-        rightHip = rightHip.C0,
-        leftShoulder = leftShoulder.C0,
-        rightShoulder = rightShoulder.C0,
-        neck = neck.C0,
-        rootJoint = rootJoint.C0
-    }
-
-    local pose = {
-        rootJoint = originalC0.rootJoint * CFrame.new(0, 0, -2) * CFrame.Angles(math.rad(-70), 0, 0),
-        leftHip = originalC0.leftHip * CFrame.new(-0.4, 0, 0),
-        rightHip = originalC0.rightHip * CFrame.new(1, 0, 0) * CFrame.Angles(0, 0, -0.5),
-        leftShoulder = originalC0.leftShoulder * CFrame.Angles(0, 0, math.rad(100)),
-        rightShoulder = originalC0.rightShoulder * CFrame.Angles(0, math.rad(40), math.rad(50)),
-        neck = originalC0.neck * CFrame.Angles(math.rad(45), 0, 0)
-    }
-
-    local tweenInfo = TweenInfo.new(duracaoAnimacao * 0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tweens = {
-        TweenService:Create(rootJoint, tweenInfo, {C0 = pose.rootJoint}),
-        TweenService:Create(leftHip, tweenInfo, {C0 = pose.leftHip}),
-        TweenService:Create(rightHip, tweenInfo, {C0 = pose.rightHip}),
-        TweenService:Create(leftShoulder, tweenInfo, {C0 = pose.leftShoulder}),
-        TweenService:Create(rightShoulder, tweenInfo, {C0 = pose.rightShoulder}),
-        TweenService:Create(neck, tweenInfo, {C0 = pose.neck})
-    }
-
-    local animation = Instance.new("Animation")
-    animation.AnimationId = animationId
-
-    local animTrack = humanoid:LoadAnimation(animation)
-    animTrack:Play()
-
-    for _, tween in ipairs(tweens) do
-        tween:Play()
+local duracao, slideDist = 1.2, 20
+local velocidadeMult = 2 -- 1 = normal, 2 = dobro da velocidade
+ 
+local emUso = {}
+ 
+local jointsNomes = {"Left Hip", "Right Hip", "Left Shoulder", "Right Shoulder", "Neck", "RootJoint"}
+ 
+local function getJoints(char)
+    local t = {}
+    for _, nome in ipairs(jointsNomes) do
+        t[nome] = (nome == "RootJoint") and char:FindFirstChild("HumanoidRootPart"):FindFirstChild(nome) or char:FindFirstChild("Torso"):FindFirstChild(nome)
+        if not t[nome] then return nil end
     end
-
-    local slideGoal = rootPart.Position + rootPart.CFrame.LookVector * slideDistance
-    local goalCFrame = CFrame.new(slideGoal, slideGoal + rootPart.CFrame.LookVector)
-
-    local slideTween = TweenService:Create(rootPart, TweenInfo.new(slideDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-        CFrame = goalCFrame
-    })
-    slideTween:Play()
-
-    task.wait(duracaoAnimacao * 0.6)
-
-    local tweenInfoVolta = TweenInfo.new(duracaoAnimacao * 0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tweensVolta = {
-        TweenService:Create(rootJoint, tweenInfoVolta, {C0 = originalC0.rootJoint}),
-        TweenService:Create(leftHip, tweenInfoVolta, {C0 = originalC0.leftHip}),
-        TweenService:Create(rightHip, tweenInfoVolta, {C0 = originalC0.rightHip}),
-        TweenService:Create(leftShoulder, tweenInfoVolta, {C0 = originalC0.leftShoulder}),
-        TweenService:Create(rightShoulder, tweenInfoVolta, {C0 = originalC0.rightShoulder}),
-        TweenService:Create(neck, tweenInfoVolta, {C0 = originalC0.neck})
-    }
-
-    for _, tween in ipairs(tweensVolta) do
-        tween:Play()
-    end
-
-    task.wait(duracaoAnimacao * 0.2)
-
-    animTrack:Stop()
-    animTrack:Destroy()
+    return t
 end
-
+ 
+local function tweenJoints(joints, metas, tempo)
+    for nome, joint in pairs(joints) do
+        local tween = game:GetService("TweenService"):Create(joint, TweenInfo.new(tempo, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        C0 = metas[nome]
+        })
+        tween:Play()
+    end
+end
+ 
+local function animar(humanoid, player)
+    if emUso[player] then return end
+    emUso[player] = true
+    
+    local char = humanoid.Parent
+    if not (char and char:FindFirstChild("Torso") and char:FindFirstChild("HumanoidRootPart")) then
+        emUso[player] = nil
+        return
+    end
+    
+    local joints = getJoints(char)
+    if not joints then emUso[player] = nil return end
+    
+    local original = {}
+    for nome, j in pairs(joints) do original[nome] = j.C0 end
+    local oldSpeed = humanoid.WalkSpeed
+    humanoid.WalkSpeed = 0
+    
+    local pose = {
+    ["RootJoint"] = original.RootJoint * CFrame.new(0,0,-2) * CFrame.Angles(math.rad(-70),0,0),
+    ["Left Hip"] = original["Left Hip"] * CFrame.new(-0.2,0,0),
+    ["Right Hip"] = original["Right Hip"] * CFrame.new(1,0,0) * CFrame.Angles(0,0,-0.5),
+    ["Left Shoulder"] = original["Left Shoulder"] * CFrame.Angles(0,0,math.rad(100)),
+    ["Right Shoulder"] = original["Right Shoulder"] * CFrame.Angles(0,math.rad(40),math.rad(50)),
+    ["Neck"] = original["Neck"] * CFrame.Angles(math.rad(45),0,0)
+    }
+    
+    -- Carrega e toca a animação
+    local anim = Instance.new("Animation")
+    anim.AnimationId = animationId
+    local track = humanoid:LoadAnimation(anim)
+    track:Play()
+    
+    tweenJoints(joints, pose, duracao * 0.3)
+    
+    -- Aplicar BodyVelocity para o slide que atualiza com a direção do personagem
+    local root = char.HumanoidRootPart
+    local bv = Instance.new("BodyVelocity")
+    bv.MaxForce = Vector3.new(1e5, 0, 1e5)
+    bv.Parent = root
+    
+    local tempoSlide = duracao * 0.7
+    local tempoDecorrido = 0
+    local conn
+    conn = RunService.Heartbeat:Connect(function(deltaTime)
+        tempoDecorrido = tempoDecorrido + deltaTime
+        bv.Velocity = root.CFrame.LookVector * (slideDist / duracao) * velocidadeMult
+        
+        if tempoDecorrido >= tempoSlide then
+            conn:Disconnect()
+        end
+    end)
+    
+    task.wait(tempoSlide)
+    
+    bv:Destroy()
+    
+    tweenJoints(joints, original, duracao * 0.3)
+    
+    task.wait(duracao * 0.3)
+    track:Stop()
+    track:Destroy()
+    humanoid.WalkSpeed = oldSpeed
+    emUso[player] = nil
+end
+ 
 slidRemote.OnServerEvent:Connect(function(player)
-    local character = player.Character
-    if not character then return end
-
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if not humanoid then return end
-
-    criarAnimacaoEslide(humanoid)
+    local char = player.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then animar(hum, player) end
 end)
