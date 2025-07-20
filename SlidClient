@@ -1,0 +1,10 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local button = script.Parent
+local slidRemote = ReplicatedStorage:WaitForChild("SlidRemote")
+
+button.MouseButton1Click:Connect(function()
+    slidRemote:FireServer() -- pede para o servidor fazer a animação + slide
+end)
