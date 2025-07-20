@@ -1,0 +1,212 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+
+local slidRemote = ReplicatedStorage:WaitForChild("DashRemote")
+
+-- Configurações
+local duracao = 1
+local velocidadeSlide = 40
+local danoSlide = 10
+local tempoStun = 1
+local distanciaHit = 8
+local emUso = {}
+local playersStunados = {}
+
+local somSlideId = "rbxassetid://84199646791291"
+local somHitId = "rbxassetid://72142112079276"
+
+local juntasNomes = {"Left Hip", "Right Hip", "Left Shoulder", "Right Shoulder", "Neck", "RootJoint"}
+
+local function pegarJuntas(personagem)
+    local juntas = {}
+    for _, nome in ipairs(juntasNomes) do
+        if nome == "RootJoint" then
+            juntas[nome] = personagem.HumanoidRootPart:FindFirstChild(nome)
+        else
+            juntas[nome] = personagem.Torso:FindFirstChild(nome)
+        end
+        if not juntas[nome] then return nil end
+    end
+    return juntas
+end
+
+local function animarJuntas(juntas, metas, tempo)
+    for nome, junta in pairs(juntas) do
+        local tween = TweenService:Create(junta, TweenInfo.new(tempo, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        C0 = metas[nome]
+        })
+        tween:Play()
+    end
+end
+
+local function stunarPlayer(targetPlayer, targetHumanoid)
+    if playersStunados[targetPlayer] then return end
+    playersStunados[targetPlayer] = true
+    local velocidadeOriginal = targetHumanoid.WalkSpeed
+    local jumpOriginal = targetHumanoid.JumpPower
+    targetHumanoid.WalkSpeed = 0
+    targetHumanoid.JumpPower = 0
+    if targetHumanoid.Health > danoSlide then
+        targetHumanoid.Health = targetHumanoid.Health - danoSlide
+    end
+    local hrp = targetHumanoid.Parent:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        local somHit = Instance.new("Sound")
+        somHit.SoundId = somHitId
+        somHit.Volume = 1
+        somHit.PlayOnRemove = true
+        somHit.Parent = hrp
+        somHit:Destroy()
+    end
+    task.wait(tempoStun)
+    if targetHumanoid and targetHumanoid.Parent then
+        targetHumanoid.WalkSpeed = velocidadeOriginal
+        targetHumanoid.JumpPower = jumpOriginal
+    end
+    playersStunados[targetPlayer] = nil
+end
+
+local function verificarHit(playerAtacante, rootAtacante)
+    for _, outroPlayer in pairs(Players:GetPlayers()) do
+        if outroPlayer ~= playerAtacante and outroPlayer.Character then
+            local outroRoot = outroPlayer.Character:FindFirstChild("HumanoidRootPart")
+            local outroHumanoid = outroPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if outroRoot and outroHumanoid and outroHumanoid.Health > 0 then
+                local distancia = (rootAtacante.Position - outroRoot.Position).Magnitude
+                if distancia <= distanciaHit then
+                    spawn(function()
+                        stunarPlayer(outroPlayer, outroHumanoid)
+                    end)
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+local function animarSlide(humanoid, player)
+    if emUso[player] then return end
+    emUso[player] = true
+    local char = humanoid.Parent
+    if not (char and char:FindFirstChild("Torso") and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Right Arm")) then
+        emUso[player] = nil
+        return
+    end
+    local rightArm = char:FindFirstChild("Right Arm")
+    local att0 = Instance.new("Attachment")
+    local att1 = Instance.new("Attachment")
+    att0.Position = Vector3.new(0, -0.25, 0)
+    att1.Position = Vector3.new(0, -1, 0)
+    att0.Parent = rightArm
+    att1.Parent = rightArm
+    local trail = Instance.new("Trail")
+    trail.Attachment0 = att0
+    trail.Attachment1 = att1
+    trail.Color = ColorSequence.new(Color3.new(1, 1, 1))
+    trail.Lifetime = 0.3
+    trail.MinLength = 0.1
+    trail.Transparency = NumberSequence.new(0.2)
+    trail.LightEmission = 1
+    trail.Parent = rightArm
+    trail.Enabled = true
+    local juntas = pegarJuntas(char)
+    if not juntas then
+        trail:Destroy()
+        att0:Destroy()
+        att1:Destroy()
+        emUso[player] = nil
+        return
+    end
+    local originais = {}
+    for nome, junta in pairs(juntas) do
+        originais[nome] = junta.C0
+    end
+    local poseSlide = {
+        ["RootJoint"] = originais.RootJoint * CFrame.Angles(math.rad(25), 0, 0),
+        ["Left Hip"] = originais["Left Hip"] * CFrame.new(-0.5, 0, 0) * CFrame.Angles(0, 0, math.rad(10)),
+        ["Right Hip"] = originais["Right Hip"] * CFrame.new(-0.3, -0.1, 0) * CFrame.Angles(math.rad(-10), 0.2, math.rad(-40)),
+        ["Left Shoulder"] = originais["Left Shoulder"] * CFrame.Angles(-0.1, -0.200, math.rad(-95)),
+        ["Right Shoulder"] = originais["Right Shoulder"] * CFrame.new(-0.5, 0, -0.2) * CFrame.Angles(math.rad(10), 5.5, math.rad(90)),
+        ["Neck"] = originais["Neck"]
+    }
+    local anim = Instance.new("Animation")
+    anim.AnimationId = "rbxassetid://28442712"
+    local track = humanoid:LoadAnimation(anim)
+    track:Play()
+    animarJuntas(juntas, poseSlide, duracao * 0.4)
+    local root = char:FindFirstChild("HumanoidRootPart")
+    local somSlide = Instance.new("Sound")
+    somSlide.SoundId = somSlideId
+    somSlide.Volume = 2
+    somSlide.PlayOnRemove = true
+    somSlide.Parent = root
+    somSlide:Destroy()
+    local direcao = humanoid.MoveDirection
+    if direcao.Magnitude < 0.1 then
+        direcao = root.CFrame.LookVector
+    end
+    local bv = Instance.new("BodyVelocity")
+    bv.Velocity = direcao.Unit * velocidadeSlide
+    bv.MaxForce = Vector3.new(1e5, 0, 1e5)
+    bv.P = 2000
+    bv.Parent = root
+    local gyro = Instance.new("BodyGyro")
+    gyro.MaxTorque = Vector3.new(0, math.huge, 0)
+    gyro.P = 5000
+    gyro.CFrame = CFrame.new(Vector3.zero, direcao)
+    gyro.Parent = root
+    local slideParado = false
+    local conn
+    conn = RunService.Heartbeat:Connect(function()
+        if slideParado or not root or not bv or not gyro or not humanoid then
+            if conn then conn:Disconnect() end
+            return
+        end
+        if verificarHit(player, root) then
+            slideParado = true
+            if bv then bv:Destroy() end
+            if gyro then gyro:Destroy() end
+            animarJuntas(juntas, originais, 0.25)
+            task.wait(0.25)
+            track:Stop()
+            track:Destroy()
+            trail:Destroy()
+            att0:Destroy()
+            att1:Destroy()
+            emUso[player] = nil
+            conn:Disconnect()
+            return
+        end
+        local novaDirecao = humanoid.MoveDirection
+        if novaDirecao.Magnitude > 0.1 then
+            bv.Velocity = novaDirecao.Unit * velocidadeSlide
+            gyro.CFrame = CFrame.new(Vector3.zero, novaDirecao)
+        end
+    end)
+    task.wait(duracao)
+    slideParado = true
+    if bv then bv:Destroy() end
+    if gyro then gyro:Destroy() end
+    animarJuntas(juntas, originais, 0.25)
+    task.wait(0.25)
+    track:Stop()
+    track:Destroy()
+    trail:Destroy()
+    att0:Destroy()
+    att1:Destroy()
+    emUso[player] = nil
+    if conn then conn:Disconnect() end
+end
+
+slidRemote.OnServerEvent:Connect(function(player)
+    local char = player.Character
+    local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        spawn(function()
+            animarSlide(humanoid, player)
+        end)
+    end
+end)
