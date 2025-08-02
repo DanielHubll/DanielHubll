@@ -1,71 +1,135 @@
--- VMax Pro UI Library - Versão 1
--- Super completa, responsiva, estilosa, com sistemas de botão, toggle, slider, dropdown, textbox e keybind
+-- VMax Pro UI Library - Versão 2.0
+-- Super completa, responsiva, estilosa, com sistemas avançados
+-- Novos componentes: LoadString Executor, Color Picker, Progress Bar, Image Button, Notification System
 
 local VMaxPro = {}
 
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+
+-- Sistema de Notificações
+local NotificationContainer = nil
 
 function VMaxPro:CreateWindow(title)
 	local ScreenGui = Instance.new("ScreenGui", game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"))
 	ScreenGui.Name = "VMaxProUI"
 	ScreenGui.ResetOnSpawn = false
 
+	-- Container para notificações
+	NotificationContainer = Instance.new("Frame", ScreenGui)
+	NotificationContainer.Name = "Notifications"
+	NotificationContainer.Size = UDim2.new(0, 300, 1, 0)
+	NotificationContainer.Position = UDim2.new(1, -320, 0, 20)
+	NotificationContainer.BackgroundTransparency = 1
+	
+	local NotifLayout = Instance.new("UIListLayout", NotificationContainer)
+	NotifLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	NotifLayout.Padding = UDim.new(0, 10)
+	NotifLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+
 	local Main = Instance.new("Frame", ScreenGui)
-	Main.Size = UDim2.new(0, 450, 0, 320)
-	Main.Position = UDim2.new(0.5, -225, 0.5, -160)
+	Main.Size = UDim2.new(0, 520, 0, 380)
+	Main.Position = UDim2.new(0.5, -260, 0.5, -190)
 	Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 	Main.AnchorPoint = Vector2.new(0.5, 0.5)
 	Main.Active = true
 	Main.Draggable = true
 
 	local UICorner = Instance.new("UICorner", Main)
-	UICorner.CornerRadius = UDim.new(0, 8)
+	UICorner.CornerRadius = UDim.new(0, 12)
+
+	-- Borda brilhante
+	local Border = Instance.new("UIStroke", Main)
+	Border.Color = Color3.fromRGB(0, 255, 200)
+	Border.Thickness = 2
+	Border.Transparency = 0.7
 
 	local Title = Instance.new("TextLabel", Main)
-	Title.Size = UDim2.new(1, 0, 0, 40)
-	Title.Text = "VMax Pro - " .. title
+	Title.Size = UDim2.new(1, 0, 0, 45)
+	Title.Text = "🚀 VMax Pro - " .. title
 	Title.TextColor3 = Color3.new(1, 1, 1)
 	Title.BackgroundTransparency = 1
 	Title.Font = Enum.Font.GothamBold
-	Title.TextSize = 18
+	Title.TextSize = 20
+
+	-- Botão de fechar
+	local CloseBtn = Instance.new("TextButton", Main)
+	CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+	CloseBtn.Position = UDim2.new(1, -35, 0, 7)
+	CloseBtn.Text = "✕"
+	CloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+	CloseBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	CloseBtn.Font = Enum.Font.GothamBold
+	CloseBtn.TextSize = 16
+	Instance.new("UICorner", CloseBtn)
+	CloseBtn.MouseButton1Click:Connect(function()
+		ScreenGui:Destroy()
+	end)
 
 	local TabButtons = Instance.new("Frame", Main)
-	TabButtons.Size = UDim2.new(0, 120, 1, -40)
-	TabButtons.Position = UDim2.new(0, 0, 0, 40)
+	TabButtons.Size = UDim2.new(0, 140, 1, -45)
+	TabButtons.Position = UDim2.new(0, 5, 0, 45)
 	TabButtons.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	Instance.new("UICorner", TabButtons)
+	local TabCorner = Instance.new("UICorner", TabButtons)
+	TabCorner.CornerRadius = UDim.new(0, 8)
 
 	local Tabs = Instance.new("Folder", Main)
 	Tabs.Name = "Tabs"
 
 	local UIList = Instance.new("UIListLayout", TabButtons)
 	UIList.SortOrder = Enum.SortOrder.LayoutOrder
-	UIList.Padding = UDim.new(0, 6)
+	UIList.Padding = UDim.new(0, 8)
+	
+	local UIPadding = Instance.new("UIPadding", TabButtons)
+	UIPadding.PaddingAll = UDim.new(0, 8)
 
-	function VMaxPro:CreateTab(tabName)
+	function VMaxPro:CreateTab(tabName, icon)
 		local tabButton = Instance.new("TextButton", TabButtons)
-		tabButton.Size = UDim2.new(1, -10, 0, 32)
-		tabButton.Text = tabName
-		tabButton.Font = Enum.Font.Gotham
-		tabButton.TextColor3 = Color3.new(1, 1, 1)
+		tabButton.Size = UDim2.new(1, 0, 0, 35)
+		tabButton.Text = (icon or "📁") .. " " .. tabName
+		tabButton.Font = Enum.Font.GothamBold
+		tabButton.TextColor3 = Color3.new(0.8, 0.8, 0.8)
 		tabButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-		Instance.new("UICorner", tabButton)
+		tabButton.TextSize = 14
+		local tabCorner = Instance.new("UICorner", tabButton)
+		tabCorner.CornerRadius = UDim.new(0, 6)
 
 		local tabFrame = Instance.new("ScrollingFrame", Tabs)
 		tabFrame.Name = tabName
 		tabFrame.Visible = false
-		tabFrame.Size = UDim2.new(1, -130, 1, -50)
-		tabFrame.Position = UDim2.new(0, 130, 0, 45)
+		tabFrame.Size = UDim2.new(1, -155, 1, -55)
+		tabFrame.Position = UDim2.new(0, 150, 0, 50)
 		tabFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-		tabFrame.ScrollBarThickness = 4
+		tabFrame.ScrollBarThickness = 6
 		tabFrame.BackgroundTransparency = 1
+		tabFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 200)
 
 		local layout = Instance.new("UIListLayout", tabFrame)
 		layout.SortOrder = Enum.SortOrder.LayoutOrder
-		layout.Padding = UDim.new(0, 6)
+		layout.Padding = UDim.new(0, 8)
+		
+		local padding = Instance.new("UIPadding", tabFrame)
+		padding.PaddingAll = UDim.new(0, 8)
+
+		-- Auto-resize canvas
+		layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			tabFrame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 16)
+		end)
 
 		tabButton.MouseButton1Click:Connect(function()
+			-- Reset all tab buttons
+			for _, btn in pairs(TabButtons:GetChildren()) do
+				if btn:IsA("TextButton") then
+					btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+					btn.TextColor3 = Color3.new(0.8, 0.8, 0.8)
+				end
+			end
+			-- Highlight selected tab
+			tabButton.BackgroundColor3 = Color3.fromRGB(0, 255, 200)
+			tabButton.TextColor3 = Color3.new(0, 0, 0)
+			
+			-- Show/hide tabs
 			for _, v in pairs(Tabs:GetChildren()) do
 				if v:IsA("ScrollingFrame") then v.Visible = false end
 			end
@@ -78,54 +142,185 @@ function VMaxPro:CreateWindow(title)
 	return VMaxPro
 end
 
-function VMaxPro:CreateButton(tab, text, callback)
+-- Componente de Notificação
+function VMaxPro:CreateNotification(title, message, duration, type)
+	if not NotificationContainer then return end
+	
+	duration = duration or 3
+	type = type or "info" -- info, success, warning, error
+	
+	local colors = {
+		info = Color3.fromRGB(100, 150, 255),
+		success = Color3.fromRGB(100, 255, 150),
+		warning = Color3.fromRGB(255, 200, 100),
+		error = Color3.fromRGB(255, 100, 100)
+	}
+	
+	local icons = {
+		info = "ℹ️",
+		success = "✅",
+		warning = "⚠️",
+		error = "❌"
+	}
+
+	local notification = Instance.new("Frame", NotificationContainer)
+	notification.Size = UDim2.new(1, 0, 0, 80)
+	notification.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	notification.Position = UDim2.new(1, 0, 0, 0) -- Start off-screen
+	
+	local corner = Instance.new("UICorner", notification)
+	corner.CornerRadius = UDim.new(0, 8)
+	
+	local stroke = Instance.new("UIStroke", notification)
+	stroke.Color = colors[type]
+	stroke.Thickness = 2
+	
+	local iconLabel = Instance.new("TextLabel", notification)
+	iconLabel.Size = UDim2.new(0, 30, 1, 0)
+	iconLabel.Text = icons[type]
+	iconLabel.TextSize = 20
+	iconLabel.BackgroundTransparency = 1
+	iconLabel.TextColor3 = colors[type]
+	
+	local titleLabel = Instance.new("TextLabel", notification)
+	titleLabel.Size = UDim2.new(1, -40, 0, 25)
+	titleLabel.Position = UDim2.new(0, 35, 0, 10)
+	titleLabel.Text = title
+	titleLabel.Font = Enum.Font.GothamBold
+	titleLabel.TextSize = 16
+	titleLabel.TextColor3 = Color3.new(1, 1, 1)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local messageLabel = Instance.new("TextLabel", notification)
+	messageLabel.Size = UDim2.new(1, -40, 0, 35)
+	messageLabel.Position = UDim2.new(0, 35, 0, 35)
+	messageLabel.Text = message
+	messageLabel.Font = Enum.Font.Gotham
+	messageLabel.TextSize = 12
+	messageLabel.TextColor3 = Color3.new(0.8, 0.8, 0.8)
+	messageLabel.BackgroundTransparency = 1
+	messageLabel.TextXAlignment = Enum.TextXAlignment.Left
+	messageLabel.TextWrapped = true
+	
+	-- Animação de entrada
+	local tween = TweenService:Create(notification, TweenInfo.new(0.3), {Position = UDim2.new(0, 0, 0, 0)})
+	tween:Play()
+	
+	-- Auto-remove após duração
+	game:GetService("Debris"):AddItem(notification, duration + 0.5)
+	wait(duration)
+	
+	-- Animação de saída
+	local exitTween = TweenService:Create(notification, TweenInfo.new(0.3), {Position = UDim2.new(1, 0, 0, 0)})
+	exitTween:Play()
+end
+
+-- Botão normal
+function VMaxPro:CreateButton(tab, text, callback, icon)
 	local btn = Instance.new("TextButton", tab.Content)
-	btn.Size = UDim2.new(1, -10, 0, 32)
-	btn.Text = text
+	btn.Size = UDim2.new(1, 0, 0, 35)
+	btn.Text = (icon or "🔘") .. " " .. text
 	btn.Font = Enum.Font.GothamBold
 	btn.TextColor3 = Color3.new(1, 1, 1)
 	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-	Instance.new("UICorner", btn)
+	btn.TextSize = 14
+	local corner = Instance.new("UICorner", btn)
+	corner.CornerRadius = UDim.new(0, 6)
+	
+	-- Hover effect
+	btn.MouseEnter:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 60, 60)}):Play()
+	end)
+	btn.MouseLeave:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}):Play()
+	end)
+	
 	btn.MouseButton1Click:Connect(function()
 		pcall(callback)
 	end)
 end
 
-function VMaxPro:CreateToggle(tab, text, default, callback)
-	local toggle = Instance.new("TextButton", tab.Content)
-	toggle.Size = UDim2.new(1, -10, 0, 32)
-	toggle.Text = text .. ": " .. (default and "ON" or "OFF")
-	toggle.Font = Enum.Font.GothamBold
-	toggle.TextColor3 = Color3.new(1, 1, 1)
-	toggle.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-	Instance.new("UICorner", toggle)
+-- Toggle melhorado
+function VMaxPro:CreateToggle(tab, text, default, callback, icon)
+	local frame = Instance.new("Frame", tab.Content)
+	frame.Size = UDim2.new(1, 0, 0, 35)
+	frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	local frameCorner = Instance.new("UICorner", frame)
+	frameCorner.CornerRadius = UDim.new(0, 6)
+	
+	local label = Instance.new("TextLabel", frame)
+	label.Size = UDim2.new(1, -60, 1, 0)
+	label.Text = (icon or "🔧") .. " " .. text
+	label.Font = Enum.Font.GothamBold
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.BackgroundTransparency = 1
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextSize = 14
+	
+	local UIPadding = Instance.new("UIPadding", label)
+	UIPadding.PaddingLeft = UDim.new(0, 10)
+	
+	local toggleButton = Instance.new("TextButton", frame)
+	toggleButton.Size = UDim2.new(0, 45, 0, 20)
+	toggleButton.Position = UDim2.new(1, -50, 0.5, -10)
+	toggleButton.Text = ""
+	toggleButton.BackgroundColor3 = default and Color3.fromRGB(0, 255, 200) or Color3.fromRGB(60, 60, 60)
+	local toggleCorner = Instance.new("UICorner", toggleButton)
+	toggleCorner.CornerRadius = UDim.new(0, 10)
+	
+	local indicator = Instance.new("Frame", toggleButton)
+	indicator.Size = UDim2.new(0, 16, 0, 16)
+	indicator.Position = default and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+	indicator.BackgroundColor3 = Color3.new(1, 1, 1)
+	local indicatorCorner = Instance.new("UICorner", indicator)
+	indicatorCorner.CornerRadius = UDim.new(0, 8)
+	
 	local state = default
-	toggle.MouseButton1Click:Connect(function()
+	toggleButton.MouseButton1Click:Connect(function()
 		state = not state
-		toggle.Text = text .. ": " .. (state and "ON" or "OFF")
+		local color = state and Color3.fromRGB(0, 255, 200) or Color3.fromRGB(60, 60, 60)
+		local pos = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+		
+		TweenService:Create(toggleButton, TweenInfo.new(0.2), {BackgroundColor3 = color}):Play()
+		TweenService:Create(indicator, TweenInfo.new(0.2), {Position = pos}):Play()
+		
 		pcall(callback, state)
 	end)
 end
 
-function VMaxPro:CreateSlider(tab, text, min, max, default, callback)
+-- Slider melhorado
+function VMaxPro:CreateSlider(tab, text, min, max, default, callback, icon)
 	local frame = Instance.new("Frame", tab.Content)
-	frame.Size = UDim2.new(1, -10, 0, 38)
+	frame.Size = UDim2.new(1, 0, 0, 50)
 	frame.BackgroundTransparency = 1
 
 	local label = Instance.new("TextLabel", frame)
 	label.Size = UDim2.new(1, 0, 0, 20)
-	label.Text = text .. ": " .. tostring(default)
-	label.Font = Enum.Font.Gotham
+	label.Text = (icon or "🎚️") .. " " .. text .. ": " .. tostring(default)
+	label.Font = Enum.Font.GothamBold
 	label.TextSize = 14
 	label.TextColor3 = Color3.new(1, 1, 1)
 	label.BackgroundTransparency = 1
+	label.TextXAlignment = Enum.TextXAlignment.Left
 
-	local slider = Instance.new("TextButton", frame)
-	slider.Position = UDim2.new(0, 0, 0, 20)
-	slider.Size = UDim2.new(1, 0, 0, 14)
-	slider.BackgroundColor3 = Color3.fromRGB(0, 255, 200)
+	local sliderBg = Instance.new("Frame", frame)
+	sliderBg.Position = UDim2.new(0, 0, 0, 25)
+	sliderBg.Size = UDim2.new(1, 0, 0, 20)
+	sliderBg.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	local bgCorner = Instance.new("UICorner", sliderBg)
+	bgCorner.CornerRadius = UDim.new(0, 10)
+	
+	local sliderFill = Instance.new("Frame", sliderBg)
+	sliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+	sliderFill.BackgroundColor3 = Color3.fromRGB(0, 255, 200)
+	local fillCorner = Instance.new("UICorner", sliderFill)
+	fillCorner.CornerRadius = UDim.new(0, 10)
+
+	local slider = Instance.new("TextButton", sliderBg)
+	slider.Size = UDim2.new(1, 0, 1, 0)
+	slider.BackgroundTransparency = 1
 	slider.Text = ""
-	Instance.new("UICorner", slider)
 
 	local dragging = false
 	slider.InputBegan:Connect(function(input)
@@ -136,82 +331,148 @@ function VMaxPro:CreateSlider(tab, text, min, max, default, callback)
 	end)
 	UserInputService.InputChanged:Connect(function(input)
 		if dragging and input.Position then
-			local rel = (input.Position.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X
-			rel = math.clamp(rel, 0, 1)
+			local rel = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
 			local val = math.floor(((max - min) * rel + min) + 0.5)
-			label.Text = text .. ": " .. tostring(val)
+			label.Text = (icon or "🎚️") .. " " .. text .. ": " .. tostring(val)
+			TweenService:Create(sliderFill, TweenInfo.new(0.1), {Size = UDim2.new(rel, 0, 1, 0)}):Play()
 			pcall(callback, val)
 		end
 	end)
 end
 
-function VMaxPro:CreateDropdown(tab, text, options, callback)
+-- Dropdown melhorado
+function VMaxPro:CreateDropdown(tab, text, options, callback, icon)
 	local dropdown = Instance.new("TextButton", tab.Content)
-	dropdown.Size = UDim2.new(1, -10, 0, 32)
-	dropdown.Text = text .. ": [Select]"
-	dropdown.Font = Enum.Font.Gotham
+	dropdown.Size = UDim2.new(1, 0, 0, 35)
+	dropdown.Text = (icon or "📋") .. " " .. text .. ": [Select] ▼"
+	dropdown.Font = Enum.Font.GothamBold
 	dropdown.TextColor3 = Color3.new(1, 1, 1)
 	dropdown.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	dropdown.TextSize = 14
+	dropdown.TextXAlignment = Enum.TextXAlignment.Left
+	local dropCorner = Instance.new("UICorner", dropdown)
+	dropCorner.CornerRadius = UDim.new(0, 6)
+	
+	local UIPadding = Instance.new("UIPadding", dropdown)
+	UIPadding.PaddingLeft = UDim.new(0, 10)
+	
 	local open = false
 	local container = Instance.new("Frame", tab.Content)
-	container.Size = UDim2.new(1, -10, 0, 0)
-	container.BackgroundTransparency = 1
+	container.Size = UDim2.new(1, 0, 0, 0)
+	container.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	container.ClipsDescendants = true
+	local containerCorner = Instance.new("UICorner", container)
+	containerCorner.CornerRadius = UDim.new(0, 6)
+	
 	local list = Instance.new("UIListLayout", container)
 	list.SortOrder = Enum.SortOrder.LayoutOrder
+	
 	dropdown.MouseButton1Click:Connect(function()
 		open = not open
-		container.Size = open and UDim2.new(1, -10, 0, #options * 26) or UDim2.new(1, -10, 0, 0)
+		local newSize = open and UDim2.new(1, 0, 0, #options * 30) or UDim2.new(1, 0, 0, 0)
+		dropdown.Text = (icon or "📋") .. " " .. text .. ": [Select] " .. (open and "▲" or "▼")
+		TweenService:Create(container, TweenInfo.new(0.2), {Size = newSize}):Play()
 	end)
+	
 	for _, opt in ipairs(options) do
 		local optBtn = Instance.new("TextButton", container)
-		optBtn.Size = UDim2.new(1, 0, 0, 24)
-		optBtn.Text = opt
+		optBtn.Size = UDim2.new(1, 0, 0, 30)
+		optBtn.Text = "  " .. opt
 		optBtn.Font = Enum.Font.Gotham
 		optBtn.TextColor3 = Color3.new(1, 1, 1)
 		optBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-		Instance.new("UICorner", optBtn)
+		optBtn.TextXAlignment = Enum.TextXAlignment.Left
+		optBtn.TextSize = 12
+		local optCorner = Instance.new("UICorner", optBtn)
+		optCorner.CornerRadius = UDim.new(0, 4)
+		
+		optBtn.MouseEnter:Connect(function()
+			optBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+		end)
+		optBtn.MouseLeave:Connect(function()
+			optBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		end)
+		
 		optBtn.MouseButton1Click:Connect(function()
-			dropdown.Text = text .. ": " .. opt
+			dropdown.Text = (icon or "📋") .. " " .. text .. ": " .. opt .. " ▼"
 			open = false
-			container.Size = UDim2.new(1, -10, 0, 0)
+			TweenService:Create(container, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, 0)}):Play()
 			pcall(callback, opt)
 		end)
 	end
 end
 
-function VMaxPro:CreateTextBox(tab, placeholder, callback)
-	local box = Instance.new("TextBox", tab.Content)
+-- TextBox melhorado
+function VMaxPro:CreateTextBox(tab, placeholder, callback, icon)
+	local frame = Instance.new("Frame", tab.Content)
+	frame.Size = UDim2.new(1, 0, 0, 35)
+	frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	local frameCorner = Instance.new("UICorner", frame)
+	frameCorner.CornerRadius = UDim.new(0, 6)
+	
+	local iconLabel = Instance.new("TextLabel", frame)
+	iconLabel.Size = UDim2.new(0, 30, 1, 0)
+	iconLabel.Text = icon or "📝"
+	iconLabel.TextSize = 16
+	iconLabel.BackgroundTransparency = 1
+	iconLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+	
+	local box = Instance.new("TextBox", frame)
 	box.PlaceholderText = placeholder
 	box.Text = ""
-	box.Size = UDim2.new(1, -10, 0, 32)
+	box.Size = UDim2.new(1, -35, 1, 0)
+	box.Position = UDim2.new(0, 35, 0, 0)
 	box.Font = Enum.Font.Gotham
 	box.TextColor3 = Color3.new(1, 1, 1)
-	box.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-	Instance.new("UICorner", box)
+	box.BackgroundTransparency = 1
+	box.TextSize = 14
+	box.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local UIPadding = Instance.new("UIPadding", box)
+	UIPadding.PaddingLeft = UDim.new(0, 5)
+	
+	box.Focused:Connect(function()
+		TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 255, 200)}):Play()
+		TweenService:Create(iconLabel, TweenInfo.new(0.2), {TextColor3 = Color3.new(0, 0, 0)}):Play()
+	end)
+	
 	box.FocusLost:Connect(function(enter)
+		TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(35, 35, 35)}):Play()
+		TweenService:Create(iconLabel, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(150, 150, 150)}):Play()
 		if enter then
 			pcall(callback, box.Text)
 		end
 	end)
 end
 
-function VMaxPro:CreateKeybind(tab, text, defaultKey, callback)
+-- Keybind melhorado
+function VMaxPro:CreateKeybind(tab, text, defaultKey, callback, icon)
 	local btn = Instance.new("TextButton", tab.Content)
-	btn.Size = UDim2.new(1, -10, 0, 32)
-	btn.Text = text .. ": [" .. defaultKey.Name .. "]"
+	btn.Size = UDim2.new(1, 0, 0, 35)
+	btn.Text = (icon or "⌨️") .. " " .. text .. ": [" .. defaultKey.Name .. "]"
 	btn.Font = Enum.Font.GothamBold
 	btn.TextColor3 = Color3.new(1, 1, 1)
 	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-	Instance.new("UICorner", btn)
+	btn.TextSize = 14
+	btn.TextXAlignment = Enum.TextXAlignment.Left
+	local corner = Instance.new("UICorner", btn)
+	corner.CornerRadius = UDim.new(0, 6)
+	
+	local UIPadding = Instance.new("UIPadding", btn)
+	UIPadding.PaddingLeft = UDim.new(0, 10)
+	
 	local binding = defaultKey
 	btn.MouseButton1Click:Connect(function()
-		btn.Text = text .. ": [Press Key]"
+		btn.Text = (icon or "⌨️") .. " " .. text .. ": [Press Key...]"
+		btn.BackgroundColor3 = Color3.fromRGB(0, 255, 200)
+		btn.TextColor3 = Color3.new(0, 0, 0)
 		local conn
 		conn = UserInputService.InputBegan:Connect(function(input)
 			if input.UserInputType == Enum.UserInputType.Keyboard then
 				binding = input.KeyCode
-				btn.Text = text .. ": [" .. binding.Name .. "]"
+				btn.Text = (icon or "⌨️") .. " " .. text .. ": [" .. binding.Name .. "]"
+				btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+				btn.TextColor3 = Color3.new(1, 1, 1)
 				conn:Disconnect()
 			end
 		end)
@@ -221,6 +482,450 @@ function VMaxPro:CreateKeybind(tab, text, defaultKey, callback)
 			pcall(callback)
 		end
 	end)
+end
+
+-- NOVO: Color Picker
+function VMaxPro:CreateColorPicker(tab, text, defaultColor, callback, icon)
+	local frame = Instance.new("Frame", tab.Content)
+	frame.Size = UDim2.new(1, 0, 0, 35)
+	frame.BackgroundTransparency = 1
+	
+	local label = Instance.new("TextLabel", frame)
+	label.Size = UDim2.new(1, -40, 1, 0)
+	label.Text = (icon or "🎨") .. " " .. text
+	label.Font = Enum.Font.GothamBold
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.BackgroundTransparency = 1
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextSize = 14
+	
+	local colorBtn = Instance.new("TextButton", frame)
+	colorBtn.Size = UDim2.new(0, 30, 0, 25)
+	colorBtn.Position = UDim2.new(1, -35, 0, 5)
+	colorBtn.Text = ""
+	colorBtn.BackgroundColor3 = defaultColor
+	local colorCorner = Instance.new("UICorner", colorBtn)
+	colorCorner.CornerRadius = UDim.new(0, 4)
+	
+	colorBtn.MouseButton1Click:Connect(function()
+		-- Simplified color picker - cycle through preset colors
+		local colors = {
+			Color3.fromRGB(255, 0, 0),
+			Color3.fromRGB(0, 255, 0),
+			Color3.fromRGB(0, 0, 255),
+			Color3.fromRGB(255, 255, 0),
+			Color3.fromRGB(255, 0, 255),
+			Color3.fromRGB(0, 255, 255),
+			Color3.fromRGB(255, 255, 255),
+			Color3.fromRGB(0, 0, 0)
+		}
+		
+		local currentIndex = 1
+		for i, color in ipairs(colors) do
+			if colorBtn.BackgroundColor3 == color then
+				currentIndex = i
+				break
+			end
+		end
+		
+		local nextIndex = (currentIndex % #colors) + 1
+		colorBtn.BackgroundColor3 = colors[nextIndex]
+		pcall(callback, colors[nextIndex])
+	end)
+end
+
+-- NOVO: Progress Bar
+function VMaxPro:CreateProgressBar(tab, text, maxValue, icon)
+	local frame = Instance.new("Frame", tab.Content)
+	frame.Size = UDim2.new(1, 0, 0, 50)
+	frame.BackgroundTransparency = 1
+
+	local label = Instance.new("TextLabel", frame)
+	label.Size = UDim2.new(1, 0, 0, 20)
+	label.Text = (icon or "📊") .. " " .. text .. ": 0/" .. maxValue
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 14
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.BackgroundTransparency = 1
+	label.TextXAlignment = Enum.TextXAlignment.Left
+
+	local progressBg = Instance.new("Frame", frame)
+	progressBg.Position = UDim2.new(0, 0, 0, 25)
+	progressBg.Size = UDim2.new(1, 0, 0, 20)
+	progressBg.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	local bgCorner = Instance.new("UICorner", progressBg)
+	bgCorner.CornerRadius = UDim.new(0, 10)
+	
+	local progressFill = Instance.new("Frame", progressBg)
+	progressFill.Size = UDim2.new(0, 0, 1, 0)
+	progressFill.BackgroundColor3 = Color3.fromRGB(0, 255, 200)
+	local fillCorner = Instance.new("UICorner", progressFill)
+	fillCorner.CornerRadius = UDim.new(0, 10)
+	
+	local currentValue = 0
+	
+	return {
+		SetValue = function(value)
+			currentValue = math.clamp(value, 0, maxValue)
+			local percentage = currentValue / maxValue
+			label.Text = (icon or "📊") .. " " .. text .. ": " .. currentValue .. "/" .. maxValue
+			TweenService:Create(progressFill, TweenInfo.new(0.3), {Size = UDim2.new(percentage, 0, 1, 0)}):Play()
+		end,
+		GetValue = function()
+			return currentValue
+		end
+	}
+end
+
+-- NOVO: LoadString Executor
+function VMaxPro:CreateLoadString(tab, text, callback, icon)
+	local frame = Instance.new("Frame", tab.Content)
+	frame.Size = UDim2.new(1, 0, 0, 100)
+	frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	local frameCorner = Instance.new("UICorner", frame)
+	frameCorner.CornerRadius = UDim.new(0, 8)
+	
+	local title = Instance.new("TextLabel", frame)
+	title.Size = UDim2.new(1, 0, 0, 25)
+	title.Text = (icon or "⚡") .. " " .. text
+	title.Font = Enum.Font.GothamBold
+	title.TextSize = 14
+	title.TextColor3 = Color3.new(1, 1, 1)
+	title.BackgroundTransparency = 1
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local UIPadding1 = Instance.new("UIPadding", title)
+	UIPadding1.PaddingLeft = UDim.new(0, 10)
+	
+	local codeBox = Instance.new("TextBox", frame)
+	codeBox.Size = UDim2.new(1, -20, 0, 50)
+	codeBox.Position = UDim2.new(0, 10, 0, 30)
+	codeBox.PlaceholderText = "Digite seu código Lua aqui... ou loadstring(game:HttpGet('URL'))()"
+	codeBox.Text = ""
+	codeBox.TextWrapped = true
+	codeBox.TextYAlignment = Enum.TextYAlignment.Top
+	codeBox.Font = Enum.Font.Code
+	codeBox.TextSize = 12
+	codeBox.TextColor3 = Color3.new(1, 1, 1)
+	codeBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+	codeBox.MultiLine = true
+	local codeCorner = Instance.new("UICorner", codeBox)
+	codeCorner.CornerRadius = UDim.new(0, 4)
+	
+	local executeBtn = Instance.new("TextButton", frame)
+	executeBtn.Size = UDim2.new(0, 80, 0, 20)
+	executeBtn.Position = UDim2.new(1, -90, 1, -25)
+	executeBtn.Text = "🚀 Execute"
+	executeBtn.Font = Enum.Font.GothamBold
+	executeBtn.TextSize = 12
+	executeBtn.TextColor3 = Color3.new(0, 0, 0)
+	executeBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 200)
+	local execCorner = Instance.new("UICorner", executeBtn)
+	execCorner.CornerRadius = UDim.new(0, 4)
+	
+	executeBtn.MouseButton1Click:Connect(function()
+		local code = codeBox.Text
+		if code ~= "" then
+			local success, result = pcall(function()
+				if string.find(string.lower(code), "loadstring") and string.find(code, "httpget") then
+					-- Execute loadstring with HttpGet
+					loadstring(code)()
+				else
+					-- Execute direct Lua code
+					loadstring(code)()
+				end
+			end)
+			
+			if success then
+				VMaxPro:CreateNotification("Sucesso", "Código executado com sucesso!", 3, "success")
+			else
+				VMaxPro:CreateNotification("Erro", "Erro ao executar: " .. tostring(result), 5, "error")
+			end
+			
+			if callback then pcall(callback, success, result) end
+		else
+			VMaxPro:CreateNotification("Aviso", "Digite algum código para executar!", 3, "warning")
+		end
+	end)
+end
+
+-- NOVO: Image Button
+function VMaxPro:CreateImageButton(tab, text, imageId, callback, size)
+	size = size or UDim2.new(1, 0, 0, 60)
+	
+	local btn = Instance.new("TextButton", tab.Content)
+	btn.Size = size
+	btn.Text = ""
+	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	local corner = Instance.new("UICorner", btn)
+	corner.CornerRadius = UDim.new(0, 8)
+	
+	local image = Instance.new("ImageLabel", btn)
+	image.Size = UDim2.new(0, 30, 0, 30)
+	image.Position = UDim2.new(0, 10, 0.5, -15)
+	image.Image = "rbxassetid://" .. tostring(imageId)
+	image.BackgroundTransparency = 1
+	image.ScaleType = Enum.ScaleType.Fit
+	
+	local label = Instance.new("TextLabel", btn)
+	label.Size = UDim2.new(1, -50, 1, 0)
+	label.Position = UDim2.new(0, 50, 0, 0)
+	label.Text = text
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 14
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.BackgroundTransparency = 1
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	
+	-- Hover effect
+	btn.MouseEnter:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 60, 60)}):Play()
+		TweenService:Create(image, TweenInfo.new(0.2), {Size = UDim2.new(0, 35, 0, 35)}):Play()
+	end)
+	btn.MouseLeave:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}):Play()
+		TweenService:Create(image, TweenInfo.new(0.2), {Size = UDim2.new(0, 30, 0, 30)}):Play()
+	end)
+	
+	btn.MouseButton1Click:Connect(function()
+		pcall(callback)
+	end)
+end
+
+-- NOVO: Multi-line TextBox
+function VMaxPro:CreateMultilineTextBox(tab, text, placeholder, lines, callback, icon)
+	lines = lines or 4
+	local height = 25 + (lines * 20)
+	
+	local frame = Instance.new("Frame", tab.Content)
+	frame.Size = UDim2.new(1, 0, 0, height)
+	frame.BackgroundTransparency = 1
+	
+	local label = Instance.new("TextLabel", frame)
+	label.Size = UDim2.new(1, 0, 0, 20)
+	label.Text = (icon or "📄") .. " " .. text
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 14
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.BackgroundTransparency = 1
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local textFrame = Instance.new("Frame", frame)
+	textFrame.Size = UDim2.new(1, 0, 0, height - 25)
+	textFrame.Position = UDim2.new(0, 0, 0, 25)
+	textFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	local textCorner = Instance.new("UICorner", textFrame)
+	textCorner.CornerRadius = UDim.new(0, 6)
+	
+	local textBox = Instance.new("TextBox", textFrame)
+	textBox.Size = UDim2.new(1, -10, 1, -10)
+	textBox.Position = UDim2.new(0, 5, 0, 5)
+	textBox.PlaceholderText = placeholder
+	textBox.Text = ""
+	textBox.TextWrapped = true
+	textBox.TextYAlignment = Enum.TextYAlignment.Top
+	textBox.TextXAlignment = Enum.TextXAlignment.Left
+	textBox.Font = Enum.Font.Gotham
+	textBox.TextSize = 12
+	textBox.TextColor3 = Color3.new(1, 1, 1)
+	textBox.BackgroundTransparency = 1
+	textBox.MultiLine = true
+	
+	textBox.Focused:Connect(function()
+		TweenService:Create(textFrame, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 255, 200)}):Play()
+	end)
+	
+	textBox.FocusLost:Connect(function(enter)
+		TweenService:Create(textFrame, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(35, 35, 35)}):Play()
+		if enter and callback then
+			pcall(callback, textBox.Text)
+		end
+	end)
+	
+	return {
+		GetText = function() return textBox.Text end,
+		SetText = function(newText) textBox.Text = newText end,
+		Clear = function() textBox.Text = "" end
+	}
+end
+
+-- NOVO: Checkbox
+function VMaxPro:CreateCheckbox(tab, text, default, callback, icon)
+	local frame = Instance.new("Frame", tab.Content)
+	frame.Size = UDim2.new(1, 0, 0, 35)
+	frame.BackgroundTransparency = 1
+	
+	local checkbox = Instance.new("TextButton", frame)
+	checkbox.Size = UDim2.new(0, 20, 0, 20)
+	checkbox.Position = UDim2.new(0, 5, 0.5, -10)
+	checkbox.Text = default and "✓" or ""
+	checkbox.Font = Enum.Font.GothamBold
+	checkbox.TextSize = 16
+	checkbox.TextColor3 = Color3.new(0, 0, 0)
+	checkbox.BackgroundColor3 = default and Color3.fromRGB(0, 255, 200) or Color3.fromRGB(60, 60, 60)
+	local checkCorner = Instance.new("UICorner", checkbox)
+	checkCorner.CornerRadius = UDim.new(0, 4)
+	
+	local label = Instance.new("TextLabel", frame)
+	label.Size = UDim2.new(1, -35, 1, 0)
+	label.Position = UDim2.new(0, 35, 0, 0)
+	label.Text = (icon or "☑️") .. " " .. text
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 14
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.BackgroundTransparency = 1
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local state = default
+	checkbox.MouseButton1Click:Connect(function()
+		state = not state
+		checkbox.Text = state and "✓" or ""
+		local color = state and Color3.fromRGB(0, 255, 200) or Color3.fromRGB(60, 60, 60)
+		TweenService:Create(checkbox, TweenInfo.new(0.2), {BackgroundColor3 = color}):Play()
+		pcall(callback, state)
+	end)
+end
+
+-- NOVO: Radio Button Group
+function VMaxPro:CreateRadioGroup(tab, text, options, defaultIndex, callback, icon)
+	local frame = Instance.new("Frame", tab.Content)
+	frame.Size = UDim2.new(1, 0, 0, 30 + (#options * 25))
+	frame.BackgroundTransparency = 1
+	
+	local label = Instance.new("TextLabel", frame)
+	label.Size = UDim2.new(1, 0, 0, 25)
+	label.Text = (icon or "🔘") .. " " .. text
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 14
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.BackgroundTransparency = 1
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local radioButtons = {}
+	local selectedIndex = defaultIndex or 1
+	
+	for i, option in ipairs(options) do
+		local radioFrame = Instance.new("Frame", frame)
+		radioFrame.Size = UDim2.new(1, 0, 0, 25)
+		radioFrame.Position = UDim2.new(0, 0, 0, 25 + ((i-1) * 25))
+		radioFrame.BackgroundTransparency = 1
+		
+		local radio = Instance.new("TextButton", radioFrame)
+		radio.Size = UDim2.new(0, 16, 0, 16)
+		radio.Position = UDim2.new(0, 10, 0.5, -8)
+		radio.Text = (i == selectedIndex) and "●" or "○"
+		radio.Font = Enum.Font.GothamBold
+		radio.TextSize = 12
+		radio.TextColor3 = (i == selectedIndex) and Color3.fromRGB(0, 255, 200) or Color3.new(0.7, 0.7, 0.7)
+		radio.BackgroundTransparency = 1
+		
+		local optionLabel = Instance.new("TextLabel", radioFrame)
+		optionLabel.Size = UDim2.new(1, -35, 1, 0)
+		optionLabel.Position = UDim2.new(0, 35, 0, 0)
+		optionLabel.Text = option
+		optionLabel.Font = Enum.Font.Gotham
+		optionLabel.TextSize = 12
+		optionLabel.TextColor3 = Color3.new(1, 1, 1)
+		optionLabel.BackgroundTransparency = 1
+		optionLabel.TextXAlignment = Enum.TextXAlignment.Left
+		
+		radioButtons[i] = radio
+		
+		radio.MouseButton1Click:Connect(function()
+			selectedIndex = i
+			for j, btn in ipairs(radioButtons) do
+				btn.Text = (j == selectedIndex) and "●" or "○"
+				btn.TextColor3 = (j == selectedIndex) and Color3.fromRGB(0, 255, 200) or Color3.new(0.7, 0.7, 0.7)
+			end
+			pcall(callback, option, i)
+		end)
+	end
+end
+
+-- NOVO: Separator/Divider
+function VMaxPro:CreateSeparator(tab, text)
+	local frame = Instance.new("Frame", tab.Content)
+	frame.Size = UDim2.new(1, 0, 0, 25)
+	frame.BackgroundTransparency = 1
+	
+	if text then
+		local label = Instance.new("TextLabel", frame)
+		label.Size = UDim2.new(0, 100, 1, 0)
+		label.Position = UDim2.new(0.5, -50, 0, 0)
+		label.Text = text
+		label.Font = Enum.Font.GothamBold
+		label.TextSize = 12
+		label.TextColor3 = Color3.fromRGB(150, 150, 150)
+		label.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+		
+		local line1 = Instance.new("Frame", frame)
+		line1.Size = UDim2.new(0.5, -55, 0, 1)
+		line1.Position = UDim2.new(0, 0, 0.5, 0)
+		line1.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+		line1.BorderSizePixel = 0
+		
+		local line2 = Instance.new("Frame", frame)
+		line2.Size = UDim2.new(0.5, -55, 0, 1)
+		line2.Position = UDim2.new(0.5, 55, 0.5, 0)
+		line2.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+		line2.BorderSizePixel = 0
+	else
+		local line = Instance.new("Frame", frame)
+		line.Size = UDim2.new(1, 0, 0, 1)
+		line.Position = UDim2.new(0, 0, 0.5, 0)
+		line.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+		line.BorderSizePixel = 0
+	end
+end
+
+-- NOVO: Info/Warning Box
+function VMaxPro:CreateInfoBox(tab, text, type, icon)
+	type = type or "info" -- info, success, warning, error
+	
+	local colors = {
+		info = {bg = Color3.fromRGB(30, 50, 80), border = Color3.fromRGB(100, 150, 255)},
+		success = {bg = Color3.fromRGB(30, 60, 40), border = Color3.fromRGB(100, 255, 150)},
+		warning = {bg = Color3.fromRGB(60, 50, 30), border = Color3.fromRGB(255, 200, 100)},
+		error = {bg = Color3.fromRGB(60, 30, 30), border = Color3.fromRGB(255, 100, 100)}
+	}
+	
+	local icons = {
+		info = icon or "ℹ️",
+		success = icon or "✅",
+		warning = icon or "⚠️",
+		error = icon or "❌"
+	}
+	
+	local frame = Instance.new("Frame", tab.Content)
+	frame.Size = UDim2.new(1, 0, 0, 60)
+	frame.BackgroundColor3 = colors[type].bg
+	local frameCorner = Instance.new("UICorner", frame)
+	frameCorner.CornerRadius = UDim.new(0, 6)
+	
+	local border = Instance.new("UIStroke", frame)
+	border.Color = colors[type].border
+	border.Thickness = 1
+	
+	local iconLabel = Instance.new("TextLabel", frame)
+	iconLabel.Size = UDim2.new(0, 40, 1, 0)
+	iconLabel.Text = icons[type]
+	iconLabel.TextSize = 20
+	iconLabel.BackgroundTransparency = 1
+	iconLabel.TextColor3 = colors[type].border
+	
+	local textLabel = Instance.new("TextLabel", frame)
+	textLabel.Size = UDim2.new(1, -50, 1, 0)
+	textLabel.Position = UDim2.new(0, 45, 0, 0)
+	textLabel.Text = text
+	textLabel.Font = Enum.Font.Gotham
+	textLabel.TextSize = 12
+	textLabel.TextColor3 = Color3.new(1, 1, 1)
+	textLabel.BackgroundTransparency = 1
+	textLabel.TextXAlignment = Enum.TextXAlignment.Left
+	textLabel.TextWrapped = true
+	
+	local UIPadding = Instance.new("UIPadding", textLabel)
+	UIPadding.PaddingRight = UDim.new(0, 10)
 end
 
 return VMaxPro
