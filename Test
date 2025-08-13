@@ -1,0 +1,166 @@
+t
+-- Guizin🥶 UI Library
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Cria GUI principal
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "Guizin"
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.ResetOnSpawn = false
+Gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Painel principal
+local Painel = Instance.new("Frame")
+Painel.Name = "Painel"
+Painel.Size = UDim2.new(0, 314, 0, 246)
+Painel.Position = UDim2.new(0.5, -157, 0.5, -123)
+Painel.BackgroundTransparency = 0.5
+Painel.BackgroundColor3 = Color3.fromRGB(255,255,255)
+Painel.Visible = false
+Painel.Parent = Gui
+
+Instance.new("UICorner", Painel).CornerRadius = UDim.new(0, 9)
+
+-- Botão fechar
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Name = "Fechar"
+CloseBtn.Text = "X"
+CloseBtn.Size = UDim2.new(0, 34, 0, 28)
+CloseBtn.Position = UDim2.new(1, -34, 0, -14)
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.TextScaled = true
+CloseBtn.TextColor3 = Color3.fromRGB(255, 0, 0)
+CloseBtn.Parent = Painel
+
+-- Título
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(1, 0, 0, 24)
+Title.Text = "Guizin🥶"
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.TextScaled = true
+Title.Parent = Painel
+
+-- Conteúdo
+local Conteudo = Instance.new("Frame")
+Conteudo.Name = "Conteudo"
+Conteudo.BackgroundTransparency = 1
+Conteudo.Position = UDim2.new(0, 8, 0, 26)
+Conteudo.Size = UDim2.new(1, -16, 1, -34)
+Conteudo.Parent = Painel
+
+-- Botão toggle painel
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Name = "AbrirPainel"
+ToggleBtn.Text = "🤑"
+ToggleBtn.Size = UDim2.new(0, 52, 0, 52)
+ToggleBtn.Position = UDim2.new(0, 10, 0, 6)
+ToggleBtn.BackgroundTransparency = 0.4
+ToggleBtn.TextScaled = true
+ToggleBtn.Parent = Gui
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 9)
+
+-- Abrir/fechar painel
+ToggleBtn.MouseButton1Click:Connect(function()
+	Painel.Visible = not Painel.Visible
+end)
+CloseBtn.MouseButton1Click:Connect(function()
+	Painel.Visible = false
+end)
+
+-- Funções da Library
+local Library = {}
+local YPos = 0
+local Padding = 6
+
+local function ExecuteScript(scriptCode)
+	local func = loadstring(scriptCode)
+	if func then
+		func()
+	end
+end
+
+function Library.SetTitle(text)
+	Title.Text = text
+end
+
+function Library.AddContent(tipo, texto, arg1, arg2)
+	if tipo == "TextButton" then
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(1, 0, 0, 30)
+		btn.Position = UDim2.new(0, 0, 0, YPos)
+		btn.Text = texto
+		btn.Parent = Conteudo
+		btn.MouseButton1Click:Connect(function()
+			ExecuteScript(arg1 or "")
+		end)
+		YPos = YPos + 30 + Padding
+		return btn
+
+	elseif tipo == "TextLabel" then
+		local lbl = Instance.new("TextLabel")
+		lbl.Size = UDim2.new(1, 0, 0, 30)
+		lbl.Position = UDim2.new(0, 0, 0, YPos)
+		lbl.Text = texto or ""
+		lbl.BackgroundTransparency = 1
+		lbl.Parent = Conteudo
+		YPos = YPos + 30 + Padding
+		return lbl
+
+	elseif tipo == "TextBox" then
+		local tb = Instance.new("TextBox")
+		tb.Size = UDim2.new(1, 0, 0, 30)
+		tb.Position = UDim2.new(0, 0, 0, YPos)
+		tb.PlaceholderText = texto or ""
+		tb.Parent = Conteudo
+		YPos = YPos + 30 + Padding
+		return tb
+
+	elseif tipo == "Toggle" then
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(1, 0, 0, 30)
+		btn.Position = UDim2.new(0, 0, 0, YPos)
+		btn.Text = texto
+		btn.Parent = Conteudo
+
+		local frame = Instance.new("Frame")
+		frame.Size = UDim2.new(0, 30, 0, 30)
+		frame.Position = UDim2.new(1, -34, 0, 0)
+		frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		frame.Parent = btn
+		Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 5)
+
+		local ativo = false
+		btn.MouseButton1Click:Connect(function()
+			ativo = not ativo
+			frame.BackgroundColor3 = ativo and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(0, 0, 0)
+			ExecuteScript(arg1 or "")
+		end)
+		YPos = YPos + 30 + Padding
+		return btn
+
+	elseif tipo == "Switch" then
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(1, 0, 0, 30)
+		btn.Position = UDim2.new(0, 0, 0, YPos)
+		btn.Text = texto
+		btn.Parent = Conteudo
+
+		local ativo = false
+		btn.MouseButton1Click:Connect(function()
+			ativo = not ativo
+			if ativo then
+				ExecuteScript(arg1 or "")
+			else
+				ExecuteScript(arg2 or "")
+			end
+		end)
+		YPos = YPos + 30 + Padding
+		return btn
+	end
+end
+
+_G.GuizinUILibrary = Library
+return Library
