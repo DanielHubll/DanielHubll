@@ -1,464 +1,436 @@
--- UI Library Guizin
-local CollectionService = game:GetService("CollectionService")
+-- UI LIBRARY SYSTEM
+-- Criado baseado no design fornecido
+
+local UILibrary = {}
+UILibrary.__index = UILibrary
+
+-- Serviços
+local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local CollectionService = game:GetService("CollectionService")
 
-local GuizinLibrary = {}
-GuizinLibrary.__index = GuizinLibrary
+-- Variáveis locais
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Configurações
-local CONFIG = {
-    TWEEN_TIME = 0.3,
-    COLORS = {
-        ACTIVE = Color3.fromRGB(0, 255, 0),    -- Verde quando ativo
-        INACTIVE = Color3.fromRGB(34, 34, 34), -- Preto quando inativo
-        TAB_ACTIVE = Color3.fromRGB(100, 150, 255),
-        TAB_INACTIVE = Color3.fromRGB(168, 168, 168)
-    }
+-- Configurações padrão
+local DEFAULT_CONFIG = {
+    Title = "UI Library",
+    Size = UDim2.new(0, 140, 0, 170),
+    Position = UDim2.new(0, 10, 0, 16),
+    Draggable = true,
+    ToggleKey = Enum.KeyCode.RightShift -- Tecla para mostrar/esconder
 }
 
-function GuizinLibrary.new(title)
-    local self = setmetatable({}, GuizinLibrary)
+-- Função principal para criar a biblioteca
+function UILibrary.new(config)
+    local self = setmetatable({}, UILibrary)
     
-    -- Estados
-    self.isOpen = false
-    self.currentTab = nil
-    self.tabs = {}
-    self.toggleStates = {}
+    -- Aplicar configurações
+    config = config or {}
+    for key, value in pairs(DEFAULT_CONFIG) do
+        self[key] = config[key] or value
+    end
     
-    -- Criar GUI base
-    self:createBaseGUI(title or "Guizin🥶")
+    -- Variáveis internas
+    self.Visible = true
+    self.Elements = {}
+    self.Callbacks = {}
+    
+    -- Criar a interface
+    self:CreateUI()
+    self:SetupEvents()
     
     return self
 end
 
-function GuizinLibrary:createBaseGUI(title)
+-- Criar a interface principal
+function UILibrary:CreateUI()
     -- ScreenGui principal
     self.ScreenGui = Instance.new("ScreenGui")
-    self.ScreenGui.Name = "Guizin"
+    self.ScreenGui.Name = "UILibrary_" .. tick()
     self.ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    self.ScreenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+    self.ScreenGui.ResetOnSpawn = false
+    self.ScreenGui.Parent = PlayerGui
     
-    CollectionService:AddTag(self.ScreenGui, "main")
+    -- Painel principal
+    self.MainFrame = Instance.new("Frame")
+    self.MainFrame.Name = "Painel"
+    self.MainFrame.Size = self.Size
+    self.MainFrame.Position = self.Position
+    self.MainFrame.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+    self.MainFrame.BackgroundTransparency = 0.2
+    self.MainFrame.BorderSizePixel = 0
+    self.MainFrame.Parent = self.ScreenGui
     
-    -- Toggle Button (sempre visível)
-    self.ToggleButton = Instance.new("TextButton")
-    self.ToggleButton.Name = "Toggle Botão"
-    self.ToggleButton.Size = UDim2.new(0, 52, 0, 52)
-    self.ToggleButton.Position = UDim2.new(0, 10, 0, 6)
-    self.ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    self.ToggleButton.BackgroundTransparency = 0.4
-    self.ToggleButton.Text = "🤑"
-    self.ToggleButton.TextScaled = true
-    self.ToggleButton.BorderSizePixel = 0
-    self.ToggleButton.Parent = self.ScreenGui
-    
-    local toggleCorner = Instance.new("UICorner")
-    toggleCorner.Parent = self.ToggleButton
-    
-    -- Painel principal (inicialmente invisível)
-    self.MainPanel = Instance.new("Frame")
-    self.MainPanel.Name = "Painel"
-    self.MainPanel.Size = UDim2.new(0, 314, 0, 246)
-    self.MainPanel.Position = UDim2.new(0, 264, 0, 20)
-    self.MainPanel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    self.MainPanel.BackgroundTransparency = 0.5
-    self.MainPanel.BorderSizePixel = 0
-    self.MainPanel.Visible = false
-    self.MainPanel.Parent = self.ScreenGui
-    
-    local panelCorner = Instance.new("UICorner")
-    panelCorner.CornerRadius = UDim.new(0, 9)
-    panelCorner.Parent = self.MainPanel
-    
-    -- Frame de fundo
-    self.BackgroundFrame = Instance.new("Frame")
-    self.BackgroundFrame.Size = UDim2.new(0, 342, 0, 276)
-    self.BackgroundFrame.Position = UDim2.new(0, -14, 0, -14)
-    self.BackgroundFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    self.BackgroundFrame.BackgroundTransparency = 0.5
-    self.BackgroundFrame.BorderSizePixel = 0
-    self.BackgroundFrame.Parent = self.MainPanel
-    
-    local bgCorner = Instance.new("UICorner")
-    bgCorner.CornerRadius = UDim.new(0, 9)
-    bgCorner.Parent = self.BackgroundFrame
-    
-    -- Botão fechar
-    self.CloseButton = Instance.new("TextButton")
-    self.CloseButton.Name = "Fechar Botão"
-    self.CloseButton.Size = UDim2.new(0, 34, 0, 28)
-    self.CloseButton.Position = UDim2.new(0, 302, 0, -14)
-    self.CloseButton.BackgroundTransparency = 1
-    self.CloseButton.Text = "X"
-    self.CloseButton.TextColor3 = Color3.fromRGB(255, 4, 4)
-    self.CloseButton.TextScaled = true
-    self.CloseButton.FontFace = Font.new("rbxasset://fonts/families/DenkOne.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-    self.CloseButton.BorderSizePixel = 0
-    self.CloseButton.Parent = self.MainPanel
+    -- Corner para o painel
+    local mainCorner = Instance.new("UICorner")
+    mainCorner.Parent = self.MainFrame
     
     -- Título
     self.TitleLabel = Instance.new("TextLabel")
-    self.TitleLabel.Name = "Title"
-    self.TitleLabel.Size = UDim2.new(0, 314, 0, 24)
-    self.TitleLabel.BackgroundTransparency = 1
-    self.TitleLabel.Text = title
-    self.TitleLabel.TextScaled = true
-    self.TitleLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+    self.TitleLabel.Name = "Título"
+    self.TitleLabel.Size = UDim2.new(0, 108, 0, 24)
+    self.TitleLabel.Position = UDim2.new(0, 2, 0, 2)
+    self.TitleLabel.BackgroundColor3 = Color3.fromRGB(74, 74, 74)
+    self.TitleLabel.BackgroundTransparency = 0.5
     self.TitleLabel.BorderSizePixel = 0
-    self.TitleLabel.Parent = self.MainPanel
+    self.TitleLabel.Text = self.Title
+    self.TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    self.TitleLabel.TextScaled = true
+    self.TitleLabel.TextWrapped = true
+    self.TitleLabel.FontFace = Font.new("rbxasset://fonts/families/DenkOne.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+    self.TitleLabel.Parent = self.MainFrame
     
-    -- Container principal
-    self.Container = Instance.new("Frame")
-    self.Container.Name = "Conterne"
-    self.Container.Size = UDim2.new(0, 298, 0, 210)
-    self.Container.Position = UDim2.new(0, 8, 0, 26)
-    self.Container.BackgroundTransparency = 1
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.Parent = self.TitleLabel
+    
+    -- Botão de fechar
+    self.CloseButton = Instance.new("TextButton")
+    self.CloseButton.Name = "FecharBotão"
+    self.CloseButton.Size = UDim2.new(0, 22, 0, 24)
+    self.CloseButton.Position = UDim2.new(0, 114, 0, 2)
+    self.CloseButton.BackgroundColor3 = Color3.fromRGB(98, 98, 98)
+    self.CloseButton.BorderSizePixel = 0
+    self.CloseButton.Text = "X"
+    self.CloseButton.TextColor3 = Color3.fromRGB(255, 0, 0)
+    self.CloseButton.TextScaled = true
+    self.CloseButton.TextWrapped = true
+    self.CloseButton.FontFace = Font.new("rbxasset://fonts/families/DenkOne.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+    self.CloseButton.Parent = self.MainFrame
+    
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.Parent = self.CloseButton
+    
+    -- Container dos elementos
+    self.Container = Instance.new("ScrollingFrame")
+    self.Container.Name = "Container"
+    self.Container.Size = UDim2.new(0, 132, 0, 126)
+    self.Container.Position = UDim2.new(0, 4, 0, 32)
+    self.Container.BackgroundColor3 = Color3.fromRGB(89, 89, 89)
+    self.Container.BackgroundTransparency = 0.5
     self.Container.BorderSizePixel = 0
-    self.Container.Parent = self.MainPanel
+    self.Container.ScrollBarThickness = 3
+    self.Container.CanvasSize = UDim2.new(0, 0, 0, 0)
+    self.Container.Parent = self.MainFrame
     
     local containerCorner = Instance.new("UICorner")
-    containerCorner.CornerRadius = UDim.new(0, 9)
     containerCorner.Parent = self.Container
     
-    -- Container das tabs
-    self.TabsContainer = Instance.new("Frame")
-    self.TabsContainer.Name = "Conterne Tabs"
-    self.TabsContainer.Size = UDim2.new(0, 60, 0, 210)
-    self.TabsContainer.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
-    self.TabsContainer.BackgroundTransparency = 0.9
-    self.TabsContainer.BorderSizePixel = 0
-    self.TabsContainer.Parent = self.Container
+    -- Layout para organizar elementos
+    self.Layout = Instance.new("UIListLayout")
+    self.Layout.SortOrder = Enum.SortOrder.LayoutOrder
+    self.Layout.Padding = UDim.new(0, 4)
+    self.Layout.Parent = self.Container
     
-    local tabsCorner = Instance.new("UICorner")
-    tabsCorner.CornerRadius = UDim.new(0, 9)
-    tabsCorner.Parent = self.TabsContainer
-    
-    -- Container dos botões/conteúdo
-    self.ContentContainer = Instance.new("Frame")
-    self.ContentContainer.Name = "Conterne Botões"
-    self.ContentContainer.Size = UDim2.new(0, 228, 0, 210)
-    self.ContentContainer.Position = UDim2.new(0, 70, 0, 0)
-    self.ContentContainer.BackgroundColor3 = Color3.fromRGB(78, 78, 78)
-    self.ContentContainer.BackgroundTransparency = 0.9
-    self.ContentContainer.BorderSizePixel = 0
-    self.ContentContainer.Parent = self.Container
-    
-    local contentCorner = Instance.new("UICorner")
-    contentCorner.CornerRadius = UDim.new(0, 9)
-    contentCorner.Parent = self.ContentContainer
-    
-    -- Scroll para o conteúdo
-    self.ContentScroll = Instance.new("ScrollingFrame")
-    self.ContentScroll.Size = UDim2.new(1, 0, 1, 0)
-    self.ContentScroll.BackgroundTransparency = 1
-    self.ContentScroll.ScrollBarThickness = 4
-    self.ContentScroll.Parent = self.ContentContainer
-    
-    local contentLayout = Instance.new("UIListLayout")
-    contentLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    contentLayout.Padding = UDim.new(0, 5)
-    contentLayout.Parent = self.ContentScroll
-    
-    -- Layout para as tabs
-    local tabLayout = Instance.new("UIListLayout")
-    tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    tabLayout.Padding = UDim.new(0, 2)
-    tabLayout.Parent = self.TabsContainer
-    
-    -- Conectar eventos
-    self:connectEvents()
+    -- Configurar drag se habilitado
+    if self.Draggable then
+        self:MakeDraggable()
+    end
 end
 
-function GuizinLibrary:connectEvents()
-    -- Toggle do painel
-    self.ToggleButton.MouseButton1Click:Connect(function()
-        self:togglePanel()
-    end)
-    
-    -- Fechar painel
+-- Configurar eventos
+function UILibrary:SetupEvents()
+    -- Botão de fechar
     self.CloseButton.MouseButton1Click:Connect(function()
-        self:closePanel()
+        self:Hide()
     end)
     
-    -- Fechar com ESC
-    UserInputService.InputBegan:Connect(function(input)
-        if input.KeyCode == Enum.KeyCode.Escape and self.isOpen then
-            self:closePanel()
-        end
-    end)
-end
-
-function GuizinLibrary:togglePanel()
-    if self.isOpen then
-        self:closePanel()
-    else
-        self:openPanel()
-    end
-end
-
-function GuizinLibrary:openPanel()
-    self.isOpen = true
-    self.MainPanel.Visible = true
-    
-    -- Animação de abertura
-    local tween = TweenService:Create(
-        self.MainPanel,
-        TweenInfo.new(CONFIG.TWEEN_TIME, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-        {Size = UDim2.new(0, 314, 0, 246)}
-    )
-    tween:Play()
-end
-
-function GuizinLibrary:closePanel()
-    self.isOpen = false
-    
-    -- Animação de fechamento
-    local tween = TweenService:Create(
-        self.MainPanel,
-        TweenInfo.new(CONFIG.TWEEN_TIME, Enum.EasingStyle.Back, Enum.EasingDirection.In),
-        {Size = UDim2.new(0, 0, 0, 0)}
-    )
-    
-    tween.Completed:Connect(function()
-        self.MainPanel.Visible = false
-    end)
-    tween:Play()
-end
-
-function GuizinLibrary:createTab(name)
-    local tab = {
-        name = name,
-        button = nil,
-        content = {},
-        active = false
-    }
-    
-    -- Criar botão da tab
-    tab.button = Instance.new("TextButton")
-    tab.button.Name = "Tab_" .. name
-    tab.button.Size = UDim2.new(0, 60, 0, 26)
-    tab.button.BackgroundColor3 = CONFIG.COLORS.TAB_INACTIVE
-    tab.button.Text = name
-    tab.button.TextScaled = true
-    tab.button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    tab.button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-    tab.button.BorderSizePixel = 0
-    tab.button.Parent = self.TabsContainer
-    
-    local tabCorner = Instance.new("UICorner")
-    tabCorner.Parent = tab.button
-    
-    -- Evento da tab
-    tab.button.MouseButton1Click:Connect(function()
-        self:switchTab(name)
-    end)
-    
-    self.tabs[name] = tab
-    
-    -- Se for a primeira tab, ativar
-    if #self.TabsContainer:GetChildren() == 2 then -- 2 porque tem o UIListLayout
-        self:switchTab(name)
-    end
-    
-    return self:createTabAPI(name)
-end
-
-function GuizinLibrary:createTabAPI(tabName)
-    local tabAPI = {}
-    
-    function tabAPI:addToggle(name, defaultState, callback)
-        return self:addToggle(tabName, name, defaultState or false, callback)
-    end
-    
-    function tabAPI:addButton(name, callback)
-        return self:addButton(tabName, name, callback)
-    end
-    
-    function tabAPI:addLabel(text)
-        return self:addLabel(tabName, text)
-    end
-    
-    return tabAPI
-end
-
-function GuizinLibrary:switchTab(tabName)
-    -- Desativar tab atual
-    if self.currentTab then
-        local currentTab = self.tabs[self.currentTab]
-        if currentTab then
-            currentTab.active = false
-            currentTab.button.BackgroundColor3 = CONFIG.COLORS.TAB_INACTIVE
-        end
-    end
-    
-    -- Ativar nova tab
-    local newTab = self.tabs[tabName]
-    if newTab then
-        newTab.active = true
-        newTab.button.BackgroundColor3 = CONFIG.COLORS.TAB_ACTIVE
-        self.currentTab = tabName
-        
-        -- Limpar conteúdo atual
-        for _, child in pairs(self.ContentScroll:GetChildren()) do
-            if child:IsA("GuiObject") then
-                child:Destroy()
-            end
-        end
-        
-        -- Mostrar conteúdo da tab
-        for _, element in pairs(newTab.content) do
-            element.Parent = self.ContentScroll
-        end
-        
-        -- Atualizar tamanho do scroll
-        self.ContentScroll.CanvasSize = UDim2.new(0, 0, 0, #newTab.content * 40)
-    end
-end
-
-function GuizinLibrary:addToggle(tabName, name, defaultState, callback)
-    local tab = self.tabs[tabName]
-    if not tab then return end
-    
-    local toggleState = defaultState or false
-    self.toggleStates[tabName .. "_" .. name] = toggleState
-    
-    -- Container do toggle
-    local toggleContainer = Instance.new("Frame")
-    toggleContainer.Name = name .. "_Container"
-    toggleContainer.Size = UDim2.new(0, 228, 0, 34)
-    toggleContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    toggleContainer.BorderSizePixel = 0
-    
-    local containerCorner = Instance.new("UICorner")
-    containerCorner.Parent = toggleContainer
-    
-    -- Label do toggle
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0, 180, 1, 0)
-    label.BackgroundTransparency = 1
-    label.Text = name
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.TextScaled = true
-    label.TextColor3 = Color3.fromRGB(0, 0, 0)
-    label.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-    label.Parent = toggleContainer
-    
-    -- Botão toggle
-    local toggleButton = Instance.new("TextButton")
-    toggleButton.Size = UDim2.new(0, 38, 0, 34)
-    toggleButton.Position = UDim2.new(0, 190, 0, 0)
-    toggleButton.BackgroundColor3 = toggleState and CONFIG.COLORS.ACTIVE or CONFIG.COLORS.INACTIVE
-    toggleButton.Text = ""
-    toggleButton.BorderSizePixel = 0
-    toggleButton.Parent = toggleContainer
-    
-    local toggleCorner = Instance.new("UICorner")
-    toggleCorner.Parent = toggleButton
-    
-    -- Evento do toggle
-    toggleButton.MouseButton1Click:Connect(function()
-        toggleState = not toggleState
-        self.toggleStates[tabName .. "_" .. name] = toggleState
-        
-        -- Animar mudança de cor
-        local tween = TweenService:Create(
-            toggleButton,
-            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            {BackgroundColor3 = toggleState and CONFIG.COLORS.ACTIVE or CONFIG.COLORS.INACTIVE}
-        )
-        tween:Play()
-        
-        -- Callback
-        if callback then
-            callback(toggleState)
+    -- Tecla para mostrar/esconder
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        if input.KeyCode == self.ToggleKey then
+            self:Toggle()
         end
     end)
     
-    table.insert(tab.content, toggleContainer)
-    
-    -- Se esta tab estiver ativa, adicionar ao scroll
-    if tab.active then
-        toggleContainer.Parent = self.ContentScroll
-        self.ContentScroll.CanvasSize = UDim2.new(0, 0, 0, #tab.content * 40)
-    end
-    
-    return {
-        getState = function()
-            return self.toggleStates[tabName .. "_" .. name]
-        end,
-        setState = function(state)
-            toggleState = state
-            self.toggleStates[tabName .. "_" .. name] = state
-            toggleButton.BackgroundColor3 = state and CONFIG.COLORS.ACTIVE or CONFIG.COLORS.INACTIVE
-        end
-    }
+    -- Atualizar tamanho do canvas quando elementos são adicionados
+    self.Layout.Changed:Connect(function()
+        self.Container.CanvasSize = UDim2.new(0, 0, 0, self.Layout.AbsoluteContentSize.Y + 8)
+    end)
 end
 
-function GuizinLibrary:addButton(tabName, name, callback)
-    local tab = self.tabs[tabName]
-    if not tab then return end
+-- Tornar o painel arrastável
+function UILibrary:MakeDraggable()
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
     
+    local function update(input)
+        local delta = input.Position - dragStart
+        local position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        self.MainFrame.Position = position
+    end
+    
+    self.TitleLabel.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = self.MainFrame.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            update(input)
+        end
+    end)
+end
+
+-- Criar botão toggle
+function UILibrary:CreateToggle(text, defaultState, callback)
+    local toggle = {}
+    toggle.State = defaultState or false
+    toggle.Callback = callback or function() end
+    
+    -- Botão principal
     local button = Instance.new("TextButton")
-    button.Name = name .. "_Button"
-    button.Size = UDim2.new(0, 228, 0, 34)
-    button.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
-    button.Text = name
-    button.TextScaled = true
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+    button.Name = "BotãoToggle"
+    button.Size = UDim2.new(0, 118, 0, 26)
+    button.BackgroundColor3 = Color3.fromRGB(174, 174, 174)
     button.BorderSizePixel = 0
+    button.Text = "  " .. (text or "Toggle")
+    button.TextXAlignment = Enum.TextXAlignment.Left
+    button.TextScaled = true
+    button.TextWrapped = true
+    button.FontFace = Font.new("rbxasset://fonts/families/DenkOne.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+    button.TextColor3 = Color3.fromRGB(0, 0, 0)
+    button.Parent = self.Container
     
     local buttonCorner = Instance.new("UICorner")
     buttonCorner.Parent = button
     
+    -- Indicador de toggle
+    local indicator = Instance.new("Frame")
+    indicator.Name = "Toggle"
+    indicator.Size = UDim2.new(0, 24, 0, 22)
+    indicator.Position = UDim2.new(0, 92, 0, 2)
+    indicator.BorderSizePixel = 0
+    indicator.Parent = button
+    
+    local indicatorCorner = Instance.new("UICorner")
+    indicatorCorner.Parent = indicator
+    
+    -- Função para atualizar visual
+    local function updateVisual()
+        local targetColor = toggle.State and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 255, 255)
+        
+        local tween = TweenService:Create(
+            indicator,
+            TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {BackgroundColor3 = targetColor}
+        )
+        tween:Play()
+    end
+    
+    -- Configurar estado inicial
+    updateVisual()
+    
+    -- Evento de clique
+    button.MouseButton1Click:Connect(function()
+        toggle.State = not toggle.State
+        updateVisual()
+        toggle.Callback(toggle.State)
+    end)
+    
+    -- Função para definir estado externamente
+    toggle.SetState = function(state)
+        toggle.State = state
+        updateVisual()
+    end
+    
+    table.insert(self.Elements, toggle)
+    return toggle
+end
+
+-- Criar botão normal
+function UILibrary:CreateButton(text, callback)
+    local button = Instance.new("TextButton")
+    button.Name = "Botão"
+    button.Size = UDim2.new(0, 116, 0, 24)
+    button.BackgroundColor3 = Color3.fromRGB(174, 174, 174)
+    button.BorderSizePixel = 0
+    button.Text = text or "Button"
+    button.TextScaled = true
+    button.TextWrapped = true
+    button.FontFace = Font.new("rbxasset://fonts/families/DenkOne.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+    button.TextColor3 = Color3.fromRGB(0, 0, 0)
+    button.Parent = self.Container
+    
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.Parent = button
+    
+    -- Efeito de hover
+    button.MouseEnter:Connect(function()
+        local tween = TweenService:Create(
+            button,
+            TweenInfo.new(0.1, Enum.EasingStyle.Quad),
+            {BackgroundColor3 = Color3.fromRGB(200, 200, 200)}
+        )
+        tween:Play()
+    end)
+    
+    button.MouseLeave:Connect(function()
+        local tween = TweenService:Create(
+            button,
+            TweenInfo.new(0.1, Enum.EasingStyle.Quad),
+            {BackgroundColor3 = Color3.fromRGB(174, 174, 174)}
+        )
+        tween:Play()
+    end)
+    
+    -- Evento de clique
     button.MouseButton1Click:Connect(function()
         if callback then
             callback()
         end
     end)
     
-    table.insert(tab.content, button)
-    
-    if tab.active then
-        button.Parent = self.ContentScroll
-        self.ContentScroll.CanvasSize = UDim2.new(0, 0, 0, #tab.content * 40)
-    end
+    return button
 end
 
-function GuizinLibrary:addLabel(tabName, text)
-    local tab = self.tabs[tabName]
-    if not tab then return end
+-- Criar slider
+function UILibrary:CreateSlider(text, min, max, default, callback)
+    local slider = {}
+    slider.Value = default or min
+    slider.Min = min or 0
+    slider.Max = max or 100
+    slider.Callback = callback or function() end
     
+    -- Frame principal
+    local frame = Instance.new("Frame")
+    frame.Name = "Slider"
+    frame.Size = UDim2.new(0, 116, 0, 40)
+    frame.BackgroundColor3 = Color3.fromRGB(174, 174, 174)
+    frame.BorderSizePixel = 0
+    frame.Parent = self.Container
+    
+    local frameCorner = Instance.new("UICorner")
+    frameCorner.Parent = frame
+    
+    -- Label do texto
     local label = Instance.new("TextLabel")
-    label.Name = "Label"
-    label.Size = UDim2.new(0, 228, 0, 20)
+    label.Size = UDim2.new(1, 0, 0, 16)
+    label.Position = UDim2.new(0, 0, 0, 2)
     label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextSize = 12
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-    label.BorderSizePixel = 0
+    label.Text = text or "Slider"
+    label.TextScaled = true
+    label.TextColor3 = Color3.fromRGB(0, 0, 0)
+    label.FontFace = Font.new("rbxasset://fonts/families/DenkOne.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+    label.Parent = frame
     
-    local labelCorner = Instance.new("UICorner")
-    labelCorner.Parent = label
+    -- Barra do slider
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(0, 100, 0, 4)
+    bar.Position = UDim2.new(0, 8, 0, 20)
+    bar.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    bar.BorderSizePixel = 0
+    bar.Parent = frame
     
-    table.insert(tab.content, label)
+    local barCorner = Instance.new("UICorner")
+    barCorner.Parent = bar
     
-    if tab.active then
-        label.Parent = self.ContentScroll
-        self.ContentScroll.CanvasSize = UDim2.new(0, 0, 0, #tab.content * 40)
+    -- Fill da barra
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(0, 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+    fill.BorderSizePixel = 0
+    fill.Parent = bar
+    
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.Parent = fill
+    
+    -- Value label
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Size = UDim2.new(1, 0, 0, 12)
+    valueLabel.Position = UDim2.new(0, 0, 0, 26)
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.Text = tostring(slider.Value)
+    valueLabel.TextScaled = true
+    valueLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
+    valueLabel.FontFace = Font.new("rbxasset://fonts/families/DenkOne.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+    valueLabel.Parent = frame
+    
+    -- Função para atualizar
+    local function updateSlider()
+        local percentage = (slider.Value - slider.Min) / (slider.Max - slider.Min)
+        fill.Size = UDim2.new(percentage, 0, 1, 0)
+        valueLabel.Text = tostring(math.round(slider.Value))
+    end
+    
+    -- Configurar interação
+    local dragging = false
+    
+    bar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local mouse = Players.LocalPlayer:GetMouse()
+            local relativeX = mouse.X - bar.AbsolutePosition.X
+            local percentage = math.clamp(relativeX / bar.AbsoluteSize.X, 0, 1)
+            slider.Value = slider.Min + (slider.Max - slider.Min) * percentage
+            updateSlider()
+            slider.Callback(slider.Value)
+        end
+    end)
+    
+    updateSlider()
+    
+    -- Função para definir valor externamente
+    slider.SetValue = function(value)
+        slider.Value = math.clamp(value, slider.Min, slider.Max)
+        updateSlider()
+    end
+    
+    table.insert(self.Elements, slider)
+    return slider
+end
+
+-- Funções de controle da UI
+function UILibrary:Show()
+    self.Visible = true
+    self.ScreenGui.Enabled = true
+end
+
+function UILibrary:Hide()
+    self.Visible = false
+    self.ScreenGui.Enabled = false
+end
+
+function UILibrary:Toggle()
+    if self.Visible then
+        self:Hide()
+    else
+        self:Show()
     end
 end
 
-function GuizinLibrary:setTitle(newTitle)
-    self.TitleLabel.Text = newTitle
+function UILibrary:SetTitle(title)
+    self.Title = title
+    self.TitleLabel.Text = title
 end
 
-function GuizinLibrary:destroy()
+function UILibrary:Destroy()
     if self.ScreenGui then
         self.ScreenGui:Destroy()
     end
 end
 
-return GuizinLibrary
+return UILibrary
