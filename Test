@@ -1,135 +1,145 @@
--- GuizinLibrary.lua
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local UI_Library = {}
 
-local GuizinLibrary = {}
-GuizinLibrary.__index = GuizinLibrary
+local function getMainGui()
+    return game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("Guizin")
+end
 
--- Função para criar a UI principal
-function GuizinLibrary.new(title)
-    local self = setmetatable({}, GuizinLibrary)
+-- Cria o painel principal
+function UI_Library.CreatePanel(title)
+    local mainGui = getMainGui()
     
-    -- ScreenGui principal
-    self.gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
-    self.gui.Name = "GuizinLibrary"
-    
-    -- Painel principal
-    self.mainFrame = Instance.new("Frame", self.gui)
-    self.mainFrame.Size = UDim2.new(0, 300, 0, 400)
-    self.mainFrame.Position = UDim2.new(0, 100, 0, 50)
-    self.mainFrame.BackgroundColor3 = Color3.fromRGB(50,50,50)
-    Instance.new("UICorner", self.mainFrame)
+    local painel = mainGui:FindFirstChild("Painel") or Instance.new("Frame")
+    painel.Name = "Painel"
+    painel.Size = UDim2.new(0, 140, 0, 170)
+    painel.Position = UDim2.new(0, 10, 0, 16)
+    painel.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+    painel.BackgroundTransparency = 0.2
+    painel.BorderSizePixel = 0
     
     -- Título
-    self.titleLabel = Instance.new("TextLabel", self.mainFrame)
-    self.titleLabel.Size = UDim2.new(1, -10, 0, 30)
-    self.titleLabel.Position = UDim2.new(0, 5, 0, 5)
-    self.titleLabel.Text = title or "GuizinLibrary"
-    self.titleLabel.TextColor3 = Color3.fromRGB(255,255,255)
-    self.titleLabel.BackgroundTransparency = 0.5
-    self.titleLabel.TextScaled = true
-    self.titleLabel.Font = Enum.Font.SourceSansBold
-    Instance.new("UICorner", self.titleLabel)
+    local titulo = painel:FindFirstChild("Título") or Instance.new("TextLabel", painel)
+    titulo.Name = "Título"
+    titulo.Size = UDim2.new(0, 108, 0, 24)
+    titulo.Position = UDim2.new(0, 2, 0, 2)
+    titulo.BackgroundColor3 = Color3.fromRGB(74, 74, 74)
+    titulo.BackgroundTransparency = 0.5
+    titulo.TextColor3 = Color3.new(1,1,1)
+    titulo.Font = Enum.Font.DenkOne
+    titulo.TextScaled = true
+    titulo.TextWrapped = true
+    titulo.Text = title or "Título"
+    local corner = titulo:FindFirstChildOfClass("UICorner") or Instance.new("UICorner", titulo)
     
-    -- Frame para abas
-    self.tabFrame = Instance.new("Frame", self.mainFrame)
-    self.tabFrame.Size = UDim2.new(1, -10, 1, -40)
-    self.tabFrame.Position = UDim2.new(0, 5, 0, 35)
-    self.tabFrame.BackgroundTransparency = 1
+    -- Botão fechar
+    local fecharBtn = painel:FindFirstChild("Fechar Botão") or Instance.new("TextButton", painel)
+    fecharBtn.Name = "Fechar Botão"
+    fecharBtn.Size = UDim2.new(0, 22, 0, 24)
+    fecharBtn.Position = UDim2.new(0, 114, 0, 2)
+    fecharBtn.Text = "X"
+    fecharBtn.TextColor3 = Color3.new(1, 0, 0)
+    fecharBtn.BackgroundColor3 = Color3.fromRGB(98, 98, 98)
+    fecharBtn.Font = Enum.Font.DenkOne
+    fecharBtn.TextScaled = true
+    local cornerBtn = Instance.new("UICorner", fecharBtn)
+    -- Evento fechar
+    fecharBtn.MouseButton1Click:Connect(function()
+        painel.Visible = false
+    end)
     
-    self.tabs = {}
-    self.activeTab = nil
+    -- Container de conteúdo
+    local content = painel:FindFirstChild("Conterne") or Instance.new("ScrollingFrame", painel)
+    content.Name = "Conterne"
+    content.Size = UDim2.new(0, 132, 0, 126)
+    content.Position = UDim2.new(0, 4, 0, 32)
+    content.BackgroundColor3 = Color3.fromRGB(89, 89, 89)
+    content.BackgroundTransparency = 0.5
+    content.BorderSizePixel = 0
+    content.ScrollBarThickness = 3
+    local cornerContent = Instance.new("UICorner", content)
     
-    return self
+    -- Funções de controle
+    local panelTable = {}
+    function panelTable.Show()
+        painel.Visible = true
+    end
+    function panelTable.Hide()
+        painel.Visible = false
+    end
+    function panelTable.Toggle()
+        painel.Visible = not painel.Visible
+    end
+    function panelTable.SetTitle(newTitle)
+        titulo.Text = newTitle
+    end
+    
+    panelTable.Panel = painel
+    panelTable.Title = titulo
+    panelTable.CloseButton = fecharBtn
+    panelTable.Content = content
+    
+    return panelTable
 end
 
--- Função para criar uma aba
-function GuizinLibrary:createTab(tabName)
-    local tab = {}
-    
-    tab.container = Instance.new("ScrollingFrame", self.tabFrame)
-    tab.container.Size = UDim2.new(1, 0, 1, 0)
-    tab.container.BackgroundTransparency = 1
-    tab.container.ScrollBarThickness = 4
-    
-    tab.elements = {}
-    
-    -- Mostrar apenas quando ativo
-    tab.container.Visible = false
-    
-    -- Registrar aba
-    self.tabs[tabName] = tab
-    
-    -- Funções de adição de elementos
-    function tab:addLabel(text)
-        local label = Instance.new("TextLabel", self.container)
-        label.Text = text
-        label.Size = UDim2.new(1, -10, 0, 25)
-        label.Position = UDim2.new(0, 5, 0, (#self.elements)*30)
-        label.TextColor3 = Color3.fromRGB(255,255,255)
-        label.BackgroundTransparency = 1
-        label.TextScaled = true
-        table.insert(self.elements, label)
-    end
-    
-    function tab:addButton(text, callback)
-        local btn = Instance.new("TextButton", self.container)
-        btn.Text = text
-        btn.Size = UDim2.new(1, -10, 0, 25)
-        btn.Position = UDim2.new(0, 5, 0, (#self.elements)*30)
-        btn.BackgroundColor3 = Color3.fromRGB(100,100,100)
-        btn.TextColor3 = Color3.fromRGB(255,255,255)
-        btn.TextScaled = true
-        Instance.new("UICorner", btn)
-        
-        btn.MouseButton1Click:Connect(callback)
-        table.insert(self.elements, btn)
-    end
-    
-    function tab:addToggle(text, default, callback)
-        local toggleBtn = Instance.new("TextButton", self.container)
-        toggleBtn.Text = text
-        toggleBtn.Size = UDim2.new(1, -10, 0, 25)
-        toggleBtn.Position = UDim2.new(0, 5, 0, (#self.elements)*30)
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(100,100,100)
-        toggleBtn.TextColor3 = Color3.fromRGB(255,255,255)
-        toggleBtn.TextScaled = true
-        Instance.new("UICorner", toggleBtn)
-        
-        local state = default or false
-        local toggleFrame = Instance.new("Frame", toggleBtn)
-        toggleFrame.Size = UDim2.new(0, 20, 0, 20)
-        toggleFrame.Position = UDim2.new(1, -25, 0, 2)
-        toggleFrame.BackgroundColor3 = state and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,255,255)
-        Instance.new("UICorner", toggleFrame)
-        
-        toggleBtn.MouseButton1Click:Connect(function()
-            state = not state
-            toggleFrame.BackgroundColor3 = state and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,255,255)
-            if callback then
-                callback(state)
-            end
-        end)
-        
-        table.insert(self.elements, toggleBtn)
-    end
-    
-    -- Função para mostrar a aba
-    function tab:show()
-        if self.container then
-            for _, t in pairs(self.tabs) do
-                t.container.Visible = false
-            end
-            self.container.Visible = true
-        end
-    end
-    
-    return tab
+-- Cria um botão normal
+function UI_Library.CreateButton(parent, text, callback)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(0, 116, 0, 24)
+    btn.BackgroundColor3 = Color3.fromRGB(174, 174, 174)
+    btn.Text = text or "Botão"
+    btn.Font = Enum.Font.DenkOne
+    btn.TextScaled = true
+    btn.BorderSizePixel = 0
+    local corner = Instance.new("UICorner", btn)
+    btn.MouseButton1Click:Connect(function()
+        if callback then callback() end
+    end)
+    return btn
 end
 
--- Função para mudar título
-function GuizinLibrary:setTitle(newTitle)
-    self.titleLabel.Text = newTitle
+-- Cria um botão toggle
+function UI_Library.CreateToggleButton(parent, text, initialState, callback)
+    local toggleFrame = Instance.new("Frame", parent)
+    toggleFrame.Size = UDim2.new(0, 118, 0, 26)
+    toggleFrame.BackgroundColor3 = Color3.fromRGB(174, 174, 174)
+    local corner = Instance.new("UICorner", toggleFrame)
+    
+    -- Label
+    local label = Instance.new("TextLabel", toggleFrame)
+    label.Size = UDim2.new(1, -24, 1, 0)
+    label.Position = UDim2.new(0, 2, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text or "Toggle"
+    label.TextColor3 = Color3.new(0,0,0)
+    label.Font = Enum.Font.DenkOne
+    label.TextScaled = true
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    
+    -- Frame do toggle
+    local toggle = Instance.new("Frame", toggleFrame)
+    toggle.Size = UDim2.new(0, 24, 0, 22)
+    toggle.Position = UDim2.new(1, -26, 0, 2)
+    local color = initialState and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 255, 255)
+    toggle.BackgroundColor3 = color
+    toggle.BorderSizePixel = 0
+    local cornerToggle = Instance.new("UICorner", toggle)
+    
+    -- Estado
+    local state = initialState or false
+    local function setState(val)
+        state = val
+        toggle.BackgroundColor3 = state and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 255, 255)
+        if callback then callback(state) end
+    end
+    
+    toggle.MouseButton1Click:Connect(function()
+        setState(not state)
+    end)
+    
+    return {
+        Frame = toggle,
+        SetState = setState,
+        GetState = function() return state end
+    }
 end
 
-return GuizinLibrary
+return UI_Library
