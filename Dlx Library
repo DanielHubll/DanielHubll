@@ -1,467 +1,195 @@
---[[
-    DlxUI Library - Sistema Completo de Interface
-    Criado para facilitar a criação de GUIs funcionais
-    
-    Funcionalidades:
-    - Botões simples com execução de script
-    - Botões toggle com estado visual
-    - Sliders funcionais para ajustar valores
-    - Sistema de seções organizadas
-    - Compatível com mobile e PC
-]]--
 
+-- DlxUI Library Funcional - Loadstring Ready
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+-- Criando GUI principal
+local DlxUI = Instance.new("ScreenGui", PlayerGui)
+DlxUI.Name = "DlxUI"
+DlxUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- Criar a GUI base se não existir
-local function createGUI()
-    -- Instâncias da GUI (sua estrutura original)
-    local G2L = {}
+-- Painel
+local Painel = Instance.new("Frame", DlxUI)
+Painel.Name = "Painel"
+Painel.Size = UDim2.new(0, 164, 0, 192)
+Painel.Position = UDim2.new(0, 22, 0, 6)
+Painel.BackgroundTransparency = 1
+local PainelCorner = Instance.new("UICorner", Painel)
 
-    -- ScreenGui principal
-    G2L["DlxUI_1"] = Instance.new("ScreenGui", playerGui)
-    G2L["DlxUI_1"]["Name"] = "DlxUI"
-    G2L["DlxUI_1"]["ZIndexBehavior"] = Enum.ZIndexBehavior.Sibling
+-- Título
+local Title = Instance.new("TextButton", Painel)
+Title.Name = "Title"
+Title.Size = UDim2.new(0, 162, 0, 14)
+Title.Position = UDim2.new(0, 0, 0, 12)
+Title.BackgroundColor3 = Color3.fromRGB(0,0,0)
+Title.BackgroundTransparency = 0.5
+Title.Text = "Sistema de UI Library"
+Title.TextColor3 = Color3.fromRGB(255,255,255)
+Title.TextScaled = true
+local TitleStroke = Instance.new("UIStroke", Title)
+TitleStroke.Thickness = 5
+TitleStroke.Transparency = 0.4
 
-    -- Painel principal
-    G2L["Painel_2"] = Instance.new("Frame", G2L["DlxUI_1"])
-    G2L["Painel_2"]["BorderSizePixel"] = 0
-    G2L["Painel_2"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
-    G2L["Painel_2"]["Size"] = UDim2.new(0, 164, 0, 192)
-    G2L["Painel_2"]["Position"] = UDim2.new(0, 22, 0, 6)
-    G2L["Painel_2"]["Name"] = "Painel"
-    G2L["Painel_2"]["BackgroundTransparency"] = 1
+-- Home Frame
+local Home = Instance.new("Frame", Painel)
+Home.Name = "Home"
+Home.Size = UDim2.new(0, 162, 0, 152)
+Home.Position = UDim2.new(0,0,0,36)
+Home.BackgroundColor3 = Color3.fromRGB(0,0,0)
+Home.BackgroundTransparency = 0.5
+local HomeStroke = Instance.new("UIStroke", Home)
+HomeStroke.Thickness = 5
+HomeStroke.Transparency = 0.4
 
-    -- UICorner do painel
-    G2L["UICorner_3"] = Instance.new("UICorner", G2L["Painel_2"])
+-- SectionLabel
+local SectionLabel = Instance.new("TextLabel", Home)
+SectionLabel.Name = "SectionLabel"
+SectionLabel.Size = UDim2.new(0, 162, 0, 12)
+SectionLabel.Position = UDim2.new(0,0,0,0)
+SectionLabel.Text = "Section"
+SectionLabel.TextColor3 = Color3.fromRGB(255,255,255)
+SectionLabel.BackgroundTransparency = 1
+SectionLabel.Font = Enum.Font.Gotham
+SectionLabel.TextScaled = true
 
-    -- Título do painel
-    G2L["Title_4"] = Instance.new("TextButton", G2L["Painel_2"])
-    G2L["Title_4"]["TextWrapped"] = true
-    G2L["Title_4"]["BorderSizePixel"] = 0
-    G2L["Title_4"]["TextScaled"] = true
-    G2L["Title_4"]["TextColor3"] = Color3.fromRGB(255, 255, 255)
-    G2L["Title_4"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0)
-    G2L["Title_4"]["FontFace"] = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-    G2L["Title_4"]["BackgroundTransparency"] = 0.5
-    G2L["Title_4"]["Size"] = UDim2.new(0, 162, 0, 14)
-    G2L["Title_4"]["Text"] = "DlxUI Library"
-    G2L["Title_4"]["Name"] = "Title"
-    G2L["Title_4"]["Position"] = UDim2.new(0, 0, 0, 12)
-
-    -- UIStroke do título
-    G2L["UIStroke_5"] = Instance.new("UIStroke", G2L["Title_4"])
-    G2L["UIStroke_5"]["Transparency"] = 0.4
-    G2L["UIStroke_5"]["ApplyStrokeMode"] = Enum.ApplyStrokeMode.Border
-    G2L["UIStroke_5"]["Thickness"] = 5
-
-    -- Frame Home
-    G2L["Home_6"] = Instance.new("ScrollingFrame", G2L["Painel_2"])
-    G2L["Home_6"]["BorderSizePixel"] = 0
-    G2L["Home_6"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0)
-    G2L["Home_6"]["Size"] = UDim2.new(0, 162, 0, 152)
-    G2L["Home_6"]["Position"] = UDim2.new(0, 0, 0, 36)
-    G2L["Home_6"]["Name"] = "Home"
-    G2L["Home_6"]["BackgroundTransparency"] = 0.5
-    G2L["Home_6"]["ScrollBarThickness"] = 4
-    G2L["Home_6"]["CanvasSize"] = UDim2.new(0, 0, 0, 0)
-
-    -- UIStroke do Home
-    G2L["UIStroke_7"] = Instance.new("UIStroke", G2L["Home_6"])
-    G2L["UIStroke_7"]["Transparency"] = 0.4
-    G2L["UIStroke_7"]["Thickness"] = 5
-
-    -- UIListLayout para organizar elementos
-    local listLayout = Instance.new("UIListLayout", G2L["Home_6"])
-    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    listLayout.Padding = UDim.new(0, 5)
-    listLayout.FillDirection = Enum.FillDirection.Vertical
-
-    return G2L["DlxUI_1"], G2L["Home_6"]
-end
-
--- Variáveis globais
-local gui, homeFrame = createGUI()
-local toggleStates = {}
-local sliderValues = {}
-local currentYOffset = 0
-
--- Sistema de arrastar GUI
-local function makeDraggable(gui)
-    local title = gui.Painel.Title
-    local painel = gui.Painel
-    
-    local dragging = false
-    local dragStart = nil
-    local startPos = nil
-    
-    title.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = painel.Position
-        end
-    end)
-    
-    title.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
-        end
-    end)
-    
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            local delta = input.Position - dragStart
-            painel.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
-end
-
--- Aplicar sistema de arrastar
-makeDraggable(gui)
-
--- Função para atualizar o tamanho do canvas
-local function updateCanvasSize()
-    local totalHeight = 0
-    for _, child in pairs(homeFrame:GetChildren()) do
-        if child:IsA("GuiObject") and child.Visible then
-            totalHeight = totalHeight + child.Size.Y.Offset + 5
-        end
-    end
-    homeFrame.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 10)
-end
-
--- DlxUI Library - Classe principal
-local DlxUI = {}
-DlxUI.__index = DlxUI
-
-function DlxUI.new(title)
-    local self = setmetatable({}, DlxUI)
-    
-    -- Definir título se fornecido
-    if title then
-        gui.Painel.Title.Text = title
-    end
-    
-    return self
-end
-
--- Função para criar seção
-function DlxUI:CreateSection(sectionName)
-    local sectionLabel = Instance.new("TextLabel", homeFrame)
-    sectionLabel.Name = "SectionLabel"
-    sectionLabel.BorderSizePixel = 0
-    sectionLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    sectionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-    sectionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    sectionLabel.BackgroundTransparency = 1
-    sectionLabel.Size = UDim2.new(0, 162, 0, 20)
-    sectionLabel.Text = sectionName or "Section"
-    sectionLabel.TextScaled = true
-    sectionLabel.LayoutOrder = currentYOffset
-    
-    currentYOffset = currentYOffset + 1
-    updateCanvasSize()
-    
-    return {
-        SetText = function(text)
-            sectionLabel.Text = text
-        end
-    }
-end
-
--- Função para criar botão simples
-function DlxUI:CreateButton(buttonName, callback)
-    local button = Instance.new("TextButton", homeFrame)
-    button.Name = "Button"
-    button.TextWrapped = true
-    button.BorderSizePixel = 0
-    button.TextScaled = true
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-    button.BackgroundTransparency = 0.8
-    button.Size = UDim2.new(0, 162, 0, 30)
-    button.Text = buttonName or "Button"
-    button.LayoutOrder = currentYOffset
-    
-    -- UIStroke
-    local stroke = Instance.new("UIStroke", button)
+-- Função para criar botão normal
+local function CreateButton(name, callback)
+    local btn = Instance.new("TextButton", Home)
+    btn.Name = name
+    btn.Size = UDim2.new(0,162,0,30)
+    btn.Position = UDim2.new(0,0,0,#Home:GetChildren()*32) -- empilha automático
+    btn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    btn.BackgroundTransparency = 0.8
+    btn.TextColor3 = Color3.fromRGB(255,255,255)
+    btn.Text = name
+    btn.TextScaled = true
+    local stroke = Instance.new("UIStroke", btn)
     stroke.Transparency = 0.6
-    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    
-    -- Efeito visual ao clicar
-    button.MouseButton1Click:Connect(function()
-        -- Animação de clique
-        local tween = TweenService:Create(button, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
-            BackgroundTransparency = 0.3
-        })
-        tween:Play()
-        
-        tween.Completed:Connect(function()
-            local tween2 = TweenService:Create(button, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
-                BackgroundTransparency = 0.8
-            })
-            tween2:Play()
-        end)
-        
-        -- Executar callback
-        if callback then
-            pcall(callback)
-        end
-    end)
-    
-    currentYOffset = currentYOffset + 1
-    updateCanvasSize()
-    
-    return {
-        SetText = function(text)
-            button.Text = text
-        end,
-        SetCallback = function(newCallback)
-            callback = newCallback
-        end
-    }
+    btn.MouseButton1Click:Connect(callback)
+    return btn
 end
 
--- Função para criar botão toggle
-function DlxUI:CreateToggle(toggleName, defaultState, callback)
-    local buttonToggle = Instance.new("TextButton", homeFrame)
-    buttonToggle.Name = "ButtonToggle"
-    buttonToggle.TextWrapped = true
-    buttonToggle.BorderSizePixel = 0
-    buttonToggle.TextXAlignment = Enum.TextXAlignment.Left
-    buttonToggle.TextScaled = true
-    buttonToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    buttonToggle.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    buttonToggle.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-    buttonToggle.BackgroundTransparency = 0.8
-    buttonToggle.Size = UDim2.new(0, 162, 0, 30)
-    buttonToggle.Text = "  " .. (toggleName or "Toggle")
-    buttonToggle.LayoutOrder = currentYOffset
-    
-    -- UIStroke
-    local stroke = Instance.new("UIStroke", buttonToggle)
+-- Função para criar toggle
+local function CreateToggle(name, default, callback)
+    local btnToggle = Instance.new("TextButton", Home)
+    btnToggle.Name = name
+    btnToggle.Size = UDim2.new(0,162,0,30)
+    btnToggle.Position = UDim2.new(0,0,0,#Home:GetChildren()*32)
+    btnToggle.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    btnToggle.BackgroundTransparency = 0.8
+    btnToggle.TextColor3 = Color3.fromRGB(255,255,255)
+    btnToggle.Text = name
+    btnToggle.TextScaled = true
+    local stroke = Instance.new("UIStroke", btnToggle)
     stroke.Transparency = 0.6
-    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    
-    -- Botão Toggle interno
-    local toggle = Instance.new("TextButton", buttonToggle)
+
+    local toggle = Instance.new("TextButton", btnToggle)
     toggle.Name = "Toggle"
-    toggle.BorderSizePixel = 0
-    toggle.BackgroundColor3 = Color3.fromRGB(117, 117, 117)
-    toggle.Size = UDim2.new(0, 30, 0, 30)
+    toggle.Size = UDim2.new(0,30,0,30)
+    toggle.Position = UDim2.new(0,132,0,0)
+    toggle.BackgroundColor3 = default and Color3.fromRGB(255,255,255) or Color3.fromRGB(117,117,117)
     toggle.Text = ""
-    toggle.Position = UDim2.new(0, 132, 0, 0)
-    
-    -- Estado do toggle
-    local isToggled = defaultState or false
-    toggleStates[toggleName] = isToggled
-    
-    -- Função para atualizar visual
-    local function updateToggleVisual()
-        if isToggled then
-            toggle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        else
-            toggle.BackgroundColor3 = Color3.fromRGB(117, 117, 117)
-        end
+
+    local state = default
+    local function Update()
+        toggle.BackgroundColor3 = state and Color3.fromRGB(255,255,255) or Color3.fromRGB(117,117,117)
+        callback(state)
     end
-    
-    -- Função para alternar estado
-    local function toggleState()
-        isToggled = not isToggled
-        toggleStates[toggleName] = isToggled
-        updateToggleVisual()
-        
-        if callback then
-            pcall(callback, isToggled)
-        end
-    end
-    
-    -- Conectar eventos de clique
-    buttonToggle.MouseButton1Click:Connect(toggleState)
-    toggle.MouseButton1Click:Connect(toggleState)
-    
-    -- Definir estado inicial
-    updateToggleVisual()
-    
-    currentYOffset = currentYOffset + 1
-    updateCanvasSize()
-    
-    return {
-        SetText = function(text)
-            buttonToggle.Text = "  " .. text
-        end,
-        SetCallback = function(newCallback)
-            callback = newCallback
-        end,
-        GetState = function()
-            return isToggled
-        end,
-        SetState = function(state)
-            isToggled = state
-            toggleStates[toggleName] = isToggled
-            updateToggleVisual()
-            if callback then
-                pcall(callback, isToggled)
-            end
-        end
-    }
+
+    btnToggle.MouseButton1Click:Connect(function()
+        state = not state
+        Update()
+    end)
+    toggle.MouseButton1Click:Connect(function()
+        state = not state
+        Update()
+    end)
+
+    return btnToggle
 end
 
--- Função para criar slider
-function DlxUI:CreateSlider(sliderName, minValue, maxValue, defaultValue, callback)
-    local slideFrame = Instance.new("Frame", homeFrame)
-    slideFrame.Name = "SlideFrame"
-    slideFrame.BorderSizePixel = 0
-    slideFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    slideFrame.Size = UDim2.new(0, 162, 0, 44)
-    slideFrame.BackgroundTransparency = 0.8
-    slideFrame.LayoutOrder = currentYOffset
-    
-    -- UIStroke
-    local stroke = Instance.new("UIStroke", slideFrame)
+-- Função para criar slider genérico
+local function CreateSlider(name, min, max, default, callback)
+    local frame = Instance.new("Frame", Home)
+    frame.Name = name
+    frame.Size = UDim2.new(0,162,0,44)
+    frame.Position = UDim2.new(0,0,0,#Home:GetChildren()*32)
+    frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    frame.BackgroundTransparency = 0.8
+    local stroke = Instance.new("UIStroke", frame)
     stroke.Transparency = 0.5
-    
-    -- Título do slider
-    local title = Instance.new("TextLabel", slideFrame)
-    title.Name = "Title"
-    title.TextWrapped = true
-    title.BorderSizePixel = 0
-    title.TextScaled = true
-    title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    title.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-    title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    title.BackgroundTransparency = 1
-    title.Size = UDim2.new(0, 162, 0, 16)
-    title.Text = sliderName or "Slider"
-    
-    -- Área do slider
-    local area = Instance.new("Frame", slideFrame)
-    area.Name = "Area"
-    area.BorderSizePixel = 0
-    area.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    area.Size = UDim2.new(0, 162, 0, 2)
-    area.Position = UDim2.new(0, 0, 0, 30)
-    
-    -- Botão de toque/arrasto
-    local touch = Instance.new("TextButton", slideFrame)
-    touch.Name = "Touch"
-    touch.BorderSizePixel = 0
-    touch.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    touch.Size = UDim2.new(0, 8, 0, 14)
-    touch.Text = ""
-    touch.Position = UDim2.new(0, 0, 0, 24)
-    
-    -- Variáveis do slider
-    minValue = minValue or 0
-    maxValue = maxValue or 100
-    local currentValue = defaultValue or minValue
-    sliderValues[sliderName] = currentValue
-    
-    -- Função para atualizar posição do touch
-    local function updateTouchPosition()
-        local percentage = (currentValue - minValue) / (maxValue - minValue)
-        local newX = percentage * (area.Size.X.Offset - touch.Size.X.Offset)
-        touch.Position = UDim2.new(0, newX, 0, 24)
-        title.Text = sliderName .. ": " .. math.floor(currentValue)
-    end
-    
-    -- Sistema de arrasto
+
+    local label = Instance.new("TextLabel", frame)
+    label.Name = "Title"
+    label.Size = UDim2.new(0,162,0,16)
+    label.Position = UDim2.new(0,0,0,0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(255,255,255)
+    label.TextScaled = true
+    label.Text = name
+    label.Font = Enum.Font.Gotham
+
+    local Area = Instance.new("Frame", frame)
+    Area.Name = "Area"
+    Area.Size = UDim2.new(0,162,0,2)
+    Area.Position = UDim2.new(0,0,0,30)
+    Area.BackgroundColor3 = Color3.fromRGB(255,255,255)
+
+    local Touch = Instance.new("TextButton", frame)
+    Touch.Name = "Touch"
+    Touch.Size = UDim2.new(0,8,0,14)
+    Touch.Position = UDim2.new(0, (default-min)/(max-min)*162,0,24)
+    Touch.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    Touch.BorderSizePixel = 0
+    Touch.Text = ""
+
     local dragging = false
-    
-    touch.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-        end
+    local function UpdateSlider(x)
+        local pos = math.clamp(x - Area.AbsolutePosition.X, 0, Area.AbsoluteSize.X)
+        Touch.Position = UDim2.new(0,pos,0,24)
+        local value = min + (pos/Area.AbsoluteSize.X)*(max-min)
+        callback(value)
+    end
+
+    Touch.MouseButton1Down:Connect(function()
+        dragging = true
     end)
-    
-    touch.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
         end
     end)
-    
     UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            local mouse = Players.LocalPlayer:GetMouse()
-            local relativeX = mouse.X - area.AbsolutePosition.X
-            local percentage = math.clamp(relativeX / area.AbsoluteSize.X, 0, 1)
-            
-            currentValue = minValue + (percentage * (maxValue - minValue))
-            sliderValues[sliderName] = currentValue
-            
-            updateTouchPosition()
-            
-            if callback then
-                pcall(callback, currentValue)
-            end
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            UpdateSlider(input.Position.X)
         end
     end)
-    
-    -- Clique na área para mover
-    area.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            local mouse = Players.LocalPlayer:GetMouse()
-            local relativeX = mouse.X - area.AbsolutePosition.X
-            local percentage = math.clamp(relativeX / area.AbsoluteSize.X, 0, 1)
-            
-            currentValue = minValue + (percentage * (maxValue - minValue))
-            sliderValues[sliderName] = currentValue
-            
-            updateTouchPosition()
-            
-            if callback then
-                pcall(callback, currentValue)
-            end
-        end
-    end)
-    
-    -- Definir posição inicial
-    updateTouchPosition()
-    
-    currentYOffset = currentYOffset + 1
-    updateCanvasSize()
-    
-    return {
-        SetText = function(text)
-            sliderName = text
-            updateTouchPosition()
-        end,
-        SetCallback = function(newCallback)
-            callback = newCallback
-        end,
-        GetValue = function()
-            return currentValue
-        end,
-        SetValue = function(value)
-            currentValue = math.clamp(value, minValue, maxValue)
-            sliderValues[sliderName] = currentValue
-            updateTouchPosition()
-            if callback then
-                pcall(callback, currentValue)
-            end
-        end,
-        SetRange = function(newMin, newMax)
-            minValue = newMin
-            maxValue = newMax
-            currentValue = math.clamp(currentValue, minValue, maxValue)
-            updateTouchPosition()
-        end
-    }
+
+    return frame
 end
 
--- Função para destruir a GUI
-function DlxUI:Destroy()
-    if gui and gui.Parent then
-        gui:Destroy()
+--[[ ====== Modo de uso ====== ]]--
+
+-- Exemplo botão normal
+CreateButton("Executar Script", function()
+    print("Botão clicado!")
+    -- Coloque aqui qualquer script que você queira executar
+end)
+
+-- Exemplo toggle
+CreateToggle("Auto Kill", false, function(state)
+    print("Auto Kill ativo?", state)
+    -- Coloque aqui seu loop ou script que fica ativo enquanto toggle estiver true
+end)
+
+-- Exemplo slider
+CreateSlider("Velocidade", 16, 200, 16, function(value)
+    print("Velocidade atual:", value)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = value
     end
-end
+end)
 
--- Retornar a library
 return DlxUI
