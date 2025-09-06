@@ -2,9 +2,9 @@ local AdminList = {}
 
 -- lista de admins (Usernames)
 AdminList.List = {
-"Vlg_Daniel01",
-"Oruam2003",
-"Lua939"
+"Plauer1",
+"Player2",
+"Player3"
 }
 
 function AdminList:IsAdmin(player)
