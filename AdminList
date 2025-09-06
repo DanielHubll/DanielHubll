@@ -1,0 +1,23 @@
+local AdminList = {}
+
+-- lista de admins (Usernames)
+AdminList.List = {
+"Vlg_Daniel01",
+"Oruam2003",
+"Lua939"
+}
+
+function AdminList:IsAdmin(player)
+    if not player then return false end
+    if player.UserId == game.CreatorId then -- dono do mapa já é admin não precisa coloca teu nome lista!
+        return true
+    end
+    for _, name in ipairs(self.List) do
+        if player.Name == name then
+            return true
+        end
+    end
+    return false
+end
+
+return AdminList
