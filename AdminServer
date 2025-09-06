@@ -1,0 +1,31 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+ 
+-- módulo de admins
+local AdminList = require(game.ServerScriptService:WaitForChild("AdminList"))
+
+local msgEvent = ReplicatedStorage:WaitForChild("AdminMensagem")
+
+local function CheckAdmin(player)
+    local isAdmin = AdminList:IsAdmin(player)
+    msgEvent:FireClient(player, "AdminStatus", isAdmin)
+end
+
+for _, player in pairs(Players:GetPlayers()) do
+    CheckAdmin(player)
+end
+
+Players.PlayerAdded:Connect(function(player)
+    CheckAdmin(player)
+end)
+
+msgEvent.OnServerEvent:Connect(function(player, tipo, mensagem)
+    if not AdminList:IsAdmin(player) then return end -- só admins podem enviar
+        
+        if tipo == "Global" or tipo == "Server" then  
+            for _, targetPlayer in pairs(Players:GetPlayers()) do  
+                msgEvent:FireClient(targetPlayer, tipo, mensagem, player.Name)  
+            end  
+            print("["..tipo:upper().."] " .. player.Name .. ": " .. mensagem)  
+        end
+    end)
