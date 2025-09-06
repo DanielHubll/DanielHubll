@@ -262,7 +262,7 @@ G2L["Base_1a"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["Base_1a"]["Size"] = UDim2.new(0, 306, 0, 12);
 G2L["Base_1a"]["Position"] = UDim2.new(0, 2, 0, 12);
 G2L["Base_1a"]["Name"] = [[Base]];
-G2L["Base_1a"]["BackgroundTransparency"] = 0.9;
+G2L["Base_1a"]["BackgroundTransparency"] = 1;
 
 
 -- Players.vlg_daniel01.PlayerGui.AdminGui.Sistema
