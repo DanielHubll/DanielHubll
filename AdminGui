@@ -262,7 +262,7 @@ G2L["Base_1a"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["Base_1a"]["Size"] = UDim2.new(0, 306, 0, 12);
 G2L["Base_1a"]["Position"] = UDim2.new(0, 2, 0, 12);
 G2L["Base_1a"]["Name"] = [[Base]];
-G2L["Base_1a"]["BackgroundTransparency"] = 1;
+G2L["Base_1a"]["BackgroundTransparency"] = 0.9;
 
 
 -- Players.vlg_daniel01.PlayerGui.AdminGui.Sistema
@@ -274,156 +274,161 @@ G2L["Sistema_1b"]["Name"] = [[Sistema]];
 local function C_1b()
     local script = G2L["Sistema_1b"];
     local TweenService = game:GetService("TweenService")
-    local Players = game:GetService("Players")
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    
-    local player = Players.LocalPlayer
-    local adminGui = script.Parent
-    
-    -- Componentes
-    local ToggleBtn = adminGui.Toggle
-    local Painel = adminGui.Painel
-    local CloseBtn = Painel.TopBar.CloseButton
-    local GlobalBtn = Painel.TopCenter.Global
-    local ServerBtn = Painel.TopCenter.Server
-    local EnviarBtn = Painel.TopCenter.Enviar
-    local MensagemBox = Painel.TopCenter.MensagemBox
-    local MensagemFrame = adminGui.Mensagem
-    local MensagemTemplate = MensagemFrame:WaitForChild("MensagemText")
-    
-    MensagemTemplate.Visible = false
-    MensagemFrame.Visible = true
-    Painel.Visible = false -- começa fechado
-    adminGui.Enabled = false -- só ativa se for admin
-    
-    -- Estado do painel e tipo de envio
-    local painelAberto = false
-    local envioTipo = nil
-    
-    -- Tween para abrir/fechar Painel suavemente
-    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    
-    local function abrirPainel()
-        painelAberto = true
-        Painel.Visible = true
-        TweenService:Create(Painel, tweenInfo, {BackgroundTransparency = 0.8}):Play()
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+local adminGui = script.Parent
+
+-- Componentes
+local ToggleBtn = adminGui.Toggle
+local Painel = adminGui.Painel
+local CloseBtn = Painel.TopBar.CloseButton
+local GlobalBtn = Painel.TopCenter.Global
+local ServerBtn = Painel.TopCenter.Server
+local EnviarBtn = Painel.TopCenter.Enviar
+local MensagemBox = Painel.TopCenter.MensagemBox
+local MensagemFrame = adminGui.Mensagem
+local MensagemTemplate = MensagemFrame:WaitForChild("MensagemText")
+
+-- Estado inicial
+MensagemTemplate.Visible = false
+MensagemFrame.Visible = true
+Painel.Visible = false
+adminGui.Enabled = false -- só habilita se for admin
+
+-- Estado do painel e tipo de envio
+local painelAberto = false
+local envioTipo = nil
+
+-- Tween para abrir/fechar Painel
+local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+local function abrirPainel()
+    painelAberto = true
+    Painel.Visible = true
+    TweenService:Create(Painel, tweenInfo, {BackgroundTransparency = 0.8}):Play()
+end
+
+local function fecharPainel()
+    painelAberto = false
+    local tween = TweenService:Create(Painel, tweenInfo, {BackgroundTransparency = 1})
+    tween:Play()
+    tween.Completed:Connect(function()
+        Painel.Visible = false
+    end)
+end
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    if painelAberto then
+        fecharPainel()
+    else
+        abrirPainel()
     end
-    
-    local function fecharPainel()
-        painelAberto = false
-        local tween = TweenService:Create(Painel, tweenInfo, {BackgroundTransparency = 1})
-        tween:Play()
-        tween.Completed:Connect(function()
-            Painel.Visible = false
+end)
+
+CloseBtn.MouseButton1Click:Connect(fecharPainel)
+
+-- Atualizar cores dos botões
+local function atualizarBotoes()
+    if envioTipo == "Global" then
+        GlobalBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        ServerBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    elseif envioTipo == "Server" then
+        GlobalBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        ServerBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        GlobalBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        ServerBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    end
+end
+
+GlobalBtn.MouseButton1Click:Connect(function()
+    envioTipo = "Global"
+    atualizarBotoes()
+end)
+
+ServerBtn.MouseButton1Click:Connect(function()
+    envioTipo = "Server"
+    atualizarBotoes()
+end)
+
+-- Mostrar mensagem no Painel
+local function mostrarMensagemTexto(novaMsg, duracao)
+    local msgClone = MensagemTemplate:Clone()
+    msgClone.Text = novaMsg
+    msgClone.Visible = true
+    msgClone.TextTransparency = 1
+    msgClone.Parent = MensagemFrame
+
+    -- Empilhar mensagens
+    local padding = 5
+    local yOffset = 0
+    for _, child in ipairs(MensagemFrame:GetChildren()) do
+        if child:IsA("TextLabel") and child.Visible then
+            child.Position = UDim2.new(0, 0, 0, yOffset)
+            yOffset = yOffset + child.Size.Y.Offset + padding
+        end
+    end
+
+    -- Som (opcional)
+    local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://17208361335"
+    sound.Volume = 1
+    sound.Parent = msgClone
+    sound:Play()
+
+    TweenService:Create(msgClone, tweenInfo, {TextTransparency = 0}):Play()
+
+    -- Remover depois do tempo
+    task.delay(duracao, function()
+        local tweenOut = TweenService:Create(msgClone, tweenInfo, {TextTransparency = 1})
+        tweenOut:Play()
+        tweenOut.Completed:Connect(function()
+            msgClone:Destroy()
         end)
-    end
-    
-    -- Toggle abre/fecha painel
-    ToggleBtn.MouseButton1Click:Connect(function()
-        if painelAberto then
-            fecharPainel()
-        else
-            abrirPainel()
-        end
+        sound:Destroy()
     end)
-    
-    -- CloseButton fecha painel
-    CloseBtn.MouseButton1Click:Connect(fecharPainel)
-    
-    -- Atualizar cores dos botões
-    local function atualizarBotoes()
-        if envioTipo == "Global" then
-            GlobalBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-            ServerBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        elseif envioTipo == "Server" then
-            GlobalBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-            ServerBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        else
-            GlobalBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-            ServerBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        end
-    end
-    
-    GlobalBtn.MouseButton1Click:Connect(function()
-        envioTipo = "Global"
-        atualizarBotoes()
-    end)
-    
-    ServerBtn.MouseButton1Click:Connect(function()
-        envioTipo = "Server"
-        atualizarBotoes()
-    end)
-    
-    -- Função para mostrar mensagem
-    local function mostrarMensagemTexto(novaMsg, duracao)
-        local msgClone = MensagemTemplate:Clone()
-        msgClone.Text = novaMsg
-        msgClone.Visible = true
-        msgClone.TextTransparency = 1
-        msgClone.Parent = MensagemFrame
-        
-        -- Empilhar mensagens
-        local padding = 5
-        local yOffset = 0
-        for _, child in ipairs(MensagemFrame:GetChildren()) do
-            if child:IsA("TextLabel") and child.Visible then
-                child.Position = UDim2.new(0, 0, 0, yOffset)
-                yOffset = yOffset + child.Size.Y.Offset + padding
+end
+
+-- RemoteEvent para mensagens e status de admin
+local msgEvent = ReplicatedStorage:WaitForChild("AdminMensagem")
+
+if not adminGui:GetAttribute("ConexaoReceber") then
+    adminGui:SetAttribute("ConexaoReceber", true)
+    msgEvent.OnClientEvent:Connect(function(tipo, data, remetente)
+        if tipo == "AdminStatus" then
+            -- data = true/false
+            if data then
+                adminGui.Enabled = true
+            else
+                adminGui.Enabled = true
+                Painel.Visible = false
             end
-        end
-        
-        -- Som
-        local sound = Instance.new("Sound")
-        sound.SoundId = "rbxassetid://17208361335"
-        sound.Volume = 1
-        sound.Parent = msgClone
-        sound:Play()
-        
-        -- Tween aparecer
-        TweenService:Create(msgClone, tweenInfo, {TextTransparency = 0}):Play()
-        
-        -- Remover depois do tempo
-        task.delay(duracao, function()
-            local tweenOut = TweenService:Create(msgClone, tweenInfo, {TextTransparency = 1})
-            tweenOut:Play()
-            tweenOut.Completed:Connect(function()
-                msgClone:Destroy()
-            end)
-            sound:Destroy()
-        end)
-    end
-    
-    -- RemoteEvent para mensagens e admin status
-    local msgEvent = ReplicatedStorage:WaitForChild("AdminMensagem")
-    
-    -- Receber mensagens ou status de admin
-    if not adminGui:GetAttribute("ConexaoReceber") then
-        adminGui:SetAttribute("ConexaoReceber", true)
-        msgEvent.OnClientEvent:Connect(function(tipo, data, remetente)
-            if tipo == "AdminStatus" then
-                adminGui.Enabled = data -- true ou false
-            elseif tipo == "Global" or tipo == "Server" then
+        elseif tipo == "Global" or tipo == "Server" then
+            if Painel.Visible then
                 mostrarMensagemTexto(remetente..": "..data, 8)
             end
-        end)
+        end
+    end)
+end
+
+-- Enviar mensagem pro servidor
+EnviarBtn.MouseButton1Click:Connect(function()
+    local msg = MensagemBox.Text
+    if msg ~= "" and envioTipo then
+        msgEvent:FireServer(envioTipo, msg)
+        MensagemBox.Text = ""
+        atualizarBotoes()
     end
-    
-    -- Enviar mensagem (cliente não mostra, só envia pro servidor)
-    EnviarBtn.MouseButton1Click:Connect(function()
-        local msg = MensagemBox.Text
-        if msg ~= "" and envioTipo then
-            msgEvent:FireServer(envioTipo, msg)
-            MensagemBox.Text = ""
-            atualizarBotoes()
-        end
-    end)
-    
-    -- Opcional: Enviar pressionando Enter
-    MensagemBox.FocusLost:Connect(function(enterPressed)
-        if enterPressed then
-            EnviarBtn.MouseButton1Click:Wait()
-        end
-    end)
+end)
+
+-- Enviar pressionando Enter
+MensagemBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        EnviarBtn.MouseButton1Click:Wait()
+    end
+end)
 end;
 task.spawn(C_1b);
 
