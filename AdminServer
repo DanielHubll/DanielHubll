@@ -5,27 +5,22 @@ local MessagingService = game:GetService("MessagingService")
 local AdminList = require(game.ServerScriptService:WaitForChild("AdminList"))
 local msgEvent = ReplicatedStorage:WaitForChild("AdminMensagem")
 
--- Função para atualizar status de admin de um player
 local function CheckAdmin(player)
     local isAdmin = AdminList:IsAdmin(player)
     msgEvent:FireClient(player, "AdminStatus", isAdmin)
 end
 
--- Verifica todos os players que já estão no servidor
 for _, player in pairs(Players:GetPlayers()) do
     CheckAdmin(player)
 end
 
--- Atualiza status quando um player entra
 Players.PlayerAdded:Connect(function(player)
     CheckAdmin(player)
 end)
 
--- Escutar mensagens globais de outros servidores
 MessagingService:SubscribeAsync("GlobalMessage", function(data)
     local messageData = data.Data
     
-    -- Enviar para todos os players deste servidor
     for _, player in pairs(Players:GetPlayers()) do
         msgEvent:FireClient(player, "Global", messageData.message, messageData.playerName)
     end
@@ -33,7 +28,6 @@ MessagingService:SubscribeAsync("GlobalMessage", function(data)
     print("[GLOBAL] " .. messageData.playerName .. ": " .. messageData.message)
 end)
 
--- Receber mensagem do cliente
 msgEvent.OnServerEvent:Connect(function(player, tipo, mensagem)
     if not AdminList:IsAdmin(player) then return end -- só admins podem enviar
         
@@ -57,8 +51,7 @@ msgEvent.OnServerEvent:Connect(function(player, tipo, mensagem)
         end
     end)
     
-    -- Função para atualizar todos os admins caso a lista mude (opcional)
-    -- Você pode chamar essa função quando alterar AdminList dinamicamente
+    -- função para atualizar todos os admins caso a lista mude (opcional)
     local function AtualizarAdmins()
         for _, player in pairs(Players:GetPlayers()) do
             CheckAdmin(player)
