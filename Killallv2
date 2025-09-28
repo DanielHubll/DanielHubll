@@ -1,0 +1,157 @@
+-- GUI Setup
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "KillAllGui"
+
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 120, 0, 50)
+Frame.Position = UDim2.new(0, 100, 0, 100)
+Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Frame.Active = true
+Frame.Draggable = true
+Frame.BorderSizePixel = 0
+
+local UICorner = Instance.new("UICorner", Frame)
+UICorner.CornerRadius = UDim.new(0, 8)
+
+local Button = Instance.new("TextButton", Frame)
+Button.Size = UDim2.new(1, 0, 1, 0)
+Button.BackgroundTransparency = 1
+Button.Text = "Kill All: OFF"
+Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+Button.Font = Enum.Font.GothamBold
+Button.TextSize = 18
+
+-- Serviços
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Funções auxiliares
+local function isAlive(player)
+	local char = player.Character
+	return char and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0
+end
+
+local function hasForceField(player)
+	local char = player.Character
+	return char and char:FindFirstChildOfClass("ForceField") ~= nil
+end
+
+local function equipSword()
+	local backpack = LocalPlayer:FindFirstChild("Backpack")
+	if backpack then
+		for _, tool in pairs(backpack:GetChildren()) do
+			if tool:IsA("Tool") and tool:FindFirstChild("Handle") and tool.Name:lower():find("sword") then
+				tool.Parent = LocalPlayer.Character
+				break
+			end
+		end
+	end
+end
+
+local function moveTo(target)
+	local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+	local targetHRP = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+	if hrp and targetHRP then
+		hrp.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 2)
+	end
+end
+
+local function swingSword()
+	local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
+	if tool and tool:FindFirstChild("Handle") then
+		pcall(function()
+			tool:Activate()
+		end)
+	end
+end
+
+-- Posicionamento por time
+local positions = {
+	Red = {
+		Vector3.new(-8, 17, 75),
+		Vector3.new(-25, 3, 186),
+		Vector3.new(26, 3, -187)
+	},
+	Blue = {
+		Vector3.new(7, 17, -76),
+		Vector3.new(25, 3, -190),
+		Vector3.new(-24, 3, 193)
+	}
+}
+
+local function getTeamName()
+	local team = LocalPlayer.Team
+	return team and team.Name or "Red"
+end
+
+local function teleportSequence()
+	local char = LocalPlayer.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
+
+	local teamName = getTeamName()
+	local posList = positions[teamName]
+	if not posList then return nil end
+
+	for _, pos in ipairs(posList) do
+		char.HumanoidRootPart.CFrame = CFrame.new(pos)
+		task.wait(0.5)
+	end
+
+	return char.HumanoidRootPart.CFrame
+end
+
+-- Kill All Loop
+local running = false
+
+local function startKillLoop()
+	running = true
+	Button.Text = "Kill All: ON"
+
+	while running do
+		-- Esperar estar vivo
+		repeat task.wait(0.5) until isAlive(LocalPlayer)
+
+		-- Equipar espada e teleportar
+		equipSword()
+		local returnPosition = teleportSequence()
+		if not returnPosition then continue end
+
+		-- Loop de kill
+		while running and isAlive(LocalPlayer) do
+			equipSword()
+
+			for _, enemy in pairs(Players:GetPlayers()) do
+				if not running or not isAlive(LocalPlayer) then break end
+
+				if enemy ~= LocalPlayer and isAlive(enemy) and not hasForceField(enemy) and enemy.Team ~= LocalPlayer.Team then
+					repeat
+						moveTo(enemy)
+						swingSword()
+						task.wait(0.1)
+					until not isAlive(enemy) or not isAlive(LocalPlayer) or not running
+
+					-- Voltar para a última posição
+					if isAlive(LocalPlayer) then
+						LocalPlayer.Character.HumanoidRootPart.CFrame = returnPosition
+						task.wait(0.3)
+					end
+				end
+			end
+
+			task.wait(0.2)
+		end
+	end
+end
+
+local function stopKillLoop()
+	running = false
+	Button.Text = "Kill All: OFF"
+end
+
+Button.MouseButton1Click:Connect(function()
+	if running then
+		stopKillLoop()
+	else
+		task.spawn(startKillLoop)
+	end
+end)
