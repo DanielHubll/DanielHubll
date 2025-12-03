@@ -1,5 +1,5 @@
 --[[ 
-    NEXUS UI LIBRARY SOURCE
+    NEXUS UI LIBRARY SOURCE - COM PROTEÇÃO ANTI-DUPLICAÇÃO
     Hospede este código no GitHub/Gist e use o link Raw no loadstring.
 ]]
 
@@ -20,6 +20,54 @@ local UIConfig = {
     Font = Enum.Font.GothamBold,
     CornerRadius = UDim.new(0, 8)
 }
+
+-- VARIÁVEL GLOBAL PARA CONTROLAR EXISTÊNCIA DA UI
+local UI_LOADED = false
+local CURRENT_GUI_NAME = "NexusLibraryV2"
+
+-- Função para destruir qualquer UI antiga
+local function DestroyOldUIs()
+    -- Lista de nomes de UIs antigas que podem existir
+    local oldNames = {"NexusLibrary", "NexusUI", "NexusHub", "NexusLibraryV2"}
+    
+    -- Função para verificar em diferentes lugares
+    local function destroyInContainer(container)
+        if not container then return end
+        for _, name in ipairs(oldNames) do
+            local gui = container:FindFirstChild(name)
+            if gui then
+                gui:Destroy()
+                task.wait(0.02)
+            end
+        end
+    end
+    
+    -- Verifica em todos os lugares possíveis
+    destroyInContainer(game:GetService("CoreGui"))
+    destroyInContainer(game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui"))
+    
+    if gethui then
+        destroyInContainer(gethui())
+    end
+    
+    -- Verifica também por "MobileToggle" (o botão flutuante)
+    local function destroyMobileButtons()
+        for _, container in pairs({game.CoreGui, gethui and gethui() or nil}) do
+            if container then
+                for _, child in pairs(container:GetChildren()) do
+                    if child.Name == "MobileToggle" or child.Name == "NexusToggle" then
+                        child:Destroy()
+                    end
+                end
+            end
+        end
+    end
+    
+    destroyMobileButtons()
+    
+    -- Pequena pausa para garantir destruição
+    task.wait(0.05)
+end
 
 local function MakeDraggable(topbarobject, object)
     local Dragging = nil
@@ -54,15 +102,21 @@ end
 function Nexus:Window(options)
     local TitleText = options.Name or "Nexus UI"
     
-    -- Proteção contra múltiplas GUIs
-    if game.CoreGui:FindFirstChild("NexusLibrary") then
-        game.CoreGui:FindFirstChild("NexusLibrary"):Destroy()
-    end
-
+    -- DESTRÓI QUALQUER UI ANTIGA ANTES DE CRIAR NOVA
+    DestroyOldUIs()
+    
+    -- MARCA QUE UI FOI CARREGADA
+    UI_LOADED = true
+    
+    -- NOTIFICAÇÃO NO CONSOLE
+    print("🔧 Nexus UI Carregada - " .. TitleText)
+    
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "NexusLibrary"
+    ScreenGui.Name = CURRENT_GUI_NAME
+    
+    -- Sistema de proteção de GUI
     if gethui then
-        ScreenGui.Parent = gethui() -- Melhor proteção para executores modernos
+        ScreenGui.Parent = gethui()
     elseif syn and syn.protect_gui then
         syn.protect_gui(ScreenGui)
         ScreenGui.Parent = game.CoreGui
@@ -71,8 +125,9 @@ function Nexus:Window(options)
     end
     
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.ResetOnSpawn = false
 
-    -- Botão Mobile (Toggle)
+    -- Botão Mobile (Toggle) com verificação
     local OpenBtn = Instance.new("TextButton")
     OpenBtn.Name = "MobileToggle"
     OpenBtn.Parent = ScreenGui
@@ -333,5 +388,21 @@ function Nexus:Window(options)
     end
     return Tabs
 end
+
+-- Função pública para fechar a UI manualmente
+function Nexus:CloseUI()
+    DestroyOldUIs()
+    UI_LOADED = false
+    print("🔒 Nexus UI Fechada")
+end
+
+-- Verificação inicial ao carregar a biblioteca
+task.spawn(function()
+    task.wait(0.1)
+    if UI_LOADED then
+        print("⚠️ Aviso: Nexus UI já está carregada!")
+        print("💡 Dica: Use Nexus:CloseUI() se quiser fechar manualmente")
+    end
+end)
 
 return Nexus
