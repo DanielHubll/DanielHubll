@@ -103,57 +103,103 @@ function UILibrary:CreateWindow(title)
         LMG2L["OpenName_2d"].Rotation = LMG2L["Main_5"].Visible and 0 or 180
     end)
     
-    -- Serviços
-local UserInputService = game:GetService("UserInputService")
-local Camera = workspace.CurrentCamera
-
--- Variáveis
+    -- Sistema de arrastar janela com limites de tela
 local draggingWindow = false
-local dragStart
-local startPos
+local dragStart, startPos
+local playerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
-local Topo = LMG2L["Topo_2"] -- Frame que arrasta
-local Janela = Topo.Parent  -- Janela inteira
+-- Função para limitar a posição dentro da tela
+local function clampPosition(position, windowSize)
+    local viewportSize = workspace.CurrentCamera.ViewportSize
+    local safeOffset = 10 -- Margem de segurança
+    
+    -- Calcular limites
+    local minX = safeOffset
+    local maxX = viewportSize.X - windowSize.X.Offset - safeOffset
+    local minY = safeOffset
+    local maxY = viewportSize.Y - windowSize.Y.Offset - safeOffset
+    
+    -- Aplicar limites
+    local clampedX = math.clamp(position.X.Offset, minX, maxX)
+    local clampedY = math.clamp(position.Y.Offset, minY, maxY)
+    
+    return UDim2.new(position.X.Scale, clampedX, position.Y.Scale, clampedY)
+end
 
--- Início do drag
-Topo.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 
-    or input.UserInputType == Enum.UserInputType.Touch then
+-- Obter tamanho da janela (ajuste conforme sua estrutura)
+local function getWindowSize()
+    -- Se sua janela tiver um Frame principal, use:
+    -- return LMG2L.AbsoluteSize
+    -- Se for apenas o Topo_2, ajuste conforme necessário
+    return UDim2.new(0, LMG2L["Topo_2"].AbsoluteSize.X, 0, LMG2L["Topo_2"].AbsoluteSize.Y)
+end
+
+LMG2L["Topo_2"].InputBegan:Connect(function(input)  
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then  
+        draggingWindow = true  
+        dragStart = input.Position  
+        startPos = LMG2L["Topo_2"].Position
         
-        draggingWindow = true
-        dragStart = input.Position
-        startPos = Janela.Position
-    end
-end)
+        -- Feedback visual opcional (reduz transparência enquanto arrasta)
+        LMG2L["Topo_2"].BackgroundTransparency = 0.7
+    end  
+end)  
 
--- Movimento
-UserInputService.InputChanged:Connect(function(input)
-    if draggingWindow and (
-        input.UserInputType == Enum.UserInputType.MouseMovement 
-        or input.UserInputType == Enum.UserInputType.Touch
-    ) then
+game:GetService("UserInputService").InputChanged:Connect(function(input)  
+    if draggingWindow and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then  
         local delta = input.Position - dragStart
+        local newPosition = UDim2.new(  
+            startPos.X.Scale,   
+            startPos.X.Offset + delta.X,  
+            startPos.Y.Scale,   
+            startPos.Y.Offset + delta.Y  
+        )
+        
+        -- Aplicar limites de tela
+        local windowSize = getWindowSize()
+        LMG2L["Topo_2"].Position = clampPosition(newPosition, windowSize)
+    end  
+end)  
 
-        local viewport = Camera.ViewportSize
-        local frameSize = Janela.AbsoluteSize
-
-        -- Nova posição desejada
-        local newX = startPos.X.Offset + delta.X
-        local newY = startPos.Y.Offset + delta.Y
-
-        -- LIMITES (clamp)
-        newX = math.clamp(newX, 0, viewport.X - frameSize.X)
-        newY = math.clamp(newY, 0, viewport.Y - frameSize.Y)
-
-        Janela.Position = UDim2.new(0, newX, 0, newY)
-    end
+game:GetService("UserInputService").InputEnded:Connect(function(input)  
+    if draggingWindow and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then  
+        draggingWindow = false
+        
+        -- Restaurar transparência
+        LMG2L["Topo_2"].BackgroundTransparency = 0
+        
+        -- Snap para bordas (opcional - para mobile)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            local windowSize = getWindowSize()
+            local currentPos = LMG2L["Topo_2"].Position
+            local viewportSize = workspace.CurrentCamera.ViewportSize
+            
+            -- Se estiver muito perto da borda esquerda
+            if currentPos.X.Offset < viewportSize.X * 0.1 then
+                LMG2L["Topo_2"].Position = UDim2.new(
+                    currentPos.X.Scale,
+                    10,
+                    currentPos.Y.Scale,
+                    currentPos.Y.Offset
+                )
+            -- Se estiver muito perto da borda direita
+            elseif currentPos.X.Offset > viewportSize.X * 0.9 - windowSize.X.Offset then
+                LMG2L["Topo_2"].Position = UDim2.new(
+                    currentPos.X.Scale,
+                    viewportSize.X - windowSize.X.Offset - 10,
+                    currentPos.Y.Scale,
+                    currentPos.Y.Offset
+                )
+            end
+        end
+    end  
 end)
 
--- Fim do drag
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 
-    or input.UserInputType == Enum.UserInputType.Touch then
-        draggingWindow = false
+-- Para garantir que a janela não fique fora da tela ao redimensionar
+game:GetService("RunService").RenderStepped:Connect(function()
+    if not draggingWindow then
+        local windowSize = getWindowSize()
+        LMG2L["Topo_2"].Position = clampPosition(LMG2L["Topo_2"].Position, windowSize)
     end
 end)
     
