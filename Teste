@@ -425,7 +425,7 @@ function UILibrary:CreateWindow(title)
         ScrollingFrame.Position = UDim2.new(0, 0, 0, 24)
         ScrollingFrame.ScrollBarThickness = 2
         ScrollingFrame.Visible = false
-        ScrollingFrame.ZIndex = 3 -- Mais alto ainda para aparecer acima
+        ScrollingFrame.ZIndex = 10 -- Mais alto ainda para aparecer acima
         ScrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
         ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #options * 20)
         
