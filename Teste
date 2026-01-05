@@ -382,8 +382,9 @@ function UILibrary:CreateWindow(title)
         }
     end
     
-    -- NOVA FUNÇÃO PARA ADICIONAR DROPDOWN - CORRIGIDA
+        -- NOVA FUNÇÃO PARA ADICIONAR DROPDOWN - CORRIGIDA COMPLETAMENTE
     function publicMethods:AddDropdown(text, options, callback)
+        -- Primeiro: criar o frame do dropdown COM ZIndex muito alto
         local DropdownFrame = Instance.new("Frame")
         DropdownFrame.Name = "Dropdown_" .. text
         DropdownFrame.BorderSizePixel = 0
@@ -391,6 +392,7 @@ function UILibrary:CreateWindow(title)
         DropdownFrame.Size = UDim2.new(0, 228, 0, 22)
         DropdownFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 30))
         DropdownFrame.BackgroundTransparency = 1
+        DropdownFrame.ZIndex = 50 -- ZIndex MUITO ALTO
         
         local InfoLabel = Instance.new("TextLabel")
         InfoLabel.Name = "InfoLabel"
@@ -404,35 +406,45 @@ function UILibrary:CreateWindow(title)
         InfoLabel.Size = UDim2.new(0, 88, 0, 20)
         InfoLabel.Text = text or "Dropdown"
         InfoLabel.Position = UDim2.new(0, 140, 0, 2)
+        InfoLabel.ZIndex = 50 -- Mesmo ZIndex alto
         InfoLabel.Parent = DropdownFrame
         
+        -- Main do dropdown
         local Main = Instance.new("Frame")
         Main.Name = "Main"
         Main.BorderSizePixel = 0
         Main.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
         Main.Size = UDim2.new(0, 136, 0, 22)
-        Main.ZIndex = 2 -- Importante: ZIndex mais alto
+        Main.ZIndex = 51 -- Um pouco mais alto
         
         local UICorner = Instance.new("UICorner")
         UICorner.CornerRadius = UDim.new(0, 5)
         UICorner.Parent = Main
         
+        -- ScrollingFrame ajustado para ser MENOR (altura fixa de 2 opções)
         local ScrollingFrame = Instance.new("ScrollingFrame")
         ScrollingFrame.Name = "ScrollingFrame"
         ScrollingFrame.BorderSizePixel = 0
         ScrollingFrame.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
-        ScrollingFrame.Size = UDim2.new(0, 136, 0, 0)
+        ScrollingFrame.Size = UDim2.new(0, 136, 0, 0) -- Começa fechado
         ScrollingFrame.Position = UDim2.new(0, 0, 0, 24)
-        ScrollingFrame.ScrollBarThickness = 2
+        ScrollingFrame.ScrollBarThickness = 4 -- Mais visível
         ScrollingFrame.Visible = false
-        ScrollingFrame.ZIndex = 10 -- Mais alto ainda para aparecer acima
+        ScrollingFrame.ZIndex = 60 -- ZIndex MAIS ALTO AINDA
         ScrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-        ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #options * 20)
+        
+        -- Tamanho fixo: mostra apenas 2 opções, se tiver mais, precisa arrastar
+        local MAX_VISIBLE_OPTIONS = 2
+        local OPTION_HEIGHT = 20
+        local VISIBLE_HEIGHT = MAX_VISIBLE_OPTIONS * OPTION_HEIGHT + 4
+        ScrollingFrame.Size = UDim2.new(0, 136, 0, 0) -- Começa fechado
+        ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #options * OPTION_HEIGHT)
         
         local UICorner2 = Instance.new("UICorner")
         UICorner2.CornerRadius = UDim.new(0, 5)
         UICorner2.Parent = ScrollingFrame
         
+        -- Botão para abrir/fechar
         local OpenFrame = Instance.new("ImageButton")
         OpenFrame.Name = "OpenFrame"
         OpenFrame.BorderSizePixel = 0
@@ -441,12 +453,13 @@ function UILibrary:CreateWindow(title)
         OpenFrame.Size = UDim2.new(0, 22, 0, 22)
         OpenFrame.Rotation = 180
         OpenFrame.Position = UDim2.new(0, 114, 0, 0)
-        OpenFrame.ZIndex = 2
+        OpenFrame.ZIndex = 52
         
         local UICorner3 = Instance.new("UICorner")
         UICorner3.CornerRadius = UDim.new(0, 5)
         UICorner3.Parent = OpenFrame
         
+        -- Texto que mostra a opção selecionada
         local InfoNumber = Instance.new("TextLabel")
         InfoNumber.Name = "InfoNumber"
         InfoNumber.BorderSizePixel = 0
@@ -456,9 +469,9 @@ function UILibrary:CreateWindow(title)
         InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
         InfoNumber.TextColor3 = Color3.fromRGB(255, 255, 255)
         InfoNumber.BackgroundTransparency = 1
-        InfoNumber.Size = UDim2.new(0, 130, 0, 22)
+        InfoNumber.Size = UDim2.new(0, 110, 0, 22) -- Menor para não cobrir o botão
         InfoNumber.Text = options[1] or "Selecione"
-        InfoNumber.ZIndex = 2
+        InfoNumber.ZIndex = 52
         
         -- Criar botões para cada opção
         for i, option in ipairs(options) do
@@ -470,11 +483,11 @@ function UILibrary:CreateWindow(title)
             Button.TextColor3 = Color3.fromRGB(255, 255, 255)
             Button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
             Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-            Button.Size = UDim2.new(1, -4, 0, 18)
-            Button.Position = UDim2.new(0, 2, 0, (i-1) * 20)
+            Button.Size = UDim2.new(1, -4, 0, OPTION_HEIGHT - 2) -- Altura ajustada
+            Button.Position = UDim2.new(0, 2, 0, (i-1) * OPTION_HEIGHT)
             Button.Text = option
             Button.AutoButtonColor = false
-            Button.ZIndex = 3
+            Button.ZIndex = 61 -- MAIOR que o ScrollingFrame
             
             -- Efeito hover
             Button.MouseEnter:Connect(function()
@@ -507,6 +520,7 @@ function UILibrary:CreateWindow(title)
             Button.Parent = ScrollingFrame
         end
         
+        -- Montar a hierarquia
         ScrollingFrame.Parent = Main
         OpenFrame.Parent = Main
         InfoNumber.Parent = Main
@@ -518,24 +532,26 @@ function UILibrary:CreateWindow(title)
         
         OpenFrame.MouseButton1Click:Connect(function()
             isOpen = not isOpen
-            ScrollingFrame.Visible = isOpen
-            OpenFrame.Rotation = isOpen and 0 or 180
             
             if isOpen then
-                -- Ajustar tamanho do scrolling frame
-                local maxHeight = math.min(#options * 20, 100)
-                ScrollingFrame.Size = UDim2.new(0, 136, 0, maxHeight)
-                ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #options * 20)
+                -- Abrir: mostrar apenas 2 opções visíveis
+                ScrollingFrame.Visible = true
+                ScrollingFrame.Size = UDim2.new(0, 136, 0, VISIBLE_HEIGHT)
+                OpenFrame.Rotation = 0
                 
-                -- Garantir que aparece acima de tudo
-                ScrollingFrame.ZIndex = 10
-                for _, child in ipairs(ScrollingFrame:GetChildren()) do
-                    if child:IsA("GuiObject") then
-                        child.ZIndex = 11
-                    end
+                -- Se tiver mais que 2 opções, habilita scroll
+                if #options > MAX_VISIBLE_OPTIONS then
+                    ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #options * OPTION_HEIGHT)
+                    ScrollingFrame.ScrollBarThickness = 4
+                else
+                    ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+                    ScrollingFrame.ScrollBarThickness = 0
                 end
             else
+                -- Fechar
+                ScrollingFrame.Visible = false
                 ScrollingFrame.Size = UDim2.new(0, 136, 0, 0)
+                OpenFrame.Rotation = 180
             end
         end)
         
