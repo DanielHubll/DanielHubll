@@ -1,197 +1,168 @@
---// VLG UI LIBRARY
---// by Daniel (VLG)
---// loadstring compatible
+local Library = {}
 
-local UILib = {}
-UILib.__index = UILib
+function Library:CreateWindow(titleText)
+    local LMG2L = {}
+    
+    -- ScreenGui Principal
+    LMG2L["Floating_1"] = Instance.new("ScreenGui", game:GetService("CoreGui")) -- Usando CoreGui para não sumir ao morrer
+    LMG2L["Floating_1"]["Name"] = "VLG_Library"
+    
+    -- Topo (Barra de Título)
+    LMG2L["Topo_2"] = Instance.new("Frame", LMG2L["Floating_1"])
+    LMG2L["Topo_2"]["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)
+    LMG2L["Topo_2"]["Size"] = UDim2.new(0, 294, 0, 22)
+    LMG2L["Topo_2"]["Position"] = UDim2.new(0.5, -147, 0.4, 0)
+    LMG2L["Topo_2"]["Name"] = "Topo"
+    
+    Instance.new("UICorner", LMG2L["Topo_2"]).CornerRadius = UDim.new(0, 5)
 
-local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
+    -- Arrastar Menu (Draggable)
+    local UserInputService = game:GetService("UserInputService")
+    local gui = LMG2L["Topo_2"]
+    local dragging, dragInput, dragStart, startPos
+    gui.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true; dragStart = input.Position; startPos = gui.Position
+            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+        end
+    end)
+    gui.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
 
---// CREATE WINDOW
-function UILib:CreateWindow(title)
-    local Window = {}
-    Window.Tabs = {}
+    -- Main (Corpo do Menu)
+    LMG2L["Main_4"] = Instance.new("Frame", LMG2L["Topo_2"])
+    LMG2L["Main_4"]["BackgroundColor3"] = Color3.fromRGB(40, 40, 40)
+    LMG2L["Main_4"]["Size"] = UDim2.new(0, 294, 0, 182)
+    LMG2L["Main_4"]["Position"] = UDim2.new(0, 0, 0, 18)
+    LMG2L["Main_4"]["Name"] = "Main"
+    LMG2L["Main_4"]["ClipsDescendants"] = true
 
-    local player = Players.LocalPlayer
+    -- Título
+    LMG2L["Title"] = Instance.new("TextLabel", LMG2L["Topo_2"])
+    LMG2L["Title"]["Text"] = titleText or "VLG XITER"
+    LMG2L["Title"]["Size"] = UDim2.new(0, 120, 0, 20)
+    LMG2L["Title"]["Position"] = UDim2.new(0, 28, 0, 0)
+    LMG2L["Title"]["TextColor3"] = Color3.fromRGB(255, 255, 255)
+    LMG2L["Title"]["BackgroundTransparency"] = 1
+    LMG2L["Title"]["TextXAlignment"] = Enum.TextXAlignment.Left
 
-    -- ScreenGui
-    local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "VLG_UI"
-    ScreenGui.ResetOnSpawn = false
-    ScreenGui.Parent = player:WaitForChild("PlayerGui")
+    -- Botão FECHAR TUDO (X)
+    local CloseBtn = Instance.new("TextButton", LMG2L["Topo_2"])
+    CloseBtn.Name = "CloseMenu"
+    CloseBtn.Text = "X"
+    CloseBtn.Size = UDim2.new(0, 20, 0, 22)
+    CloseBtn.Position = UDim2.new(0, 270, 0, 0)
+    CloseBtn.BackgroundTransparency = 1
+    CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    
+    CloseBtn.MouseButton1Click:Connect(function()
+        LMG2L["Floating_1"]:Destroy()
+    end)
 
-    -- Top bar
-    local Topo = Instance.new("Frame", ScreenGui)
-    Topo.Size = UDim2.new(0,294,0,22)
-    Topo.Position = UDim2.new(0.5,-147,0.3,0)
-    Topo.BackgroundColor3 = Color3.fromRGB(144,0,181)
-    Topo.BorderSizePixel = 0
-    Instance.new("UICorner", Topo).CornerRadius = UDim.new(0,6)
+    -- Botão MINIMIZAR (Setinha)
+    local OpenName = Instance.new("ImageButton", LMG2L["Topo_2"])
+    OpenName.Name = "OpenName"
+    OpenName.Image = "rbxassetid://8539638324"
+    OpenName.Size = UDim2.new(0, 16, 0, 14)
+    OpenName.Position = UDim2.new(0, 5, 0, 4)
+    OpenName.BackgroundTransparency = 1
+    
+    local opened = true
+    OpenName.MouseButton1Click:Connect(function()
+        opened = not opened
+        LMG2L["Main_4"].Visible = opened
+        OpenName.Rotation = opened and 180 or 0
+    end)
 
-    -- Title
-    local Title = Instance.new("TextLabel", Topo)
-    Title.Size = UDim2.new(1,-10,1,0)
-    Title.Position = UDim2.new(0,10,0,0)
-    Title.BackgroundTransparency = 1
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.Text = title or "VLG UI"
-    Title.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
-    Title.TextSize = 11
-    Title.TextColor3 = Color3.new(1,1,1)
+    local TabContainer = {}
 
-    -- Menu
-    local Menu = Instance.new("Frame", Topo)
-    Menu.Position = UDim2.new(0,0,1,0)
-    Menu.Size = UDim2.new(0,294,0,182)
-    Menu.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    Menu.BorderSizePixel = 0
+    -- Função para adicionar Toggle
+    function TabContainer:AddToggle(text, callback)
+        local ToggleFrame = Instance.new("Frame", LMG2L["Main_4"])
+        ToggleFrame.Size = UDim2.new(0, 200, 0, 25)
+        ToggleFrame.BackgroundTransparency = 1
+        ToggleFrame.Position = UDim2.new(0, 60, 0, 10 + (#LMG2L["Main_4"]:GetChildren() * 25))
 
-    -- Tabs
-    local TabsFrame = Instance.new("Frame", Menu)
-    TabsFrame.Size = UDim2.new(0,52,1,0)
-    TabsFrame.BackgroundTransparency = 1
+        local TBtn = Instance.new("TextButton", ToggleFrame)
+        TBtn.Size = UDim2.new(0, 20, 0, 20)
+        TBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        TBtn.Text = ""
+        Instance.new("UICorner", TBtn).CornerRadius = UDim.new(0, 4)
 
-    -- Main
-    local Main = Instance.new("Frame", Menu)
-    Main.Position = UDim2.new(0,52,0,0)
-    Main.Size = UDim2.new(1,-52,1,0)
-    Main.BackgroundTransparency = 1
+        local TLog = Instance.new("TextLabel", ToggleFrame)
+        TLog.Text = text
+        TLog.Position = UDim2.new(0, 30, 0, 0)
+        TLog.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TLog.BackgroundTransparency = 1
 
-    local Layout = Instance.new("UIListLayout", Main)
-    Layout.Padding = UDim.new(0,6)
+        local state = false
+        TBtn.MouseButton1Click:Connect(function()
+            state = not state
+            TBtn.BackgroundColor3 = state and Color3.fromRGB(144, 0, 181) or Color3.fromRGB(60, 60, 60)
+            callback(state)
+        end)
+    end
 
-    -- Drag
-    do
-        local dragging, dragStart, startPos
-        Topo.InputBegan:Connect(function(i)
-            if i.UserInputType == Enum.UserInputType.MouseButton1 then
+    -- Função para adicionar Slider
+    function TabContainer:AddSlider(text, min, max, callback)
+        local SliderFrame = Instance.new("Frame", LMG2L["Main_4"])
+        SliderFrame.Size = UDim2.new(0, 200, 0, 40)
+        SliderFrame.BackgroundTransparency = 1
+        SliderFrame.Position = UDim2.new(0, 60, 0, 10 + (#LMG2L["Main_4"]:GetChildren() * 30))
+
+        local Label = Instance.new("TextLabel", SliderFrame)
+        Label.Text = text .. ": " .. min
+        Label.TextColor3 = Color3.fromRGB(255,255,255)
+        Label.Size = UDim2.new(1, 0, 0, 15)
+        Label.BackgroundTransparency = 1
+
+        local SliderBack = Instance.new("Frame", SliderFrame)
+        SliderBack.Size = UDim2.new(0, 150, 0, 10)
+        SliderBack.Position = UDim2.new(0, 0, 0, 20)
+        SliderBack.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+
+        local SliderBar = Instance.new("Frame", SliderBack)
+        SliderBar.Size = UDim2.new(0, 0, 1, 0)
+        SliderBar.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
+
+        local dragging = false
+        local function update()
+            local mousePos = UserInputService:GetMouseLocation().X
+            local barPos = SliderBack.AbsolutePosition.X
+            local barWidth = SliderBack.AbsoluteSize.X
+            local percent = math.clamp((mousePos - barPos) / barWidth, 0, 1)
+            SliderBar.Size = UDim2.new(percent, 0, 1, 0)
+            local value = math.floor(min + (max - min) * percent)
+            Label.Text = text .. ": " .. value
+            callback(value)
+        end
+
+        SliderBack.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 dragging = true
-                dragStart = i.Position
-                startPos = Topo.Position
+                update()
             end
         end)
-        UIS.InputEnded:Connect(function(i)
-            if i.UserInputType == Enum.UserInputType.MouseButton1 then
+
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                update()
+            end
+        end)
+
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 dragging = false
             end
         end)
-        UIS.InputChanged:Connect(function(i)
-            if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
-                local delta = i.Position - dragStart
-                Topo.Position = UDim2.new(
-                    startPos.X.Scale,
-                    startPos.X.Offset + delta.X,
-                    startPos.Y.Scale,
-                    startPos.Y.Offset + delta.Y
-                )
-            end
-        end)
     end
 
-    -- CREATE TAB
-    function Window:CreateTab(name)
-        local Tab = {}
-        Tab.Container = Instance.new("Frame", Main)
-        Tab.Container.Size = UDim2.new(1,0,1,0)
-        Tab.Container.BackgroundTransparency = 1
-        Tab.Container.Visible = false
-
-        local TabLayout = Instance.new("UIListLayout", Tab.Container)
-        TabLayout.Padding = UDim.new(0,6)
-
-        local TabBtn = Instance.new("TextButton", TabsFrame)
-        TabBtn.Size = UDim2.new(0,40,0,40)
-        TabBtn.Position = UDim2.new(0,6,0,#Window.Tabs * 46 + 6)
-        TabBtn.Text = name:sub(1,1)
-        TabBtn.TextColor3 = Color3.new(1,1,1)
-        TabBtn.BackgroundColor3 = Color3.fromRGB(52,52,52)
-        TabBtn.BorderSizePixel = 0
-        Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0,6)
-
-        TabBtn.MouseButton1Click:Connect(function()
-            for _,t in pairs(Window.Tabs) do
-                t.Container.Visible = false
-            end
-            Tab.Container.Visible = true
-        end)
-
-        -- TOGGLE
-        function Tab:AddToggle(text, default, callback)
-            local Toggle = Instance.new("TextButton", Tab.Container)
-            Toggle.Size = UDim2.new(1,-12,0,22)
-            Toggle.Text = text
-            Toggle.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
-            Toggle.TextSize = 10
-            Toggle.TextColor3 = Color3.new(1,1,1)
-            Toggle.BackgroundColor3 = Color3.fromRGB(52,52,52)
-            Toggle.BorderSizePixel = 0
-            Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0,6)
-
-            local state = default or false
-
-            local function refresh()
-                Toggle.BackgroundColor3 = state and Color3.fromRGB(144,0,181) or Color3.fromRGB(52,52,52)
-            end
-            refresh()
-
-            Toggle.MouseButton1Click:Connect(function()
-                state = not state
-                refresh()
-                callback(state)
-            end)
-        end
-
-        -- SLIDER
-        function Tab:AddSlider(text,min,max,default,callback)
-            local Holder = Instance.new("Frame", Tab.Container)
-            Holder.Size = UDim2.new(1,-12,0,32)
-            Holder.BackgroundTransparency = 1
-
-            local Label = Instance.new("TextLabel", Holder)
-            Label.Size = UDim2.new(1,0,0,12)
-            Label.BackgroundTransparency = 1
-            Label.TextXAlignment = Left
-            Label.Text = text
-            Label.TextSize = 10
-            Label.TextColor3 = Color3.new(1,1,1)
-
-            local Bar = Instance.new("Frame", Holder)
-            Bar.Position = UDim2.new(0,0,0,16)
-            Bar.Size = UDim2.new(1,0,0,10)
-            Bar.BackgroundColor3 = Color3.fromRGB(60,60,60)
-            Instance.new("UICorner", Bar).CornerRadius = UDim.new(0,6)
-
-            local Fill = Instance.new("Frame", Bar)
-            Fill.Size = UDim2.new(0,0,1,0)
-            Fill.BackgroundColor3 = Color3.fromRGB(144,0,181)
-            Instance.new("UICorner", Fill).CornerRadius = UDim.new(0,6)
-
-            local dragging = false
-
-            Bar.InputBegan:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
-            end)
-            UIS.InputEnded:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
-            end)
-            UIS.InputChanged:Connect(function(i)
-                if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
-                    local pct = math.clamp((i.Position.X-Bar.AbsolutePosition.X)/Bar.AbsoluteSize.X,0,1)
-                    Fill.Size = UDim2.new(pct,0,1,0)
-                    local val = math.floor(min + (max-min)*pct)
-                    callback(val)
-                end
-            end)
-        end
-
-        table.insert(Window.Tabs, Tab)
-        if #Window.Tabs == 1 then Tab.Container.Visible = true end
-        return Tab
-    end
-
-    return Window
+    return TabContainer
 end
 
-return setmetatable({}, UILib)
+return Library
