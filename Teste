@@ -1,0 +1,197 @@
+--// VLG UI LIBRARY
+--// by Daniel (VLG)
+--// loadstring compatible
+
+local UILib = {}
+UILib.__index = UILib
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+--// CREATE WINDOW
+function UILib:CreateWindow(title)
+    local Window = {}
+    Window.Tabs = {}
+
+    local player = Players.LocalPlayer
+
+    -- ScreenGui
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "VLG_UI"
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.Parent = player:WaitForChild("PlayerGui")
+
+    -- Top bar
+    local Topo = Instance.new("Frame", ScreenGui)
+    Topo.Size = UDim2.new(0,294,0,22)
+    Topo.Position = UDim2.new(0.5,-147,0.3,0)
+    Topo.BackgroundColor3 = Color3.fromRGB(144,0,181)
+    Topo.BorderSizePixel = 0
+    Instance.new("UICorner", Topo).CornerRadius = UDim.new(0,6)
+
+    -- Title
+    local Title = Instance.new("TextLabel", Topo)
+    Title.Size = UDim2.new(1,-10,1,0)
+    Title.Position = UDim2.new(0,10,0,0)
+    Title.BackgroundTransparency = 1
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.Text = title or "VLG UI"
+    Title.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+    Title.TextSize = 11
+    Title.TextColor3 = Color3.new(1,1,1)
+
+    -- Menu
+    local Menu = Instance.new("Frame", Topo)
+    Menu.Position = UDim2.new(0,0,1,0)
+    Menu.Size = UDim2.new(0,294,0,182)
+    Menu.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    Menu.BorderSizePixel = 0
+
+    -- Tabs
+    local TabsFrame = Instance.new("Frame", Menu)
+    TabsFrame.Size = UDim2.new(0,52,1,0)
+    TabsFrame.BackgroundTransparency = 1
+
+    -- Main
+    local Main = Instance.new("Frame", Menu)
+    Main.Position = UDim2.new(0,52,0,0)
+    Main.Size = UDim2.new(1,-52,1,0)
+    Main.BackgroundTransparency = 1
+
+    local Layout = Instance.new("UIListLayout", Main)
+    Layout.Padding = UDim.new(0,6)
+
+    -- Drag
+    do
+        local dragging, dragStart, startPos
+        Topo.InputBegan:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
+                dragStart = i.Position
+                startPos = Topo.Position
+            end
+        end)
+        UIS.InputEnded:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+            end
+        end)
+        UIS.InputChanged:Connect(function(i)
+            if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+                local delta = i.Position - dragStart
+                Topo.Position = UDim2.new(
+                    startPos.X.Scale,
+                    startPos.X.Offset + delta.X,
+                    startPos.Y.Scale,
+                    startPos.Y.Offset + delta.Y
+                )
+            end
+        end)
+    end
+
+    -- CREATE TAB
+    function Window:CreateTab(name)
+        local Tab = {}
+        Tab.Container = Instance.new("Frame", Main)
+        Tab.Container.Size = UDim2.new(1,0,1,0)
+        Tab.Container.BackgroundTransparency = 1
+        Tab.Container.Visible = false
+
+        local TabLayout = Instance.new("UIListLayout", Tab.Container)
+        TabLayout.Padding = UDim.new(0,6)
+
+        local TabBtn = Instance.new("TextButton", TabsFrame)
+        TabBtn.Size = UDim2.new(0,40,0,40)
+        TabBtn.Position = UDim2.new(0,6,0,#Window.Tabs * 46 + 6)
+        TabBtn.Text = name:sub(1,1)
+        TabBtn.TextColor3 = Color3.new(1,1,1)
+        TabBtn.BackgroundColor3 = Color3.fromRGB(52,52,52)
+        TabBtn.BorderSizePixel = 0
+        Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0,6)
+
+        TabBtn.MouseButton1Click:Connect(function()
+            for _,t in pairs(Window.Tabs) do
+                t.Container.Visible = false
+            end
+            Tab.Container.Visible = true
+        end)
+
+        -- TOGGLE
+        function Tab:AddToggle(text, default, callback)
+            local Toggle = Instance.new("TextButton", Tab.Container)
+            Toggle.Size = UDim2.new(1,-12,0,22)
+            Toggle.Text = text
+            Toggle.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            Toggle.TextSize = 10
+            Toggle.TextColor3 = Color3.new(1,1,1)
+            Toggle.BackgroundColor3 = Color3.fromRGB(52,52,52)
+            Toggle.BorderSizePixel = 0
+            Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0,6)
+
+            local state = default or false
+
+            local function refresh()
+                Toggle.BackgroundColor3 = state and Color3.fromRGB(144,0,181) or Color3.fromRGB(52,52,52)
+            end
+            refresh()
+
+            Toggle.MouseButton1Click:Connect(function()
+                state = not state
+                refresh()
+                callback(state)
+            end)
+        end
+
+        -- SLIDER
+        function Tab:AddSlider(text,min,max,default,callback)
+            local Holder = Instance.new("Frame", Tab.Container)
+            Holder.Size = UDim2.new(1,-12,0,32)
+            Holder.BackgroundTransparency = 1
+
+            local Label = Instance.new("TextLabel", Holder)
+            Label.Size = UDim2.new(1,0,0,12)
+            Label.BackgroundTransparency = 1
+            Label.TextXAlignment = Left
+            Label.Text = text
+            Label.TextSize = 10
+            Label.TextColor3 = Color3.new(1,1,1)
+
+            local Bar = Instance.new("Frame", Holder)
+            Bar.Position = UDim2.new(0,0,0,16)
+            Bar.Size = UDim2.new(1,0,0,10)
+            Bar.BackgroundColor3 = Color3.fromRGB(60,60,60)
+            Instance.new("UICorner", Bar).CornerRadius = UDim.new(0,6)
+
+            local Fill = Instance.new("Frame", Bar)
+            Fill.Size = UDim2.new(0,0,1,0)
+            Fill.BackgroundColor3 = Color3.fromRGB(144,0,181)
+            Instance.new("UICorner", Fill).CornerRadius = UDim.new(0,6)
+
+            local dragging = false
+
+            Bar.InputBegan:Connect(function(i)
+                if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
+            end)
+            UIS.InputEnded:Connect(function(i)
+                if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+            end)
+            UIS.InputChanged:Connect(function(i)
+                if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+                    local pct = math.clamp((i.Position.X-Bar.AbsolutePosition.X)/Bar.AbsoluteSize.X,0,1)
+                    Fill.Size = UDim2.new(pct,0,1,0)
+                    local val = math.floor(min + (max-min)*pct)
+                    callback(val)
+                end
+            end)
+        end
+
+        table.insert(Window.Tabs, Tab)
+        if #Window.Tabs == 1 then Tab.Container.Visible = true end
+        return Tab
+    end
+
+    return Window
+end
+
+return setmetatable({}, UILib)
