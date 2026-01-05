@@ -382,9 +382,8 @@ function UILibrary:CreateWindow(title)
         }
     end
     
-        -- NOVA FUNÇÃO PARA ADICIONAR DROPDOWN - CORRIGIDA COMPLETAMENTE
+    -- NOVA FUNÇÃO PARA ADICIONAR DROPDOWN - CORRIGIDA E OTIMIZADA
     function publicMethods:AddDropdown(text, options, callback)
-        -- Primeiro: criar o frame do dropdown COM ZIndex muito alto
         local DropdownFrame = Instance.new("Frame")
         DropdownFrame.Name = "Dropdown_" .. text
         DropdownFrame.BorderSizePixel = 0
@@ -392,7 +391,7 @@ function UILibrary:CreateWindow(title)
         DropdownFrame.Size = UDim2.new(0, 228, 0, 22)
         DropdownFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 30))
         DropdownFrame.BackgroundTransparency = 1
-        DropdownFrame.ZIndex = 50 -- ZIndex MUITO ALTO
+        DropdownFrame.ZIndex = 2
         
         local InfoLabel = Instance.new("TextLabel")
         InfoLabel.Name = "InfoLabel"
@@ -406,45 +405,38 @@ function UILibrary:CreateWindow(title)
         InfoLabel.Size = UDim2.new(0, 88, 0, 20)
         InfoLabel.Text = text or "Dropdown"
         InfoLabel.Position = UDim2.new(0, 140, 0, 2)
-        InfoLabel.ZIndex = 50 -- Mesmo ZIndex alto
+        InfoLabel.ZIndex = 2
         InfoLabel.Parent = DropdownFrame
         
-        -- Main do dropdown
         local Main = Instance.new("Frame")
         Main.Name = "Main"
         Main.BorderSizePixel = 0
         Main.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
         Main.Size = UDim2.new(0, 136, 0, 22)
-        Main.ZIndex = 51 -- Um pouco mais alto
+        Main.ZIndex = 3
         
         local UICorner = Instance.new("UICorner")
         UICorner.CornerRadius = UDim.new(0, 5)
         UICorner.Parent = Main
         
-        -- ScrollingFrame ajustado para ser MENOR (altura fixa de 2 opções)
+        -- CORREÇÃO: ScrollingFrame ajustável
         local ScrollingFrame = Instance.new("ScrollingFrame")
         ScrollingFrame.Name = "ScrollingFrame"
         ScrollingFrame.BorderSizePixel = 0
         ScrollingFrame.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
-        ScrollingFrame.Size = UDim2.new(0, 136, 0, 0) -- Começa fechado
+        ScrollingFrame.Size = UDim2.new(0, 136, 0, 0) -- Inicia fechado
         ScrollingFrame.Position = UDim2.new(0, 0, 0, 24)
-        ScrollingFrame.ScrollBarThickness = 4 -- Mais visível
+        ScrollingFrame.ScrollBarThickness = 3
         ScrollingFrame.Visible = false
-        ScrollingFrame.ZIndex = 60 -- ZIndex MAIS ALTO AINDA
+        ScrollingFrame.ZIndex = 100 -- ZIndex MUITO ALTO para aparecer acima de tudo
         ScrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-        
-        -- Tamanho fixo: mostra apenas 2 opções, se tiver mais, precisa arrastar
-        local MAX_VISIBLE_OPTIONS = 2
-        local OPTION_HEIGHT = 20
-        local VISIBLE_HEIGHT = MAX_VISIBLE_OPTIONS * OPTION_HEIGHT + 4
-        ScrollingFrame.Size = UDim2.new(0, 136, 0, 0) -- Começa fechado
-        ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #options * OPTION_HEIGHT)
+        ScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
         
         local UICorner2 = Instance.new("UICorner")
         UICorner2.CornerRadius = UDim.new(0, 5)
         UICorner2.Parent = ScrollingFrame
         
-        -- Botão para abrir/fechar
         local OpenFrame = Instance.new("ImageButton")
         OpenFrame.Name = "OpenFrame"
         OpenFrame.BorderSizePixel = 0
@@ -453,27 +445,30 @@ function UILibrary:CreateWindow(title)
         OpenFrame.Size = UDim2.new(0, 22, 0, 22)
         OpenFrame.Rotation = 180
         OpenFrame.Position = UDim2.new(0, 114, 0, 0)
-        OpenFrame.ZIndex = 52
+        OpenFrame.ZIndex = 4
         
         local UICorner3 = Instance.new("UICorner")
         UICorner3.CornerRadius = UDim.new(0, 5)
         UICorner3.Parent = OpenFrame
         
-        -- Texto que mostra a opção selecionada
         local InfoNumber = Instance.new("TextLabel")
         InfoNumber.Name = "InfoNumber"
         InfoNumber.BorderSizePixel = 0
-        InfoNumber.TextSize = 13
+        InfoNumber.TextSize = 11
         InfoNumber.TextXAlignment = Enum.TextXAlignment.Left
         InfoNumber.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
         InfoNumber.TextColor3 = Color3.fromRGB(255, 255, 255)
         InfoNumber.BackgroundTransparency = 1
-        InfoNumber.Size = UDim2.new(0, 110, 0, 22) -- Menor para não cobrir o botão
+        InfoNumber.Size = UDim2.new(0, 110, 0, 22)
         InfoNumber.Text = options[1] or "Selecione"
-        InfoNumber.ZIndex = 52
+        InfoNumber.ZIndex = 4
+        InfoNumber.TextTruncate = Enum.TextTruncate.AtEnd
         
         -- Criar botões para cada opção
+        local buttonHeight = 20
+        local padding = 2
+        
         for i, option in ipairs(options) do
             local Button = Instance.new("TextButton")
             Button.Name = "Button_" .. option
@@ -483,11 +478,11 @@ function UILibrary:CreateWindow(title)
             Button.TextColor3 = Color3.fromRGB(255, 255, 255)
             Button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
             Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-            Button.Size = UDim2.new(1, -4, 0, OPTION_HEIGHT - 2) -- Altura ajustada
-            Button.Position = UDim2.new(0, 2, 0, (i-1) * OPTION_HEIGHT)
+            Button.Size = UDim2.new(1, -4, 0, buttonHeight)
+            Button.Position = UDim2.new(0, 2, 0, (i-1) * (buttonHeight + padding))
             Button.Text = option
             Button.AutoButtonColor = false
-            Button.ZIndex = 61 -- MAIOR que o ScrollingFrame
+            Button.ZIndex = 101 -- Mais alto que o ScrollingFrame
             
             -- Efeito hover
             Button.MouseEnter:Connect(function()
@@ -520,38 +515,44 @@ function UILibrary:CreateWindow(title)
             Button.Parent = ScrollingFrame
         end
         
-        -- Montar a hierarquia
         ScrollingFrame.Parent = Main
         OpenFrame.Parent = Main
         InfoNumber.Parent = Main
         Main.Parent = DropdownFrame
         DropdownFrame.Parent = LMG2L["ElementsContainer"]
         
+        -- CORREÇÃO: Ajustar tamanho baseado no número de opções
+        local function calculateHeight()
+            local numOptions = #options
+            if numOptions <= 3 then
+                -- Se tem 3 ou menos, mostra todas sem scroll
+                return numOptions * (buttonHeight + padding)
+            else
+                -- Se tem mais que 3, mostra só 3 e ativa scroll
+                return 3 * (buttonHeight + padding) + 5 -- +5 para a borda
+            end
+        end
+        
         -- Função para abrir/fechar dropdown
         local isOpen = false
         
         OpenFrame.MouseButton1Click:Connect(function()
             isOpen = not isOpen
+            ScrollingFrame.Visible = isOpen
+            OpenFrame.Rotation = isOpen and 0 or 180
             
             if isOpen then
-                -- Abrir: mostrar apenas 2 opções visíveis
-                ScrollingFrame.Visible = true
-                ScrollingFrame.Size = UDim2.new(0, 136, 0, VISIBLE_HEIGHT)
-                OpenFrame.Rotation = 0
+                -- Ajustar altura baseada no número de opções
+                local height = calculateHeight()
+                ScrollingFrame.Size = UDim2.new(0, 136, 0, height)
+                ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #options * (buttonHeight + padding))
                 
-                -- Se tiver mais que 2 opções, habilita scroll
-                if #options > MAX_VISIBLE_OPTIONS then
-                    ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #options * OPTION_HEIGHT)
-                    ScrollingFrame.ScrollBarThickness = 4
-                else
-                    ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-                    ScrollingFrame.ScrollBarThickness = 0
-                end
+                -- Garantir ZIndex alto
+                ScrollingFrame.ZIndex = 100
+                Main.ZIndex = 50
+                DropdownFrame.ZIndex = 25
             else
-                -- Fechar
-                ScrollingFrame.Visible = false
                 ScrollingFrame.Size = UDim2.new(0, 136, 0, 0)
-                OpenFrame.Rotation = 180
             end
         end)
         
@@ -571,17 +572,17 @@ function UILibrary:CreateWindow(title)
                 local mousePos = input.Position
                 local absPos = ScrollingFrame.AbsolutePosition
                 local absSize = ScrollingFrame.AbsoluteSize
-                local openFramePos = OpenFrame.AbsolutePosition
-                local openFrameSize = OpenFrame.AbsoluteSize
+                local mainPos = Main.AbsolutePosition
+                local mainSize = Main.AbsoluteSize
                 
                 -- Verificar se clicou fora do dropdown
-                local clickedInScrolling = mousePos.X >= absPos.X and mousePos.X <= absPos.X + absSize.X and
-                                          mousePos.Y >= absPos.Y and mousePos.Y <= absPos.Y + absSize.Y
+                local clickedInDropdown = 
+                    (mousePos.X >= absPos.X and mousePos.X <= absPos.X + absSize.X and
+                     mousePos.Y >= absPos.Y and mousePos.Y <= absPos.Y + absSize.Y) or
+                    (mousePos.X >= mainPos.X and mousePos.X <= mainPos.X + mainSize.X and
+                     mousePos.Y >= mainPos.Y and mousePos.Y <= mainPos.Y + mainSize.Y)
                 
-                local clickedInOpenFrame = mousePos.X >= openFramePos.X and mousePos.X <= openFramePos.X + openFrameSize.X and
-                                          mousePos.Y >= openFramePos.Y and mousePos.Y <= openFramePos.Y + openFrameSize.Y
-                
-                if not clickedInScrolling and not clickedInOpenFrame then
+                if not clickedInDropdown then
                     closeDropdown()
                 end
             end
