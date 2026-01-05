@@ -1,4 +1,4 @@
--- UI Library ATUALIZADA com Sistema de Tabs CORRIGIDO
+-- UI Library ATUALIZADA com NOVO VISUAL (cores e dimensões alteradas)
 local UILibrary = {}
 
 function UILibrary:CreateWindow(title)
@@ -14,11 +14,11 @@ function UILibrary:CreateWindow(title)
     LMG2L["Floating_1"]["Name"] = [[Floating]]
     LMG2L["Floating_1"]["ZIndexBehavior"] = Enum.ZIndexBehavior.Sibling
 
-    -- Frame Topo
+    -- Frame Topo (LARGURA AUMENTADA para 316)
     LMG2L["Topo_2"] = Instance.new("Frame", LMG2L["Floating_1"])
     LMG2L["Topo_2"]["BorderSizePixel"] = 0
     LMG2L["Topo_2"]["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)
-    LMG2L["Topo_2"]["Size"] = UDim2.new(0, 294, 0, 22)
+    LMG2L["Topo_2"]["Size"] = UDim2.new(0, 316, 0, 22)  -- Largura aumentada
     LMG2L["Topo_2"]["Position"] = UDim2.new(0, 260, 0, 46)
     LMG2L["Topo_2"]["Name"] = [[Topo]]
 
@@ -36,7 +36,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["TitleMenu_3"]["Name"] = [[TitleMenu]]
     LMG2L["TitleMenu_3"]["Position"] = UDim2.new(0, 28, 0, 0)
 
-    -- CloseMenu
+    -- CloseMenu (POSIÇÃO AJUSTADA para 296)
     LMG2L["CloseMenu_4"] = Instance.new("TextButton", LMG2L["Topo_2"])
     LMG2L["CloseMenu_4"]["BorderSizePixel"] = 0
     LMG2L["CloseMenu_4"]["TextSize"] = 10
@@ -46,22 +46,22 @@ function UILibrary:CreateWindow(title)
     LMG2L["CloseMenu_4"]["Size"] = UDim2.new(0, 14, 0, 14)
     LMG2L["CloseMenu_4"]["Text"] = [[X]]
     LMG2L["CloseMenu_4"]["Name"] = [[CloseMenu]]
-    LMG2L["CloseMenu_4"]["Position"] = UDim2.new(0, 276, 0, 4)
+    LMG2L["CloseMenu_4"]["Position"] = UDim2.new(0, 296, 0, 4)  -- Posição ajustada
 
-    -- Main Frame
+    -- Main Frame (LARGURA AUMENTADA para 316)
     LMG2L["Main_5"] = Instance.new("Frame", LMG2L["Topo_2"])
     LMG2L["Main_5"]["BorderSizePixel"] = 0
-    LMG2L["Main_5"]["BackgroundColor3"] = Color3.fromRGB(40, 40, 40)
-    LMG2L["Main_5"]["Size"] = UDim2.new(0, 294, 0, 202)
+    LMG2L["Main_5"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0)  -- Cor alterada para PRETO
+    LMG2L["Main_5"]["Size"] = UDim2.new(0, 316, 0, 202)  -- Largura aumentada
     LMG2L["Main_5"]["Position"] = UDim2.new(0, 0, 0, 22)
     LMG2L["Main_5"]["Name"] = [[Main]]
     LMG2L["Main_5"]["Visible"] = false
 
-    -- Effect Line
+    -- Effect Line (COMPRIMENTO AUMENTADO para 250)
     LMG2L["Effect_6"] = Instance.new("Frame", LMG2L["Main_5"])
     LMG2L["Effect_6"]["BorderSizePixel"] = 0
     LMG2L["Effect_6"]["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)
-    LMG2L["Effect_6"]["Size"] = UDim2.new(0, 230, 0, 2)
+    LMG2L["Effect_6"]["Size"] = UDim2.new(0, 250, 0, 2)  -- Comprimento aumentado
     LMG2L["Effect_6"]["Position"] = UDim2.new(0, 54, 0, 10)
     LMG2L["Effect_6"]["Name"] = [[Effect]]
 
@@ -144,7 +144,7 @@ function UILibrary:CreateWindow(title)
             elementCount = 0
         }
         
-        -- Criar botão da tab
+        -- Criar botão da tab (COR ALTERADA para roxo quando ativo)
         local TabButton = Instance.new("ImageButton", LMG2L["Tabs_2a"])
         TabButton["BorderSizePixel"] = 0
         TabButton["BackgroundColor3"] = Color3.fromRGB(53, 53, 53)
@@ -176,7 +176,7 @@ function UILibrary:CreateWindow(title)
             
             -- Ativar esta tab
             ElementsContainer.Visible = true
-            TabButton.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
+            TabButton.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  -- Cor roxa quando ativa
             currentTab = tabData
         end
         
@@ -193,7 +193,7 @@ function UILibrary:CreateWindow(title)
         -- Retornar objeto da tab com métodos para adicionar elementos
         local tabMethods = {}
         
-        -- ADICIONAR TOGGLE
+        -- ADICIONAR TOGGLE (COM NOVO VISUAL)
         function tabMethods:AddToggle(text, callback)
             local ToggleFrame = Instance.new("Frame")
             ToggleFrame.Name = "Toggle_" .. text
@@ -219,7 +219,7 @@ function UILibrary:CreateWindow(title)
             
             local ToggleButton = Instance.new("TextButton")
             ToggleButton.Name = "ToggleButton"
-            ToggleButton.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
+            ToggleButton.BackgroundColor3 = Color3.fromRGB(36, 36, 36)  -- Cor escura igual ao novo
             ToggleButton.Size = UDim2.new(0, 22, 0, 22)
             ToggleButton.BorderSizePixel = 0
             ToggleButton.Text = ""
@@ -235,7 +235,7 @@ function UILibrary:CreateWindow(title)
             local toggleState = false
             
             local function updateToggle()
-                ToggleButton.BackgroundColor3 = toggleState and Color3.fromRGB(144, 0, 181) or Color3.fromRGB(53, 53, 53)
+                ToggleButton.BackgroundColor3 = toggleState and Color3.fromRGB(144, 0, 181) or Color3.fromRGB(36, 36, 36)
                 if callback then callback(toggleState) end
             end
             
@@ -257,21 +257,21 @@ function UILibrary:CreateWindow(title)
             }
         end
         
-        -- ADICIONAR SLIDER
+        -- ADICIONAR SLIDER (COM NOVO VISUAL - LARGURA AUMENTADA)
         function tabMethods:AddSlider(text, min, max, callback)
             local SliderFrame = Instance.new("Frame")
             SliderFrame.Name = "Slider_" .. text
             SliderFrame.BorderSizePixel = 0
             SliderFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            SliderFrame.Size = UDim2.new(0, 228, 0, 22)
+            SliderFrame.Size = UDim2.new(0, 246, 0, 22)  -- Largura aumentada
             SliderFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 30))
             SliderFrame.BackgroundTransparency = 1
             
             local Main = Instance.new("Frame")
             Main.Name = "Main"
             Main.BorderSizePixel = 0
-            Main.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-            Main.Size = UDim2.new(0, 136, 0, 22)
+            Main.BackgroundColor3 = Color3.fromRGB(40, 40, 40)  -- Cor igual ao novo
+            Main.Size = UDim2.new(0, 168, 0, 22)  -- Largura aumentada
             Main.BackgroundTransparency = 1
             
             local UICorner = Instance.new("UICorner")
@@ -281,8 +281,8 @@ function UILibrary:CreateWindow(title)
             local SliderTrack = Instance.new("Frame")
             SliderTrack.Name = "SliderTrack"
             SliderTrack.BorderSizePixel = 0
-            SliderTrack.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
-            SliderTrack.Size = UDim2.new(0, 136, 0, 22)
+            SliderTrack.BackgroundColor3 = Color3.fromRGB(37, 37, 37)  -- Cor escura igual ao novo
+            SliderTrack.Size = UDim2.new(0, 168, 0, 22)  -- Largura aumentada
             
             local UICorner2 = Instance.new("UICorner")
             UICorner2.CornerRadius = UDim.new(0, 6)
@@ -304,10 +304,11 @@ function UILibrary:CreateWindow(title)
             InfoNumber.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
             InfoNumber.TextColor3 = Color3.fromRGB(255, 255, 255)
             InfoNumber.BackgroundTransparency = 1
-            InfoNumber.Size = UDim2.new(0, 136, 0, 22)
+            InfoNumber.Size = UDim2.new(0, 168, 0, 22)  -- Largura aumentada
             InfoNumber.Text = tostring(min or 0)
             InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-            InfoNumber.TextSize = 10
+            InfoNumber.TextSize = 20  -- Texto maior
+            InfoNumber.TextTransparency = 0.5
             
             local InfoLabel = Instance.new("TextLabel")
             InfoLabel.Name = "InfoLabel"
@@ -318,15 +319,15 @@ function UILibrary:CreateWindow(title)
             InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
             InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
             InfoLabel.BackgroundTransparency = 1
-            InfoLabel.Size = UDim2.new(0, 88, 0, 20)
+            InfoLabel.Size = UDim2.new(0, 70, 0, 20)
             InfoLabel.Text = text or "Slider"
-            InfoLabel.Position = UDim2.new(0, 140, 0, 2)
+            InfoLabel.Position = UDim2.new(0, 176, 0, 2)  -- Posição ajustada
+            InfoLabel.Parent = SliderFrame
             
             SliderFill.Parent = SliderTrack
             SliderTrack.Parent = Main
             InfoNumber.Parent = Main
             Main.Parent = SliderFrame
-            InfoLabel.Parent = SliderFrame
             SliderFrame.Parent = ElementsContainer
             
             local sliderValue = min or 0
@@ -392,7 +393,7 @@ function UILibrary:CreateWindow(title)
             }
         end
         
-        -- ADICIONAR DROPDOWN (COMPLETO)
+        -- ADICIONAR DROPDOWN (COM NOVO VISUAL)
         function tabMethods:AddDropdown(text, options, callback)
             local DropdownFrame = Instance.new("Frame")
             DropdownFrame.Name = "Dropdown_" .. text
@@ -414,14 +415,14 @@ function UILibrary:CreateWindow(title)
             InfoLabel.BackgroundTransparency = 1
             InfoLabel.Size = UDim2.new(0, 88, 0, 20)
             InfoLabel.Text = text or "Dropdown"
-            InfoLabel.Position = UDim2.new(0, 140, 0, 2)
+            InfoLabel.Position = UDim2.new(0, 140, 0, 2)  -- Posição ajustada
             InfoLabel.ZIndex = 2
             InfoLabel.Parent = DropdownFrame
             
             local Main = Instance.new("Frame")
             Main.Name = "Main"
             Main.BorderSizePixel = 0
-            Main.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
+            Main.BackgroundColor3 = Color3.fromRGB(37, 37, 37)  -- Cor escura igual ao novo
             Main.Size = UDim2.new(0, 136, 0, 22)
             Main.ZIndex = 3
             
@@ -432,10 +433,10 @@ function UILibrary:CreateWindow(title)
             local ScrollingFrame = Instance.new("ScrollingFrame")
             ScrollingFrame.Name = "ScrollingFrame"
             ScrollingFrame.BorderSizePixel = 0
-            ScrollingFrame.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
+            ScrollingFrame.BackgroundColor3 = Color3.fromRGB(37, 37, 37)  -- Cor escura igual ao novo
             ScrollingFrame.Size = UDim2.new(0, 136, 0, 0)
             ScrollingFrame.Position = UDim2.new(0, 0, 0, 24)
-            ScrollingFrame.ScrollBarThickness = 3
+            ScrollingFrame.ScrollBarThickness = 0  -- Scrollbar removido
             ScrollingFrame.Visible = false
             ScrollingFrame.ZIndex = 100
             ScrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
@@ -449,11 +450,11 @@ function UILibrary:CreateWindow(title)
             local OpenFrame = Instance.new("ImageButton")
             OpenFrame.Name = "OpenFrame"
             OpenFrame.BorderSizePixel = 0
-            OpenFrame.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
+            OpenFrame.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  -- Cor roxa
             OpenFrame.Image = [[rbxassetid://8539638324]]
             OpenFrame.Size = UDim2.new(0, 22, 0, 22)
             OpenFrame.Rotation = 180
-            OpenFrame.Position = UDim2.new(0, 114, 0, 0)
+            OpenFrame.Position = UDim2.new(0, 114, 0, 0)  -- Posição ajustada
             OpenFrame.ZIndex = 4
             
             local UICorner3 = Instance.new("UICorner")
@@ -463,18 +464,19 @@ function UILibrary:CreateWindow(title)
             local InfoNumber = Instance.new("TextLabel")
             InfoNumber.Name = "InfoNumber"
             InfoNumber.BorderSizePixel = 0
-            InfoNumber.TextSize = 11
+            InfoNumber.TextSize = 13  -- Texto maior
             InfoNumber.TextXAlignment = Enum.TextXAlignment.Left
             InfoNumber.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
             InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
             InfoNumber.TextColor3 = Color3.fromRGB(255, 255, 255)
             InfoNumber.BackgroundTransparency = 1
-            InfoNumber.Size = UDim2.new(0, 110, 0, 22)
+            InfoNumber.Size = UDim2.new(0, 130, 0, 22)  -- Largura aumentada
             InfoNumber.Text = options[1] or "Selecione"
             InfoNumber.ZIndex = 4
             InfoNumber.TextTruncate = Enum.TextTruncate.AtEnd
+            InfoNumber.Position = UDim2.new(0, 6, 0, 0)
             
-            local buttonHeight = 20
+            local buttonHeight = 16
             local padding = 2
             
             for i, option in ipairs(options) do
@@ -484,7 +486,7 @@ function UILibrary:CreateWindow(title)
                 Button.BorderSizePixel = 0
                 Button.TextSize = 10
                 Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-                Button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
+                Button.BackgroundColor3 = Color3.fromRGB(37, 37, 37)  -- Cor escura
                 Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
                 Button.Size = UDim2.new(1, -4, 0, buttonHeight)
                 Button.Position = UDim2.new(0, 2, 0, (i-1) * (buttonHeight + padding))
@@ -493,11 +495,11 @@ function UILibrary:CreateWindow(title)
                 Button.ZIndex = 101
                 
                 Button.MouseEnter:Connect(function()
-                    Button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+                    Button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
                 end)
                 
                 Button.MouseLeave:Connect(function()
-                    Button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
+                    Button.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
                 end)
                 
                 Button.MouseButton1Click:Connect(function()
@@ -562,13 +564,13 @@ function UILibrary:CreateWindow(title)
             }
         end
         
-        -- ADICIONAR RADIO BUTTONS (COMPLETO)
+        -- ADICIONAR RADIO BUTTONS (COM NOVO VISUAL)
         function tabMethods:AddRadioButtons(text, options, callback)
             local RadioFrame = Instance.new("Frame")
             RadioFrame.Name = "RadioButtons_" .. text
             RadioFrame.BorderSizePixel = 0
             RadioFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            RadioFrame.Size = UDim2.new(0, 162, 0, 50)
+            RadioFrame.Size = UDim2.new(0, 162, 0, 40)  -- Altura reduzida
             RadioFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 30))
             RadioFrame.BackgroundTransparency = 1
             
@@ -593,7 +595,7 @@ function UILibrary:CreateWindow(title)
                 RadioOption.Name = "Radio" .. i
                 RadioOption.BorderSizePixel = 0
                 RadioOption.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                RadioOption.Size = UDim2.new(0, 74, 0, 16)
+                RadioOption.Size = UDim2.new(0, 70, 0, 16)  -- Largura aumentada
                 RadioOption.Position = UDim2.new(0, (i-1) * 78, 0, 16)
                 RadioOption.BackgroundTransparency = 1
                 
@@ -620,7 +622,7 @@ function UILibrary:CreateWindow(title)
                 RadioButton.AutoButtonColor = false
                 
                 local UICorner = Instance.new("UICorner")
-                UICorner.CornerRadius = UDim.new(1, 9)
+                UICorner.CornerRadius = UDim.new(1, 9)  -- Círculo perfeito
                 UICorner.Parent = RadioButton
                 
                 RadioButton.Parent = RadioOption
@@ -646,7 +648,7 @@ function UILibrary:CreateWindow(title)
                 end)
             end
             
-            RadioFrame.Size = UDim2.new(0, math.min(#options * 78, 162), 0, 50)
+            RadioFrame.Size = UDim2.new(0, math.min(#options * 78, 162), 0, 40)
             RadioFrame.Parent = ElementsContainer
             
             tabData.elementCount = tabData.elementCount + 1
@@ -672,15 +674,15 @@ function UILibrary:CreateWindow(title)
             }
         end
         
-        -- ADICIONAR BOTÃO
+        -- ADICIONAR BOTÃO (COM NOVO VISUAL - LARGURA AUMENTADA)
         function tabMethods:AddButton(text, callback)
             local ButtonFrame = Instance.new("Frame")
             ButtonFrame.Name = "Button_" .. text
             ButtonFrame.BorderSizePixel = 0
             ButtonFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            ButtonFrame.Size = UDim2.new(0, 220, 0, 22)
+            ButtonFrame.Size = UDim2.new(0, 236, 0, 22)  -- Largura aumentada
             ButtonFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 35))
-            ButtonFrame.BackgroundTransparency = 0.9
+            ButtonFrame.BackgroundTransparency = 0.9  -- Transparência alterada
             
             local Button = Instance.new("TextButton")
             Button.Name = "Button"
@@ -690,7 +692,7 @@ function UILibrary:CreateWindow(title)
             Button.TextColor3 = Color3.fromRGB(255, 255, 255)
             Button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
             Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-            Button.Size = UDim2.new(0, 220, 0, 22)
+            Button.Size = UDim2.new(0, 238, 0, 22)  -- Largura aumentada
             Button.Text = text or "Button"
             Button.AutoButtonColor = false
             
