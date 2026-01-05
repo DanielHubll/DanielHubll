@@ -595,7 +595,7 @@ function UILibrary:CreateWindow(title)
         RadioFrame.BorderSizePixel = 0
         RadioFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         RadioFrame.Size = UDim2.new(0, 162, 0, 50) -- Aumentei a altura
-        RadioFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 35)) -- Mais espaçamento
+        RadioFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 30)) -- Mais espaçamento
         RadioFrame.BackgroundTransparency = 1
         
         local InfoLabel = Instance.new("TextLabel")
