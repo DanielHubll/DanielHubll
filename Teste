@@ -158,92 +158,76 @@ function UILibrary:CreateWindow(title)
     
     -- FUNÇÃO PARA ADICIONAR TOGGLE - CORRIGIDA
     function publicMethods:AddToggle(text, callback)  
-        local ToggleFrame = Instance.new("Frame")  
-        ToggleFrame.Name = "Toggle_" .. text  
-        ToggleFrame.BorderSizePixel = 0  
-        ToggleFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
-        ToggleFrame.Size = UDim2.new(0, 100, 0, 22)  
-        ToggleFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 26))  
-        ToggleFrame.BackgroundTransparency = 1  
-        
-        local InfoLabel = Instance.new("TextLabel")  
-        InfoLabel.Name = "InfoLabel"  
-        InfoLabel.BorderSizePixel = 0  
-        InfoLabel.TextSize = 10  
-        InfoLabel.TextXAlignment = Enum.TextXAlignment.Left  
-        InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
-        InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)  
-        InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)  
-        InfoLabel.BackgroundTransparency = 1  
-        InfoLabel.Size = UDim2.new(0, 88, 0, 22)  
-        InfoLabel.Text = text or "Toggle"  
-        InfoLabel.Position = UDim2.new(0, 28, 0, 0)  
-        InfoLabel.Parent = ToggleFrame  
-        
-        local ToggleButton = Instance.new("TextButton")  
-        ToggleButton.Name = "ToggleButton"  
-        ToggleButton.BackgroundColor3 = Color3.fromRGB(53, 53, 53)  
-        ToggleButton.Size = UDim2.new(0, 22, 0, 22)  
-        ToggleButton.BorderSizePixel = 0 -- REMOVIDO BORDA
-        ToggleButton.Text = ""  
-        ToggleButton.AutoButtonColor = false -- IMPORTANTE: Evita efeitos automáticos
-        
-        local UICorner = Instance.new("UICorner")  
-        UICorner.CornerRadius = UDim.new(0, 5)  
-        UICorner.Parent = ToggleButton  
-        
-        local ToggleIndicator = Instance.new("Frame")  
-        ToggleIndicator.Name = "ToggleIndicator"  
-        ToggleIndicator.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  
-        ToggleIndicator.Size = UDim2.new(0, 16, 0, 16)  
-        ToggleIndicator.Position = UDim2.new(0, 3, 0, 3)  
-        ToggleIndicator.Visible = false  
-        ToggleIndicator.BorderSizePixel = 0 -- REMOVIDO BORDA
-        
-        local UICorner2 = Instance.new("UICorner")  
-        UICorner2.CornerRadius = UDim.new(0, 3)  
-        UICorner2.Parent = ToggleIndicator  
-        
-        ToggleIndicator.Parent = ToggleButton  
-        ToggleButton.Parent = ToggleFrame  
-        ToggleFrame.Parent = LMG2L["ElementsContainer"]  
-        
-        local toggleState = false  
-        
-        local function updateToggle()  
-            ToggleIndicator.Visible = toggleState  
-            if toggleState then  
-                ToggleButton.BackgroundColor3 = Color3.fromRGB(100, 0, 125)  
-            else  
-                ToggleButton.BackgroundColor3 = Color3.fromRGB(53, 53, 53)  
-            end  
-            
-            if callback then  
-                callback(toggleState)  
-            end  
+    local ToggleFrame = Instance.new("Frame")  
+    ToggleFrame.Name = "Toggle_" .. text  
+    ToggleFrame.BorderSizePixel = 0  
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
+    ToggleFrame.Size = UDim2.new(0, 100, 0, 22)  
+    ToggleFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 26))  
+    ToggleFrame.BackgroundTransparency = 1  
+    
+    local InfoLabel = Instance.new("TextLabel")  
+    InfoLabel.Name = "InfoLabel"  
+    InfoLabel.BorderSizePixel = 0  
+    InfoLabel.TextSize = 10  
+    InfoLabel.TextXAlignment = Enum.TextXAlignment.Left  
+    InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
+    InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)  
+    InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)  
+    InfoLabel.BackgroundTransparency = 1  
+    InfoLabel.Size = UDim2.new(0, 88, 0, 22)  
+    InfoLabel.Text = text or "Toggle"  
+    InfoLabel.Position = UDim2.new(0, 28, 0, 0)  
+    InfoLabel.Parent = ToggleFrame  
+    
+    local ToggleButton = Instance.new("TextButton")  
+    ToggleButton.Name = "ToggleButton"  
+    ToggleButton.BackgroundColor3 = Color3.fromRGB(53, 53, 53)  
+    ToggleButton.Size = UDim2.new(0, 22, 0, 22)  
+    ToggleButton.BorderSizePixel = 0  
+    ToggleButton.Text = ""  
+    ToggleButton.AutoButtonColor = false  
+    
+    local UICorner = Instance.new("UICorner")  
+    UICorner.CornerRadius = UDim.new(0, 5)  
+    UICorner.Parent = ToggleButton  
+    
+    ToggleButton.Parent = ToggleFrame  
+    ToggleFrame.Parent = LMG2L["ElementsContainer"]  
+    
+    local toggleState = false  
+    
+    local function updateToggle()  
+        if toggleState then  
+            ToggleButton.BackgroundColor3 = Color3.fromRGB(100, 0, 125)  -- Ativado
+        else  
+            ToggleButton.BackgroundColor3 = Color3.fromRGB(53, 53, 53)   -- Desativado
         end  
         
-        -- FUNÇÃO ÚNICA para clicar - EVITA BUG
-        local function toggleClick()
-            toggleState = not toggleState  
-            updateToggle()
-        end
-        
-        -- APENAS MouseButton1Click - Remove o InputBegan duplicado que causava bug
-        ToggleButton.MouseButton1Click:Connect(toggleClick)
-        
-        elementCount = elementCount + 1  
-        
-        return {  
-            SetState = function(self, state)  
-                toggleState = state  
-                updateToggle()  
-            end,  
-            GetState = function(self)  
-                return toggleState  
-            end  
-        }  
+        if callback then  
+            callback(toggleState)  
+        end  
     end  
+    
+    local function toggleClick()
+        toggleState = not toggleState  
+        updateToggle()
+    end
+    
+    ToggleButton.MouseButton1Click:Connect(toggleClick)
+    
+    elementCount = elementCount + 1  
+    
+    return {  
+        SetState = function(self, state)  
+            toggleState = state  
+            updateToggle()  
+        end,  
+        GetState = function(self)  
+            return toggleState  
+        end  
+    }  
+end
     
     -- FUNÇÃO PARA ADICIONAR SLIDER (funciona em PC e Mobile)  
     function publicMethods:AddSlider(text, min, max, callback)  
