@@ -1,18 +1,18 @@
--- UI Library SIMPLES com Tabs e toggle corrigido
+-- UI Library SIMPLES no seu estilo
 local UILibrary = {}
 
 function UILibrary:CreateWindow(title)
     local publicMethods = {}
     
-    -- Criar a interface
+    -- Criar a interface IDÊNTICA à sua
     local LMG2L = {}
     
-    -- ScreenGui principal
+    -- Players.USUARIODEK99993.PlayerGui.Floating  
     LMG2L["Floating_1"] = Instance.new("ScreenGui", game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"))  
     LMG2L["Floating_1"]["Name"] = "Floating"  
     LMG2L["Floating_1"]["ZIndexBehavior"] = Enum.ZIndexBehavior.Sibling  
     
-    -- Topo da janela
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo  
     LMG2L["Topo_2"] = Instance.new("Frame", LMG2L["Floating_1"])  
     LMG2L["Topo_2"]["BorderSizePixel"] = 0  
     LMG2L["Topo_2"]["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)  
@@ -20,11 +20,11 @@ function UILibrary:CreateWindow(title)
     LMG2L["Topo_2"]["Position"] = UDim2.new(0, 260, 0, 46)  
     LMG2L["Topo_2"]["Name"] = "Topo"  
     
-    -- Borda arredondada
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.UICorner  
     LMG2L["UICorner_3"] = Instance.new("UICorner", LMG2L["Topo_2"])  
     LMG2L["UICorner_3"]["CornerRadius"] = UDim.new(0, 5)  
     
-    -- Menu principal (começa invisível)
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.Main  
     LMG2L["Main_4"] = Instance.new("Frame", LMG2L["Topo_2"])  
     LMG2L["Main_4"]["BorderSizePixel"] = 0  
     LMG2L["Main_4"]["BackgroundColor3"] = Color3.fromRGB(40, 40, 40)  
@@ -33,24 +33,42 @@ function UILibrary:CreateWindow(title)
     LMG2L["Main_4"]["Name"] = "Main"  
     LMG2L["Main_4"]["Visible"] = false
     
-    -- Container das tabs
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.Main.Tabs  
     LMG2L["Tabs_5"] = Instance.new("Frame", LMG2L["Main_4"])  
     LMG2L["Tabs_5"]["BorderSizePixel"] = 0  
     LMG2L["Tabs_5"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)  
     LMG2L["Tabs_5"]["Size"] = UDim2.new(0, 52, 0, 182)  
     LMG2L["Tabs_5"]["Name"] = "Tabs"  
-    LMG2L["Tabs_5"]["BackgroundTransparency"] = 1
+    LMG2L["Tabs_5"]["BackgroundTransparency"] = 1  
     
-    -- Container do conteúdo (onde ficam os elementos)
-    LMG2L["ContentContainer"] = Instance.new("Frame", LMG2L["Main_4"])
-    LMG2L["ContentContainer"]["BorderSizePixel"] = 0
-    LMG2L["ContentContainer"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
-    LMG2L["ContentContainer"]["Size"] = UDim2.new(0, 242, 0, 182)
-    LMG2L["ContentContainer"]["Position"] = UDim2.new(0, 52, 0, 0)
-    LMG2L["ContentContainer"]["BackgroundTransparency"] = 1
-    LMG2L["ContentContainer"]["Name"] = "ContentContainer"
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.Main.Tabs.Tab1  
+    LMG2L["Tab1_6"] = Instance.new("ImageButton", LMG2L["Tabs_5"])  
+    LMG2L["Tab1_6"]["BorderSizePixel"] = 0  
+    LMG2L["Tab1_6"]["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)  
+    LMG2L["Tab1_6"]["Size"] = UDim2.new(0, 40, 0, 40)  
+    LMG2L["Tab1_6"]["Name"] = "Tab1"  
+    LMG2L["Tab1_6"]["Position"] = UDim2.new(0, 6, 0, 8)  
     
-    -- Linha de efeito
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.Main.Tabs.Tab1.UICorner  
+    LMG2L["UICorner_7"] = Instance.new("UICorner", LMG2L["Tab1_6"])  
+    LMG2L["UICorner_7"]["CornerRadius"] = UDim.new(0, 5)  
+    
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.Main.Main  
+    LMG2L["Main_8"] = Instance.new("Frame", LMG2L["Main_4"])  
+    LMG2L["Main_8"]["BorderSizePixel"] = 0  
+    LMG2L["Main_8"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)  
+    LMG2L["Main_8"]["Size"] = UDim2.new(0, 242, 0, 182)  
+    LMG2L["Main_8"]["Position"] = UDim2.new(0, 52, 0, 0)  
+    LMG2L["Main_8"]["Name"] = "Main"  
+    LMG2L["Main_8"]["BackgroundTransparency"] = 1  
+    
+    -- Container para elementos
+    LMG2L["ElementsContainer"] = Instance.new("Frame", LMG2L["Main_8"])
+    LMG2L["ElementsContainer"]["BackgroundTransparency"] = 1
+    LMG2L["ElementsContainer"]["Size"] = UDim2.new(1, 0, 1, 0)
+    LMG2L["ElementsContainer"]["Name"] = "ElementsContainer"
+    
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.Main.Effect  
     LMG2L["Effect_14"] = Instance.new("Frame", LMG2L["Main_4"])  
     LMG2L["Effect_14"]["BorderSizePixel"] = 0  
     LMG2L["Effect_14"]["BackgroundColor3"] = Color3.fromRGB(204, 0, 255)  
@@ -58,7 +76,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Effect_14"]["Position"] = UDim2.new(0, 54, 0, 10)  
     LMG2L["Effect_14"]["Name"] = "Effect"  
     
-    -- Título
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.TitleMenu  
     LMG2L["TitleMenu_15"] = Instance.new("TextLabel", LMG2L["Topo_2"])  
     LMG2L["TitleMenu_15"]["BorderSizePixel"] = 0  
     LMG2L["TitleMenu_15"]["TextSize"] = 11  
@@ -71,7 +89,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["TitleMenu_15"]["Name"] = "TitleMenu"  
     LMG2L["TitleMenu_15"]["Position"] = UDim2.new(0, 28, 0, 0)  
     
-    -- Botão para fechar
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.CloseMenu  
     LMG2L["CloseMenu_16"] = Instance.new("TextButton", LMG2L["Topo_2"])  
     LMG2L["CloseMenu_16"]["BorderSizePixel"] = 0  
     LMG2L["CloseMenu_16"]["TextSize"] = 10  
@@ -84,7 +102,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["CloseMenu_16"]["Name"] = "CloseMenu"  
     LMG2L["CloseMenu_16"]["Position"] = UDim2.new(0, 270, 0, 0)  
     
-    -- Botão para abrir/fechar menu
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.OpenName  
     LMG2L["OpenName_17"] = Instance.new("ImageButton", LMG2L["Topo_2"])  
     LMG2L["OpenName_17"]["BorderSizePixel"] = 0  
     LMG2L["OpenName_17"]["BackgroundTransparency"] = 1  
@@ -95,10 +113,8 @@ function UILibrary:CreateWindow(title)
     LMG2L["OpenName_17"]["Rotation"] = 180  
     LMG2L["OpenName_17"]["Position"] = UDim2.new(0, 2, 0, 4)
     
-    -- Variáveis para controle
-    local tabs = {}
-    local currentTab = nil
-    local tabCount = 0
+    -- Contador para posicionar elementos
+    local elementCount = 0
     
     -- Funções do menu
     LMG2L["CloseMenu_16"].MouseButton1Click:Connect(function()
@@ -140,464 +156,289 @@ function UILibrary:CreateWindow(title)
         end
     end)
     
-    -- FUNÇÃO PARA CRIAR UMA TAB (máximo 4)
-    function publicMethods:AddTab(name, icon)
-        if tabCount >= 4 then
-            warn("Limite de 4 tabs atingido!")
-            return nil
-        end
+    -- FUNÇÃO PARA ADICIONAR TOGGLE
+    function publicMethods:AddToggle(text, callback)
+        local ToggleFrame = Instance.new("Frame")
+        ToggleFrame.Name = "Toggle_" .. text
+        ToggleFrame.BorderSizePixel = 0
+        ToggleFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        ToggleFrame.Size = UDim2.new(0, 100, 0, 22)
+        ToggleFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 26))
+        ToggleFrame.BackgroundTransparency = 1
         
-        tabCount = tabCount + 1
+        local InfoLabel = Instance.new("TextLabel")
+        InfoLabel.Name = "InfoLabel"
+        InfoLabel.BorderSizePixel = 0
+        InfoLabel.TextSize = 10
+        InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+        InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+        InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        InfoLabel.BackgroundTransparency = 1
+        InfoLabel.Size = UDim2.new(0, 88, 0, 22)
+        InfoLabel.Text = text or "Toggle"
+        InfoLabel.Position = UDim2.new(0, 28, 0, 0)
+        InfoLabel.Parent = ToggleFrame
         
-        -- Criar botão da tab
-        local TabButton = Instance.new("TextButton") -- Mudei para TextButton para ser mais simples
-        TabButton.Name = "Tab" .. tabCount
-        TabButton.BorderSizePixel = 0
-        TabButton.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
-        TabButton.Size = UDim2.new(0, 40, 0, 40)
-        TabButton.Position = UDim2.new(0, 6, 0, 8 + ((tabCount-1) * 45))
-        TabButton.Text = ""
+        local ToggleButton = Instance.new("TextButton")
+        ToggleButton.Name = "ToggleButton"
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
+        ToggleButton.Size = UDim2.new(0, 22, 0, 22)
+        ToggleButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
+        ToggleButton.Text = ""
         
         local UICorner = Instance.new("UICorner")
         UICorner.CornerRadius = UDim.new(0, 5)
-        UICorner.Parent = TabButton
+        UICorner.Parent = ToggleButton
         
-        -- Adicionar ícone se fornecido
-        if icon then
-            local IconLabel = Instance.new("TextLabel")
-            IconLabel.Name = "Icon"
-            IconLabel.BackgroundTransparency = 1
-            IconLabel.Size = UDim2.new(1, 0, 1, 0)
-            IconLabel.Text = icon
-            IconLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-            IconLabel.Font = Enum.Font.SourceSansBold
-            IconLabel.TextSize = 16
-            IconLabel.Parent = TabButton
-        end
+        local ToggleIndicator = Instance.new("Frame")
+        ToggleIndicator.Name = "ToggleIndicator"
+        ToggleIndicator.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
+        ToggleIndicator.Size = UDim2.new(0, 16, 0, 16)
+        ToggleIndicator.Position = UDim2.new(0, 3, 0, 3)
+        ToggleIndicator.Visible = false
         
-        TabButton.Parent = LMG2L["Tabs_5"]
+        local UICorner2 = Instance.new("UICorner")
+        UICorner2.CornerRadius = UDim.new(0, 3)
+        UICorner2.Parent = ToggleIndicator
         
-        -- Criar container para elementos da tab
-        local TabContent = Instance.new("ScrollingFrame")
-        TabContent.Name = name .. "Content"
-        TabContent.BackgroundTransparency = 1
-        TabContent.Size = UDim2.new(1, 0, 1, -10)
-        TabContent.Position = UDim2.new(0, 0, 0, 10)
-        TabContent.Visible = false
-        TabContent.ScrollingEnabled = true
-        TabContent.ScrollBarThickness = 0
-        TabContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
-        TabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
+        ToggleIndicator.Parent = ToggleButton
+        ToggleButton.Parent = ToggleFrame
+        ToggleFrame.Parent = LMG2L["ElementsContainer"]
         
-        local UIListLayout = Instance.new("UIListLayout")
-        UIListLayout.Padding = UDim.new(0, 4)
-        UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        UIListLayout.Parent = TabContent
+        local toggleState = false
         
-        TabContent.Parent = LMG2L["ContentContainer"]
-        
-        -- Armazenar a tab
-        local tabData = {
-            Name = name,
-            Button = TabButton,
-            Content = TabContent,
-            Elements = {},
-            ElementCount = 0
-        }
-        
-        table.insert(tabs, tabData)
-        
-        -- Se for a primeira tab, mostrar por padrão
-        if tabCount == 1 then
-            currentTab = tabData
-            TabContent.Visible = true
-            TabButton.BackgroundColor3 = Color3.fromRGB(120, 0, 150) -- Cor quando selecionada
-        end
-        
-        -- Função para selecionar a tab
-        TabButton.MouseButton1Click:Connect(function()
-            -- Desmarcar todas as tabs
-            for _, tab in ipairs(tabs) do
-                tab.Content.Visible = false
-                tab.Button.BackgroundColor3 = Color3.fromRGB(144, 0, 181) -- Cor normal
+        local function updateToggle()
+            ToggleIndicator.Visible = toggleState
+            if toggleState then
+                ToggleButton.BackgroundColor3 = Color3.fromRGB(100, 0, 125)
+            else
+                ToggleButton.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
             end
             
-            -- Selecionar esta tab
-            currentTab = tabData
-            TabContent.Visible = true
-            TabButton.BackgroundColor3 = Color3.fromRGB(120, 0, 150) -- Cor selecionada
+            if callback then
+                callback(toggleState)
+            end
+        end
+        
+        ToggleButton.MouseButton1Click:Connect(function()
+            toggleState = not toggleState
+            updateToggle()
         end)
         
-        -- Retornar funções para adicionar elementos a esta tab
-        local tabMethods = {}
-        
-        -- TOGGLE CORRIGIDO (sem borda bugada)
-        function tabMethods:AddToggle(text, callback)
-            local ToggleFrame = Instance.new("Frame")
-            ToggleFrame.Name = "Toggle_" .. text
-            ToggleFrame.BorderSizePixel = 0
-            ToggleFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            ToggleFrame.Size = UDim2.new(1, -12, 0, 22)
-            ToggleFrame.Position = UDim2.new(0, 6, 0, 0)
-            ToggleFrame.BackgroundTransparency = 1
-            ToggleFrame.LayoutOrder = tabData.ElementCount
-            
-            local InfoLabel = Instance.new("TextLabel")
-            InfoLabel.Name = "InfoLabel"
-            InfoLabel.BorderSizePixel = 0
-            InfoLabel.TextSize = 10
-            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
-            InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-            InfoLabel.BackgroundTransparency = 1
-            InfoLabel.Size = UDim2.new(0.7, -30, 1, 0)
-            InfoLabel.Text = text or "Toggle"
-            InfoLabel.Position = UDim2.new(0, 28, 0, 0)
-            InfoLabel.Parent = ToggleFrame
-            
-            -- Toggle button CORRIGIDO (sem borda branca)
-            local ToggleButton = Instance.new("TextButton")
-            ToggleButton.Name = "ToggleButton"
-            ToggleButton.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
-            ToggleButton.Size = UDim2.new(0, 22, 0, 22)
-            ToggleButton.BorderSizePixel = 0  -- REMOVI A BORDA
-            ToggleButton.Text = ""
-            
-            -- Só o UICorner, sem borda
-            local UICorner = Instance.new("UICorner")
-            UICorner.CornerRadius = UDim.new(0, 5)
-            UICorner.Parent = ToggleButton
-            
-            -- Indicador interno (muda de cor)
-            local ToggleIndicator = Instance.new("Frame")
-            ToggleIndicator.Name = "ToggleIndicator"
-            ToggleIndicator.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
-            ToggleIndicator.Size = UDim2.new(0, 16, 0, 16)
-            ToggleIndicator.Position = UDim2.new(0, 3, 0, 3)
-            ToggleIndicator.Visible = false
-            
-            local UICorner2 = Instance.new("UICorner")
-            UICorner2.CornerRadius = UDim.new(0, 3)
-            UICorner2.Parent = ToggleIndicator
-            
-            ToggleIndicator.Parent = ToggleButton
-            ToggleButton.Parent = ToggleFrame
-            ToggleFrame.Parent = TabContent
-            
-            -- Variável local para controle do estado
-            local toggleState = false
-            local toggleCallback = callback
-            
-            -- Função para atualizar o visual
-            local function updateToggleVisual()
-                ToggleIndicator.Visible = toggleState
-                if toggleState then
-                    ToggleButton.BackgroundColor3 = Color3.fromRGB(100, 0, 125)
-                else
-                    ToggleButton.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
-                end
-            end
-            
-            -- Função principal do toggle
-            local function toggleFunction()
+        ToggleButton.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch then
                 toggleState = not toggleState
-                updateToggleVisual()
-                
-                if toggleCallback then
-                    toggleCallback(toggleState)
-                end
+                updateToggle()
             end
-            
-            -- Conectar eventos (apenas UM evento)
-            local connection
-            connection = ToggleButton.MouseButton1Click:Connect(function()
-                toggleFunction()
-            end)
-            
-            -- Para mobile também
-            ToggleButton.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.Touch then
-                    toggleFunction()
-                end
-            end)
-            
-            updateToggleVisual() -- Estado inicial
-            
-            table.insert(tabData.Elements, ToggleFrame)
-            tabData.ElementCount = tabData.ElementCount + 1
-            
-            -- Retornar métodos para controlar o toggle
-            return {
-                SetState = function(self, state)
-                    if toggleState ~= state then
-                        toggleState = state
-                        updateToggleVisual()
-                        if toggleCallback then
-                            toggleCallback(toggleState)
-                        end
-                    end
-                end,
-                GetState = function(self)
-                    return toggleState
-                end,
-                Toggle = function(self)
-                    toggleFunction()
-                end
-            }
-        end
+        end)
         
-        -- SLIDER (funciona em PC e Mobile)
-        function tabMethods:AddSlider(text, min, max, callback)
-            local SliderFrame = Instance.new("Frame")
-            SliderFrame.Name = "Slider_" .. text
-            SliderFrame.BorderSizePixel = 0
-            SliderFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            SliderFrame.Size = UDim2.new(1, -12, 0, 32)
-            SliderFrame.Position = UDim2.new(0, 6, 0, 0)
-            SliderFrame.BackgroundTransparency = 1
-            SliderFrame.LayoutOrder = tabData.ElementCount
-            
-            -- Label
-            local InfoLabel = Instance.new("TextLabel")
-            InfoLabel.Name = "InfoLabel"
-            InfoLabel.BorderSizePixel = 0
-            InfoLabel.TextSize = 10
-            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
-            InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-            InfoLabel.BackgroundTransparency = 1
-            InfoLabel.Size = UDim2.new(1, 0, 0, 12)
-            InfoLabel.Text = text or "Slider"
-            InfoLabel.Position = UDim2.new(0, 0, 0, 0)
-            InfoLabel.Parent = SliderFrame
-            
-            -- Container do slider
-            local Main = Instance.new("Frame")
-            Main.Name = "Main"
-            Main.BorderSizePixel = 0
-            Main.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-            Main.Size = UDim2.new(1, 0, 0, 18)
-            Main.Position = UDim2.new(0, 0, 0, 14)
-            Main.BackgroundTransparency = 1
-            
-            local UICorner = Instance.new("UICorner")
-            UICorner.CornerRadius = UDim.new(0, 5)
-            UICorner.Parent = Main
-            
-            -- Track do slider
-            local SliderTrack = Instance.new("Frame")
-            SliderTrack.Name = "SliderTrack"
-            SliderTrack.BorderSizePixel = 0
-            SliderTrack.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
-            SliderTrack.Size = UDim2.new(1, 0, 1, 0)
-            
-            local UICorner2 = Instance.new("UICorner")
-            UICorner2.CornerRadius = UDim.new(0, 6)
-            UICorner2.Parent = SliderTrack
-            
-            -- Fill do slider
-            local SliderFill = Instance.new("Frame")
-            SliderFill.Name = "SliderFill"
-            SliderFill.BorderSizePixel = 0
-            SliderFill.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
-            SliderFill.Size = UDim2.new(0, 0, 1, 0)
-            
-            local UICorner3 = Instance.new("UICorner")
-            UICorner3.CornerRadius = UDim.new(0, 6)
-            UICorner3.Parent = SliderFill
-            
-            -- Valor numérico
-            local InfoNumber = Instance.new("TextLabel")
-            InfoNumber.Name = "InfoNumber"
-            InfoNumber.BorderSizePixel = 0
-            InfoNumber.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            InfoNumber.TextColor3 = Color3.fromRGB(255, 255, 255)
-            InfoNumber.BackgroundTransparency = 1
-            InfoNumber.Size = UDim2.new(0, 40, 1, 0)
-            InfoNumber.Text = tostring(min or 0)
-            InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-            InfoNumber.TextSize = 10
-            InfoNumber.TextXAlignment = Enum.TextXAlignment.Right
-            InfoNumber.Position = UDim2.new(1, -40, 0, 0)
-            
-            SliderFill.Parent = SliderTrack
-            SliderTrack.Parent = Main
-            InfoNumber.Parent = Main
-            Main.Parent = SliderFrame
-            SliderFrame.Parent = TabContent
-            
-            -- Variáveis do slider
-            local sliderValue = min or 0
-            local sliderMin = min
-            local sliderMax = max
-            local sliderCallback = callback
-            local dragging = false
-            
-            -- Função para atualizar valor
-            local function updateValue(newValue)
-                sliderValue = math.clamp(newValue, sliderMin, sliderMax)
-                local percentage = (sliderValue - sliderMin) / (sliderMax - sliderMin)
-                SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
-                InfoNumber.Text = tostring(math.floor(sliderValue))
-                
-                if sliderCallback then
-                    sliderCallback(sliderValue)
-                end
-            end
-            
-            -- Função para pegar posição do mouse/touch
-            local function getRelativePosition(input)
-                local sliderAbsolutePosition = SliderTrack.AbsolutePosition
-                local sliderAbsoluteSize = SliderTrack.AbsoluteSize
-                
-                local posX
-                if input.UserInputType == Enum.UserInputType.Touch then
-                    posX = input.Position.X
-                else
-                    local mouse = game:GetService("Players").LocalPlayer:GetMouse()
-                    posX = mouse.X
-                end
-                
-                local relativeX = (posX - sliderAbsolutePosition.X) / sliderAbsoluteSize.X
-                return math.clamp(relativeX, 0, 1)
-            end
-            
-            -- Função de atualização
-            local function updateSlider(input)
-                local relativeX = getRelativePosition(input)
-                local newValue = sliderMin + (relativeX * (sliderMax - sliderMin))
-                updateValue(newValue)
-            end
-            
-            -- Eventos para PC
-            SliderTrack.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    dragging = true
-                    updateSlider(input)
-                end
-            end)
-            
-            -- Eventos para Mobile
-            SliderTrack.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.Touch then
-                    dragging = true
-                    updateSlider(input)
-                end
-            end)
-            
-            SliderTrack.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or 
-                   input.UserInputType == Enum.UserInputType.Touch then
-                    dragging = false
-                end
-            end)
-            
-            -- Atualizar enquanto arrasta (PC)
-            game:GetService("UserInputService").InputChanged:Connect(function(input)
-                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                    updateSlider(input)
-                end
-            end)
-            
-            -- Atualizar enquanto arrasta (Mobile)
-            game:GetService("UserInputService").TouchMoved:Connect(function(input)
-                if dragging then
-                    updateSlider({Position = input.Position, UserInputType = Enum.UserInputType.Touch})
-                end
-            end)
-            
-            -- Valor inicial
-            updateValue(sliderMin)
-            
-            table.insert(tabData.Elements, SliderFrame)
-            tabData.ElementCount = tabData.ElementCount + 1
-            
-            return {
-                SetValue = function(self, value)
-                    updateValue(value)
-                end,
-                GetValue = function(self)
-                    return sliderValue
-                end
-            }
-        end
+        elementCount = elementCount + 1
         
-        -- BOTÃO (opcional)
-        function tabMethods:AddButton(text, callback)
-            local ButtonFrame = Instance.new("Frame")
-            ButtonFrame.Name = "Button_" .. text
-            ButtonFrame.BorderSizePixel = 0
-            ButtonFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            ButtonFrame.Size = UDim2.new(1, -12, 0, 22)
-            ButtonFrame.Position = UDim2.new(0, 6, 0, 0)
-            ButtonFrame.BackgroundTransparency = 1
-            ButtonFrame.LayoutOrder = tabData.ElementCount
-            
-            local Button = Instance.new("TextButton")
-            Button.Name = "Button"
-            Button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
-            Button.Size = UDim2.new(1, 0, 1, 0)
-            Button.Text = text or "Button"
-            Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-            Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-            Button.TextSize = 10
-            Button.BorderSizePixel = 0
-            
-            local UICorner = Instance.new("UICorner")
-            UICorner.CornerRadius = UDim.new(0, 5)
-            UICorner.Parent = Button
-            
-            Button.MouseButton1Click:Connect(function()
-                if callback then
-                    callback()
-                end
-            end)
-            
-            Button.Parent = ButtonFrame
-            ButtonFrame.Parent = TabContent
-            
-            table.insert(tabData.Elements, ButtonFrame)
-            tabData.ElementCount = tabData.ElementCount + 1
-            
-            return Button
-        end
-        
-        return tabMethods
+        return {
+            SetState = function(self, state)
+                toggleState = state
+                updateToggle()
+            end,
+            GetState = function(self)
+                return toggleState
+            end
+        }
     end
     
-    -- Métodos principais da janela
-    function publicMethods:AddTab(name, icon)
-        return self:AddTab(name, icon)
-    end
-    
-    -- Método para adicionar elementos à tab atual
-    function publicMethods:AddToggle(text, callback)
-        if currentTab then
-            return currentTab:AddToggle(text, callback)
-        else
-            warn("Crie uma tab primeiro!")
-            return nil
-        end
-    end
-    
+    -- FUNÇÃO PARA ADICIONAR SLIDER (funciona em PC e Mobile)
     function publicMethods:AddSlider(text, min, max, callback)
-        if currentTab then
-            return currentTab:AddSlider(text, min, max, callback)
-        else
-            warn("Crie uma tab primeiro!")
-            return nil
+        local SliderFrame = Instance.new("Frame")
+        SliderFrame.Name = "Slider_" .. text
+        SliderFrame.BorderSizePixel = 0
+        SliderFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        SliderFrame.Size = UDim2.new(1, -12, 0, 22)
+        SliderFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 26))
+        SliderFrame.BackgroundTransparency = 1
+        
+        local Main = Instance.new("Frame")
+        Main.Name = "Main"
+        Main.BorderSizePixel = 0
+        Main.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        Main.Size = UDim2.new(0, 136, 0, 22)
+        Main.BackgroundTransparency = 1
+        
+        local UICorner = Instance.new("UICorner")
+        UICorner.CornerRadius = UDim.new(0, 5)
+        UICorner.Parent = Main
+        
+        local SliderTrack = Instance.new("Frame")
+        SliderTrack.Name = "SliderTrack"
+        SliderTrack.BorderSizePixel = 0
+        SliderTrack.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
+        SliderTrack.Size = UDim2.new(0, 136, 0, 22)
+        
+        local UICorner2 = Instance.new("UICorner")
+        UICorner2.CornerRadius = UDim.new(0, 6)
+        UICorner2.Parent = SliderTrack
+        
+        local SliderFill = Instance.new("Frame")
+        SliderFill.Name = "SliderFill"
+        SliderFill.BorderSizePixel = 0
+        SliderFill.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
+        SliderFill.Size = UDim2.new(0, 0, 1, 0)
+        
+        local UICorner3 = Instance.new("UICorner")
+        UICorner3.CornerRadius = UDim.new(0, 6)
+        UICorner3.Parent = SliderFill
+        
+        local InfoNumber = Instance.new("TextLabel")
+        InfoNumber.Name = "InfoNumber"
+        InfoNumber.BorderSizePixel = 0
+        InfoNumber.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        InfoNumber.TextColor3 = Color3.fromRGB(255, 255, 255)
+        InfoNumber.BackgroundTransparency = 1
+        InfoNumber.Size = UDim2.new(0, 136, 0, 22)
+        InfoNumber.Text = tostring(min or 0)
+        InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+        InfoNumber.TextSize = 10
+        
+        local InfoLabel = Instance.new("TextLabel")
+        InfoLabel.Name = "InfoLabel"
+        InfoLabel.BorderSizePixel = 0
+        InfoLabel.TextSize = 10
+        InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+        InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+        InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        InfoLabel.BackgroundTransparency = 1
+        InfoLabel.Size = UDim2.new(0, 88, 0, 20)
+        InfoLabel.Text = text or "Slider"
+        InfoLabel.Position = UDim2.new(0, 140, 0, 2)
+        
+        SliderFill.Parent = SliderTrack
+        SliderTrack.Parent = Main
+        InfoNumber.Parent = Main
+        Main.Parent = SliderFrame
+        InfoLabel.Parent = SliderFrame
+        SliderFrame.Parent = LMG2L["ElementsContainer"]
+        
+        local sliderValue = min or 0
+        local dragging = false
+        
+        local function updateValue(newValue)
+            sliderValue = math.clamp(newValue, min, max)
+            local percentage = (sliderValue - min) / (max - min)
+            SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
+            InfoNumber.Text = tostring(math.floor(sliderValue))
+            
+            if callback then
+                callback(sliderValue)
+            end
         end
+        
+        -- Função para atualizar slider com posição
+        local function updateSliderFromPosition(input)
+            if not SliderTrack:IsDescendantOf(game) then return end
+            
+            local sliderAbsolutePosition = SliderTrack.AbsolutePosition
+            local sliderAbsoluteSize = SliderTrack.AbsoluteSize
+            
+            local relativeX
+            if input.UserInputType == Enum.UserInputType.Touch then
+                relativeX = (input.Position.X - sliderAbsolutePosition.X) / sliderAbsoluteSize.X
+            else
+                local mouse = game:GetService("Players").LocalPlayer:GetMouse()
+                relativeX = (mouse.X - sliderAbsolutePosition.X) / sliderAbsoluteSize.X
+            end
+            
+            relativeX = math.clamp(relativeX, 0, 1)
+            local newValue = min + (relativeX * (max - min))
+            updateValue(newValue)
+        end
+        
+        -- PC: Mouse
+        SliderTrack.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
+                updateSliderFromPosition(input)
+            end
+        end)
+        
+        -- Mobile: Touch
+        SliderTrack.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                updateSliderFromPosition(input)
+            end
+        end)
+        
+        SliderTrack.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = false
+            end
+        end)
+        
+        -- Atualizar enquanto arrasta (PC)
+        game:GetService("UserInputService").InputChanged:Connect(function(input)
+            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                updateSliderFromPosition(input)
+            end
+        end)
+        
+        -- Atualizar enquanto arrasta (Mobile)
+        game:GetService("UserInputService").TouchMoved:Connect(function(input)
+            if dragging then
+                updateSliderFromPosition({Position = input.Position, UserInputType = Enum.UserInputType.Touch})
+            end
+        end)
+        
+        -- Valor inicial
+        updateValue(min)
+        
+        elementCount = elementCount + 1
+        
+        return {
+            SetValue = function(self, value)
+                updateValue(value)
+            end,
+            GetValue = function(self)
+                return sliderValue
+            end
+        }
     end
     
+    -- FUNÇÃO PARA ADICIONAR BOTÃO (se precisar depois)
     function publicMethods:AddButton(text, callback)
-        if currentTab then
-            return currentTab:AddButton(text, callback)
-        else
-            warn("Crie uma tab primeiro!")
-            return nil
-        end
+        local ButtonFrame = Instance.new("Frame")
+        ButtonFrame.Name = "Button_" .. text
+        ButtonFrame.BorderSizePixel = 0
+        ButtonFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        ButtonFrame.Size = UDim2.new(1, -12, 0, 22)
+        ButtonFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 26))
+        ButtonFrame.BackgroundTransparency = 1
+        
+        local Button = Instance.new("TextButton")
+        Button.Name = "Button"
+        Button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
+        Button.Size = UDim2.new(1, 0, 1, 0)
+        Button.Text = text or "Button"
+        Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+        Button.TextSize = 10
+        Button.BorderSizePixel = 0
+        
+        local UICorner = Instance.new("UICorner")
+        UICorner.CornerRadius = UDim.new(0, 5)
+        UICorner.Parent = Button
+        
+        Button.MouseButton1Click:Connect(function()
+            if callback then
+                callback()
+            end
+        end)
+        
+        Button.Parent = ButtonFrame
+        ButtonFrame.Parent = LMG2L["ElementsContainer"]
+        
+        elementCount = elementCount + 1
+        
+        return Button
     end
     
     return publicMethods
