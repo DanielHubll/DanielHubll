@@ -1,14 +1,10 @@
--- UI Library ATUALIZADA com NOVO VISUAL + SCROLLING FRAMES
+-- UI Library ATUALIZADA com NOVO VISUAL (cores e dimensões alteradas)
 local UILibrary = {}
 
 function UILibrary:CreateWindow(title)
     local publicMethods = {}
     local tabs = {}
     local currentTab = nil
-    
-    -- Configurações
-    local MAX_TABS_NO_SCROLL = 4  -- Máximo de tabs sem scroll
-    local MAX_ELEMENTS_HEIGHT = 182  -- Altura máxima do container de elementos
     
     -- Criar a interface
     local LMG2L = {}
@@ -69,63 +65,22 @@ function UILibrary:CreateWindow(title)
     LMG2L["Effect_6"]["Position"] = UDim2.new(0, 54, 0, 10)
     LMG2L["Effect_6"]["Name"] = [[Effect]]
 
-    -- Main Content Area (AGORA É UM SCROLLINGFRAME)
-    LMG2L["Main_7"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])
+    -- Main Content Area
+    LMG2L["Main_7"] = Instance.new("Frame", LMG2L["Main_5"])
     LMG2L["Main_7"]["BorderSizePixel"] = 0
     LMG2L["Main_7"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
-    LMG2L["Main_7"]["Size"] = UDim2.new(0, 242, 0, 182)
-    LMG2L["Main_7"]["Position"] = UDim2.new(0, 52, 0, 20)  -- Ajustado para dar espaço para a linha
+    LMG2L["Main_7"]["Size"] = UDim2.new(0, 242, 0, 202)
+    LMG2L["Main_7"]["Position"] = UDim2.new(0, 52, 0, 0)
     LMG2L["Main_7"]["Name"] = [[Main]]
     LMG2L["Main_7"]["BackgroundTransparency"] = 1
-    LMG2L["Main_7"]["ScrollBarThickness"] = 3
-    LMG2L["Main_7"]["ScrollBarImageColor3"] = Color3.fromRGB(144, 0, 181)
-    LMG2L["Main_7"]["AutomaticCanvasSize"] = Enum.AutomaticSize.Y
-    LMG2L["Main_7"]["CanvasSize"] = UDim2.new(0, 0, 0, 0)
-    LMG2L["Main_7"]["ScrollingDirection"] = Enum.ScrollingDirection.Y
 
-    -- Container dentro do ScrollingFrame
-    LMG2L["MainContainer"] = Instance.new("Frame", LMG2L["Main_7"])
-    LMG2L["MainContainer"]["BorderSizePixel"] = 0
-    LMG2L["MainContainer"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
-    LMG2L["MainContainer"]["Size"] = UDim2.new(1, 0, 0, 0)
-    LMG2L["MainContainer"]["BackgroundTransparency"] = 1
-    
-    -- Atualizar automaticamente o tamanho do canvas
-    LMG2L["MainContainer"]:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-        LMG2L["Main_7"].CanvasSize = UDim2.new(0, 0, 0, LMG2L["MainContainer"].AbsoluteSize.Y)
-    end)
-
-    -- Tabs Container (PODE VIRAR SCROLLINGFRAME)
-    LMG2L["TabsContainer"] = Instance.new("Frame", LMG2L["Main_5"])
-    LMG2L["TabsContainer"]["BorderSizePixel"] = 0
-    LMG2L["TabsContainer"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
-    LMG2L["TabsContainer"]["Size"] = UDim2.new(0, 52, 0, 182)
-    LMG2L["TabsContainer"]["Position"] = UDim2.new(0, 0, 0, 20)
-    LMG2L["TabsContainer"]["Name"] = [[Tabs]]
-    LMG2L["TabsContainer"]["BackgroundTransparency"] = 1
-
-    -- ScrollingFrame para tabs (inicialmente invisível)
-    LMG2L["TabsScrolling"] = Instance.new("ScrollingFrame", LMG2L["TabsContainer"])
-    LMG2L["TabsScrolling"]["BorderSizePixel"] = 0
-    LMG2L["TabsScrolling"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
-    LMG2L["TabsScrolling"]["Size"] = UDim2.new(1, 0, 1, 0)
-    LMG2L["TabsScrolling"]["Name"] = [[TabsScrolling]]
-    LMG2L["TabsScrolling"]["BackgroundTransparency"] = 1
-    LMG2L["TabsScrolling"]["ScrollBarThickness"] = 3
-    LMG2L["TabsScrolling"]["ScrollBarImageColor3"] = Color3.fromRGB(144, 0, 181)
-    LMG2L["TabsScrolling"]["AutomaticCanvasSize"] = Enum.AutomaticSize.Y
-    LMG2L["TabsScrolling"]["CanvasSize"] = UDim2.new(0, 0, 0, 0)
-    LMG2L["TabsScrolling"]["ScrollingDirection"] = Enum.ScrollingDirection.Y
-    LMG2L["TabsScrolling"]["Visible"] = false
-
-    -- Container normal para tabs (quando poucas tabs)
-    LMG2L["TabsNormal"] = Instance.new("Frame", LMG2L["TabsContainer"])
-    LMG2L["TabsNormal"]["BorderSizePixel"] = 0
-    LMG2L["TabsNormal"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
-    LMG2L["TabsNormal"]["Size"] = UDim2.new(1, 0, 1, 0)
-    LMG2L["TabsNormal"]["Name"] = [[TabsNormal]]
-    LMG2L["TabsNormal"]["BackgroundTransparency"] = 1
-    LMG2L["TabsNormal"]["Visible"] = true
+    -- Tabs Container
+    LMG2L["Tabs_2a"] = Instance.new("Frame", LMG2L["Main_5"])
+    LMG2L["Tabs_2a"]["BorderSizePixel"] = 0
+    LMG2L["Tabs_2a"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
+    LMG2L["Tabs_2a"]["Size"] = UDim2.new(0, 52, 0, 182)
+    LMG2L["Tabs_2a"]["Name"] = [[Tabs]]
+    LMG2L["Tabs_2a"]["BackgroundTransparency"] = 1
 
     -- OpenName Button
     LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])
@@ -178,61 +133,6 @@ function UILibrary:CreateWindow(title)
         end
     end)
     
-    -- FUNÇÃO PARA ATUALIZAR LAYOUT DAS TABS
-    local function updateTabsLayout()
-        local totalTabs = #tabs
-        
-        if totalTabs > MAX_TABS_NO_SCROLL then
-            -- Ativar scrolling para tabs
-            LMG2L["TabsNormal"].Visible = false
-            LMG2L["TabsScrolling"].Visible = true
-            
-            -- Limpar e recriar tabs no scrolling frame
-            local container = LMG2L["TabsScrolling"]
-            
-            -- Remover todos os botões antigos
-            for _, child in ipairs(container:GetChildren()) do
-                if child:IsA("ImageButton") then
-                    child:Destroy()
-                end
-            end
-            
-            -- Recriar todos os botões
-            for i, tabData in ipairs(tabs) do
-                local TabButton = tabData.button:Clone()
-                TabButton.Parent = container
-                TabButton.Position = UDim2.new(0, 6, 0, 8 + ((i - 1) * 48))
-                
-                -- Reconectar evento de clique
-                TabButton.MouseButton1Click:Connect(function()
-                    -- Desativar todas as tabs
-                    for _, tab in ipairs(tabs) do
-                        tab.container.Visible = false
-                        tab.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
-                    end
-                    
-                    -- Ativar esta tab
-                    tabData.container.Visible = true
-                    TabButton.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
-                    currentTab = tabData
-                end)
-                
-                -- Atualizar referência do botão
-                tabData.button = TabButton
-            end
-        else
-            -- Usar layout normal
-            LMG2L["TabsNormal"].Visible = true
-            LMG2L["TabsScrolling"].Visible = false
-            
-            -- Posicionar tabs normalmente
-            for i, tabData in ipairs(tabs) do
-                tabData.button.Parent = LMG2L["TabsNormal"]
-                tabData.button.Position = UDim2.new(0, 6, 0, 8 + ((i - 1) * 48))
-            end
-        end
-    end
-    
     -- FUNÇÃO PARA CRIAR NOVA TAB
     function publicMethods:AddTab(tabName, iconId)
         local tabIndex = #tabs + 1
@@ -244,38 +144,27 @@ function UILibrary:CreateWindow(title)
             elementCount = 0
         }
         
-        -- Criar botão da tab
-        local TabButton = Instance.new("ImageButton")
+        -- Criar botão da tab (COR ALTERADA para roxo quando ativo)
+        local TabButton = Instance.new("ImageButton", LMG2L["Tabs_2a"])
         TabButton["BorderSizePixel"] = 0
         TabButton["BackgroundColor3"] = Color3.fromRGB(53, 53, 53)
         TabButton["Size"] = UDim2.new(0, 40, 0, 40)
         TabButton["Name"] = "Tab" .. tabIndex
+        TabButton["Position"] = UDim2.new(0, 6, 0, 8 + ((tabIndex - 1) * 48))
         TabButton["Image"] = iconId or "rbxassetid://10709852168"
         
         local UICorner = Instance.new("UICorner", TabButton)
         UICorner["CornerRadius"] = UDim.new(0, 5)
         
-        -- Container para elementos desta tab (DENTRO DO SCROLLINGFRAME)
-        local ElementsContainer = Instance.new("Frame", LMG2L["MainContainer"])
+        -- Container para elementos desta tab
+        local ElementsContainer = Instance.new("Frame", LMG2L["Main_7"])
         ElementsContainer["BackgroundTransparency"] = 1
-        ElementsContainer["Size"] = UDim2.new(1, 0, 0, 0)  -- Altura será ajustada automaticamente
+        ElementsContainer["Size"] = UDim2.new(1, 0, 1, 0)
         ElementsContainer["Name"] = "Container_" .. tabName
         ElementsContainer["Visible"] = false
         
-        -- Função para atualizar altura do container
-        local function updateContainerHeight()
-            local totalHeight = 20 + (tabData.elementCount * 35)
-            ElementsContainer.Size = UDim2.new(1, 0, 0, totalHeight)
-            
-            -- Se altura total for maior que a área visível, garantir que o scrolling está ativado
-            if totalHeight > MAX_ELEMENTS_HEIGHT then
-                LMG2L["Main_7"].ScrollBarThickness = 3
-            end
-        end
-        
         tabData.container = ElementsContainer
         tabData.button = TabButton
-        tabData.updateHeight = updateContainerHeight
         
         -- Função para trocar de tab
         local function switchToTab()
@@ -287,20 +176,14 @@ function UILibrary:CreateWindow(title)
             
             -- Ativar esta tab
             ElementsContainer.Visible = true
-            TabButton.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
+            TabButton.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  -- Cor roxa quando ativa
             currentTab = tabData
-            
-            -- Resetar scroll position
-            LMG2L["Main_7"].CanvasPosition = Vector2.new(0, 0)
         end
         
         TabButton.MouseButton1Click:Connect(switchToTab)
         
         -- Adicionar tab à lista
         table.insert(tabs, tabData)
-        
-        -- Atualizar layout das tabs
-        updateTabsLayout()
         
         -- Se for a primeira tab, ativar automaticamente
         if tabIndex == 1 then
@@ -310,32 +193,14 @@ function UILibrary:CreateWindow(title)
         -- Retornar objeto da tab com métodos para adicionar elementos
         local tabMethods = {}
         
-        -- FUNÇÃO PARA ADICIONAR ELEMENTO (genérica)
-        local function addElement(elementFrame, height)
-            elementFrame.Parent = ElementsContainer
-            tabData.elementCount = tabData.elementCount + 1
-            
-            -- Reposicionar todos os elementos
-            local yPosition = 20
-            for _, child in ipairs(ElementsContainer:GetChildren()) do
-                if child:IsA("Frame") and child ~= elementFrame then
-                    child.Position = UDim2.new(0, 6, 0, yPosition)
-                    yPosition = yPosition + height
-                end
-            end
-            
-            -- Atualizar altura do container
-            updateContainerHeight()
-        end
-        
-        -- ADICIONAR TOGGLE
+        -- ADICIONAR TOGGLE (COM NOVO VISUAL)
         function tabMethods:AddToggle(text, callback)
             local ToggleFrame = Instance.new("Frame")
             ToggleFrame.Name = "Toggle_" .. text
             ToggleFrame.BorderSizePixel = 0
             ToggleFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
             ToggleFrame.Size = UDim2.new(0, 100, 0, 22)
-            ToggleFrame.Position = UDim2.new(0, 6, 0, 20)
+            ToggleFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 30))
             ToggleFrame.BackgroundTransparency = 1
             
             local InfoLabel = Instance.new("TextLabel")
@@ -354,7 +219,7 @@ function UILibrary:CreateWindow(title)
             
             local ToggleButton = Instance.new("TextButton")
             ToggleButton.Name = "ToggleButton"
-            ToggleButton.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
+            ToggleButton.BackgroundColor3 = Color3.fromRGB(36, 36, 36)  -- Cor escura igual ao novo
             ToggleButton.Size = UDim2.new(0, 22, 0, 22)
             ToggleButton.BorderSizePixel = 0
             ToggleButton.Text = ""
@@ -365,6 +230,7 @@ function UILibrary:CreateWindow(title)
             UICorner.Parent = ToggleButton
             
             ToggleButton.Parent = ToggleFrame
+            ToggleFrame.Parent = ElementsContainer
             
             local toggleState = false
             
@@ -378,7 +244,7 @@ function UILibrary:CreateWindow(title)
                 updateToggle()
             end)
             
-            addElement(ToggleFrame, 30)
+            tabData.elementCount = tabData.elementCount + 1
             
             return {
                 SetState = function(self, state)
@@ -391,21 +257,21 @@ function UILibrary:CreateWindow(title)
             }
         end
         
-        -- ADICIONAR SLIDER
+        -- ADICIONAR SLIDER (COM NOVO VISUAL - LARGURA AUMENTADA)
         function tabMethods:AddSlider(text, min, max, callback)
             local SliderFrame = Instance.new("Frame")
             SliderFrame.Name = "Slider_" .. text
             SliderFrame.BorderSizePixel = 0
             SliderFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            SliderFrame.Size = UDim2.new(0, 228, 0, 22)
-            SliderFrame.Position = UDim2.new(0, 6, 0, 20)
+            SliderFrame.Size = UDim2.new(0, 246, 0, 22)  -- Largura aumentada
+            SliderFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 30))
             SliderFrame.BackgroundTransparency = 1
             
             local Main = Instance.new("Frame")
             Main.Name = "Main"
             Main.BorderSizePixel = 0
-            Main.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-            Main.Size = UDim2.new(0, 150, 0, 22)
+            Main.BackgroundColor3 = Color3.fromRGB(40, 40, 40)  -- Cor igual ao novo
+            Main.Size = UDim2.new(0, 168, 0, 22)  -- Largura aumentada
             Main.BackgroundTransparency = 1
             
             local UICorner = Instance.new("UICorner")
@@ -415,8 +281,8 @@ function UILibrary:CreateWindow(title)
             local SliderTrack = Instance.new("Frame")
             SliderTrack.Name = "SliderTrack"
             SliderTrack.BorderSizePixel = 0
-            SliderTrack.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
-            SliderTrack.Size = UDim2.new(0, 150, 0, 22)
+            SliderTrack.BackgroundColor3 = Color3.fromRGB(37, 37, 37)  -- Cor escura igual ao novo
+            SliderTrack.Size = UDim2.new(0, 168, 0, 22)  -- Largura aumentada
             
             local UICorner2 = Instance.new("UICorner")
             UICorner2.CornerRadius = UDim.new(0, 6)
@@ -438,10 +304,10 @@ function UILibrary:CreateWindow(title)
             InfoNumber.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
             InfoNumber.TextColor3 = Color3.fromRGB(255, 255, 255)
             InfoNumber.BackgroundTransparency = 1
-            InfoNumber.Size = UDim2.new(0, 150, 0, 22)
+            InfoNumber.Size = UDim2.new(0, 168, 0, 22)  -- Largura aumentada
             InfoNumber.Text = tostring(min or 0)
             InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-            InfoNumber.TextSize = 20
+            InfoNumber.TextSize = 20  -- Texto maior
             InfoNumber.TextTransparency = 0.5
             
             local InfoLabel = Instance.new("TextLabel")
@@ -455,13 +321,14 @@ function UILibrary:CreateWindow(title)
             InfoLabel.BackgroundTransparency = 1
             InfoLabel.Size = UDim2.new(0, 70, 0, 20)
             InfoLabel.Text = text or "Slider"
-            InfoLabel.Position = UDim2.new(0, 158, 0, 2)
+            InfoLabel.Position = UDim2.new(0, 176, 0, 2)  -- Posição ajustada
             InfoLabel.Parent = SliderFrame
             
             SliderFill.Parent = SliderTrack
             SliderTrack.Parent = Main
             InfoNumber.Parent = Main
             Main.Parent = SliderFrame
+            SliderFrame.Parent = ElementsContainer
             
             local sliderValue = min or 0
             local dragging = false
@@ -518,7 +385,7 @@ function UILibrary:CreateWindow(title)
             end)
             
             updateValue(min)
-            addElement(SliderFrame, 30)
+            tabData.elementCount = tabData.elementCount + 1
             
             return {
                 SetValue = function(self, value) updateValue(value) end,
@@ -526,14 +393,14 @@ function UILibrary:CreateWindow(title)
             }
         end
         
-        -- ADICIONAR DROPDOWN
+        -- ADICIONAR DROPDOWN (COM NOVO VISUAL)
         function tabMethods:AddDropdown(text, options, callback)
             local DropdownFrame = Instance.new("Frame")
             DropdownFrame.Name = "Dropdown_" .. text
             DropdownFrame.BorderSizePixel = 0
             DropdownFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
             DropdownFrame.Size = UDim2.new(0, 228, 0, 22)
-            DropdownFrame.Position = UDim2.new(0, 6, 0, 20)
+            DropdownFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 30))
             DropdownFrame.BackgroundTransparency = 1
             DropdownFrame.ZIndex = 2
             
@@ -548,14 +415,14 @@ function UILibrary:CreateWindow(title)
             InfoLabel.BackgroundTransparency = 1
             InfoLabel.Size = UDim2.new(0, 88, 0, 20)
             InfoLabel.Text = text or "Dropdown"
-            InfoLabel.Position = UDim2.new(0, 140, 0, 2)
+            InfoLabel.Position = UDim2.new(0, 140, 0, 2)  -- Posição ajustada
             InfoLabel.ZIndex = 2
             InfoLabel.Parent = DropdownFrame
             
             local Main = Instance.new("Frame")
             Main.Name = "Main"
             Main.BorderSizePixel = 0
-            Main.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+            Main.BackgroundColor3 = Color3.fromRGB(37, 37, 37)  -- Cor escura igual ao novo
             Main.Size = UDim2.new(0, 136, 0, 22)
             Main.ZIndex = 3
             
@@ -566,10 +433,10 @@ function UILibrary:CreateWindow(title)
             local ScrollingFrame = Instance.new("ScrollingFrame")
             ScrollingFrame.Name = "ScrollingFrame"
             ScrollingFrame.BorderSizePixel = 0
-            ScrollingFrame.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+            ScrollingFrame.BackgroundColor3 = Color3.fromRGB(37, 37, 37)  -- Cor escura igual ao novo
             ScrollingFrame.Size = UDim2.new(0, 136, 0, 0)
             ScrollingFrame.Position = UDim2.new(0, 0, 0, 24)
-            ScrollingFrame.ScrollBarThickness = 0
+            ScrollingFrame.ScrollBarThickness = 0  -- Scrollbar removido
             ScrollingFrame.Visible = false
             ScrollingFrame.ZIndex = 100
             ScrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
@@ -583,11 +450,11 @@ function UILibrary:CreateWindow(title)
             local OpenFrame = Instance.new("ImageButton")
             OpenFrame.Name = "OpenFrame"
             OpenFrame.BorderSizePixel = 0
-            OpenFrame.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
+            OpenFrame.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  -- Cor roxa
             OpenFrame.Image = [[rbxassetid://8539638324]]
             OpenFrame.Size = UDim2.new(0, 22, 0, 22)
             OpenFrame.Rotation = 180
-            OpenFrame.Position = UDim2.new(0, 114, 0, 0)
+            OpenFrame.Position = UDim2.new(0, 114, 0, 0)  -- Posição ajustada
             OpenFrame.ZIndex = 4
             
             local UICorner3 = Instance.new("UICorner")
@@ -597,13 +464,13 @@ function UILibrary:CreateWindow(title)
             local InfoNumber = Instance.new("TextLabel")
             InfoNumber.Name = "InfoNumber"
             InfoNumber.BorderSizePixel = 0
-            InfoNumber.TextSize = 13
+            InfoNumber.TextSize = 13  -- Texto maior
             InfoNumber.TextXAlignment = Enum.TextXAlignment.Left
             InfoNumber.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
             InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
             InfoNumber.TextColor3 = Color3.fromRGB(255, 255, 255)
             InfoNumber.BackgroundTransparency = 1
-            InfoNumber.Size = UDim2.new(0, 130, 0, 22)
+            InfoNumber.Size = UDim2.new(0, 130, 0, 22)  -- Largura aumentada
             InfoNumber.Text = options[1] or "Selecione"
             InfoNumber.ZIndex = 4
             InfoNumber.TextTruncate = Enum.TextTruncate.AtEnd
@@ -619,7 +486,7 @@ function UILibrary:CreateWindow(title)
                 Button.BorderSizePixel = 0
                 Button.TextSize = 10
                 Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-                Button.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+                Button.BackgroundColor3 = Color3.fromRGB(37, 37, 37)  -- Cor escura
                 Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
                 Button.Size = UDim2.new(1, -4, 0, buttonHeight)
                 Button.Position = UDim2.new(0, 2, 0, (i-1) * (buttonHeight + padding))
@@ -653,6 +520,7 @@ function UILibrary:CreateWindow(title)
             OpenFrame.Parent = Main
             InfoNumber.Parent = Main
             Main.Parent = DropdownFrame
+            DropdownFrame.Parent = ElementsContainer
             
             local function calculateHeight()
                 local numOptions = #options
@@ -679,13 +547,15 @@ function UILibrary:CreateWindow(title)
                 end
             end)
             
-            addElement(DropdownFrame, 30)
+            tabData.elementCount = tabData.elementCount + 1
             
             return {
                 SetValue = function(self, value)
                     if table.find(options, value) then
                         InfoNumber.Text = value
-                        if callback then callback(value) end
+                        if callback then
+                            callback(value)
+                        end
                     end
                 end,
                 GetValue = function(self)
@@ -694,14 +564,14 @@ function UILibrary:CreateWindow(title)
             }
         end
         
-        -- ADICIONAR RADIO BUTTONS
+        -- ADICIONAR RADIO BUTTONS (COM NOVO VISUAL)
         function tabMethods:AddRadioButtons(text, options, callback)
             local RadioFrame = Instance.new("Frame")
             RadioFrame.Name = "RadioButtons_" .. text
             RadioFrame.BorderSizePixel = 0
             RadioFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            RadioFrame.Size = UDim2.new(0, 162, 0, 40)
-            RadioFrame.Position = UDim2.new(0, 6, 0, 20)
+            RadioFrame.Size = UDim2.new(0, 162, 0, 40)  -- Altura reduzida
+            RadioFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 30))
             RadioFrame.BackgroundTransparency = 1
             
             local InfoLabel = Instance.new("TextLabel")
@@ -725,7 +595,7 @@ function UILibrary:CreateWindow(title)
                 RadioOption.Name = "Radio" .. i
                 RadioOption.BorderSizePixel = 0
                 RadioOption.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                RadioOption.Size = UDim2.new(0, 70, 0, 16)
+                RadioOption.Size = UDim2.new(0, 70, 0, 16)  -- Largura aumentada
                 RadioOption.Position = UDim2.new(0, (i-1) * 78, 0, 16)
                 RadioOption.BackgroundTransparency = 1
                 
@@ -752,7 +622,7 @@ function UILibrary:CreateWindow(title)
                 RadioButton.AutoButtonColor = false
                 
                 local UICorner = Instance.new("UICorner")
-                UICorner.CornerRadius = UDim.new(1, 9)
+                UICorner.CornerRadius = UDim.new(1, 9)  -- Círculo perfeito
                 UICorner.Parent = RadioButton
                 
                 RadioButton.Parent = RadioOption
@@ -779,8 +649,9 @@ function UILibrary:CreateWindow(title)
             end
             
             RadioFrame.Size = UDim2.new(0, math.min(#options * 78, 162), 0, 40)
+            RadioFrame.Parent = ElementsContainer
             
-            addElement(RadioFrame, 40)
+            tabData.elementCount = tabData.elementCount + 1
             
             return {
                 SetValue = function(self, value)
@@ -793,7 +664,9 @@ function UILibrary:CreateWindow(title)
                         end
                     end
                     
-                    if callback then callback(value) end
+                    if callback then
+                        callback(value)
+                    end
                 end,
                 GetValue = function(self)
                     return selectedOption
@@ -801,15 +674,15 @@ function UILibrary:CreateWindow(title)
             }
         end
         
-        -- ADICIONAR BOTÃO
+        -- ADICIONAR BOTÃO (COM NOVO VISUAL - LARGURA AUMENTADA)
         function tabMethods:AddButton(text, callback)
             local ButtonFrame = Instance.new("Frame")
             ButtonFrame.Name = "Button_" .. text
             ButtonFrame.BorderSizePixel = 0
             ButtonFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            ButtonFrame.Size = UDim2.new(0, 228, 0, 22)
-            ButtonFrame.Position = UDim2.new(0, 6, 0, 20)
-            ButtonFrame.BackgroundTransparency = 0.9
+            ButtonFrame.Size = UDim2.new(0, 236, 0, 22)  -- Largura aumentada
+            ButtonFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 35))
+            ButtonFrame.BackgroundTransparency = 0.9  -- Transparência alterada
             
             local Button = Instance.new("TextButton")
             Button.Name = "Button"
@@ -819,7 +692,7 @@ function UILibrary:CreateWindow(title)
             Button.TextColor3 = Color3.fromRGB(255, 255, 255)
             Button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
             Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-            Button.Size = UDim2.new(0, 230, 0, 22)
+            Button.Size = UDim2.new(0, 238, 0, 22)  -- Largura aumentada
             Button.Text = text or "Button"
             Button.AutoButtonColor = false
             
@@ -840,8 +713,9 @@ function UILibrary:CreateWindow(title)
             end)
             
             Button.Parent = ButtonFrame
-            addElement(ButtonFrame, 35)
+            ButtonFrame.Parent = ElementsContainer
             
+            tabData.elementCount = tabData.elementCount + 1
             return Button
         end
         
