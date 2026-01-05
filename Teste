@@ -1,4 +1,4 @@
--- UI Library ATUALIZADA com Dropdown e Radio Buttons
+-- UI Library ATUALIZADA com Dropdown e Radio Buttons CORRIGIDA
 local UILibrary = {}
 
 function UILibrary:CreateWindow(title)
@@ -382,7 +382,7 @@ function UILibrary:CreateWindow(title)
         }
     end
     
-    -- NOVA FUNÇÃO PARA ADICIONAR DROPDOWN
+    -- NOVA FUNÇÃO PARA ADICIONAR DROPDOWN - CORRIGIDA
     function publicMethods:AddDropdown(text, options, callback)
         local DropdownFrame = Instance.new("Frame")
         DropdownFrame.Name = "Dropdown_" .. text
@@ -392,11 +392,26 @@ function UILibrary:CreateWindow(title)
         DropdownFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 30))
         DropdownFrame.BackgroundTransparency = 1
         
+        local InfoLabel = Instance.new("TextLabel")
+        InfoLabel.Name = "InfoLabel"
+        InfoLabel.BorderSizePixel = 0
+        InfoLabel.TextSize = 10
+        InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+        InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+        InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        InfoLabel.BackgroundTransparency = 1
+        InfoLabel.Size = UDim2.new(0, 88, 0, 20)
+        InfoLabel.Text = text or "Dropdown"
+        InfoLabel.Position = UDim2.new(0, 140, 0, 2)
+        InfoLabel.Parent = DropdownFrame
+        
         local Main = Instance.new("Frame")
         Main.Name = "Main"
         Main.BorderSizePixel = 0
         Main.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
         Main.Size = UDim2.new(0, 136, 0, 22)
+        Main.ZIndex = 2 -- Importante: ZIndex mais alto
         
         local UICorner = Instance.new("UICorner")
         UICorner.CornerRadius = UDim.new(0, 5)
@@ -408,49 +423,15 @@ function UILibrary:CreateWindow(title)
         ScrollingFrame.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
         ScrollingFrame.Size = UDim2.new(0, 136, 0, 0)
         ScrollingFrame.Position = UDim2.new(0, 0, 0, 24)
-        ScrollingFrame.ScrollBarThickness = 0
+        ScrollingFrame.ScrollBarThickness = 2
         ScrollingFrame.Visible = false
-        ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #options * 16)
+        ScrollingFrame.ZIndex = 3 -- Mais alto ainda para aparecer acima
+        ScrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+        ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #options * 20)
         
         local UICorner2 = Instance.new("UICorner")
         UICorner2.CornerRadius = UDim.new(0, 5)
         UICorner2.Parent = ScrollingFrame
-        
-        -- Criar botões para cada opção
-        for i, option in ipairs(options) do
-            local Button = Instance.new("TextButton")
-            Button.Name = "Button_" .. option
-            Button.TextWrapped = true
-            Button.BorderSizePixel = 0
-            Button.TextSize = 10
-            Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-            Button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
-            Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-            Button.Size = UDim2.new(1, 0, 0, 16)
-            Button.Position = UDim2.new(0, 0, 0, (i-1) * 16)
-            Button.Text = option
-            
-            -- Efeito hover
-            Button.MouseEnter:Connect(function()
-                Button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-            end)
-            
-            Button.MouseLeave:Connect(function()
-                Button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
-            end)
-            
-            Button.MouseButton1Click:Connect(function()
-                InfoNumber.Text = option
-                ScrollingFrame.Visible = false
-                OpenFrame.Rotation = 180
-                
-                if callback then
-                    callback(option)
-                end
-            end)
-            
-            Button.Parent = ScrollingFrame
-        end
         
         local OpenFrame = Instance.new("ImageButton")
         OpenFrame.Name = "OpenFrame"
@@ -460,6 +441,7 @@ function UILibrary:CreateWindow(title)
         OpenFrame.Size = UDim2.new(0, 22, 0, 22)
         OpenFrame.Rotation = 180
         OpenFrame.Position = UDim2.new(0, 114, 0, 0)
+        OpenFrame.ZIndex = 2
         
         local UICorner3 = Instance.new("UICorner")
         UICorner3.CornerRadius = UDim.new(0, 5)
@@ -476,25 +458,59 @@ function UILibrary:CreateWindow(title)
         InfoNumber.BackgroundTransparency = 1
         InfoNumber.Size = UDim2.new(0, 130, 0, 22)
         InfoNumber.Text = options[1] or "Selecione"
+        InfoNumber.ZIndex = 2
         
-        local InfoLabel = Instance.new("TextLabel")
-        InfoLabel.Name = "InfoLabel"
-        InfoLabel.BorderSizePixel = 0
-        InfoLabel.TextSize = 10
-        InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
-        InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-        InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        InfoLabel.BackgroundTransparency = 1
-        InfoLabel.Size = UDim2.new(0, 88, 0, 20)
-        InfoLabel.Text = text or "Dropdown"
-        InfoLabel.Position = UDim2.new(0, 140, 0, 2)
+        -- Criar botões para cada opção
+        for i, option in ipairs(options) do
+            local Button = Instance.new("TextButton")
+            Button.Name = "Button_" .. option
+            Button.TextWrapped = true
+            Button.BorderSizePixel = 0
+            Button.TextSize = 10
+            Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
+            Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+            Button.Size = UDim2.new(1, -4, 0, 18)
+            Button.Position = UDim2.new(0, 2, 0, (i-1) * 20)
+            Button.Text = option
+            Button.AutoButtonColor = false
+            Button.ZIndex = 3
+            
+            -- Efeito hover
+            Button.MouseEnter:Connect(function()
+                Button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+            end)
+            
+            Button.MouseLeave:Connect(function()
+                Button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
+            end)
+            
+            Button.MouseButton1Down:Connect(function()
+                Button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
+            end)
+            
+            Button.MouseButton1Up:Connect(function()
+                Button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+            end)
+            
+            Button.MouseButton1Click:Connect(function()
+                InfoNumber.Text = option
+                ScrollingFrame.Visible = false
+                ScrollingFrame.Size = UDim2.new(0, 136, 0, 0)
+                OpenFrame.Rotation = 180
+                
+                if callback then
+                    callback(option)
+                end
+            end)
+            
+            Button.Parent = ScrollingFrame
+        end
         
         ScrollingFrame.Parent = Main
         OpenFrame.Parent = Main
         InfoNumber.Parent = Main
         Main.Parent = DropdownFrame
-        InfoLabel.Parent = DropdownFrame
         DropdownFrame.Parent = LMG2L["ElementsContainer"]
         
         -- Função para abrir/fechar dropdown
@@ -503,30 +519,54 @@ function UILibrary:CreateWindow(title)
         OpenFrame.MouseButton1Click:Connect(function()
             isOpen = not isOpen
             ScrollingFrame.Visible = isOpen
-            ScrollingFrame.Size = isOpen and UDim2.new(0, 136, 0, math.min(#options * 16, 80)) or UDim2.new(0, 136, 0, 0)
             OpenFrame.Rotation = isOpen and 0 or 180
             
             if isOpen then
-                -- Ajustar tamanho do scrolling frame se tiver muitas opções
-                local maxHeight = math.min(#options * 16, 80)
+                -- Ajustar tamanho do scrolling frame
+                local maxHeight = math.min(#options * 20, 100)
                 ScrollingFrame.Size = UDim2.new(0, 136, 0, maxHeight)
-                ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #options * 16)
+                ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #options * 20)
+                
+                -- Garantir que aparece acima de tudo
+                ScrollingFrame.ZIndex = 10
+                for _, child in ipairs(ScrollingFrame:GetChildren()) do
+                    if child:IsA("GuiObject") then
+                        child.ZIndex = 11
+                    end
+                end
+            else
+                ScrollingFrame.Size = UDim2.new(0, 136, 0, 0)
             end
         end)
         
         -- Fechar dropdown ao clicar fora
+        local function closeDropdown()
+            if isOpen then
+                isOpen = false
+                ScrollingFrame.Visible = false
+                ScrollingFrame.Size = UDim2.new(0, 136, 0, 0)
+                OpenFrame.Rotation = 180
+            end
+        end
+        
+        -- Detectar clique fora do dropdown
         game:GetService("UserInputService").InputBegan:Connect(function(input)
             if isOpen and input.UserInputType == Enum.UserInputType.MouseButton1 then
                 local mousePos = input.Position
                 local absPos = ScrollingFrame.AbsolutePosition
                 local absSize = ScrollingFrame.AbsoluteSize
+                local openFramePos = OpenFrame.AbsolutePosition
+                local openFrameSize = OpenFrame.AbsoluteSize
                 
-                if mousePos.X < absPos.X or mousePos.X > absPos.X + absSize.X or
-                   mousePos.Y < absPos.Y or mousePos.Y > absPos.Y + absSize.Y then
-                    isOpen = false
-                    ScrollingFrame.Visible = false
-                    ScrollingFrame.Size = UDim2.new(0, 136, 0, 0)
-                    OpenFrame.Rotation = 180
+                -- Verificar se clicou fora do dropdown
+                local clickedInScrolling = mousePos.X >= absPos.X and mousePos.X <= absPos.X + absSize.X and
+                                          mousePos.Y >= absPos.Y and mousePos.Y <= absPos.Y + absSize.Y
+                
+                local clickedInOpenFrame = mousePos.X >= openFramePos.X and mousePos.X <= openFramePos.X + openFrameSize.X and
+                                          mousePos.Y >= openFramePos.Y and mousePos.Y <= openFramePos.Y + openFrameSize.Y
+                
+                if not clickedInScrolling and not clickedInOpenFrame then
+                    closeDropdown()
                 end
             end
         end)
@@ -548,14 +588,14 @@ function UILibrary:CreateWindow(title)
         }
     end
     
-    -- NOVA FUNÇÃO PARA ADICIONAR RADIO BUTTONS
+    -- NOVA FUNÇÃO PARA ADICIONAR RADIO BUTTONS - CORRIGIDA
     function publicMethods:AddRadioButtons(text, options, callback)
         local RadioFrame = Instance.new("Frame")
         RadioFrame.Name = "RadioButtons_" .. text
         RadioFrame.BorderSizePixel = 0
         RadioFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        RadioFrame.Size = UDim2.new(0, 162, 0, 40)
-        RadioFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 30))
+        RadioFrame.Size = UDim2.new(0, 162, 0, 50) -- Aumentei a altura
+        RadioFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 35)) -- Mais espaçamento
         RadioFrame.BackgroundTransparency = 1
         
         local InfoLabel = Instance.new("TextLabel")
@@ -580,8 +620,8 @@ function UILibrary:CreateWindow(title)
             RadioOption.Name = "Radio" .. i
             RadioOption.BorderSizePixel = 0
             RadioOption.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            RadioOption.Size = UDim2.new(0, 70, 0, 16)
-            RadioOption.Position = UDim2.new(0, (i-1) * 74, 0, 16)
+            RadioOption.Size = UDim2.new(0, 74, 0, 16)
+            RadioOption.Position = UDim2.new(0, (i-1) * 78, 0, 16)
             RadioOption.BackgroundTransparency = 1
             
             local OptionLabel = Instance.new("TextLabel")
@@ -636,7 +676,7 @@ function UILibrary:CreateWindow(title)
         end
         
         -- Ajustar largura do frame baseado no número de opções
-        RadioFrame.Size = UDim2.new(0, math.min(#options * 74, 162), 0, 40)
+        RadioFrame.Size = UDim2.new(0, math.min(#options * 78, 162), 0, 50)
         
         RadioFrame.Parent = LMG2L["ElementsContainer"]
         
@@ -663,14 +703,14 @@ function UILibrary:CreateWindow(title)
         }
     end
     
-    -- FUNÇÃO PARA ADICIONAR BOTÃO
+    -- FUNÇÃO PARA ADICIONAR BOTÃO - COM MAIS ESPAÇAMENTO
     function publicMethods:AddButton(text, callback)
         local ButtonFrame = Instance.new("Frame")
         ButtonFrame.Name = "Button_" .. text
         ButtonFrame.BorderSizePixel = 0
         ButtonFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         ButtonFrame.Size = UDim2.new(0, 220, 0, 22)
-        ButtonFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 30))
+        ButtonFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 35)) -- Mais espaçamento
         ButtonFrame.BackgroundTransparency = 0.9
         
         local Button = Instance.new("TextButton")
