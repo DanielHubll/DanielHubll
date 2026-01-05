@@ -1,161 +1,746 @@
-local Library = {}
+-- UI Library SIMPLES no seu estilo - ATUALIZADA
+local UILibrary = {}
 
-function Library:CreateWindow(hubName)
-    local UIS = game:GetService("UserInputService")
-    local LMG2L = {}
+function UILibrary:CreateWindow(title)
+    local publicMethods = {}
 
-    -- Principal ScreenGui
-    LMG2L["Floating_1"] = Instance.new("ScreenGui", game:GetService("CoreGui"))
-    LMG2L["Floating_1"]["Name"] = "VLG_PAINEL"
-
-    -- Topo (Barra de Arraste)
-    LMG2L["Topo_2"] = Instance.new("Frame", LMG2L["Floating_1"])
-    LMG2L["Topo_2"]["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)
-    LMG2L["Topo_2"]["Size"] = UDim2.new(0, 294, 0, 22)
-    LMG2L["Topo_2"]["Position"] = UDim2.new(0.5, -147, 0.4, 0)
-    LMG2L["Topo_2"]["Name"] = "Topo"
-    Instance.new("UICorner", LMG2L["Topo_2"]).CornerRadius = UDim.new(0, 5)
-
-    -- Função de Arrastar
-    local dragToggle, dragStart, startPos
-    LMG2L["Topo_2"].InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragToggle = true; dragStart = input.Position; startPos = LMG2L["Topo_2"].Position
-            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragToggle = false end end)
-        end
-    end)
-    UIS.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement and dragToggle then
-            local delta = input.Position - dragStart
-            LMG2L["Topo_2"].Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
-
-    -- Titulo
-    local Title = Instance.new("TextLabel", LMG2L["Topo_2"])
-    Title.Text = hubName or "VLG PAINEL"
-    Title.Size = UDim2.new(0, 152, 0, 20); Title.Position = UDim2.new(0, 28, 0, 0)
-    Title.TextColor3 = Color3.fromRGB(255, 254, 254); Title.BackgroundTransparency = 1
-    Title.Font = Enum.Font.GothamBold; Title.TextSize = 11; Title.TextXAlignment = Enum.TextXAlignment.Left
-
-    -- Corpo (Main)
-    local MainFrame = Instance.new("Frame", LMG2L["Topo_2"])
-    MainFrame.Name = "MainFrame"
-    MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    MainFrame.Size = UDim2.new(0, 294, 0, 202)
-    MainFrame.Position = UDim2.new(0, 0, 0, 22)
-    MainFrame.ClipsDescendants = true
-
-    -- Botão Fechar (X)
-    local Close = Instance.new("TextButton", LMG2L["Topo_2"])
-    Close.Text = "X"; Close.Size = UDim2.new(0, 14, 0, 14); Close.Position = UDim2.new(0, 276, 0, 4)
-    Close.BackgroundTransparency = 1; Close.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Close.MouseButton1Click:Connect(function() LMG2L["Floating_1"]:Destroy() end)
-
-    -- Botão Minimizar (Setinha)
-    local OpenBtn = Instance.new("ImageButton", LMG2L["Topo_2"])
-    OpenBtn.Image = "rbxassetid://8539638324"; OpenBtn.Size = UDim2.new(0, 14, 0, 14); OpenBtn.Position = UDim2.new(0, 4, 0, 4)
-    OpenBtn.BackgroundTransparency = 1; OpenBtn.Rotation = 180
-    local isOpened = true
-    OpenBtn.MouseButton1Click:Connect(function()
-        isOpened = not isOpened
-        MainFrame.Visible = isOpened
-        OpenBtn.Rotation = isOpened and 180 or 0
-    end)
-
-    -- Container de Itens (Scroll)
-    local Container = Instance.new("ScrollingFrame", MainFrame)
-    Container.Size = UDim2.new(0, 230, 0, 190); Container.Position = UDim2.new(0, 58, 0, 5)
-    Container.BackgroundTransparency = 1; Container.ScrollBarThickness = 2
-    local UIList = Instance.new("UIListLayout", Container)
-    UIList.Padding = UDim.new(0, 10); UIList.SortOrder = Enum.SortOrder.LayoutOrder
-
-    local TabElements = {}
-
-    -- TOGGLE
-    function TabElements:AddToggle(text, callback)
-        local TFrame = Instance.new("Frame", Container)
-        TFrame.Size = UDim2.new(0, 210, 0, 22); TFrame.BackgroundTransparency = 1
+    -- Criar a interface IDÊNTICA à sua  
+    local LMG2L = {}  
+    
+    -- Players.USUARIODEK99993.PlayerGui.Floating    
+    LMG2L["Floating_1"] = Instance.new("ScreenGui", game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"))    
+    LMG2L["Floating_1"]["Name"] = "Floating"    
+    LMG2L["Floating_1"]["ZIndexBehavior"] = Enum.ZIndexBehavior.Sibling    
+    
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo    
+    LMG2L["Topo_2"] = Instance.new("Frame", LMG2L["Floating_1"])    
+    LMG2L["Topo_2"]["BorderSizePixel"] = 0    
+    LMG2L["Topo_2"]["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)    
+    LMG2L["Topo_2"]["Size"] = UDim2.new(0, 294, 0, 22)    
+    LMG2L["Topo_2"]["Position"] = UDim2.new(0, 260, 0, 46)    
+    LMG2L["Topo_2"]["Name"] = "Topo"    
+    
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.UICorner    
+    LMG2L["UICorner_3"] = Instance.new("UICorner", LMG2L["Topo_2"])    
+    LMG2L["UICorner_3"]["CornerRadius"] = UDim.new(0, 5)    
+    
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.Main    
+    LMG2L["Main_4"] = Instance.new("Frame", LMG2L["Topo_2"])    
+    LMG2L["Main_4"]["BorderSizePixel"] = 0    
+    LMG2L["Main_4"]["BackgroundColor3"] = Color3.fromRGB(40, 40, 40)    
+    LMG2L["Main_4"]["Size"] = UDim2.new(0, 294, 0, 202)    
+    LMG2L["Main_4"]["Position"] = UDim2.new(0, 0, 0, 22)    
+    LMG2L["Main_4"]["Name"] = "Main"    
+    
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.Main.Effect    
+    LMG2L["Effect_6"] = Instance.new("Frame", LMG2L["Main_4"])    
+    LMG2L["Effect_6"]["BorderSizePixel"] = 0    
+    LMG2L["Effect_6"]["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)    
+    LMG2L["Effect_6"]["Size"] = UDim2.new(0, 230, 0, 2)    
+    LMG2L["Effect_6"]["Position"] = UDim2.new(0, 54, 0, 10)    
+    LMG2L["Effect_6"]["Name"] = "Effect"    
+    
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.Main.Main    
+    LMG2L["Main_7"] = Instance.new("Frame", LMG2L["Main_4"])    
+    LMG2L["Main_7"]["BorderSizePixel"] = 0    
+    LMG2L["Main_7"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)    
+    LMG2L["Main_7"]["Size"] = UDim2.new(0, 242, 0, 202)    
+    LMG2L["Main_7"]["Position"] = UDim2.new(0, 52, 0, 0)    
+    LMG2L["Main_7"]["Name"] = "Main"    
+    LMG2L["Main_7"]["BackgroundTransparency"] = 1    
+    
+    -- Container para elementos  
+    LMG2L["ElementsContainer"] = Instance.new("Frame", LMG2L["Main_7"])  
+    LMG2L["ElementsContainer"]["BackgroundTransparency"] = 1  
+    LMG2L["ElementsContainer"]["Size"] = UDim2.new(1, 0, 1, 0)  
+    LMG2L["ElementsContainer"]["Name"] = "ElementsContainer"  
+    
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.Main.Tabs    
+    LMG2L["Tabs_2a"] = Instance.new("Frame", LMG2L["Main_4"])    
+    LMG2L["Tabs_2a"]["BorderSizePixel"] = 0    
+    LMG2L["Tabs_2a"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)    
+    LMG2L["Tabs_2a"]["Size"] = UDim2.new(0, 52, 0, 182)    
+    LMG2L["Tabs_2a"]["Name"] = "Tabs"    
+    LMG2L["Tabs_2a"]["BackgroundTransparency"] = 1    
+    
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.Main.Tabs.Tab1    
+    LMG2L["Tab1_2b"] = Instance.new("ImageButton", LMG2L["Tabs_2a"])    
+    LMG2L["Tab1_2b"]["BorderSizePixel"] = 0    
+    LMG2L["Tab1_2b"]["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)    
+    LMG2L["Tab1_2b"]["Size"] = UDim2.new(0, 40, 0, 40)    
+    LMG2L["Tab1_2b"]["Name"] = "Tab1"    
+    LMG2L["Tab1_2b"]["Position"] = UDim2.new(0, 6, 0, 8)    
+    
+    LMG2L["UICorner_2c"] = Instance.new("UICorner", LMG2L["Tab1_2b"])    
+    LMG2L["UICorner_2c"]["CornerRadius"] = UDim.new(0, 5)    
+    
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.TitleMenu    
+    LMG2L["TitleMenu_3"] = Instance.new("TextLabel", LMG2L["Topo_2"])    
+    LMG2L["TitleMenu_3"]["BorderSizePixel"] = 0    
+    LMG2L["TitleMenu_3"]["TextSize"] = 11    
+    LMG2L["TitleMenu_3"]["TextXAlignment"] = Enum.TextXAlignment.Left    
+    LMG2L["TitleMenu_3"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)    
+    LMG2L["TitleMenu_3"]["FontFace"] = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)    
+    LMG2L["TitleMenu_3"]["TextColor3"] = Color3.fromRGB(255, 254, 254)    
+    LMG2L["TitleMenu_3"]["BackgroundTransparency"] = 1    
+    LMG2L["TitleMenu_3"]["Size"] = UDim2.new(0, 152, 0, 20)    
+    LMG2L["TitleMenu_3"]["Text"] = title or "VLG PAINEL"    
+    LMG2L["TitleMenu_3"]["Name"] = "TitleMenu"    
+    LMG2L["TitleMenu_3"]["Position"] = UDim2.new(0, 28, 0, 0)    
+    
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.CloseMenu    
+    LMG2L["CloseMenu_4"] = Instance.new("TextButton", LMG2L["Topo_2"])    
+    LMG2L["CloseMenu_4"]["BorderSizePixel"] = 0    
+    LMG2L["CloseMenu_4"]["TextSize"] = 10    
+    LMG2L["CloseMenu_4"]["TextColor3"] = Color3.fromRGB(255, 255, 255)    
+    LMG2L["CloseMenu_4"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)    
+    LMG2L["CloseMenu_4"]["BackgroundTransparency"] = 1    
+    LMG2L["CloseMenu_4"]["Size"] = UDim2.new(0, 14, 0, 14)    
+    LMG2L["CloseMenu_4"]["Text"] = "X"    
+    LMG2L["CloseMenu_4"]["Name"] = "CloseMenu"    
+    LMG2L["CloseMenu_4"]["Position"] = UDim2.new(0, 276, 0, 4)    
+    
+    -- Players.USUARIODEK99993.PlayerGui.Floating.Topo.OpenName    
+    LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])    
+    LMG2L["OpenName_2d"]["BorderSizePixel"] = 0    
+    LMG2L["OpenName_2d"]["BackgroundTransparency"] = 1    
+    LMG2L["OpenName_2d"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)    
+    LMG2L["OpenName_2d"]["Image"] = "rbxassetid://8539638324"    
+    LMG2L["OpenName_2d"]["Size"] = UDim2.new(0, 14, 0, 14)    
+    LMG2L["OpenName_2d"]["Name"] = "OpenName"    
+    LMG2L["OpenName_2d"]["Rotation"] = 180    
+    LMG2L["OpenName_2d"]["Position"] = UDim2.new(0, 4, 0, 4)  
+    
+    -- Contador para posicionar elementos  
+    local elementCount = 0  
+    
+    -- Funções do menu  
+    LMG2L["CloseMenu_4"].MouseButton1Click:Connect(function()  
+        LMG2L["Topo_2"].Visible = false  
+    end)  
+    
+    LMG2L["OpenName_2d"].MouseButton1Click:Connect(function()  
+        LMG2L["Main_4"].Visible = not LMG2L["Main_4"].Visible  
+        LMG2L["OpenName_2d"].Rotation = LMG2L["Main_4"].Visible and 0 or 180  
+    end)  
+    
+    -- Função para mover a janela  
+    local draggingWindow = false  
+    local dragStart, startPos  
+    
+    LMG2L["Topo_2"].InputBegan:Connect(function(input)  
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then  
+            draggingWindow = true  
+            dragStart = input.Position  
+            startPos = LMG2L["Topo_2"].Position  
+        end  
+    end)  
+    
+    game:GetService("UserInputService").InputChanged:Connect(function(input)  
+        if draggingWindow and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then  
+            local delta = input.Position - dragStart  
+            LMG2L["Topo_2"].Position = UDim2.new(  
+                startPos.X.Scale,   
+                startPos.X.Offset + delta.X,  
+                startPos.Y.Scale,   
+                startPos.Y.Offset + delta.Y  
+            )  
+        end  
+    end)  
+    
+    game:GetService("UserInputService").InputEnded:Connect(function(input)  
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then  
+            draggingWindow = false  
+        end  
+    end)  
+    
+    -- FUNÇÃO PARA ADICIONAR TOGGLE
+    function publicMethods:AddToggle(text, callback)  
+        local ToggleFrame = Instance.new("Frame")  
+        ToggleFrame.Name = "Toggle_" .. text  
+        ToggleFrame.BorderSizePixel = 0  
+        ToggleFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
+        ToggleFrame.Size = UDim2.new(0, 100, 0, 22)  
+        ToggleFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 26))  
+        ToggleFrame.BackgroundTransparency = 1  
         
-        local TBtn = Instance.new("TextButton", TFrame)
-        TBtn.Size = UDim2.new(0, 22, 0, 22); TBtn.BackgroundColor3 = Color3.fromRGB(53, 53, 53); TBtn.Text = ""
-        Instance.new("UICorner", TBtn).CornerRadius = UDim.new(0, 5)
+        local InfoLabel = Instance.new("TextLabel")  
+        InfoLabel.Name = "InfoLabel"  
+        InfoLabel.BorderSizePixel = 0  
+        InfoLabel.TextSize = 10  
+        InfoLabel.TextXAlignment = Enum.TextXAlignment.Left  
+        InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
+        InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)  
+        InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)  
+        InfoLabel.BackgroundTransparency = 1  
+        InfoLabel.Size = UDim2.new(0, 88, 0, 22)  
+        InfoLabel.Text = text or "Toggle"  
+        InfoLabel.Position = UDim2.new(0, 28, 0, 0)  
+        InfoLabel.Parent = ToggleFrame  
         
-        local TLab = Instance.new("TextLabel", TFrame)
-        TLab.Text = text; TLab.Position = UDim2.new(0, 28, 0, 0); TLab.Size = UDim2.new(0, 150, 0, 22)
-        TLab.BackgroundTransparency = 1; TLab.TextColor3 = Color3.fromRGB(255, 255, 255); TLab.TextXAlignment = 0
-
-        local toggled = false
-        TBtn.MouseButton1Click:Connect(function()
-            toggled = not toggled
-            TBtn.BackgroundColor3 = toggled and Color3.fromRGB(144, 0, 181) or Color3.fromRGB(53, 53, 53)
-            callback(toggled)
-        end)
+        local ToggleButton = Instance.new("TextButton")  
+        ToggleButton.Name = "ToggleButton"  
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(53, 53, 53)  
+        ToggleButton.Size = UDim2.new(0, 22, 0, 22)  
+        ToggleButton.BorderSizePixel = 0  
+        ToggleButton.Text = ""  
+        ToggleButton.AutoButtonColor = false  
+        
+        local UICorner = Instance.new("UICorner")  
+        UICorner.CornerRadius = UDim.new(0, 5)  
+        UICorner.Parent = ToggleButton  
+        
+        ToggleButton.Parent = ToggleFrame  
+        ToggleFrame.Parent = LMG2L["ElementsContainer"]  
+        
+        local toggleState = false  
+        
+        local function updateToggle()  
+            if toggleState then  
+                ToggleButton.BackgroundColor3 = Color3.fromRGB(100, 0, 125)  -- Ativado
+            else  
+                ToggleButton.BackgroundColor3 = Color3.fromRGB(53, 53, 53)   -- Desativado
+            end  
+            
+            if callback then  
+                callback(toggleState)  
+            end  
+        end  
+        
+        local function toggleClick()
+            toggleState = not toggleState  
+            updateToggle()
+        end
+        
+        ToggleButton.MouseButton1Click:Connect(toggleClick)
+        
+        elementCount = elementCount + 1  
+        
+        return {  
+            SetState = function(self, state)  
+                toggleState = state  
+                updateToggle()  
+            end,  
+            GetState = function(self)  
+                return toggleState  
+            end  
+        }  
     end
-
-    -- SLIDER
-    function TabElements:AddSlider(text, min, max, callback)
-        local SFrame = Instance.new("Frame", Container)
-        SFrame.Size = UDim2.new(0, 210, 0, 40); SFrame.BackgroundTransparency = 1
+    
+    -- FUNÇÃO PARA ADICIONAR SLIDER (funciona em PC e Mobile)  
+    function publicMethods:AddSlider(text, min, max, callback)  
+        local SliderFrame = Instance.new("Frame")  
+        SliderFrame.Name = "Slider_" .. text  
+        SliderFrame.BorderSizePixel = 0  
+        SliderFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
+        SliderFrame.Size = UDim2.new(1, -12, 0, 22)  
+        SliderFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 26))  
+        SliderFrame.BackgroundTransparency = 1  
         
-        local Title = Instance.new("TextLabel", SFrame)
-        Title.Text = text; Title.Size = UDim2.new(0, 100, 0, 15); Title.TextColor3 = Color3.fromRGB(255,255,255); Title.BackgroundTransparency = 1
+        local Main = Instance.new("Frame")  
+        Main.Name = "Main"  
+        Main.BorderSizePixel = 0  
+        Main.BackgroundColor3 = Color3.fromRGB(40, 40, 40)  
+        Main.Size = UDim2.new(0, 136, 0, 22)  
+        Main.BackgroundTransparency = 1  
         
-        local MainS = Instance.new("Frame", SFrame)
-        MainS.Size = UDim2.new(0, 136, 0, 22); MainS.Position = UDim2.new(0, 0, 0, 18); MainS.BackgroundColor3 = Color3.fromRGB(40,40,40)
+        local UICorner = Instance.new("UICorner")  
+        UICorner.CornerRadius = UDim.new(0, 5)  
+        UICorner.Parent = Main  
         
-        local Bar = Instance.new("Frame", MainS)
-        Bar.Size = UDim2.new(0, 0, 1, 0); Bar.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
-        Instance.new("UICorner", Bar)
+        local SliderTrack = Instance.new("Frame")  
+        SliderTrack.Name = "SliderTrack"  
+        SliderTrack.BorderSizePixel = 0  
+        SliderTrack.BackgroundColor3 = Color3.fromRGB(53, 53, 53)  
+        SliderTrack.Size = UDim2.new(0, 136, 0, 22)  
         
-        local Number = Instance.new("TextLabel", MainS)
-        Number.Size = UDim2.new(1, 0, 1, 0); Number.Text = min; Number.TextColor3 = Color3.fromRGB(255,255,255); Number.BackgroundTransparency = 1
-
-        local function move()
-            local mousePos = UIS:GetMouseLocation().X
-            local barPos = MainS.AbsolutePosition.X
-            local barWidth = MainS.AbsoluteSize.X
-            local percent = math.clamp((mousePos - barPos) / barWidth, 0, 1)
-            Bar.Size = UDim2.new(percent, 0, 1, 0)
-            local value = math.floor(min + (max - min) * percent)
-            Number.Text = tostring(value)
-            callback(value)
+        local UICorner2 = Instance.new("UICorner")  
+        UICorner2.CornerRadius = UDim.new(0, 6)  
+        UICorner2.Parent = SliderTrack  
+        
+        local SliderFill = Instance.new("Frame")  
+        SliderFill.Name = "SliderFill"  
+        SliderFill.BorderSizePixel = 0  
+        SliderFill.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  
+        SliderFill.Size = UDim2.new(0, 0, 1, 0)  
+        
+        local UICorner3 = Instance.new("UICorner")  
+        UICorner3.CornerRadius = UDim.new(0, 6)  
+        UICorner3.Parent = SliderFill  
+        
+        local InfoNumber = Instance.new("TextLabel")  
+        InfoNumber.Name = "InfoNumber"  
+        InfoNumber.BorderSizePixel = 0  
+        InfoNumber.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
+        InfoNumber.TextColor3 = Color3.fromRGB(255, 255, 255)  
+        InfoNumber.BackgroundTransparency = 1  
+        InfoNumber.Size = UDim2.new(0, 136, 0, 22)  
+        InfoNumber.Text = tostring(min or 0)  
+        InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)  
+        InfoNumber.TextSize = 10  
+        
+        local InfoLabel = Instance.new("TextLabel")  
+        InfoLabel.Name = "InfoLabel"  
+        InfoLabel.BorderSizePixel = 0  
+        InfoLabel.TextSize = 10  
+        InfoLabel.TextXAlignment = Enum.TextXAlignment.Left  
+        InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
+        InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)  
+        InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)  
+        InfoLabel.BackgroundTransparency = 1  
+        InfoLabel.Size = UDim2.new(0, 88, 0, 20)  
+        InfoLabel.Text = text or "Slider"  
+        InfoLabel.Position = UDim2.new(0, 140, 0, 2)  
+        
+        SliderFill.Parent = SliderTrack  
+        SliderTrack.Parent = Main  
+        InfoNumber.Parent = Main  
+        Main.Parent = SliderFrame  
+        InfoLabel.Parent = SliderFrame  
+        SliderFrame.Parent = LMG2L["ElementsContainer"]  
+        
+        local sliderValue = min or 0  
+        local dragging = false  
+        
+        local function updateValue(newValue)  
+            sliderValue = math.clamp(newValue, min, max)  
+            local percentage = (sliderValue - min) / (max - min)  
+            SliderFill.Size = UDim2.new(percentage, 0, 1, 0)  
+            InfoNumber.Text = tostring(math.floor(sliderValue))  
+            
+            if callback then  
+                callback(sliderValue)  
+            end  
+        end  
+        
+        -- Função para atualizar slider com posição  
+        local function updateSliderFromPosition(input)  
+            if not SliderTrack:IsDescendantOf(game) then return end  
+            
+            local sliderAbsolutePosition = SliderTrack.AbsolutePosition  
+            local sliderAbsoluteSize = SliderTrack.AbsoluteSize  
+            
+            local relativeX  
+            if input.UserInputType == Enum.UserInputType.Touch then  
+                relativeX = (input.Position.X - sliderAbsolutePosition.X) / sliderAbsoluteSize.X  
+            else  
+                local mouse = game:GetService("Players").LocalPlayer:GetMouse()  
+                relativeX = (mouse.X - sliderAbsolutePosition.X) / sliderAbsoluteSize.X  
+            end  
+            
+            relativeX = math.clamp(relativeX, 0, 1)  
+            local newValue = min + (relativeX * (max - min))  
+            updateValue(newValue)  
+        end  
+        
+        -- PC: Mouse  
+        SliderTrack.InputBegan:Connect(function(input)  
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then  
+                dragging = true  
+                updateSliderFromPosition(input)  
+            end  
+        end)  
+        
+        -- Mobile: Touch  
+        SliderTrack.InputBegan:Connect(function(input)  
+            if input.UserInputType == Enum.UserInputType.Touch then  
+                dragging = true  
+                updateSliderFromPosition(input)  
+            end  
+        end)  
+        
+        SliderTrack.InputEnded:Connect(function(input)  
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then  
+                dragging = false  
+            end  
+        end)  
+        
+        -- Atualizar enquanto arrasta (PC)  
+        game:GetService("UserInputService").InputChanged:Connect(function(input)  
+            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then  
+                updateSliderFromPosition(input)  
+            end  
+        end)  
+        
+        -- Atualizar enquanto arrasta (Mobile)  
+        game:GetService("UserInputService").TouchMoved:Connect(function(input)  
+            if dragging then  
+                updateSliderFromPosition({Position = input.Position, UserInputType = Enum.UserInputType.Touch})  
+            end  
+        end)  
+        
+        -- Valor inicial  
+        updateValue(min)  
+        
+        elementCount = elementCount + 1  
+        
+        return {  
+            SetValue = function(self, value)  
+                updateValue(value)  
+            end,  
+            GetValue = function(self)  
+                return sliderValue  
+            end  
+        }  
+    end  
+    
+    -- FUNÇÃO PARA ADICIONAR BOTÃO
+    function publicMethods:AddButton(text, callback)  
+        local ButtonFrame = Instance.new("Frame")  
+        ButtonFrame.Name = "Button_" .. text  
+        ButtonFrame.BorderSizePixel = 0  
+        ButtonFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
+        ButtonFrame.Size = UDim2.new(1, -12, 0, 22)  
+        ButtonFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 26))  
+        ButtonFrame.BackgroundTransparency = 1  
+        
+        local Button = Instance.new("TextButton")  
+        Button.Name = "Button"  
+        Button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  
+        Button.Size = UDim2.new(1, 0, 1, 0)  
+        Button.Text = text or "Button"  
+        Button.TextColor3 = Color3.fromRGB(255, 255, 255)  
+        Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)  
+        Button.TextSize = 10  
+        Button.BorderSizePixel = 0  
+        Button.AutoButtonColor = false
+        
+        local UICorner = Instance.new("UICorner")  
+        UICorner.CornerRadius = UDim.new(0, 5)  
+        UICorner.Parent = Button  
+        
+        -- Efeito de hover manual
+        Button.MouseEnter:Connect(function()
+            Button.BackgroundColor3 = Color3.fromRGB(164, 20, 201)
+        end)
+        
+        Button.MouseLeave:Connect(function()
+            Button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
+        end)
+        
+        Button.MouseButton1Down:Connect(function()
+            Button.BackgroundColor3 = Color3.fromRGB(124, 0, 161)
+        end)
+        
+        Button.MouseButton1Up:Connect(function()
+            Button.BackgroundColor3 = Color3.fromRGB(164, 20, 201)
+        end)
+        
+        Button.MouseButton1Click:Connect(function()  
+            if callback then  
+                callback()  
+            end  
+        end)  
+        
+        Button.Parent = ButtonFrame  
+        ButtonFrame.Parent = LMG2L["ElementsContainer"]  
+        
+        elementCount = elementCount + 1  
+        
+        return {  
+            Button = Button,
+            Frame = ButtonFrame
+        }  
+    end
+    
+    -- FUNÇÃO PARA ADICIONAR DROPDOWN
+    function publicMethods:AddDropdown(text, options, callback)
+        local DropdownFrame = Instance.new("Frame")
+        DropdownFrame.Name = "Dropdown_" .. text
+        DropdownFrame.BorderSizePixel = 0
+        DropdownFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        DropdownFrame.Size = UDim2.new(1, -12, 0, 22)
+        DropdownFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 26))
+        DropdownFrame.BackgroundTransparency = 1
+        
+        local InfoLabel = Instance.new("TextLabel")
+        InfoLabel.Name = "InfoLabel"
+        InfoLabel.BorderSizePixel = 0
+        InfoLabel.TextSize = 10
+        InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+        InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+        InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        InfoLabel.BackgroundTransparency = 1
+        InfoLabel.Size = UDim2.new(0, 88, 0, 20)
+        InfoLabel.Text = text or "Dropdown"
+        InfoLabel.Position = UDim2.new(0, 140, 0, 2)
+        InfoLabel.Parent = DropdownFrame
+        
+        local Main = Instance.new("Frame")
+        Main.Name = "Main"
+        Main.BorderSizePixel = 0
+        Main.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
+        Main.Size = UDim2.new(0, 136, 0, 22)
+        
+        local UICorner = Instance.new("UICorner")
+        UICorner.CornerRadius = UDim.new(0, 5)
+        UICorner.Parent = Main
+        
+        local ScrollingFrame = Instance.new("ScrollingFrame")
+        ScrollingFrame.Name = "ScrollingFrame"
+        ScrollingFrame.BorderSizePixel = 0
+        ScrollingFrame.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
+        ScrollingFrame.Size = UDim2.new(0, 112, 0, 0)
+        ScrollingFrame.Position = UDim2.new(0, 2, 0, 24)
+        ScrollingFrame.ScrollBarThickness = 0
+        ScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        ScrollingFrame.Visible = false
+        
+        local UICorner2 = Instance.new("UICorner")
+        UICorner2.CornerRadius = UDim.new(0, 5)
+        UICorner2.Parent = ScrollingFrame
+        
+        local OpenFrame = Instance.new("ImageButton")
+        OpenFrame.Name = "OpenFrame"
+        OpenFrame.BorderSizePixel = 0
+        OpenFrame.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
+        OpenFrame.Image = "rbxassetid://8539638324"
+        OpenFrame.Size = UDim2.new(0, 22, 0, 22)
+        OpenFrame.Rotation = 180
+        OpenFrame.Position = UDim2.new(0, 114, 0, 0)
+        
+        local UICorner3 = Instance.new("UICorner")
+        UICorner3.CornerRadius = UDim.new(0, 5)
+        UICorner3.Parent = OpenFrame
+        
+        local InfoNumber = Instance.new("TextLabel")
+        InfoNumber.Name = "InfoNumber"
+        InfoNumber.BorderSizePixel = 0
+        InfoNumber.TextSize = 13
+        InfoNumber.TextXAlignment = Enum.TextXAlignment.Left
+        InfoNumber.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+        InfoNumber.TextColor3 = Color3.fromRGB(255, 255, 255)
+        InfoNumber.BackgroundTransparency = 1
+        InfoNumber.Size = UDim2.new(0, 130, 0, 22)
+        InfoNumber.Text = options and #options > 0 and options[1] or "Selecione"
+        
+        -- Criar botões para cada opção
+        local buttonHeight = 16
+        local totalHeight = 0
+        local buttonInstances = {}
+        
+        local function updateDropdownSize()
+            local optionCount = #options
+            local maxHeight = 100
+            local calculatedHeight = math.min(optionCount * (buttonHeight + 2), maxHeight)
+            ScrollingFrame.Size = UDim2.new(0, 112, 0, calculatedHeight)
         end
-
-        MainS.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                local conn; conn = UIS.InputChanged:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseMovement then move() end
-                end)
-                UIS.InputEnded:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then conn:Disconnect() end
-                end)
+        
+        local selectedOption = options and #options > 0 and options[1] or nil
+        
+        local function createOptionButtons()
+            for _, button in pairs(buttonInstances) do
+                button:Destroy()
             end
-        end)
-    end
-
-    -- DROPDOWN
-    function TabElements:AddDropdown(text, options, callback)
-        local DFrame = Instance.new("Frame", Container)
-        DFrame.Size = UDim2.new(0, 210, 0, 22); DFrame.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
-        Instance.new("UICorner", DFrame)
+            buttonInstances = {}
+            
+            for i, option in ipairs(options) do
+                local Button = Instance.new("TextButton")
+                Button.Name = "Button_" .. option
+                Button.TextWrapped = true
+                Button.BorderSizePixel = 0
+                Button.TextSize = 10
+                Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+                Button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
+                Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+                Button.BackgroundTransparency = 1
+                Button.Size = UDim2.new(0, 112, 0, buttonHeight)
+                Button.Position = UDim2.new(0, 0, 0, (i-1) * (buttonHeight + 2))
+                Button.Text = option
+                
+                -- Efeito hover
+                Button.MouseEnter:Connect(function()
+                    Button.BackgroundTransparency = 0.8
+                end)
+                
+                Button.MouseLeave:Connect(function()
+                    Button.BackgroundTransparency = 1
+                end)
+                
+                Button.MouseButton1Click:Connect(function()
+                    selectedOption = option
+                    InfoNumber.Text = option
+                    ScrollingFrame.Visible = false
+                    OpenFrame.Rotation = 180
+                    
+                    if callback then
+                        callback(option)
+                    end
+                end)
+                
+                Button.Parent = ScrollingFrame
+                table.insert(buttonInstances, Button)
+            end
+        end
         
-        local TLab = Instance.new("TextLabel", DFrame)
-        TLab.Text = text .. ": Select"; TLab.Size = UDim2.new(1, -25, 1, 0); TLab.TextColor3 = Color3.fromRGB(255,255,255); TLab.BackgroundTransparency = 1
+        if options then
+            createOptionButtons()
+            updateDropdownSize()
+        end
         
-        local Btn = Instance.new("TextButton", DFrame)
-        Btn.Size = UDim2.new(1, 0, 1, 0); Btn.BackgroundTransparency = 1; Btn.Text = ""
-
-        Btn.MouseButton1Click:Connect(function()
-            -- Lógica simplificada: Alterna entre os itens da lista ao clicar
-            local current = table.find(options, TLab.Text:split(": ")[2]) or 0
-            local nextOpt = options[current + 1] or options[1]
-            TLab.Text = text .. ": " .. nextOpt
-            callback(nextOpt)
-        end)
+        -- Alternar visibilidade do dropdown
+        local function toggleDropdown()
+            ScrollingFrame.Visible = not ScrollingFrame.Visible
+            OpenFrame.Rotation = ScrollingFrame.Visible and 0 or 180
+        end
+        
+        Main.MouseButton1Click:Connect(toggleDropdown)
+        OpenFrame.MouseButton1Click:Connect(toggleDropdown)
+        
+        ScrollingFrame.Parent = Main
+        OpenFrame.Parent = Main
+        InfoNumber.Parent = Main
+        Main.Parent = DropdownFrame
+        DropdownFrame.Parent = LMG2L["ElementsContainer"]
+        
+        elementCount = elementCount + 1
+        
+        return {
+            SetOptions = function(self, newOptions)
+                options = newOptions
+                createOptionButtons()
+                updateDropdownSize()
+            end,
+            GetSelected = function(self)
+                return selectedOption
+            end,
+            SetSelected = function(self, option)
+                if table.find(options, option) then
+                    selectedOption = option
+                    InfoNumber.Text = option
+                    if callback then
+                        callback(option)
+                    end
+                end
+            end
+        }
     end
-
-    return TabElements
+    
+    -- FUNÇÃO PARA ADICIONAR RADIO BUTTONS
+    function publicMethods:AddRadioButtons(text, options, callback)
+        local RadioFrame = Instance.new("Frame")
+        RadioFrame.Name = "RadioButtons_" .. text
+        RadioFrame.BorderSizePixel = 0
+        RadioFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        RadioFrame.Size = UDim2.new(1, -12, 0, 40)
+        RadioFrame.Position = UDim2.new(0, 6, 0, 20 + (elementCount * 26))
+        RadioFrame.BackgroundTransparency = 1
+        
+        local InfoLabel = Instance.new("TextLabel")
+        InfoLabel.Name = "InfoLabel"
+        InfoLabel.BorderSizePixel = 0
+        InfoLabel.TextSize = 10
+        InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+        InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+        InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        InfoLabel.BackgroundTransparency = 1
+        InfoLabel.Size = UDim2.new(0, 132, 0, 10)
+        InfoLabel.Text = text or "Radio Buttons"
+        InfoLabel.Parent = RadioFrame
+        
+        local radioInstances = {}
+        local selectedOption = nil
+        
+        for i, option in ipairs(options) do
+            local OptionFrame = Instance.new("Frame")
+            OptionFrame.Name = "Radio" .. i
+            OptionFrame.BorderSizePixel = 0
+            OptionFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            OptionFrame.Size = UDim2.new(0, 70, 0, 16)
+            OptionFrame.Position = UDim2.new(0, 8 + ((i-1) * 74), 0, 16)
+            OptionFrame.BackgroundTransparency = 1
+            
+            local OptionLabel = Instance.new("TextLabel")
+            OptionLabel.Name = "InfoLabel"
+            OptionLabel.BorderSizePixel = 0
+            OptionLabel.TextSize = 9
+            OptionLabel.TextXAlignment = Enum.TextXAlignment.Left
+            OptionLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            OptionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+            OptionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            OptionLabel.BackgroundTransparency = 1
+            OptionLabel.Size = UDim2.new(0, 58, 0, 16)
+            OptionLabel.Text = option
+            OptionLabel.Position = UDim2.new(0, 20, 0, 0)
+            
+            local RadioButton = Instance.new("TextButton")
+            RadioButton.Name = "Toggle"
+            RadioButton.BorderSizePixel = 0
+            RadioButton.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
+            RadioButton.Size = UDim2.new(0, 16, 0, 16)
+            RadioButton.Text = ""
+            RadioButton.AutoButtonColor = false
+            
+            local UICorner = Instance.new("UICorner")
+            UICorner.CornerRadius = UDim.new(1, 9)
+            UICorner.Parent = RadioButton
+            
+            local function updateRadioButton()
+                if selectedOption == option then
+                    RadioButton.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
+                else
+                    RadioButton.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
+                end
+            end
+            
+            RadioButton.MouseButton1Click:Connect(function()
+                selectedOption = option
+                -- Atualizar todos os botões
+                for _, radio in ipairs(radioInstances) do
+                    radio.update()
+                end
+                
+                if callback then
+                    callback(option)
+                end
+            end)
+            
+            OptionLabel.Parent = OptionFrame
+            RadioButton.Parent = OptionFrame
+            OptionFrame.Parent = RadioFrame
+            
+            table.insert(radioInstances, {
+                frame = OptionFrame,
+                button = RadioButton,
+                option = option,
+                update = updateRadioButton
+            })
+            
+            updateRadioButton()
+        end
+        
+        RadioFrame.Parent = LMG2L["ElementsContainer"]
+        
+        elementCount = elementCount + 2  -- Radio buttons ocupam mais espaço
+        
+        return {
+            GetSelected = function(self)
+                return selectedOption
+            end,
+            SetSelected = function(self, option)
+                if table.find(options, option) then
+                    selectedOption = option
+                    for _, radio in ipairs(radioInstances) do
+                        radio.update()
+                    end
+                    if callback then
+                        callback(option)
+                    end
+                end
+            end
+        }
+    end
+    
+    return publicMethods
 end
 
-return Library
+-- Versão para Loadstring
+if _G.VLG_UILibrary then
+    return _G.VLG_UILibrary
+else
+    _G.VLG_UILibrary = UILibrary
+    return UILibrary
+end
