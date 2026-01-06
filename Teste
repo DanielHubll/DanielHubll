@@ -159,62 +159,62 @@ function UILibrary:CreateWindow(title)
         end
     end)
     
-    -- FUNÇÃO PARA CRIAR NOVA TAB
-    function publicMethods:AddTab(tabName, iconId)
-        local tabIndex = #tabs + 1
-        local tabData = {
-            name = tabName,
-            elements = {},
-            container = nil,
-            button = nil,
-            elementCount = 0
-        }
-        
-        -- Criar botão da tab (COR ALTERADA para roxo quando ativo)
-        local TabButton = Instance.new("ImageButton", LMG2L["Tabs_2a"])
-        TabButton["BorderSizePixel"] = 0
-        TabButton["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)
-        TabButton["Size"] = UDim2.new(0, 40, 0, 40)
-        TabButton["Name"] = "Tab" .. tabIndex
-        TabButton["Position"] = UDim2.new(0, 6, 0, 8 + ((tabIndex - 1) * 48))
-        TabButton["Image"] = iconId or "rbxassetid://10709852168"
-        
-        local UICorner = Instance.new("UICorner", TabButton)
-        UICorner["CornerRadius"] = UDim.new(0, 5)
-        
-        -- Container para elementos desta tab
-        local ElementsContainer = Instance.new("Frame", LMG2L["Main_7"])
-        ElementsContainer["BackgroundTransparency"] = 1
-        ElementsContainer["Size"] = UDim2.new(1, 0, 1, 0)
-        ElementsContainer["Name"] = "Container_" .. tabName
-        ElementsContainer["Visible"] = false
-        
-        tabData.container = ElementsContainer
-        tabData.button = TabButton
-        
-        -- Função para trocar de tab
-        local function switchToTab()
-            -- Desativar todas as tabs
-            for _, tab in ipairs(tabs) do
-                tab.container.Visible = false
-                tab.button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
-            end
-            
-            -- Ativar esta tab
-            ElementsContainer.Visible = true
-            TabButton.BackgroundColor3 = Color3.fromRGB(110, 0, 140)  -- Cor roxa quando ativa
-            currentTab = tabData
-        end
-        
-        TabButton.MouseButton1Click:Connect(switchToTab)
-        
-        -- Adicionar tab à lista
-        table.insert(tabs, tabData)
-        
-        -- Se for a primeira tab, ativar automaticamente
-        if tabIndex == 1 then
-            switchToTab()
-        end
+    -- FUNÇÃO PARA CRIAR NOVA TAB  
+function publicMethods:AddTab(tabName, iconId)  
+    local tabIndex = #tabs + 1  
+    local tabData = {  
+        name = tabName,  
+        elements = {},  
+        container = nil,  
+        button = nil,  
+        elementCount = 0  
+    }  
+      
+    -- Criar botão da tab (COR INICIAL: roxa normal - 144, 0, 181)  
+    local TabButton = Instance.new("ImageButton", LMG2L["Tabs_2a"])  
+    TabButton["BorderSizePixel"] = 0  
+    TabButton["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)  -- ROXA NORMAL inicial
+    TabButton["Size"] = UDim2.new(0, 40, 0, 40)  
+    TabButton["Name"] = "Tab" .. tabIndex  
+    TabButton["Position"] = UDim2.new(0, 6, 0, 8 + ((tabIndex - 1) * 48))  
+    TabButton["Image"] = iconId or "rbxassetid://10709852168"  
+      
+    local UICorner = Instance.new("UICorner", TabButton)  
+    UICorner["CornerRadius"] = UDim.new(0, 5)  
+      
+    -- Container para elementos desta tab  
+    local ElementsContainer = Instance.new("Frame", LMG2L["Main_7"])  
+    ElementsContainer["BackgroundTransparency"] = 1  
+    ElementsContainer["Size"] = UDim2.new(1, 0, 1, 0)  
+    ElementsContainer["Name"] = "Container_" .. tabName  
+    ElementsContainer["Visible"] = false  
+      
+    tabData.container = ElementsContainer  
+    tabData.button = TabButton  
+      
+    -- Função para trocar de tab  
+    local function switchToTab()  
+        -- Desativar todas as tabs (voltar para ROXA NORMAL - 144, 0, 181)
+        for _, tab in ipairs(tabs) do  
+            tab.container.Visible = false  
+            tab.button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  -- ROXA NORMAL quando não selecionada
+        end  
+          
+        -- Ativar esta tab (ROXA ESCURO - 110, 0, 140 quando selecionada)
+        ElementsContainer.Visible = true  
+        TabButton.BackgroundColor3 = Color3.fromRGB(110, 0, 140)  -- ROXA ESCURO quando ativa  
+        currentTab = tabData  
+    end  
+      
+    TabButton.MouseButton1Click:Connect(switchToTab)  
+      
+    -- Adicionar tab à lista  
+    table.insert(tabs, tabData)  
+      
+    -- Se for a primeira tab, ativar automaticamente (com roxa escuro)
+    if tabIndex == 1 then  
+        switchToTab()  
+    end
         
         -- Retornar objeto da tab com métodos para adicionar elementos
         local tabMethods = {}
