@@ -197,12 +197,12 @@ function UILibrary:CreateWindow(title)
             -- Desativar todas as tabs
             for _, tab in ipairs(tabs) do
                 tab.container.Visible = false
-                tab.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
+                tab.button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
             end
             
             -- Ativar esta tab
             ElementsContainer.Visible = true
-            TabButton.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  -- Cor roxa quando ativa
+            TabButton.BackgroundColor3 = Color3.fromRGB(110, 0, 140)  -- Cor roxa quando ativa
             currentTab = tabData
         end
         
