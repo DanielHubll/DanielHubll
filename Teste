@@ -355,7 +355,6 @@ function publicMethods:AddTab(tabName, iconId)
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local ContextActionService = game:GetService("ContextActionService")
-local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -371,7 +370,6 @@ local min = min or 0
 local max = max or 100
 local sliderValue = min
 local dragging = false
-local connection = nil
 
 --// Função que BLOQUEIA a câmera
 local function blockCamera(_, inputState)
@@ -394,14 +392,13 @@ local function updateValue(newValue)
     end
 end
 
---// Atualiza slider pela posição do input (global)
+--// Atualiza slider pela posição do input
 local function updateSliderFromPosition(inputPosition)
-    if not SliderTrack:IsDescendantOf(game) then return end
+    if not SliderTrack:IsDescendantOf(game) or not inputPosition then return end
 
     local absPos = SliderTrack.AbsolutePosition
     local absSize = SliderTrack.AbsoluteSize
 
-    -- Calcula a posição relativa mesmo se o mouse/touch estiver fora do slider
     local relativeX = (inputPosition.X - absPos.X) / absSize.X
     relativeX = math.clamp(relativeX, 0, 1)
 
@@ -425,49 +422,27 @@ SliderTrack.InputBegan:Connect(function(input)
             Enum.UserInputType.Touch
         )
 
-        -- PC: trava mouse
-        UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
+        -- PC: trava mouse (só se for PC)
+        if UserInputService.MouseEnabled then
+            UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
+        end
 
         updateSliderFromPosition(input)
-        
-        -- Cria uma conexão para atualizar continuamente enquanto arrasta
-        connection = RunService.RenderStepped:Connect(function()
-            if dragging then
-                local inputPos
-                
-                -- Para PC: usa a posição atual do mouse
-                if UserInputService.MouseEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
-                    inputPos = UserInputService:GetMouseLocation()
-                end
-                
-                -- Para Mobile: usa o touch atual
-                if UserInputService.TouchEnabled and #UserInputService:GetTouches() > 0 then
-                    local touch = UserInputService:GetTouches()[1]
-                    inputPos = touch.Position
-                end
-                
-                if inputPos then
-                    updateSliderFromPosition({Position = inputPos})
-                end
-            end
-        end)
     end
 end)
 
---// Para de arrastar (Evento global para garantir que pare)
+--// Para de arrastar
 local function stopDragging()
     if dragging then
         dragging = false
         
-        -- Remove a conexão de atualização contínua
-        if connection then
-            connection:Disconnect()
-            connection = nil
-        end
-        
         -- LIBERA a câmera
         ContextActionService:UnbindAction("BlockCameraSlider")
-        UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+        
+        -- PC: volta mouse ao normal
+        if UserInputService.MouseEnabled then
+            UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+        end
     end
 end
 
@@ -479,21 +454,32 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
---// Também conecta ao InputEnded do slider (backup)
-SliderTrack.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
-        stopDragging()
-    end
-end)
-
---// MOVIMENTO DO MOUSE/TOUCH (Mantido para compatibilidade)
+--// Movimento GLOBAL - funciona mesmo fora da área do slider
 UserInputService.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+    if not dragging then return end
+    
+    local inputPosition = nil
+    
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        -- Para mouse (PC)
+        inputPosition = input.Position
+    elseif input.UserInputType == Enum.UserInputType.Touch then
+        -- Para touch (Mobile)
+        inputPosition = input.Position
+    elseif input.UserInputType == Enum.UserInputType.Gamepad1 or
+           input.UserInputType == Enum.UserInputType.Gamepad2 or
+           input.UserInputType == Enum.UserInputType.Gamepad3 or
+           input.UserInputType == Enum.UserInputType.Gamepad4 then
+        -- Para joystick (opcional)
+        return
+    end
+    
+    if inputPosition then
         updateSliderFromPosition(input)
     end
 end)
 
+--// Também usar TouchMoved como backup para mobile
 UserInputService.TouchMoved:Connect(function(input)
     if dragging then
         updateSliderFromPosition({
@@ -502,6 +488,45 @@ UserInputService.TouchMoved:Connect(function(input)
         })
     end
 end)
+
+--// TAMBÉM conectar InputChanged para touch (algumas plataformas usam isso)
+local function handleInputChangedForTouch(input)
+    if not dragging then return end
+    
+    if input.UserInputType == Enum.UserInputType.Touch then
+        updateSliderFromPosition({
+            Position = input.Position,
+            UserInputType = Enum.UserInputType.Touch
+        })
+    end
+end
+
+UserInputService.InputChanged:Connect(handleInputChangedForTouch)
+
+--// Backup: verifica periodicamente se ainda está arrastando (para mobile)
+if UserInputService.TouchEnabled then
+    local stillTouching = false
+    local lastTouchTime = 0
+    
+    game:GetService("RunService").RenderStepped:Connect(function()
+        if dragging then
+            local touches = UserInputService:GetTouches()
+            stillTouching = #touches > 0
+            
+            if stillTouching then
+                lastTouchTime = tick()
+                -- Atualiza com a posição do primeiro touch
+                updateSliderFromPosition({
+                    Position = touches[1].Position,
+                    UserInputType = Enum.UserInputType.Touch
+                })
+            elseif tick() - lastTouchTime > 0.2 then
+                -- Se não há toques há mais de 0.2 segundos, para o arrasto
+                stopDragging()
+            end
+        end
+    end)
+end
 
 --// Valor inicial
 updateValue(min)
@@ -515,6 +540,10 @@ return {
 
     GetValue = function(self)
         return sliderValue
+    end,
+    
+    Destroy = function(self)
+        stopDragging()
     end
 }
     end  
