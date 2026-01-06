@@ -173,7 +173,7 @@ function UILibrary:CreateWindow(title)
         -- Criar botão da tab (COR ALTERADA para roxo quando ativo)
         local TabButton = Instance.new("ImageButton", LMG2L["Tabs_2a"])
         TabButton["BorderSizePixel"] = 0
-        TabButton["BackgroundColor3"] = Color3.fromRGB(53, 53, 53)
+        TabButton["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)
         TabButton["Size"] = UDim2.new(0, 40, 0, 40)
         TabButton["Name"] = "Tab" .. tabIndex
         TabButton["Position"] = UDim2.new(0, 6, 0, 8 + ((tabIndex - 1) * 48))
