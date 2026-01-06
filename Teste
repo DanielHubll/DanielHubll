@@ -355,10 +355,11 @@ function publicMethods:AddTab(tabName, iconId)
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local ContextActionService = game:GetService("ContextActionService")
+local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 
---// Slider Setup (exemplo)
+--// Slider Setup
 SliderFill.Parent = SliderTrack
 SliderTrack.Parent = Main
 InfoNumber.Parent = Main
@@ -370,107 +371,151 @@ local min = min or 0
 local max = max or 100
 local sliderValue = min
 local dragging = false
-local activeInput -- guarda qual input iniciou o drag
+local connection = nil
 
---// BLOQUEIA câmera
+--// Função que BLOQUEIA a câmera
 local function blockCamera(_, inputState)
-	if inputState == Enum.UserInputState.Begin
-	or inputState == Enum.UserInputState.Change then
-		return Enum.ContextActionResult.Sink
-	end
+    if inputState == Enum.UserInputState.Begin
+    or inputState == Enum.UserInputState.Change then
+        return Enum.ContextActionResult.Sink
+    end
 end
 
 --// Atualiza valor
 local function updateValue(newValue)
-	sliderValue = math.clamp(newValue, min, max)
+    sliderValue = math.clamp(newValue, min, max)
 
-	local percentage = (sliderValue - min) / (max - min)
-	SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
-	InfoNumber.Text = tostring(math.floor(sliderValue))
+    local percentage = (sliderValue - min) / (max - min)
+    SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
+    InfoNumber.Text = tostring(math.floor(sliderValue))
 
-	if callback then
-		callback(sliderValue)
-	end
+    if callback then
+        callback(sliderValue)
+    end
 end
 
---// Atualiza slider pela posição
-local function updateSliderFromPosition(position)
-	if not SliderTrack:IsDescendantOf(game) then return end
+--// Atualiza slider pela posição do input (global)
+local function updateSliderFromPosition(inputPosition)
+    if not SliderTrack:IsDescendantOf(game) then return end
 
-	local absPos = SliderTrack.AbsolutePosition
-	local absSize = SliderTrack.AbsoluteSize
+    local absPos = SliderTrack.AbsolutePosition
+    local absSize = SliderTrack.AbsoluteSize
 
-	local relativeX = (position.X - absPos.X) / absSize.X
-	relativeX = math.clamp(relativeX, 0, 1)
+    -- Calcula a posição relativa mesmo se o mouse/touch estiver fora do slider
+    local relativeX = (inputPosition.X - absPos.X) / absSize.X
+    relativeX = math.clamp(relativeX, 0, 1)
 
-	local newValue = min + (relativeX * (max - min))
-	updateValue(newValue)
+    local newValue = min + (relativeX * (max - min))
+    updateValue(newValue)
 end
 
---// COMEÇA A ARRASTAR
+--// Começa a arrastar
 SliderTrack.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1
-	or input.UserInputType == Enum.UserInputType.Touch then
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
 
-		dragging = true
-		activeInput = input
+        dragging = true
 
-		-- Bloqueia câmera
-		ContextActionService:BindAction(
-			"BlockCameraSlider",
-			blockCamera,
-			false,
-			Enum.UserInputType.MouseMovement,
-			Enum.UserInputType.Touch
-		)
+        -- BLOQUEIA a câmera
+        ContextActionService:BindAction(
+            "BlockCameraSlider",
+            blockCamera,
+            false,
+            Enum.UserInputType.MouseMovement,
+            Enum.UserInputType.Touch
+        )
 
-		-- PC
-		UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
+        -- PC: trava mouse
+        UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
 
-		updateSliderFromPosition(input.Position)
-	end
+        updateSliderFromPosition(input)
+        
+        -- Cria uma conexão para atualizar continuamente enquanto arrasta
+        connection = RunService.RenderStepped:Connect(function()
+            if dragging then
+                local inputPos
+                
+                -- Para PC: usa a posição atual do mouse
+                if UserInputService.MouseEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+                    inputPos = UserInputService:GetMouseLocation()
+                end
+                
+                -- Para Mobile: usa o touch atual
+                if UserInputService.TouchEnabled and #UserInputService:GetTouches() > 0 then
+                    local touch = UserInputService:GetTouches()[1]
+                    inputPos = touch.Position
+                end
+                
+                if inputPos then
+                    updateSliderFromPosition({Position = inputPos})
+                end
+            end
+        end)
+    end
 end)
 
---// MOVIMENTO GLOBAL (FUNCIONA FORA DO SLIDER)
-UserInputService.InputChanged:Connect(function(input)
-	if not dragging then return end
+--// Para de arrastar (Evento global para garantir que pare)
+local function stopDragging()
+    if dragging then
+        dragging = false
+        
+        -- Remove a conexão de atualização contínua
+        if connection then
+            connection:Disconnect()
+            connection = nil
+        end
+        
+        -- LIBERA a câmera
+        ContextActionService:UnbindAction("BlockCameraSlider")
+        UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+    end
+end
 
-	if input.UserInputType == Enum.UserInputType.MouseMovement
-	or input.UserInputType == Enum.UserInputType.Touch then
-		updateSliderFromPosition(input.Position)
-	end
-end)
-
---// SOLTA DEDO / MOUSE (GLOBAL — ESSENCIAL)
+--// Para de arrastar quando soltar em qualquer lugar
 UserInputService.InputEnded:Connect(function(input)
-	if not dragging then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        stopDragging()
+    end
+end)
 
-	if input == activeInput
-	or input.UserInputType == Enum.UserInputType.MouseButton1
-	or input.UserInputType == Enum.UserInputType.Touch then
+--// Também conecta ao InputEnded do slider (backup)
+SliderTrack.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        stopDragging()
+    end
+end)
 
-		dragging = false
-		activeInput = nil
+--// MOVIMENTO DO MOUSE/TOUCH (Mantido para compatibilidade)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        updateSliderFromPosition(input)
+    end
+end)
 
-		-- Libera câmera
-		ContextActionService:UnbindAction("BlockCameraSlider")
-		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-	end
+UserInputService.TouchMoved:Connect(function(input)
+    if dragging then
+        updateSliderFromPosition({
+            Position = input.Position,
+            UserInputType = Enum.UserInputType.Touch
+        })
+    end
 end)
 
 --// Valor inicial
 updateValue(min)
 tabData.elementCount = tabData.elementCount + 1
 
---// API do Slider
+--// Retorno (API do Slider)
 return {
-	SetValue = function(self, value)
-		updateValue(value)
-	end,
+    SetValue = function(self, value)
+        updateValue(value)
+    end,
 
-	GetValue = function(self)
-		return sliderValue
-	end
+    GetValue = function(self)
+        return sliderValue
+    end
 }
     end  
       
