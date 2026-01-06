@@ -356,69 +356,133 @@ function publicMethods:AddTab(tabName, iconId)
             InfoNumber.Parent = Main
             Main.Parent = SliderFrame
             SliderFrame.Parent = ElementsContainer
-            
+
             local sliderValue = min or 0
             local dragging = false
-            
-            local function updateValue(newValue)
-                sliderValue = math.clamp(newValue, min, max)
-                local percentage = (sliderValue - min) / (max - min)
-                SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
-                InfoNumber.Text = tostring(math.floor(sliderValue))
-                if callback then callback(sliderValue) end
-            end
-            
-            local function updateSliderFromPosition(input)
-                if not SliderTrack:IsDescendantOf(game) then return end
-                local absPos = SliderTrack.AbsolutePosition
-                local absSize = SliderTrack.AbsoluteSize
-                local relativeX
-                
-                if input.UserInputType == Enum.UserInputType.Touch then
-                    relativeX = (input.Position.X - absPos.X) / absSize.X
-                else
-                    local mouse = game:GetService("Players").LocalPlayer:GetMouse()
-                    relativeX = (mouse.X - absPos.X) / absSize.X
-                end
-                
-                relativeX = math.clamp(relativeX, 0, 1)
-                local newValue = min + (relativeX * (max - min))
-                updateValue(newValue)
-            end
-            
-            SliderTrack.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    dragging = true
-                    updateSliderFromPosition(input)
-                end
-            end)
-            
-            SliderTrack.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    dragging = false
-                end
-            end)
-            
-            game:GetService("UserInputService").InputChanged:Connect(function(input)
-                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                    updateSliderFromPosition(input)
-                end
-            end)
-            
-            game:GetService("UserInputService").TouchMoved:Connect(function(input)
-                if dragging then
-                    updateSliderFromPosition({Position = input.Position, UserInputType = Enum.UserInputType.Touch})
-                end
-            end)
-            
-            updateValue(min)
-            tabData.elementCount = tabData.elementCount + 1
-            
-            return {
-                SetValue = function(self, value) updateValue(value) end,
-                GetValue = function(self) return sliderValue end
-            }
+            local userInputService = game:GetService("UserInputService")
+
+local function updateValue(newValue)
+    sliderValue = math.clamp(newValue, min, max)
+    local percentage = (sliderValue - min) / (max - min)
+    SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
+    InfoNumber.Text = tostring(math.floor(sliderValue))
+    if callback then callback(sliderValue) end
+end
+
+local function updateSliderFromPosition(input)
+    if not SliderTrack:IsDescendantOf(game) then return end
+    local absPos = SliderTrack.AbsolutePosition
+    local absSize = SliderTrack.AbsoluteSize
+    local relativeX
+    
+    if input.UserInputType == Enum.UserInputType.Touch then
+        relativeX = (input.Position.X - absPos.X) / absSize.X
+    else
+        local mouse = game:GetService("Players").LocalPlayer:GetMouse()
+        relativeX = (mouse.X - absPos.X) / absSize.X
+    end
+    
+    relativeX = math.clamp(relativeX, 0, 1)
+    local newValue = min + (relativeX * (max - min))
+    updateValue(newValue)
+end
+
+-- Função para capturar o input
+local function captureInput()
+    -- Isso vai impedir o Roblox de usar esse input para a câmera
+    if userInputService.MouseEnabled then
+        local mouse = game:GetService("Players").LocalPlayer:GetMouse()
+        if mouse then
+            mouse.TargetFilter = SliderTrack -- Filtra o input para o slider
         end
+    end
+end
+
+-- Função para liberar o input
+local function releaseInput()
+    if userInputService.MouseEnabled then
+        local mouse = game:GetService("Players").LocalPlayer:GetMouse()
+        if mouse then
+            mouse.TargetFilter = nil -- Remove o filtro
+        end
+    end
+end
+
+SliderTrack.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        captureInput() -- Captura o input antes de atualizar
+        updateSliderFromPosition(input)
+    end
+end)
+
+SliderTrack.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+        releaseInput() -- Libera o input quando soltar
+    end
+end)
+
+userInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        captureInput() -- Continua capturando enquanto arrasta
+        updateSliderFromPosition(input)
+    end
+end)
+
+-- Alternativa mais simples usando MouseButton1Down/Up
+SliderTrack.MouseButton1Down:Connect(function()
+    dragging = true
+    captureInput()
+    -- Pega a posição inicial do mouse
+    local mouse = game:GetService("Players").LocalPlayer:GetMouse()
+    updateSliderFromPosition({Position = Vector2.new(mouse.X, mouse.Y), UserInputType = Enum.UserInputType.MouseButton1})
+end)
+
+game:GetService("Players").LocalPlayer:GetMouse().Button1Up:Connect(function()
+    if dragging then
+        dragging = false
+        releaseInput()
+    end
+end)
+
+-- Para touch devices
+if userInputService.TouchEnabled then
+    local touchConnections = {}
+    
+    SliderTrack.TouchStarted:Connect(function(input)
+        dragging = true
+        captureInput()
+        updateSliderFromPosition(input)
+        
+        -- Conecta para movimento do touch
+        local connection = input.Changed:Connect(function()
+            if dragging then
+                updateSliderFromPosition(input)
+            end
+        end)
+        
+        table.insert(touchConnections, connection)
+    end)
+    
+    SliderFrame.TouchEnded:Connect(function()
+        dragging = false
+        releaseInput()
+        -- Limpa todas as conexões de touch
+        for _, connection in ipairs(touchConnections) do
+            connection:Disconnect()
+        end
+        touchConnections = {}
+    end)
+end
+
+updateValue(min)
+tabData.elementCount = tabData.elementCount + 1
+
+return {
+    SetValue = function(self, value) updateValue(value) end,
+    GetValue = function(self) return sliderValue end
+}
         
         -- ADICIONAR DROPDOWN (COM NOVO VISUAL - CORNERS 3)
         function tabMethods:AddDropdown(text, options, callback)
