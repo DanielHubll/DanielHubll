@@ -1,6 +1,8 @@
 -- UI Library ATUALIZADA com NOVO VISUAL (última versão)
 local UILibrary = {}
 
+local OpenDropdown = nil
+
 function UILibrary:CreateWindow(title)
 local publicMethods = {}
 local tabs = {}
@@ -497,7 +499,7 @@ function publicMethods:AddTab(tabName, iconId)
     Main.BackgroundColor3 = Color3.fromRGB(37,37,37)
     Main.Size = UDim2.new(0,136,0,22)
     Main.ZIndex = 11
-
+    Main.Parent = DropdownFrame
     Instance.new("UICorner", Main).CornerRadius = UDim.new(0,3)
 
     local Selected = Instance.new("TextLabel")
@@ -521,8 +523,8 @@ function publicMethods:AddTab(tabName, iconId)
     Open.Rotation = 180
     Open.BorderSizePixel = 0
     Open.ZIndex = 12
-    Instance.new("UICorner", Open).CornerRadius = UDim.new(0,3)
     Open.Parent = Main
+    Instance.new("UICorner", Open).CornerRadius = UDim.new(0,3)
 
     local Scroll = Instance.new("ScrollingFrame")
     Scroll.Visible = false
@@ -550,7 +552,7 @@ function publicMethods:AddTab(tabName, iconId)
         Btn.BackgroundColor3 = Color3.fromRGB(37,37,37)
         Btn.TextColor3 = Color3.fromRGB(255,255,255)
         Btn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
-        Btn.ZIndex = 51
+        Btn.ZIndex = 101
         Btn.Parent = Scroll
 
         Btn.MouseEnter:Connect(function()
@@ -563,38 +565,57 @@ function publicMethods:AddTab(tabName, iconId)
 
         Btn.MouseButton1Click:Connect(function()
             Selected.Text = opt
-            Scroll.Visible = false
-            Open.Rotation = 180
             if callback then callback(opt) end
+            CloseDropdown()
+            OpenDropdown = nil
         end)
     end
 
     local function getHeight()
-        return math.min(#options,3)*(btnHeight+padding)+4
+        return math.min(#options,3) * (btnHeight + padding) + 4
     end
 
     local opened = false
 
+    function CloseDropdown()
+        opened = false
+        Scroll.Visible = false
+        Open.Rotation = 180
+
+        DropdownFrame.ZIndex = 10
+        Main.ZIndex = 11
+        Scroll.ZIndex = 50
+    end
+
     Open.MouseButton1Click:Connect(function()
+        if OpenDropdown and OpenDropdown ~= CloseDropdown then
+            OpenDropdown()
+        end
+
         opened = not opened
 
-        DropdownFrame.ZIndex = opened and 50 or 10
-        Main.ZIndex = opened and 51 or 11
-        Scroll.ZIndex = opened and 52 or 50
+        if opened then
+            OpenDropdown = CloseDropdown
 
-        Scroll.Visible = opened
-        Open.Rotation = opened and 0 or 180
-        Scroll.Size = opened and UDim2.new(0,112,0,getHeight()) or UDim2.new(0,112,0,28)
+            DropdownFrame.ZIndex = 100
+            Main.ZIndex = 101
+            Scroll.ZIndex = 102
+
+            Scroll.Visible = true
+            Open.Rotation = 0
+            Scroll.Size = UDim2.new(0,112,0,getHeight())
+        else
+            CloseDropdown()
+            OpenDropdown = nil
+        end
     end)
 
-    Main.Parent = DropdownFrame
     DropdownFrame.Parent = ElementsContainer
-
     tabData.elementCount += 1
 
     return {
         SetValue = function(_, val)
-            if table.find(options,val) then
+            if table.find(options, val) then
                 Selected.Text = val
                 if callback then callback(val) end
             end
@@ -603,7 +624,7 @@ function publicMethods:AddTab(tabName, iconId)
             return Selected.Text
         end
     }
-end 
+end
       
     -- ADICIONAR RADIO BUTTONS (ATUALIZADO - TextWrapped e TextScaled)  
     function tabMethods:AddRadioButtons(text, options, callback)  
