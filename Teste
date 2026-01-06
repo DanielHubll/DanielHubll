@@ -255,7 +255,7 @@ function publicMethods:AddTab(tabNameOrIcon, optionalIcon)
         
         -- Ajustar transparência baseado na presença de imagem
         if hasImage then
-            TabLabel["TextTransparency"] = 0.1  -- Levemente transparente quando tem imagem
+            TabLabel["TextTransparency"] = 0.3  -- Levemente transparente quando tem imagem
             TabLabel["TextSize"] = 10  -- Texto menor quando tem imagem
         else
             TabLabel["TextTransparency"] = 0  -- Totalmente visível quando só tem texto
