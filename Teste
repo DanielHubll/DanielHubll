@@ -1,8 +1,6 @@
 -- UI Library ATUALIZADA com NOVO VISUAL (última versão)
 local UILibrary = {}
 
-local OpenDropdown = nil
-
 function UILibrary:CreateWindow(title)
 local publicMethods = {}
 local tabs = {}
@@ -481,148 +479,218 @@ function publicMethods:AddTab(tabName, iconId)
     DropdownFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 30))
     DropdownFrame.ZIndex = 10
 
-    local InfoLabel = Instance.new("TextLabel")
-    InfoLabel.BorderSizePixel = 0
-    InfoLabel.TextSize = 10
-    InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
-    InfoLabel.BackgroundTransparency = 1
-    InfoLabel.Size = UDim2.new(0, 88, 0, 20)
-    InfoLabel.Position = UDim2.new(0, 140, 0, 2)
-    InfoLabel.Text = text or "Dropdown"
-    InfoLabel.TextColor3 = Color3.fromRGB(255,255,255)
-    InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
-    InfoLabel.ZIndex = 11
-    InfoLabel.Parent = DropdownFrame
+    local InfoLabel = Instance.new("TextLabel")  
+    InfoLabel.BorderSizePixel = 0  
+    InfoLabel.TextSize = 10  
+    InfoLabel.TextXAlignment = Enum.TextXAlignment.Left  
+    InfoLabel.BackgroundTransparency = 1  
+    InfoLabel.Size = UDim2.new(0, 88, 0, 20)  
+    InfoLabel.Position = UDim2.new(0, 140, 0, 2)  
+    InfoLabel.Text = text or "Dropdown"  
+    InfoLabel.TextColor3 = Color3.fromRGB(255,255,255)  
+    InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)  
+    InfoLabel.ZIndex = 11  
+    InfoLabel.Parent = DropdownFrame  
 
-    local Main = Instance.new("Frame")
-    Main.BorderSizePixel = 0
-    Main.BackgroundColor3 = Color3.fromRGB(37,37,37)
-    Main.Size = UDim2.new(0,136,0,22)
-    Main.ZIndex = 11
-    Main.Parent = DropdownFrame
-    Instance.new("UICorner", Main).CornerRadius = UDim.new(0,3)
+    local Main = Instance.new("Frame")  
+    Main.BorderSizePixel = 0  
+    Main.BackgroundColor3 = Color3.fromRGB(37,37,37)  
+    Main.Size = UDim2.new(0,136,0,22)  
+    Main.ZIndex = 11  
 
-    local Selected = Instance.new("TextLabel")
-    Selected.BackgroundTransparency = 1
-    Selected.Size = UDim2.new(1,-28,1,0)
-    Selected.Position = UDim2.new(0,6,0,0)
-    Selected.TextXAlignment = Enum.TextXAlignment.Left
-    Selected.TextTruncate = Enum.TextTruncate.AtEnd
-    Selected.TextSize = 13
-    Selected.TextColor3 = Color3.fromRGB(255,255,255)
-    Selected.Text = options[1] or "Selecionar"
-    Selected.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
-    Selected.ZIndex = 12
-    Selected.Parent = Main
+    Instance.new("UICorner", Main).CornerRadius = UDim.new(0,3)  
 
-    local Open = Instance.new("ImageButton")
-    Open.BackgroundColor3 = Color3.fromRGB(144,0,181)
-    Open.Size = UDim2.new(0,22,0,22)
-    Open.Position = UDim2.new(1,-22,0,0)
-    Open.Image = "rbxassetid://8539638324"
-    Open.Rotation = 180
-    Open.BorderSizePixel = 0
-    Open.ZIndex = 12
-    Open.Parent = Main
-    Instance.new("UICorner", Open).CornerRadius = UDim.new(0,3)
+    local Selected = Instance.new("TextLabel")  
+    Selected.BackgroundTransparency = 1  
+    Selected.Size = UDim2.new(1,-28,1,0)  
+    Selected.Position = UDim2.new(0,6,0,0)  
+    Selected.TextXAlignment = Enum.TextXAlignment.Left  
+    Selected.TextTruncate = Enum.TextTruncate.AtEnd  
+    Selected.TextSize = 13  
+    Selected.TextColor3 = Color3.fromRGB(255,255,255)  
+    Selected.Text = options[1] or "Selecionar"  
+    Selected.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)  
+    Selected.ZIndex = 12  
+    Selected.Parent = Main  
 
-    local Scroll = Instance.new("ScrollingFrame")
-    Scroll.Visible = false
-    Scroll.BorderSizePixel = 0
-    Scroll.BackgroundColor3 = Color3.fromRGB(37,37,37)
-    Scroll.Position = UDim2.new(0,2,0,24)
-    Scroll.Size = UDim2.new(0,112,0,28)
-    Scroll.ScrollBarThickness = 0
-    Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    Scroll.CanvasSize = UDim2.new()
-    Scroll.ZIndex = 50
-    Scroll.Parent = Main
-    Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0,3)
+    local Open = Instance.new("ImageButton")  
+    Open.BackgroundColor3 = Color3.fromRGB(144,0,181)  
+    Open.Size = UDim2.new(0,22,0,22)  
+    Open.Position = UDim2.new(1,-22,0,0)  
+    Open.Image = "rbxassetid://8539638324"  
+    Open.Rotation = 180  
+    Open.BorderSizePixel = 0  
+    Open.ZIndex = 12  
+    Instance.new("UICorner", Open).CornerRadius = UDim.new(0,3)  
+    Open.Parent = Main  
 
-    local btnHeight, padding = 16, 2
+    local Scroll = Instance.new("ScrollingFrame")  
+    Scroll.Visible = false  
+    Scroll.BorderSizePixel = 0  
+    Scroll.BackgroundColor3 = Color3.fromRGB(37,37,37)  
+    Scroll.Position = UDim2.new(0,2,0,24)  
+    Scroll.Size = UDim2.new(0,112,0,28)  
+    Scroll.ScrollBarThickness = 0  
+    Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y  
+    Scroll.CanvasSize = UDim2.new()  
+    Scroll.ZIndex = 50  
+    Scroll.Parent = Main  
+    Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0,3)  
 
-    for i, opt in ipairs(options) do
-        local Btn = Instance.new("TextButton")
-        Btn.Size = UDim2.new(1,-4,0,btnHeight)
-        Btn.Position = UDim2.new(0,2,0,(i-1)*(btnHeight+padding))
-        Btn.Text = opt
-        Btn.TextSize = 10
-        Btn.TextWrapped = true
-        Btn.BorderSizePixel = 0
-        Btn.BackgroundColor3 = Color3.fromRGB(37,37,37)
-        Btn.TextColor3 = Color3.fromRGB(255,255,255)
-        Btn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
-        Btn.ZIndex = 101
-        Btn.Parent = Scroll
+    local btnHeight, padding = 16, 2  
 
-        Btn.MouseEnter:Connect(function()
-            Btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-        end)
+    for i, opt in ipairs(options) do  
+        local Btn = Instance.new("TextButton")  
+        Btn.Size = UDim2.new(1,-4,0,btnHeight)  
+        Btn.Position = UDim2.new(0,2,0,(i-1)*(btnHeight+padding))  
+        Btn.Text = opt  
+        Btn.TextSize = 10  
+        Btn.TextWrapped = true  
+        Btn.BorderSizePixel = 0  
+        Btn.BackgroundColor3 = Color3.fromRGB(37,37,37)  
+        Btn.TextColor3 = Color3.fromRGB(255,255,255)  
+        Btn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)  
+        Btn.ZIndex = 51  
+        Btn.Parent = Scroll  
 
-        Btn.MouseLeave:Connect(function()
-            Btn.BackgroundColor3 = Color3.fromRGB(37,37,37)
-        end)
+        Btn.MouseEnter:Connect(function()  
+            Btn.BackgroundColor3 = Color3.fromRGB(50,50,50)  
+        end)  
 
-        Btn.MouseButton1Click:Connect(function()
-            Selected.Text = opt
-            if callback then callback(opt) end
-            CloseDropdown()
-            OpenDropdown = nil
-        end)
-    end
+        Btn.MouseLeave:Connect(function()  
+            Btn.BackgroundColor3 = Color3.fromRGB(37,37,37)  
+        end)  
 
-    local function getHeight()
-        return math.min(#options,3) * (btnHeight + padding) + 4
-    end
+        Btn.MouseButton1Click:Connect(function()  
+            Selected.Text = opt  
+            Scroll.Visible = false  
+            Open.Rotation = 180
+            -- Resetar z-index quando fechar
+            DropdownFrame.ZIndex = 10
+            Main.ZIndex = 11
+            Scroll.ZIndex = 50
+            if callback then callback(opt) end  
+        end)  
+    end  
 
-    local opened = false
+    local function getHeight()  
+        return math.min(#options,3)*(btnHeight+padding)+4  
+    end  
 
-    function CloseDropdown()
-        opened = false
-        Scroll.Visible = false
-        Open.Rotation = 180
+    local opened = false  
 
-        DropdownFrame.ZIndex = 10
-        Main.ZIndex = 11
-        Scroll.ZIndex = 50
-    end
+    -- Variável para rastrear todos os dropdowns abertos
+    local activeDropdowns = {} -- Adicione esta variável no escopo apropriado (global ou onde seus dropdowns são criados)
 
-    Open.MouseButton1Click:Connect(function()
-        if OpenDropdown and OpenDropdown ~= CloseDropdown then
-            OpenDropdown()
+    -- Função para fechar todos os dropdowns exceto o atual
+    local function closeOtherDropdowns(currentDropdown)
+        for _, dropdown in pairs(activeDropdowns) do
+            if dropdown ~= currentDropdown and dropdown.Scroll.Visible then
+                dropdown.Scroll.Visible = false
+                dropdown.Open.Rotation = 180
+                dropdown.DropdownFrame.ZIndex = 10
+                dropdown.Main.ZIndex = 11
+                dropdown.Scroll.ZIndex = 50
+            end
         end
+    end
 
-        opened = not opened
+    -- Armazenar referência a este dropdown
+    local thisDropdown = {
+        DropdownFrame = DropdownFrame,
+        Main = Main,
+        Scroll = Scroll,
+        Open = Open
+    }
+    
+    table.insert(activeDropdowns, thisDropdown)
 
+    Open.MouseButton1Click:Connect(function()  
+        -- Fechar todos os outros dropdowns primeiro
+        closeOtherDropdowns(thisDropdown)
+        
+        opened = not opened  
+
+        -- Aumentar z-index apenas se estiver abrindo
         if opened then
-            OpenDropdown = CloseDropdown
-
+            -- Definir z-index alto para garantir que fique por cima
             DropdownFrame.ZIndex = 100
             Main.ZIndex = 101
             Scroll.ZIndex = 102
-
-            Scroll.Visible = true
-            Open.Rotation = 0
-            Scroll.Size = UDim2.new(0,112,0,getHeight())
         else
-            CloseDropdown()
-            OpenDropdown = nil
+            DropdownFrame.ZIndex = 10
+            Main.ZIndex = 11
+            Scroll.ZIndex = 50
+        end
+
+        Scroll.Visible = opened  
+        Open.Rotation = opened and 0 or 180  
+        Scroll.Size = opened and UDim2.new(0,112,0,getHeight()) or UDim2.new(0,112,0,28)  
+    end)  
+
+    -- Fechar dropdown quando clicar fora dele
+    local function onGlobalClick(inputObject)
+        if inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
+            local mousePos = game:GetService("UserInputService"):GetMouseLocation()
+            local isClickInside = false
+            
+            -- Verificar se o clique foi dentro do dropdown
+            local function isPointInFrame(point, frame)
+                local absPos = frame.AbsolutePosition
+                local absSize = frame.AbsoluteSize
+                return point.X >= absPos.X and point.X <= absPos.X + absSize.X and
+                       point.Y >= absPos.Y and point.Y <= absPos.Y + absSize.Y
+            end
+            
+            if isPointInFrame(mousePos, Main) or isPointInFrame(mousePos, Scroll) then
+                isClickInside = true
+            end
+            
+            if not isClickInside and Scroll.Visible then
+                Scroll.Visible = false
+                Open.Rotation = 180
+                DropdownFrame.ZIndex = 10
+                Main.ZIndex = 11
+                Scroll.ZIndex = 50
+                opened = false
+            end
+        end
+    end
+
+    -- Conectar evento global de clique
+    local inputConnection
+    inputConnection = game:GetService("UserInputService").InputBegan:Connect(onGlobalClick)
+
+    -- Limpar conexão quando o dropdown for destruído
+    DropdownFrame.Destroying:Connect(function()
+        if inputConnection then
+            inputConnection:Disconnect()
+        end
+        
+        -- Remover da lista de dropdowns ativos
+        for i, dropdown in ipairs(activeDropdowns) do
+            if dropdown == thisDropdown then
+                table.remove(activeDropdowns, i)
+                break
+            end
         end
     end)
 
-    DropdownFrame.Parent = ElementsContainer
-    tabData.elementCount += 1
+    Main.Parent = DropdownFrame  
+    DropdownFrame.Parent = ElementsContainer  
 
-    return {
-        SetValue = function(_, val)
-            if table.find(options, val) then
-                Selected.Text = val
-                if callback then callback(val) end
-            end
-        end,
-        GetValue = function()
-            return Selected.Text
-        end
+    tabData.elementCount += 1  
+
+    return {  
+        SetValue = function(_, val)  
+            if table.find(options,val) then  
+                Selected.Text = val  
+                if callback then callback(val) end  
+            end  
+        end,  
+        GetValue = function()  
+            return Selected.Text  
+        end  
     }
 end
       
