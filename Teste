@@ -1,5 +1,6 @@
 -- UI Library ATUALIZADA com NOVO VISUAL (última versão)
 local UILibrary = {}
+local activeDropdowns = {}
 
 function UILibrary:CreateWindow(title)
 local publicMethods = {}
@@ -470,6 +471,7 @@ function publicMethods:AddTab(tabName, iconId)
     end  
       
     -- ADICIONAR DROPDOWN (COM NOVO VISUAL - CORNERS 3)  
+    -- Adicione esta variável no escopo global (fora da função)
     function tabMethods:AddDropdown(text, options, callback)
     local DropdownFrame = Instance.new("Frame")
     DropdownFrame.Name = "Dropdown_" .. text
@@ -518,7 +520,7 @@ function publicMethods:AddTab(tabName, iconId)
     Open.Size = UDim2.new(0,22,0,22)  
     Open.Position = UDim2.new(1,-22,0,0)  
     Open.Image = "rbxassetid://8539638324"  
-    Open.Rotation = 180  
+    Open.Rotation = 180 -- Estado inicial: seta para baixo
     Open.BorderSizePixel = 0  
     Open.ZIndex = 12  
     Instance.new("UICorner", Open).CornerRadius = UDim.new(0,3)  
@@ -564,8 +566,7 @@ function publicMethods:AddTab(tabName, iconId)
         Btn.MouseButton1Click:Connect(function()  
             Selected.Text = opt  
             Scroll.Visible = false  
-            Open.Rotation = 180
-            -- Resetar z-index quando fechar
+            Open.Rotation = 180 -- Volta seta para baixo ao selecionar
             DropdownFrame.ZIndex = 10
             Main.ZIndex = 11
             Scroll.ZIndex = 50
@@ -577,23 +578,44 @@ function publicMethods:AddTab(tabName, iconId)
         return math.min(#options,3)*(btnHeight+padding)+4  
     end  
 
-    local opened = false  
-
-    -- Variável para rastrear todos os dropdowns abertos
-    local activeDropdowns = {} -- Adicione esta variável no escopo apropriado (global ou onde seus dropdowns são criados)
-
-    -- Função para fechar todos os dropdowns exceto o atual
-    local function closeOtherDropdowns(currentDropdown)
+    -- Função para fechar TODOS os dropdowns (incluindo este)
+    local function closeAllDropdowns()
         for _, dropdown in pairs(activeDropdowns) do
-            if dropdown ~= currentDropdown and dropdown.Scroll.Visible then
+            if dropdown.Scroll and dropdown.Scroll.Visible then
                 dropdown.Scroll.Visible = false
-                dropdown.Open.Rotation = 180
+                dropdown.Open.Rotation = 180 -- Garante que TODOS voltem ao estado normal
                 dropdown.DropdownFrame.ZIndex = 10
                 dropdown.Main.ZIndex = 11
                 dropdown.Scroll.ZIndex = 50
             end
         end
     end
+
+    -- Função para abrir APENAS este dropdown
+    local function openThisDropdown()
+        closeAllDropdowns() -- Primeiro fecha todos
+        
+        Scroll.Visible = true
+        Open.Rotation = 0 -- Seta para cima quando aberto
+        DropdownFrame.ZIndex = 100
+        Main.ZIndex = 101
+        Scroll.ZIndex = 102
+        Scroll.Size = UDim2.new(0,112,0,getHeight())
+    end
+
+    Open.MouseButton1Click:Connect(function()  
+        if Scroll.Visible then
+            -- Se já estiver aberto, fecha
+            Scroll.Visible = false
+            Open.Rotation = 180 -- Volta para seta para baixo
+            DropdownFrame.ZIndex = 10
+            Main.ZIndex = 11
+            Scroll.ZIndex = 50
+        else
+            -- Se não estiver aberto, abre este e fecha todos os outros
+            openThisDropdown()
+        end
+    end)  
 
     -- Armazenar referência a este dropdown
     local thisDropdown = {
@@ -605,69 +627,44 @@ function publicMethods:AddTab(tabName, iconId)
     
     table.insert(activeDropdowns, thisDropdown)
 
-    Open.MouseButton1Click:Connect(function()  
-        -- Fechar todos os outros dropdowns primeiro
-        closeOtherDropdowns(thisDropdown)
-        
-        opened = not opened  
-
-        -- Aumentar z-index apenas se estiver abrindo
-        if opened then
-            -- Definir z-index alto para garantir que fique por cima
-            DropdownFrame.ZIndex = 100
-            Main.ZIndex = 101
-            Scroll.ZIndex = 102
-        else
-            DropdownFrame.ZIndex = 10
-            Main.ZIndex = 11
-            Scroll.ZIndex = 50
-        end
-
-        Scroll.Visible = opened  
-        Open.Rotation = opened and 0 or 180  
-        Scroll.Size = opened and UDim2.new(0,112,0,getHeight()) or UDim2.new(0,112,0,28)  
-    end)  
-
-    -- Fechar dropdown quando clicar fora dele
-    local function onGlobalClick(inputObject)
-        if inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
-            local mousePos = game:GetService("UserInputService"):GetMouseLocation()
-            local isClickInside = false
+    -- Fechar dropdown quando clicar fora
+    local inputConnection
+    local function onGlobalClick(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local mouse = game:GetService("UserInputService"):GetMouseLocation()
             
-            -- Verificar se o clique foi dentro do dropdown
-            local function isPointInFrame(point, frame)
-                local absPos = frame.AbsolutePosition
-                local absSize = frame.AbsoluteSize
-                return point.X >= absPos.X and point.X <= absPos.X + absSize.X and
-                       point.Y >= absPos.Y and point.Y <= absPos.Y + absSize.Y
-            end
+            -- Verificar se clique foi DENTRO do dropdown atual
+            local mainAbsPos = Main.AbsolutePosition
+            local mainAbsSize = Main.AbsoluteSize
+            local scrollAbsPos = Scroll.AbsolutePosition
+            local scrollAbsSize = Scroll.AbsoluteSize
             
-            if isPointInFrame(mousePos, Main) or isPointInFrame(mousePos, Scroll) then
-                isClickInside = true
-            end
+            local isInMain = mouse.X >= mainAbsPos.X and mouse.X <= mainAbsPos.X + mainAbsSize.X and
+                            mouse.Y >= mainAbsPos.Y and mouse.Y <= mainAbsPos.Y + mainAbsSize.Y
             
-            if not isClickInside and Scroll.Visible then
+            local isInScroll = mouse.X >= scrollAbsPos.X and mouse.X <= scrollAbsPos.X + scrollAbsSize.X and
+                              mouse.Y >= scrollAbsPos.Y and mouse.Y <= scrollAbsPos.Y + scrollAbsSize.Y
+            
+            -- Se clicou FORA do dropdown
+            if not isInMain and not isInScroll and Scroll.Visible then
                 Scroll.Visible = false
-                Open.Rotation = 180
+                Open.Rotation = 180 -- Volta seta para baixo
                 DropdownFrame.ZIndex = 10
                 Main.ZIndex = 11
                 Scroll.ZIndex = 50
-                opened = false
             end
         end
     end
 
-    -- Conectar evento global de clique
-    local inputConnection
     inputConnection = game:GetService("UserInputService").InputBegan:Connect(onGlobalClick)
 
-    -- Limpar conexão quando o dropdown for destruído
+    -- Limpar quando for destruído
     DropdownFrame.Destroying:Connect(function()
         if inputConnection then
             inputConnection:Disconnect()
         end
         
-        -- Remover da lista de dropdowns ativos
+        -- Remover da lista
         for i, dropdown in ipairs(activeDropdowns) do
             if dropdown == thisDropdown then
                 table.remove(activeDropdowns, i)
@@ -690,7 +687,14 @@ function publicMethods:AddTab(tabName, iconId)
         end,  
         GetValue = function()  
             return Selected.Text  
-        end  
+        end,
+        Close = function()
+            Scroll.Visible = false
+            Open.Rotation = 180
+            DropdownFrame.ZIndex = 10
+            Main.ZIndex = 11
+            Scroll.ZIndex = 50
+        end
     }
 end
       
