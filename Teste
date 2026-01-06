@@ -105,34 +105,36 @@ LMG2L["OpenName_2d"].MouseButton1Click:Connect(function()
     LMG2L["OpenName_2d"].Rotation = LMG2L["Main_5"].Visible and 0 or 180  
 end)  
   
--- Sistema de arrastar janela
+-- Sistema de arrastar janela ATUALIZADO
 local draggingWindow = false
 local dragStart, startPos
 
-LMG2L["Topo_2"].InputBegan:Connect(function(input)  
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then  
-        draggingWindow = true  
-        dragStart = input.Position  
-        startPos = LMG2L["Topo_2"].Position  
-    end  
-end)  
-  
-game:GetService("UserInputService").InputChanged:Connect(function(input)  
-    if draggingWindow and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then  
-        local delta = input.Position - dragStart  
-        LMG2L["Topo_2"].Position = UDim2.new(  
-            startPos.X.Scale,   
-            startPos.X.Offset + delta.X,  
-            startPos.Y.Scale,   
-            startPos.Y.Offset + delta.Y  
-        )  
-    end  
-end)  
-  
-game:GetService("UserInputService").InputEnded:Connect(function(input)  
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then  
-        draggingWindow = false  
-    end  
+LMG2L["Topo_2"].InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingWindow = true
+        dragStart = input.Position
+        startPos = LMG2L["Floating_1"].Position -- CORREÇÃO: usar a posição do ScreenGui
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if draggingWindow and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        
+        -- CORREÇÃO: Arrastar o ScreenGui inteiro
+        LMG2L["Floating_1"].Position = UDim2.new(
+            0,
+            startPos.X.Offset + delta.X,
+            0,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+game:GetService("UserInputService").InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingWindow = false
+    end
 end)  
   
 -- FUNÇÃO PARA CRIAR NOVA TAB  
