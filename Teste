@@ -330,7 +330,7 @@ function publicMethods:AddTab(tabName, iconId)
         InfoNumber.Text = tostring(min or 0)  
         InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)  
         InfoNumber.TextSize = 20  -- Texto maior  
-        InfoNumber.TextTransparency = 0.8  -- Transparência aumentada  
+        InfoNumber.TextTransparency = 0.3 -- Transparência aumentada  
           
         local InfoLabel = Instance.new("TextLabel")  
         InfoLabel.Name = "InfoLabel"  
