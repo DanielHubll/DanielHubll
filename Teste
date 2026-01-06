@@ -160,248 +160,90 @@ function UILibrary:CreateWindow(title)
         end  
     end)  
 
-     -- FUNÇÃO PARA CRIAR NOVA TAB (ATUALIZADA com suporte a texto e imagem separados)
-function publicMethods:AddTab(tabName, iconId)  
-    local tabIndex = #tabs + 1  
-    local tabData = {  
-        name = tabName,  
-        elements = {},  
-        container = nil,  
-        button = nil,  
-        elementCount = 0  
-    }  
+    -- FUNÇÃO PARA CRIAR NOVA TAB (ATUALIZADA com suporte a texto e imagem separados)
+    function publicMethods:AddTab(tabName, iconId)  
+        local tabIndex = #tabs + 1  
+        local tabData = {  
+            name = tabName,  
+            elements = {},  
+            container = nil,  
+            button = nil,  
+            elementCount = 0  
+        }  
 
-    -- Criar botão da tab (COR INICIAL: roxa normal - 144, 0, 181)  
-    local TabButton = Instance.new("ImageButton", LMG2L["Tabs_2a"])  
-    TabButton["BorderSizePixel"] = 0  
-    TabButton["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)  -- ROXA NORMAL inicial
-    TabButton["Size"] = UDim2.new(0, 40, 0, 40)  
-    TabButton["Name"] = "Tab" .. tabIndex  
-    TabButton["Position"] = UDim2.new(0, 6, 0, 8 + ((tabIndex - 1) * 48))  
+        -- Criar botão da tab (COR INICIAL: roxa normal - 144, 0, 181)  
+        local TabButton = Instance.new("ImageButton", LMG2L["Tabs_2a"])  
+        TabButton["BorderSizePixel"] = 0  
+        TabButton["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)  -- ROXA NORMAL inicial
+        TabButton["Size"] = UDim2.new(0, 40, 0, 40)  
+        TabButton["Name"] = "Tab" .. tabIndex  
+        TabButton["Position"] = UDim2.new(0, 6, 0, 8 + ((tabIndex - 1) * 48))  
 
-    -- CRIAÇÃO DO TEXTLABEL SEPARADO (TabLabel)
-    local TabLabel = Instance.new("TextLabel", TabButton)
-    TabLabel["TextWrapped"] = true
-    TabLabel["BorderSizePixel"] = 0
-    TabLabel["TextScaled"] = true
-    TabLabel["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
-    TabLabel["FontFace"] = Font.new([[rbxasset://fonts/families/GothamSSm.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-    TabLabel["TextColor3"] = Color3.fromRGB(255, 255, 255)
-    TabLabel["BackgroundTransparency"] = 1
-    TabLabel["Size"] = UDim2.new(0, 36, 0, 36)
-    TabLabel["Text"] = tabName or "Tab"
-    TabLabel["Name"] = "TabLabel"
-    TabLabel["Position"] = UDim2.new(0, 2, 0, 2)
-    TabLabel["TextTransparency"] = 0  -- Inicialmente visível (será ajustado)
-
-    local TabLabelUICorner = Instance.new("UICorner", TabLabel)
-    TabLabelUICorner["CornerRadius"] = UDim.new(0, 5)
-
-    local UICorner = Instance.new("UICorner", TabButton)  
-    UICorner["CornerRadius"] = UDim.new(0, 5)  
-
-    -- FUNÇÃO PARA VERIFICAR SE IMAGEM É VÁLIDA
-    local function verificarImagemValida(imageId)
-        if not imageId or imageId == "" then
-            return false, "Sem ID de imagem"
-        end
-        
-        -- Verifica se é um ID numérico válido
-        if not tonumber(imageId:match("%d+")) then
-            return false, "ID não numérico"
-        end
-        
-        -- Cria uma cópia temporária para teste
-        local success, result = pcall(function()
-            local testImage = Instance.new("ImageLabel")
-            testImage.Image = "rbxassetid://" .. imageId
-            testImage:Destroy()
-            return true
-        end)
-        
-        return success, result
-    end
-
-    -- FUNÇÃO PARA TENTAR CARREGAR IMAGEM COM FALLBACK
-    local function configurarImagemTab()
-        local hasValidImage = false
-        
+        -- LÓGICA ATUALIZADA: Se tiver iconId, usa como imagem. Se não, usa o tabName como texto.
         if iconId and iconId ~= "" then
-            -- Remove "rbxassetid://" se já tiver
-            local cleanId = iconId:gsub("rbxassetid://", "")
-            
-            -- Verifica se o ID é válido
-            local isValid, errorMsg = verificarImagemValida(cleanId)
-            
-            if isValid then
-                -- Tenta carregar a imagem
-                local success, loadResult = pcall(function()
-                    TabButton.Image = "rbxassetid://" .. cleanId
-                    -- Configura propriedades para melhor visualização
-                    TabButton.ImageColor3 = Color3.fromRGB(255, 255, 255)
-                    TabButton.ImageTransparency = 0
-                    return true
-                end)
-                
-                if success then
-                    hasValidImage = true
-                    -- Tenta verificar se a imagem realmente carrega
-                    spawn(function()
-                        wait(0.5) -- Espera um pouco para carregar
-                        if TabButton.Image ~= "" then
-                            -- Se ainda tem imagem, assume que é válida
-                            TabLabel.TextTransparency = 0.4
-                        else
-                            -- Se não carregou, volta ao normal
-                            TabLabel.TextTransparency = 0
-                        end
-                    end)
-                else
-                    -- Se falhou ao carregar, remove imagem
-                    TabButton.Image = ""
-                    hasValidImage = false
-                    TabLabel.TextTransparency = 0
-                end
-            else
-                -- ID inválido, não usa imagem
-                TabButton.Image = ""
-                hasValidImage = false
-                TabLabel.TextTransparency = 0
-            end
-        else
-            -- Sem ID de imagem
-            TabButton.Image = ""
-            hasValidImage = false
-            TabLabel.TextTransparency = 0
-        end
-        
-        -- Se não tem imagem válida e não tem texto, mostra nome da tab
-        if not hasValidImage and (not tabName or tabName == "") then
-            TabLabel.Text = "Tab " .. tabIndex
-        end
-        
--- FUNÇÃO PARA CRIAR NOVA TAB (ATUALIZADA com suporte flexível)
-function publicMethods:AddTab(tabName, iconId)  
-    local tabIndex = #tabs + 1  
-    local tabData = {  
-        name = tabName,  
-        elements = {},  
-        container = nil,  
-        button = nil,  
-        elementCount = 0  
-    }  
-
-    -- Determinar o tipo de conteúdo
-    local hasImage = false
-    local displayText = ""
-    
-    -- CASO 1: Apenas um parâmetro
-    if iconId == nil then
-        -- Verificar se o parâmetro é uma imagem ou texto
-        if type(tabName) == "string" then
-            -- Verifica se parece ser um asset ID
-            if tabName:match("^rbxassetid://%d+$") or tabName:match("^%d+$") then
-                -- É uma imagem
-                hasImage = true
-                displayText = ""  -- Sem texto quando só tem imagem
-            else
-                -- É texto
-                hasImage = false
-                displayText = tabName
-            end
-        end
-    -- CASO 2: Dois parâmetros (texto e imagem)
-    else
-        hasImage = true
-        displayText = tabName or ""
-    end
-
-    -- Criar botão da tab (COR INICIAL: roxa normal - 144, 0, 181)  
-    local TabButton = Instance.new("ImageButton", LMG2L["Tabs_2a"])  
-    TabButton["BorderSizePixel"] = 0  
-    TabButton["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)  -- ROXA NORMAL inicial
-    TabButton["Size"] = UDim2.new(0, 40, 0, 40)  
-    TabButton["Name"] = "Tab" .. tabIndex  
-    TabButton["Position"] = UDim2.new(0, 6, 0, 8 + ((tabIndex - 1) * 48))  
-
-    -- Configurar imagem se existir
-    if hasImage then
-        if iconId then
-            -- Se tem iconId (segundo parâmetro)
+            -- Se tem imagem, usa como ImageButton normal
             TabButton["Image"] = iconId
         else
-            -- Se só tem um parâmetro e é imagem
-            TabButton["Image"] = tabName:match("^%d+$") and ("rbxassetid://" .. tabName) or tabName
+            -- Se não tem imagem, cria TextLabel para mostrar o nome
+            TabButton["Image"] = ""
         end
-    else
-        TabButton["Image"] = ""
-    end
 
-    local UICorner = Instance.new("UICorner", TabButton)  
-    UICorner["CornerRadius"] = UDim.new(0, 5)  
+        local UICorner = Instance.new("UICorner", TabButton)  
+        UICorner["CornerRadius"] = UDim.new(0, 5)  
 
-    -- CRIAÇÃO DO TEXTLABEL SEPARADO (TabLabel)
-    local TabLabel = Instance.new("TextLabel", TabButton)
-    TabLabel["TextWrapped"] = true
-    TabLabel["BorderSizePixel"] = 0
-    TabLabel["TextScaled"] = true
-    TabLabel["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
-    TabLabel["FontFace"] = Font.new([[rbxasset://fonts/families/GothamSSm.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-    TabLabel["TextColor3"] = Color3.fromRGB(255, 255, 255)
-    TabLabel["BackgroundTransparency"] = 1
-    TabLabel["Size"] = UDim2.new(0, 36, 0, 36)
-    TabLabel["Text"] = displayText
-    TabLabel["Name"] = "TabLabel"
-    TabLabel["Position"] = UDim2.new(0, 2, 0, 2)
-    
-    -- Ajustar transparência baseado na presença de imagem
-    if hasImage and displayText ~= "" then
-        TabLabel["TextTransparency"] = 0.4  -- Levemente transparente quando tem imagem e texto
-    elseif hasImage then
-        TabLabel["TextTransparency"] = 1  -- Totalmente transparente quando só tem imagem
-    else
-        TabLabel["TextTransparency"] = 0  -- Totalmente visível quando só tem texto
-    end
+        -- CRIAÇÃO DO TEXTLABEL SEPARADO (TabLabel)
+        local TabLabel = Instance.new("TextLabel", TabButton)
+        TabLabel["TextWrapped"] = true
+        TabLabel["BorderSizePixel"] = 0
+        TabLabel["TextScaled"] = true
+        TabLabel["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
+        TabLabel["FontFace"] = Font.new([[rbxasset://fonts/families/GothamSSm.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+        TabLabel["TextColor3"] = Color3.fromRGB(255, 255, 255)
+        TabLabel["BackgroundTransparency"] = 1
+        TabLabel["Size"] = UDim2.new(0, 36, 0, 36)
+        TabLabel["Text"] = tabName or "Tab"
+        TabLabel["Name"] = "TabLabel"
+        TabLabel["Position"] = UDim2.new(0, 2, 0, 2)
 
-    local TabLabelUICorner = Instance.new("UICorner", TabLabel)
-    TabLabelUICorner["CornerRadius"] = UDim.new(0, 5)
+        local TabLabelUICorner = Instance.new("UICorner", TabLabel)
+        TabLabelUICorner["CornerRadius"] = UDim.new(0, 5)
 
-    -- Container para elementos desta tab  
-    local ElementsContainer = Instance.new("Frame", LMG2L["Main_7"])  
-    ElementsContainer["BackgroundTransparency"] = 1  
-    ElementsContainer["Size"] = UDim2.new(1, 0, 1, 0)  
-    ElementsContainer["Name"] = "Container_" .. (displayText ~= "" and displayText or "Tab" .. tabIndex)
-    ElementsContainer["Visible"] = false  
+        -- Container para elementos desta tab  
+        local ElementsContainer = Instance.new("Frame", LMG2L["Main_7"])  
+        ElementsContainer["BackgroundTransparency"] = 1  
+        ElementsContainer["Size"] = UDim2.new(1, 0, 1, 0)  
+        ElementsContainer["Name"] = "Container_" .. tabName  
+        ElementsContainer["Visible"] = false  
 
-    tabData.container = ElementsContainer  
-    tabData.button = TabButton  
+        tabData.container = ElementsContainer  
+        tabData.button = TabButton  
 
-    -- Função para trocar de tab  
-    local function switchToTab()  
-        -- Desativar todas as tabs (voltar para ROXA NORMAL - 144, 0, 181)
-        for _, tab in ipairs(tabs) do  
-            tab.container.Visible = false  
-            tab.button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  -- ROXA NORMAL quando não selecionada
+        -- Função para trocar de tab  
+        local function switchToTab()  
+            -- Desativar todas as tabs (voltar para ROXA NORMAL - 144, 0, 181)
+            for _, tab in ipairs(tabs) do  
+                tab.container.Visible = false  
+                tab.button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  -- ROXA NORMAL quando não selecionada
+            end  
+
+            -- Ativar esta tab (ROXA ESCURO - 110, 0, 140 quando selecionada)
+            ElementsContainer.Visible = true  
+            TabButton.BackgroundColor3 = Color3.fromRGB(110, 0, 140)  -- ROXA ESCURO quando ativa  
+            currentTab = tabData  
         end  
 
-        -- Ativar esta tab (ROXA ESCURO - 110, 0, 140 quando selecionada)
-        ElementsContainer.Visible = true  
-        TabButton.BackgroundColor3 = Color3.fromRGB(110, 0, 140)  -- ROXA ESCURO quando ativa  
-        currentTab = tabData  
-    end  
+        TabButton.MouseButton1Click:Connect(switchToTab)  
 
-    TabButton.MouseButton1Click:Connect(switchToTab)  
+        -- Adicionar tab à lista  
+        table.insert(tabs, tabData)  
 
-    -- Adicionar tab à lista  
-    table.insert(tabs, tabData)  
+        -- Se for a primeira tab, ativar automaticamente (com roxa escuro)
+        if tabIndex == 1 then  
+            switchToTab()  
+        end  
 
-    -- Se for a primeira tab, ativar automaticamente (com roxa escuro)
-    if tabIndex == 1 then  
-        switchToTab()  
-    end  
-
-    -- Retornar objeto da tab com métodos para adicionar elementos  
-    local tabMethods = {}
+        -- Retornar objeto da tab com métodos para adicionar elementos  
+        local tabMethods = {}  
 
         -- ADICIONAR TOGGLE (COM NOVO VISUAL - CORNERS 3)  
         function tabMethods:AddToggle(text, callback)  
