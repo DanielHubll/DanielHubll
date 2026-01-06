@@ -160,7 +160,7 @@ function UILibrary:CreateWindow(title)
         end  
     end)  
 
-     -- FUNÇÃO PARA CRIAR NOVA TAB (VERSÃO APRIMORADA COM DETECÇÃO CONFIÁVEL)
+     -- FUNÇÃO PARA CRIAR NOVA TAB (ATUALIZADA com suporte a texto e imagem separados)
 function publicMethods:AddTab(tabName, iconId)  
     local tabIndex = #tabs + 1  
     local tabData = {  
@@ -171,10 +171,10 @@ function publicMethods:AddTab(tabName, iconId)
         elementCount = 0  
     }  
 
-    -- Criar botão da tab
+    -- Criar botão da tab (COR INICIAL: roxa normal - 144, 0, 181)  
     local TabButton = Instance.new("ImageButton", LMG2L["Tabs_2a"])  
     TabButton["BorderSizePixel"] = 0  
-    TabButton["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)
+    TabButton["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)  -- ROXA NORMAL inicial
     TabButton["Size"] = UDim2.new(0, 40, 0, 40)  
     TabButton["Name"] = "Tab" .. tabIndex  
     TabButton["Position"] = UDim2.new(0, 6, 0, 8 + ((tabIndex - 1) * 48))  
@@ -192,7 +192,7 @@ function publicMethods:AddTab(tabName, iconId)
     TabLabel["Text"] = tabName or "Tab"
     TabLabel["Name"] = "TabLabel"
     TabLabel["Position"] = UDim2.new(0, 2, 0, 2)
-    TabLabel["TextTransparency"] = 0  -- Inicialmente visível
+    TabLabel["TextTransparency"] = 0  -- Inicialmente visível (será ajustado)
 
     local TabLabelUICorner = Instance.new("UICorner", TabLabel)
     TabLabelUICorner["CornerRadius"] = UDim.new(0, 5)
@@ -200,78 +200,97 @@ function publicMethods:AddTab(tabName, iconId)
     local UICorner = Instance.new("UICorner", TabButton)  
     UICorner["CornerRadius"] = UDim.new(0, 5)  
 
-    -- SISTEMA INTELIGENTE DE DETECÇÃO DE IMAGEM
-    local function processarImagem()
-        -- Flag para rastrear se tem imagem válida
-        local temImagemValida = false
+    -- FUNÇÃO PARA VERIFICAR SE IMAGEM É VÁLIDA
+    local function verificarImagemValida(imageId)
+        if not imageId or imageId == "" then
+            return false, "Sem ID de imagem"
+        end
         
-        -- Verifica se foi fornecido um ID
+        -- Verifica se é um ID numérico válido
+        if not tonumber(imageId:match("%d+")) then
+            return false, "ID não numérico"
+        end
+        
+        -- Cria uma cópia temporária para teste
+        local success, result = pcall(function()
+            local testImage = Instance.new("ImageLabel")
+            testImage.Image = "rbxassetid://" .. imageId
+            testImage:Destroy()
+            return true
+        end)
+        
+        return success, result
+    end
+
+    -- FUNÇÃO PARA TENTAR CARREGAR IMAGEM COM FALLBACK
+    local function configurarImagemTab()
+        local hasValidImage = false
+        
         if iconId and iconId ~= "" then
-            -- Limpa o ID (remove "rbxassetid://" se existir)
-            local idLimpo = tostring(iconId):gsub("rbxassetid://", "")
+            -- Remove "rbxassetid://" se já tiver
+            local cleanId = iconId:gsub("rbxassetid://", "")
             
-            -- Verifica se parece ser um ID numérico
-            local idNumerico = idLimpo:match("^%d+$")
+            -- Verifica se o ID é válido
+            local isValid, errorMsg = verificarImagemValida(cleanId)
             
-            if idNumerico then
-                -- Tenta configurar a imagem
-                local sucesso = pcall(function()
-                    TabButton.Image = "rbxassetid://" .. idNumerico
+            if isValid then
+                -- Tenta carregar a imagem
+                local success, loadResult = pcall(function()
+                    TabButton.Image = "rbxassetid://" .. cleanId
+                    -- Configura propriedades para melhor visualização
                     TabButton.ImageColor3 = Color3.fromRGB(255, 255, 255)
                     TabButton.ImageTransparency = 0
-                    
-                    -- Marca que temos uma imagem (pelo menos tentamos)
-                    temImagemValida = true
-                    TabLabel.TextTransparency = 0.4  -- Pré-configura transparência
+                    return true
                 end)
                 
-                if not sucesso then
-                    -- Se falhou ao configurar, remove imagem
-                    TabButton.Image = ""
-                    temImagemValida = false
-                    TabLabel.TextTransparency = 0
-                else
-                    -- Verificação adicional após 1 segundo
+                if success then
+                    hasValidImage = true
+                    -- Tenta verificar se a imagem realmente carrega
                     spawn(function()
-                        wait(1)  -- Tempo para carregar
-                        
-                        -- Verifica se a imagem ainda está configurada
-                        if TabButton.Image == "" or TabButton.ImageTransparency == 1 then
-                            -- Imagem não carregou ou foi removida
-                            TabLabel.TextTransparency = 0
-                        else
-                            -- Imagem carregou com sucesso, mantém transparência
+                        wait(0.5) -- Espera um pouco para carregar
+                        if TabButton.Image ~= "" then
+                            -- Se ainda tem imagem, assume que é válida
                             TabLabel.TextTransparency = 0.4
+                        else
+                            -- Se não carregou, volta ao normal
+                            TabLabel.TextTransparency = 0
                         end
                     end)
+                else
+                    -- Se falhou ao carregar, remove imagem
+                    TabButton.Image = ""
+                    hasValidImage = false
+                    TabLabel.TextTransparency = 0
                 end
             else
-                -- ID não numérico, não usa imagem
+                -- ID inválido, não usa imagem
                 TabButton.Image = ""
-                temImagemValida = false
+                hasValidImage = false
                 TabLabel.TextTransparency = 0
             end
         else
-            -- Sem ID fornecido
+            -- Sem ID de imagem
             TabButton.Image = ""
-            temImagemValida = false
+            hasValidImage = false
             TabLabel.TextTransparency = 0
         end
         
-        -- Fallback: se não tem texto nem imagem válida
-        if (not tabName or tabName == "") and not temImagemValida then
-            TabLabel.Text = "Tab" .. tabIndex
+        -- Se não tem imagem válida e não tem texto, mostra nome da tab
+        if not hasValidImage and (not tabName or tabName == "") then
+            TabLabel.Text = "Tab " .. tabIndex
         end
+        
+        return hasValidImage
     end
 
-    -- Processa a imagem de forma assíncrona
-    spawn(processarImagem)
+    -- Configura imagem (executa assincronamente para não travar)
+    spawn(configurarImagemTab)
 
     -- Container para elementos desta tab  
     local ElementsContainer = Instance.new("Frame", LMG2L["Main_7"])  
     ElementsContainer["BackgroundTransparency"] = 1  
     ElementsContainer["Size"] = UDim2.new(1, 0, 1, 0)  
-    ElementsContainer["Name"] = "Container_" .. (tabName or ("Tab" .. tabIndex))  
+    ElementsContainer["Name"] = "Container_" .. tabName  
     ElementsContainer["Visible"] = false  
 
     tabData.container = ElementsContainer  
@@ -279,15 +298,15 @@ function publicMethods:AddTab(tabName, iconId)
 
     -- Função para trocar de tab  
     local function switchToTab()  
-        -- Desativar todas as tabs
+        -- Desativar todas as tabs (voltar para ROXA NORMAL - 144, 0, 181)
         for _, tab in ipairs(tabs) do  
             tab.container.Visible = false  
-            tab.button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
+            tab.button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  -- ROXA NORMAL quando não selecionada
         end  
 
-        -- Ativar esta tab
+        -- Ativar esta tab (ROXA ESCURO - 110, 0, 140 quando selecionada)
         ElementsContainer.Visible = true  
-        TabButton.BackgroundColor3 = Color3.fromRGB(110, 0, 140)
+        TabButton.BackgroundColor3 = Color3.fromRGB(110, 0, 140)  -- ROXA ESCURO quando ativa  
         currentTab = tabData  
     end  
 
@@ -296,13 +315,13 @@ function publicMethods:AddTab(tabName, iconId)
     -- Adicionar tab à lista  
     table.insert(tabs, tabData)  
 
-    -- Se for a primeira tab, ativar automaticamente
+    -- Se for a primeira tab, ativar automaticamente (com roxa escuro)
     if tabIndex == 1 then  
         switchToTab()  
     end  
 
-    -- Retornar objeto da tab
-    local tabMethods = {}  
+    -- Retornar objeto da tab com métodos para adicionar elementos  
+    local tabMethods = {}   
 
         -- ADICIONAR TOGGLE (COM NOVO VISUAL - CORNERS 3)  
         function tabMethods:AddToggle(text, callback)  
