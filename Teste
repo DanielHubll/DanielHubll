@@ -1,4 +1,4 @@
--- UI Library ATUALIZADA com NOVO VISUAL (cores e dimensões alteradas)
+-- UI Library ATUALIZADA com NOVO VISUAL (última versão)
 local UILibrary = {}
 
 function UILibrary:CreateWindow(title)
@@ -22,19 +22,21 @@ function UILibrary:CreateWindow(title)
     LMG2L["Topo_2"]["Position"] = UDim2.new(0, 260, 0, 46)
     LMG2L["Topo_2"]["Name"] = [[Topo]]
 
-    -- TitleMenu
+    -- TitleMenu (ATUALIZADO: TextWrapped, TextScaled, altura 14)
     LMG2L["TitleMenu_3"] = Instance.new("TextLabel", LMG2L["Topo_2"])
+    LMG2L["TitleMenu_3"]["TextWrapped"] = true
     LMG2L["TitleMenu_3"]["BorderSizePixel"] = 0
     LMG2L["TitleMenu_3"]["TextSize"] = 11
     LMG2L["TitleMenu_3"]["TextXAlignment"] = Enum.TextXAlignment.Left
+    LMG2L["TitleMenu_3"]["TextScaled"] = true
     LMG2L["TitleMenu_3"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
     LMG2L["TitleMenu_3"]["FontFace"] = Font.new([[rbxasset://fonts/families/GothamSSm.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal)
     LMG2L["TitleMenu_3"]["TextColor3"] = Color3.fromRGB(255, 254, 254)
     LMG2L["TitleMenu_3"]["BackgroundTransparency"] = 1
-    LMG2L["TitleMenu_3"]["Size"] = UDim2.new(0, 152, 0, 20)
+    LMG2L["TitleMenu_3"]["Size"] = UDim2.new(0, 196, 0, 14)  -- Altura reduzida
     LMG2L["TitleMenu_3"]["Text"] = title or [[VLG PAINEL]]
     LMG2L["TitleMenu_3"]["Name"] = [[TitleMenu]]
-    LMG2L["TitleMenu_3"]["Position"] = UDim2.new(0, 28, 0, 0)
+    LMG2L["TitleMenu_3"]["Position"] = UDim2.new(0, 28, 0, 4)  -- Posição ajustada
 
     -- CloseMenu (POSIÇÃO AJUSTADA para 296)
     LMG2L["CloseMenu_4"] = Instance.new("TextButton", LMG2L["Topo_2"])
@@ -46,7 +48,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["CloseMenu_4"]["Size"] = UDim2.new(0, 14, 0, 14)
     LMG2L["CloseMenu_4"]["Text"] = [[X]]
     LMG2L["CloseMenu_4"]["Name"] = [[CloseMenu]]
-    LMG2L["CloseMenu_4"]["Position"] = UDim2.new(0, 296, 0, 4)  -- Posição ajustada
+    LMG2L["CloseMenu_4"]["Position"] = UDim2.new(0, 296, 0, 4)
 
     -- Main Frame (LARGURA AUMENTADA para 316)
     LMG2L["Main_5"] = Instance.new("Frame", LMG2L["Topo_2"])
@@ -57,19 +59,19 @@ function UILibrary:CreateWindow(title)
     LMG2L["Main_5"]["Name"] = [[Main]]
     LMG2L["Main_5"]["Visible"] = false
 
-    -- Effect Line (COMPRIMENTO AUMENTADO para 250)
+    -- Effect Line (COMPRIMENTO AUMENTADO para 250, ALTURA 1)
     LMG2L["Effect_6"] = Instance.new("Frame", LMG2L["Main_5"])
     LMG2L["Effect_6"]["BorderSizePixel"] = 0
     LMG2L["Effect_6"]["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)
-    LMG2L["Effect_6"]["Size"] = UDim2.new(0, 250, 0, 2)  -- Comprimento aumentado
+    LMG2L["Effect_6"]["Size"] = UDim2.new(0, 250, 0, 1)  -- Altura reduzida para 1
     LMG2L["Effect_6"]["Position"] = UDim2.new(0, 54, 0, 10)
     LMG2L["Effect_6"]["Name"] = [[Effect]]
 
-    -- Main Content Area
+    -- Main Content Area (LARGURA AUMENTADA para 264)
     LMG2L["Main_7"] = Instance.new("Frame", LMG2L["Main_5"])
     LMG2L["Main_7"]["BorderSizePixel"] = 0
     LMG2L["Main_7"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
-    LMG2L["Main_7"]["Size"] = UDim2.new(0, 242, 0, 202)
+    LMG2L["Main_7"]["Size"] = UDim2.new(0, 264, 0, 202)  -- Largura aumentada para 264
     LMG2L["Main_7"]["Position"] = UDim2.new(0, 52, 0, 0)
     LMG2L["Main_7"]["Name"] = [[Main]]
     LMG2L["Main_7"]["BackgroundTransparency"] = 1
@@ -104,58 +106,58 @@ function UILibrary:CreateWindow(title)
     end)
     
     -- Serviços
-local UserInputService = game:GetService("UserInputService")
-local Camera = workspace.CurrentCamera
+    local UserInputService = game:GetService("UserInputService")
+    local Camera = workspace.CurrentCamera
 
--- Variáveis
-local draggingWindow = false
-local dragStart
-local startPos
+    -- Variáveis
+    local draggingWindow = false
+    local dragStart
+    local startPos
 
-local Topo = LMG2L["Topo_2"] -- Frame que arrasta
-local Janela = Topo.Parent  -- Janela inteira
+    local Topo = LMG2L["Topo_2"] -- Frame que arrasta
+    local Janela = Topo.Parent  -- Janela inteira
 
--- Início do drag
-Topo.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 
-    or input.UserInputType == Enum.UserInputType.Touch then
-        
-        draggingWindow = true
-        dragStart = input.Position
-        startPos = Janela.Position
-    end
-end)
+    -- Início do drag
+    Topo.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 
+        or input.UserInputType == Enum.UserInputType.Touch then
+            
+            draggingWindow = true
+            dragStart = input.Position
+            startPos = Janela.Position
+        end
+    end)
 
--- Movimento
-UserInputService.InputChanged:Connect(function(input)
-    if draggingWindow and (
-        input.UserInputType == Enum.UserInputType.MouseMovement 
-        or input.UserInputType == Enum.UserInputType.Touch
-    ) then
-        local delta = input.Position - dragStart
+    -- Movimento
+    UserInputService.InputChanged:Connect(function(input)
+        if draggingWindow and (
+            input.UserInputType == Enum.UserInputType.MouseMovement 
+            or input.UserInputType == Enum.UserInputType.Touch
+        ) then
+            local delta = input.Position - dragStart
 
-        local viewport = Camera.ViewportSize
-        local frameSize = Janela.AbsoluteSize
+            local viewport = Camera.ViewportSize
+            local frameSize = Janela.AbsoluteSize
 
-        -- Nova posição desejada
-        local newX = startPos.X.Offset + delta.X
-        local newY = startPos.Y.Offset + delta.Y
+            -- Nova posição desejada
+            local newX = startPos.X.Offset + delta.X
+            local newY = startPos.Y.Offset + delta.Y
 
-        -- LIMITES (clamp)
-        newX = math.clamp(newX, 0, viewport.X - frameSize.X)
-        newY = math.clamp(newY, 0, viewport.Y - frameSize.Y)
+            -- LIMITES (clamp)
+            newX = math.clamp(newX, 0, viewport.X - frameSize.X)
+            newY = math.clamp(newY, 0, viewport.Y - frameSize.Y)
 
-        Janela.Position = UDim2.new(0, newX, 0, newY)
-    end
-end)
+            Janela.Position = UDim2.new(0, newX, 0, newY)
+        end
+    end)
 
--- Fim do drag
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 
-    or input.UserInputType == Enum.UserInputType.Touch then
-        draggingWindow = false
-    end
-end)
+    -- Fim do drag
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 
+        or input.UserInputType == Enum.UserInputType.Touch then
+            draggingWindow = false
+        end
+    end)
     
     -- FUNÇÃO PARA CRIAR NOVA TAB
     function publicMethods:AddTab(tabName, iconId)
@@ -217,7 +219,7 @@ end)
         -- Retornar objeto da tab com métodos para adicionar elementos
         local tabMethods = {}
         
-        -- ADICIONAR TOGGLE (COM NOVO VISUAL)
+        -- ADICIONAR TOGGLE (COM NOVO VISUAL - CORNERS 3)
         function tabMethods:AddToggle(text, callback)
             local ToggleFrame = Instance.new("Frame")
             ToggleFrame.Name = "Toggle_" .. text
@@ -243,14 +245,15 @@ end)
             
             local ToggleButton = Instance.new("TextButton")
             ToggleButton.Name = "ToggleButton"
-            ToggleButton.BackgroundColor3 = Color3.fromRGB(36, 36, 36)  -- Cor escura igual ao novo
+            ToggleButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)  -- Cor ajustada para 37,37,37
             ToggleButton.Size = UDim2.new(0, 22, 0, 22)
             ToggleButton.BorderSizePixel = 0
+            ToggleButton.BorderColor3 = Color3.fromRGB(255, 255, 255)  -- Borda adicionada
             ToggleButton.Text = ""
             ToggleButton.AutoButtonColor = false
             
             local UICorner = Instance.new("UICorner")
-            UICorner.CornerRadius = UDim.new(0, 5)
+            UICorner.CornerRadius = UDim.new(0, 3)  -- Corner radius reduzido
             UICorner.Parent = ToggleButton
             
             ToggleButton.Parent = ToggleFrame
@@ -259,7 +262,7 @@ end)
             local toggleState = false
             
             local function updateToggle()
-                ToggleButton.BackgroundColor3 = toggleState and Color3.fromRGB(144, 0, 181) or Color3.fromRGB(36, 36, 36)
+                ToggleButton.BackgroundColor3 = toggleState and Color3.fromRGB(144, 0, 181) or Color3.fromRGB(37, 37, 37)
                 if callback then callback(toggleState) end
             end
             
@@ -281,7 +284,7 @@ end)
             }
         end
         
-        -- ADICIONAR SLIDER (COM NOVO VISUAL - LARGURA AUMENTADA)
+        -- ADICIONAR SLIDER (COM NOVO VISUAL - CORNERS 3)
         function tabMethods:AddSlider(text, min, max, callback)
             local SliderFrame = Instance.new("Frame")
             SliderFrame.Name = "Slider_" .. text
@@ -299,7 +302,7 @@ end)
             Main.BackgroundTransparency = 1
             
             local UICorner = Instance.new("UICorner")
-            UICorner.CornerRadius = UDim.new(0, 5)
+            UICorner.CornerRadius = UDim.new(0, 3)  -- Corner radius reduzido
             UICorner.Parent = Main
             
             local SliderTrack = Instance.new("Frame")
@@ -309,7 +312,7 @@ end)
             SliderTrack.Size = UDim2.new(0, 168, 0, 22)  -- Largura aumentada
             
             local UICorner2 = Instance.new("UICorner")
-            UICorner2.CornerRadius = UDim.new(0, 6)
+            UICorner2.CornerRadius = UDim.new(0, 3)  -- Corner radius reduzido
             UICorner2.Parent = SliderTrack
             
             local SliderFill = Instance.new("Frame")
@@ -319,7 +322,7 @@ end)
             SliderFill.Size = UDim2.new(0, 0, 1, 0)
             
             local UICorner3 = Instance.new("UICorner")
-            UICorner3.CornerRadius = UDim.new(0, 6)
+            UICorner3.CornerRadius = UDim.new(0, 3)  -- Corner radius reduzido
             UICorner3.Parent = SliderFill
             
             local InfoNumber = Instance.new("TextLabel")
@@ -332,7 +335,7 @@ end)
             InfoNumber.Text = tostring(min or 0)
             InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
             InfoNumber.TextSize = 20  -- Texto maior
-            InfoNumber.TextTransparency = 0.5
+            InfoNumber.TextTransparency = 0.8  -- Transparência aumentada
             
             local InfoLabel = Instance.new("TextLabel")
             InfoLabel.Name = "InfoLabel"
@@ -417,7 +420,7 @@ end)
             }
         end
         
-        -- ADICIONAR DROPDOWN (COM NOVO VISUAL)
+        -- ADICIONAR DROPDOWN (COM NOVO VISUAL - CORNERS 3)
         function tabMethods:AddDropdown(text, options, callback)
             local DropdownFrame = Instance.new("Frame")
             DropdownFrame.Name = "Dropdown_" .. text
@@ -439,7 +442,7 @@ end)
             InfoLabel.BackgroundTransparency = 1
             InfoLabel.Size = UDim2.new(0, 88, 0, 20)
             InfoLabel.Text = text or "Dropdown"
-            InfoLabel.Position = UDim2.new(0, 140, 0, 2)  -- Posição ajustada
+            InfoLabel.Position = UDim2.new(0, 140, 0, 2)
             InfoLabel.ZIndex = 2
             InfoLabel.Parent = DropdownFrame
             
@@ -451,15 +454,15 @@ end)
             Main.ZIndex = 3
             
             local UICorner = Instance.new("UICorner")
-            UICorner.CornerRadius = UDim.new(0, 5)
+            UICorner.CornerRadius = UDim.new(0, 3)  -- Corner radius reduzido
             UICorner.Parent = Main
             
             local ScrollingFrame = Instance.new("ScrollingFrame")
             ScrollingFrame.Name = "ScrollingFrame"
             ScrollingFrame.BorderSizePixel = 0
             ScrollingFrame.BackgroundColor3 = Color3.fromRGB(37, 37, 37)  -- Cor escura igual ao novo
-            ScrollingFrame.Size = UDim2.new(0, 136, 0, 0)
-            ScrollingFrame.Position = UDim2.new(0, 0, 0, 24)
+            ScrollingFrame.Size = UDim2.new(0, 112, 0, 28)  -- Largura ajustada
+            ScrollingFrame.Position = UDim2.new(0, 2, 0, 24)  -- Posição ajustada
             ScrollingFrame.ScrollBarThickness = 0  -- Scrollbar removido
             ScrollingFrame.Visible = false
             ScrollingFrame.ZIndex = 100
@@ -468,7 +471,7 @@ end)
             ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
             
             local UICorner2 = Instance.new("UICorner")
-            UICorner2.CornerRadius = UDim.new(0, 5)
+            UICorner2.CornerRadius = UDim.new(0, 3)  -- Corner radius reduzido
             UICorner2.Parent = ScrollingFrame
             
             local OpenFrame = Instance.new("ImageButton")
@@ -482,7 +485,7 @@ end)
             OpenFrame.ZIndex = 4
             
             local UICorner3 = Instance.new("UICorner")
-            UICorner3.CornerRadius = UDim.new(0, 5)
+            UICorner3.CornerRadius = UDim.new(0, 3)  -- Corner radius reduzido
             UICorner3.Parent = OpenFrame
             
             local InfoNumber = Instance.new("TextLabel")
@@ -529,7 +532,7 @@ end)
                 Button.MouseButton1Click:Connect(function()
                     InfoNumber.Text = option
                     ScrollingFrame.Visible = false
-                    ScrollingFrame.Size = UDim2.new(0, 136, 0, 0)
+                    ScrollingFrame.Size = UDim2.new(0, 112, 0, 28)
                     OpenFrame.Rotation = 180
                     
                     if callback then
@@ -549,9 +552,9 @@ end)
             local function calculateHeight()
                 local numOptions = #options
                 if numOptions <= 3 then
-                    return numOptions * (buttonHeight + padding)
+                    return 28  -- Altura fixa como no novo
                 else
-                    return 3 * (buttonHeight + padding) + 5
+                    return 28 + ((numOptions - 3) * (buttonHeight + padding))
                 end
             end
             
@@ -564,10 +567,10 @@ end)
                 
                 if isOpen then
                     local height = calculateHeight()
-                    ScrollingFrame.Size = UDim2.new(0, 136, 0, height)
+                    ScrollingFrame.Size = UDim2.new(0, 112, 0, height)
                     ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #options * (buttonHeight + padding))
                 else
-                    ScrollingFrame.Size = UDim2.new(0, 136, 0, 0)
+                    ScrollingFrame.Size = UDim2.new(0, 112, 0, 28)
                 end
             end)
             
@@ -588,7 +591,7 @@ end)
             }
         end
         
-        -- ADICIONAR RADIO BUTTONS (COM NOVO VISUAL)
+        -- ADICIONAR RADIO BUTTONS (ATUALIZADO - TextWrapped e TextScaled)
         function tabMethods:AddRadioButtons(text, options, callback)
             local RadioFrame = Instance.new("Frame")
             RadioFrame.Name = "RadioButtons_" .. text
@@ -600,15 +603,18 @@ end)
             
             local InfoLabel = Instance.new("TextLabel")
             InfoLabel.Name = "InfoLabel"
+            InfoLabel.TextWrapped = true
             InfoLabel.BorderSizePixel = 0
             InfoLabel.TextSize = 10
             InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+            InfoLabel.TextScaled = true
             InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
             InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
             InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
             InfoLabel.BackgroundTransparency = 1
-            InfoLabel.Size = UDim2.new(0, 132, 0, 10)
+            InfoLabel.Size = UDim2.new(0, 132, 0, 12)  -- Altura ajustada
             InfoLabel.Text = text or "Radio Buttons"
+            InfoLabel.Position = UDim2.new(0, 0, 0, -2)  -- Posição ajustada
             InfoLabel.Parent = RadioFrame
             
             local radioButtons = {}
@@ -698,7 +704,7 @@ end)
             }
         end
         
-        -- ADICIONAR BOTÃO (COM NOVO VISUAL - LARGURA AUMENTADA)
+        -- ADICIONAR BOTÃO (COM NOVO VISUAL - CORNER 3)
         function tabMethods:AddButton(text, callback)
             local ButtonFrame = Instance.new("Frame")
             ButtonFrame.Name = "Button_" .. text
@@ -721,7 +727,7 @@ end)
             Button.AutoButtonColor = false
             
             local UICorner = Instance.new("UICorner")
-            UICorner.CornerRadius = UDim.new(0, 5)
+            UICorner.CornerRadius = UDim.new(0, 3)  -- Corner radius reduzido
             UICorner.Parent = Button
             
             Button.MouseEnter:Connect(function()
