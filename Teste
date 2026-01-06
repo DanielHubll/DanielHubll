@@ -159,65 +159,82 @@ UserInputService.InputEnded:Connect(function(input)
     end  
 end)  
   
--- FUNÇÃO PARA CRIAR NOVA TAB (ATUALIZADA com suporte flexível)
-function publicMethods:AddTab(tabName, iconId)  
-    local tabIndex = #tabs + 1  
-    local tabData = {  
-        name = tabName,  
-        elements = {},  
-        container = nil,  
-        button = nil,  
-        elementCount = 0  
-    }  
+-- FUNÇÃO PARA CRIAR NOVA TAB (ATUALIZADA com múltiplos comportamentos)
+function publicMethods:AddTab(tabNameOrIcon, optionalIcon)
+    local tabIndex = #tabs + 1
+    local tabData = {
+        name = "",
+        elements = {},
+        container = nil,
+        button = nil,
+        elementCount = 0
+    }
 
-    -- Determinar o tipo de conteúdo
+    -- DETECTAR TIPO DE USO
+    local hasText = false
     local hasImage = false
     local displayText = ""
+    local displayImage = ""
     
-    -- CASO 1: Apenas um parâmetro
-    if iconId == nil then
-        -- Verificar se o parâmetro é uma imagem ou texto
-        if type(tabName) == "string" then
-            -- Verifica se parece ser um asset ID
-            if tabName:match("^rbxassetid://%d+$") or tabName:match("^%d+$") then
-                -- É uma imagem
-                hasImage = true
-                displayText = ""  -- Sem texto quando só tem imagem
-            else
-                -- É texto
-                hasImage = false
-                displayText = tabName
-            end
-        end
-    -- CASO 2: Dois parâmetros (texto e imagem)
-    else
+    -- LÓGICA DE DETECÇÃO DOS PARÂMETROS
+    if optionalIcon then
+        -- CASO 3: Texto + Imagem (dois parâmetros)
+        hasText = true
         hasImage = true
-        displayText = tabName or ""
+        displayText = tabNameOrIcon or "Tab"
+        displayImage = optionalIcon
+        
+        -- Corrigir o formato do assetId se necessário
+        if string.find(displayImage, "^%d+$") then
+            displayImage = "rbxassetid://" .. displayImage
+        end
+        
+        -- Definir nome da tab
+        tabData.name = displayText
+    else
+        -- CASOS 1 e 2: Apenas um parâmetro
+        if string.find(tabNameOrIcon, "^rbxassetid://") or string.find(tabNameOrIcon, "^%d+$") then
+            -- CASO 2: Apenas imagem (identificada por rbxassetid:// ou apenas números)
+            hasText = false
+            hasImage = true
+            displayImage = tabNameOrIcon
+            
+            -- Corrigir o formato do assetId se necessário
+            if string.find(displayImage, "^%d+$") then
+                displayImage = "rbxassetid://" .. displayImage
+            end
+            
+            -- Definir nome da tab como número da tab
+            tabData.name = "Tab" .. tabIndex
+        else
+            -- CASO 1: Apenas texto
+            hasText = true
+            hasImage = false
+            displayText = tabNameOrIcon or "Tab"
+            
+            -- Definir nome da tab
+            tabData.name = displayText
+        end
     end
 
-    -- Criar botão da tab (COR INICIAL: roxa normal - 144, 0, 181)  
-    local TabButton = Instance.new("ImageButton", LMG2L["Tabs_2a"])  
-    TabButton["BorderSizePixel"] = 0  
+    -- Criar botão da tab (COR INICIAL: roxa normal - 144, 0, 181)
+    local TabButton = Instance.new("ImageButton", LMG2L["Tabs_2a"])
+    TabButton["BorderSizePixel"] = 0
     TabButton["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)  -- ROXA NORMAL inicial
-    TabButton["Size"] = UDim2.new(0, 40, 0, 40)  
-    TabButton["Name"] = "Tab" .. tabIndex  
-    TabButton["Position"] = UDim2.new(0, 6, 0, 8 + ((tabIndex - 1) * 48))  
-
-    -- Configurar imagem se existir
+    TabButton["Size"] = UDim2.new(0, 40, 0, 40)
+    TabButton["Name"] = "Tab" .. tabIndex
+    TabButton["Position"] = UDim2.new(0, 6, 0, 8 + ((tabIndex - 1) * 48))
+    
+    -- CONFIGURAR IMAGEM (se houver)
     if hasImage then
-        if iconId then
-            -- Se tem iconId (segundo parâmetro)
-            TabButton["Image"] = iconId
-        else
-            -- Se só tem um parâmetro e é imagem
-            TabButton["Image"] = tabName:match("^%d+$") and ("rbxassetid://" .. tabName) or tabName
-        end
+        TabButton["Image"] = displayImage
+        TabButton["ScaleType"] = Enum.ScaleType.Fit  -- Garantir que a imagem se ajuste
     else
         TabButton["Image"] = ""
     end
 
-    local UICorner = Instance.new("UICorner", TabButton)  
-    UICorner["CornerRadius"] = UDim.new(0, 5)  
+    local UICorner = Instance.new("UICorner", TabButton)
+    UICorner["CornerRadius"] = UDim.new(0, 5)
 
     -- CRIAÇÃO DO TEXTLABEL SEPARADO (TabLabel)
     local TabLabel = Instance.new("TextLabel", TabButton)
@@ -229,58 +246,69 @@ function publicMethods:AddTab(tabName, iconId)
     TabLabel["TextColor3"] = Color3.fromRGB(255, 255, 255)
     TabLabel["BackgroundTransparency"] = 1
     TabLabel["Size"] = UDim2.new(0, 36, 0, 36)
-    TabLabel["Text"] = displayText
     TabLabel["Name"] = "TabLabel"
     TabLabel["Position"] = UDim2.new(0, 2, 0, 2)
     
-    -- Ajustar transparência baseado na presença de imagem
-    if hasImage and displayText ~= "" then
-        TabLabel["TextTransparency"] = 0.4  -- Levemente transparente quando tem imagem e texto
-    elseif hasImage then
-        TabLabel["TextTransparency"] = 1  -- Totalmente transparente quando só tem imagem
+    -- CONFIGURAR TEXTO E TRANSPARÊNCIA
+    if hasText then
+        TabLabel["Text"] = displayText
+        
+        -- Ajustar transparência baseado na presença de imagem
+        if hasImage then
+            TabLabel["TextTransparency"] = 0.3  -- Levemente transparente quando tem imagem
+            TabLabel["TextSize"] = 10  -- Texto menor quando tem imagem
+        else
+            TabLabel["TextTransparency"] = 0  -- Totalmente visível quando só tem texto
+            TabLabel["TextSize"] = 12  -- Texto maior quando só tem texto
+        end
     else
-        TabLabel["TextTransparency"] = 0  -- Totalmente visível quando só tem texto
+        -- Sem texto (apenas imagem)
+        TabLabel["Text"] = ""
+        TabLabel["TextTransparency"] = 1  -- Totalmente transparente
     end
 
     local TabLabelUICorner = Instance.new("UICorner", TabLabel)
     TabLabelUICorner["CornerRadius"] = UDim.new(0, 5)
 
-    -- Container para elementos desta tab  
-    local ElementsContainer = Instance.new("Frame", LMG2L["Main_7"])  
-    ElementsContainer["BackgroundTransparency"] = 1  
-    ElementsContainer["Size"] = UDim2.new(1, 0, 1, 0)  
-    ElementsContainer["Name"] = "Container_" .. (displayText ~= "" and displayText or "Tab" .. tabIndex)
-    ElementsContainer["Visible"] = false  
+    -- Container para elementos desta tab
+    local ElementsContainer = Instance.new("Frame", LMG2L["Main_7"])
+    ElementsContainer["BackgroundTransparency"] = 1
+    ElementsContainer["Size"] = UDim2.new(1, 0, 1, 0)
+    ElementsContainer["Name"] = "Container_" .. tabData.name
+    ElementsContainer["Visible"] = false
 
-    tabData.container = ElementsContainer  
-    tabData.button = TabButton  
+    tabData.container = ElementsContainer
+    tabData.button = TabButton
 
-    -- Função para trocar de tab  
-    local function switchToTab()  
+    -- Função para trocar de tab
+    local function switchToTab()
         -- Desativar todas as tabs (voltar para ROXA NORMAL - 144, 0, 181)
-        for _, tab in ipairs(tabs) do  
-            tab.container.Visible = false  
+        for _, tab in ipairs(tabs) do
+            tab.container.Visible = false
             tab.button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  -- ROXA NORMAL quando não selecionada
-        end  
+        end
 
         -- Ativar esta tab (ROXA ESCURO - 110, 0, 140 quando selecionada)
-        ElementsContainer.Visible = true  
-        TabButton.BackgroundColor3 = Color3.fromRGB(110, 0, 140)  -- ROXA ESCURO quando ativa  
-        currentTab = tabData  
-    end  
+        ElementsContainer.Visible = true
+        TabButton.BackgroundColor3 = Color3.fromRGB(110, 0, 140)  -- ROXA ESCURO quando ativa
+        currentTab = tabData
+    end
 
-    TabButton.MouseButton1Click:Connect(switchToTab)  
+    TabButton.MouseButton1Click:Connect(switchToTab)
 
-    -- Adicionar tab à lista  
-    table.insert(tabs, tabData)  
+    -- Adicionar tab à lista
+    table.insert(tabs, tabData)
 
     -- Se for a primeira tab, ativar automaticamente (com roxa escuro)
-    if tabIndex == 1 then  
-        switchToTab()  
-    end  
+    if tabIndex == 1 then
+        switchToTab()
+    end
 
-    -- Retornar objeto da tab com métodos para adicionar elementos  
-    local tabMethods = {}
+    -- Resto do código permanece igual...
+    -- (as funções AddToggle, AddSlider, AddDropdown, etc.)
+    
+    return tabMethods
+end
       
     -- ADICIONAR TOGGLE (COM NOVO VISUAL - CORNERS 3)  
     function tabMethods:AddToggle(text, callback)  
