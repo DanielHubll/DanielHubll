@@ -95,7 +95,7 @@ LMG2L["OpenName_2d"]["Name"] = [[OpenName]]
 LMG2L["OpenName_2d"]["Rotation"] = 180  
 LMG2L["OpenName_2d"]["Position"] = UDim2.new(0, 4, 0, 4)  
 
--- Funções do menu  
+- Funções do menu  
 LMG2L["CloseMenu_4"].MouseButton1Click:Connect(function()  
     LMG2L["Topo_2"].Visible = false  
 end)  
@@ -105,56 +105,32 @@ LMG2L["OpenName_2d"].MouseButton1Click:Connect(function()
     LMG2L["OpenName_2d"].Rotation = LMG2L["Main_5"].Visible and 0 or 180  
 end)  
   
--- Serviços  
-local UserInputService = game:GetService("UserInputService")  
-local Camera = workspace.CurrentCamera  
+-- Sistema de arrastar janela
+local draggingWindow = false
+local dragStart, startPos
 
--- Variáveis  
-local draggingWindow = false  
-local dragStart  
-local startPos  
-
-local Topo = LMG2L["Topo_2"] -- Frame que arrasta  
-local Janela = Topo.Parent  -- Janela inteira  
-
--- Início do drag  
-Topo.InputBegan:Connect(function(input)  
-    if input.UserInputType == Enum.UserInputType.MouseButton1   
-    or input.UserInputType == Enum.UserInputType.Touch then  
-          
+LMG2L["Topo_2"].InputBegan:Connect(function(input)  
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then  
         draggingWindow = true  
         dragStart = input.Position  
-        startPos = Janela.Position  
+        startPos = LMG2L["Topo_2"].Position  
     end  
 end)  
-
--- Movimento  
-UserInputService.InputChanged:Connect(function(input)  
-    if draggingWindow and (  
-        input.UserInputType == Enum.UserInputType.MouseMovement   
-        or input.UserInputType == Enum.UserInputType.Touch  
-    ) then  
+  
+game:GetService("UserInputService").InputChanged:Connect(function(input)  
+    if draggingWindow and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then  
         local delta = input.Position - dragStart  
-
-        local viewport = Camera.ViewportSize  
-        local frameSize = Janela.AbsoluteSize  
-
-        -- Nova posição desejada  
-        local newX = startPos.X.Offset + delta.X  
-        local newY = startPos.Y.Offset + delta.Y  
-
-        -- LIMITES (clamp)  
-        newX = math.clamp(newX, 0, viewport.X - frameSize.X)  
-        newY = math.clamp(newY, 0, viewport.Y - frameSize.Y)  
-
-        Janela.Position = UDim2.new(0, newX, 0, newY)  
+        LMG2L["Topo_2"].Position = UDim2.new(  
+            startPos.X.Scale,   
+            startPos.X.Offset + delta.X,  
+            startPos.Y.Scale,   
+            startPos.Y.Offset + delta.Y  
+        )  
     end  
 end)  
-
--- Fim do drag  
-UserInputService.InputEnded:Connect(function(input)  
-    if input.UserInputType == Enum.UserInputType.MouseButton1   
-    or input.UserInputType == Enum.UserInputType.Touch then  
+  
+game:GetService("UserInputService").InputEnded:Connect(function(input)  
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then  
         draggingWindow = false  
     end  
 end)  
@@ -351,119 +327,127 @@ function publicMethods:AddTab(tabName, iconId)
         InfoLabel.Position = UDim2.new(0, 176, 0, 2)  -- Posição ajustada  
         InfoLabel.Parent = SliderFrame  
           
-        SliderFill.Parent = SliderTrack
+        --// Serviços
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local ContextActionService = game:GetService("ContextActionService")
+
+local LocalPlayer = Players.LocalPlayer
+
+--// Slider Setup (exemplo)
+SliderFill.Parent = SliderTrack
 SliderTrack.Parent = Main
 InfoNumber.Parent = Main
 Main.Parent = SliderFrame
 SliderFrame.Parent = ElementsContainer
 
-local sliderValue = min or 0
+--// Config
+local min = min or 0
+local max = max or 100
+local sliderValue = min
 local dragging = false
-local connections = {} -- Tabela para armazenar conexões
 
-local function updateValue(newValue)
-    sliderValue = math.clamp(newValue, min, max)
-    local percentage = (sliderValue - min) / (max - min)
-    
-    SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
-    InfoNumber.Text = tostring(math.floor(sliderValue))
-    
-    if callback then 
-        callback(sliderValue) 
+--// Função que BLOQUEIA a câmera
+local function blockCamera(_, inputState)
+    if inputState == Enum.UserInputState.Begin
+    or inputState == Enum.UserInputState.Change then
+        return Enum.ContextActionResult.Sink
     end
 end
 
-local function updateSliderFromPosition(input)
-    if not SliderTrack:IsDescendantOf(game) then 
-        return 
+--// Atualiza valor
+local function updateValue(newValue)
+    sliderValue = math.clamp(newValue, min, max)
+
+    local percentage = (sliderValue - min) / (max - min)
+    SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
+    InfoNumber.Text = tostring(math.floor(sliderValue))
+
+    if callback then
+        callback(sliderValue)
     end
-    
+end
+
+--// Atualiza slider pela posição do input
+local function updateSliderFromPosition(input)
+    if not SliderTrack:IsDescendantOf(game) then return end
+
     local absPos = SliderTrack.AbsolutePosition
     local absSize = SliderTrack.AbsoluteSize
-    local relativeX
-    
-    if input.UserInputType == Enum.UserInputType.Touch then
-        relativeX = (input.Position.X - absPos.X) / absSize.X
-    else
-        local mouse = game:GetService("Players").LocalPlayer:GetMouse()
-        relativeX = (mouse.X - absPos.X) / absSize.X
-    end
-    
+
+    local relativeX = (input.Position.X - absPos.X) / absSize.X
     relativeX = math.clamp(relativeX, 0, 1)
+
     local newValue = min + (relativeX * (max - min))
-    
     updateValue(newValue)
 end
 
--- Conexão para InputBegan com captura
+--// Começa a arrastar
 SliderTrack.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or 
-       input.UserInputType == Enum.UserInputType.Touch then
-        
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+
         dragging = true
-        
-        -- CRÍTICO: Captura o input para evitar propagação
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            input:Capture()
-        end
-        
+
+        -- BLOQUEIA a câmera
+        ContextActionService:BindAction(
+            "BlockCameraSlider",
+            blockCamera,
+            false,
+            Enum.UserInputType.MouseMovement,
+            Enum.UserInputType.Touch
+        )
+
+        -- PC: trava mouse
+        UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
+
         updateSliderFromPosition(input)
     end
 end)
 
--- Conexão para InputEnded
+--// Para de arrastar
 SliderTrack.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or 
-       input.UserInputType == Enum.UserInputType.Touch then
-        
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+
         dragging = false
+
+        -- LIBERA a câmera
+        ContextActionService:UnbindAction("BlockCameraSlider")
+        UserInputService.MouseBehavior = Enum.MouseBehavior.Default
     end
 end)
 
--- Conexão para InputChanged (mouse)
-local mouseConnection = game:GetService("UserInputService").InputChanged:Connect(function(input)
+--// Movimento do mouse (PC)
+UserInputService.InputChanged:Connect(function(input)
     if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
         updateSliderFromPosition(input)
     end
 end)
 
-table.insert(connections, mouseConnection)
-
--- Conexão para TouchMoved
-local touchConnection = game:GetService("UserInputService").TouchMoved:Connect(function(input)
+--// Movimento do touch (Mobile)
+UserInputService.TouchMoved:Connect(function(input)
     if dragging then
         updateSliderFromPosition({
-            Position = input.Position, 
+            Position = input.Position,
             UserInputType = Enum.UserInputType.Touch
         })
     end
 end)
 
-table.insert(connections, touchConnection)
-
--- Função para limpar conexões quando não for mais necessário
-local function cleanup()
-    for _, conn in ipairs(connections) do
-        conn:Disconnect()
-    end
-    connections = {}
-end
-
+--// Valor inicial
 updateValue(min)
 tabData.elementCount = tabData.elementCount + 1
 
+--// Retorno (API do Slider)
 return {
-    SetValue = function(self, value) 
-        updateValue(value) 
+    SetValue = function(self, value)
+        updateValue(value)
     end,
-    
-    GetValue = function(self) 
-        return sliderValue 
-    end,
-    
-    Destroy = function(self) 
-        cleanup() 
-    end -- Opcional: para limpeza
+
+    GetValue = function(self)
+        return sliderValue
+    end
 }
     end  
       
