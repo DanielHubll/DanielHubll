@@ -105,46 +105,43 @@ LMG2L["OpenName_2d"].MouseButton1Click:Connect(function()
     LMG2L["OpenName_2d"].Rotation = LMG2L["Main_5"].Visible and 0 or 180  
 end)  
   
--- Serviços
+    -- Serviços
 local UserInputService = game:GetService("UserInputService")
+local Camera = workspace.CurrentCamera
 
 -- Variáveis
 local draggingWindow = false
 local dragStart
 local startPos
 
+-- Elementos da interface (usando os objetos já criados)
 local Topo = LMG2L["Topo_2"] -- Frame que arrasta
-local Janela = Topo.Parent  -- Janela inteira
 
 -- Início do drag
 Topo.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
-
+        
         draggingWindow = true
         dragStart = input.Position
-        startPos = Janela.Position
+        startPos = Topo.Position
     end
 end)
 
--- Movimento (SEM LIMITE)
+-- Movimento
 UserInputService.InputChanged:Connect(function(input)
     if draggingWindow and (
         input.UserInputType == Enum.UserInputType.MouseMovement
         or input.UserInputType == Enum.UserInputType.Touch
     ) then
         local delta = input.Position - dragStart
-
+        
+        -- Nova posição desejada - SEM LIMITES
         local newX = startPos.X.Offset + delta.X
         local newY = startPos.Y.Offset + delta.Y
-
-        -- Sem clamp = livre total
-        Janela.Position = UDim2.new(
-            startPos.X.Scale,
-            newX,
-            startPos.Y.Scale,
-            newY
-        )
+        
+        -- Movimentar a janela - PODE IR PARA QUALQUER LUGAR
+        Topo.Position = UDim2.new(0, newX, 0, newY)
     end
 end)
 
@@ -154,7 +151,7 @@ UserInputService.InputEnded:Connect(function(input)
     or input.UserInputType == Enum.UserInputType.Touch then
         draggingWindow = false
     end
-end)  
+end)
   
 -- FUNÇÃO PARA CRIAR NOVA TAB  
 function publicMethods:AddTab(tabName, iconId)  
