@@ -105,58 +105,55 @@ LMG2L["OpenName_2d"].MouseButton1Click:Connect(function()
     LMG2L["OpenName_2d"].Rotation = LMG2L["Main_5"].Visible and 0 or 180  
 end)  
   
--- Serviços  
-local UserInputService = game:GetService("UserInputService")  
-local Camera = workspace.CurrentCamera  
+-- Serviços
+local UserInputService = game:GetService("UserInputService")
 
--- Variáveis  
-local draggingWindow = false  
-local dragStart  
-local startPos  
+-- Variáveis
+local draggingWindow = false
+local dragStart
+local startPos
 
-local Topo = LMG2L["Topo_2"] -- Frame que arrasta  
-local Janela = Topo.Parent  -- Janela inteira  
+local Topo = LMG2L["Topo_2"] -- Frame que arrasta
+local Janela = Topo.Parent  -- Janela inteira
 
--- Início do drag  
-Topo.InputBegan:Connect(function(input)  
-    if input.UserInputType == Enum.UserInputType.MouseButton1   
-    or input.UserInputType == Enum.UserInputType.Touch then  
-          
-        draggingWindow = true  
-        dragStart = input.Position  
-        startPos = Janela.Position  
-    end  
-end)  
+-- Início do drag
+Topo.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
 
--- Movimento  
-UserInputService.InputChanged:Connect(function(input)  
-    if draggingWindow and (  
-        input.UserInputType == Enum.UserInputType.MouseMovement   
-        or input.UserInputType == Enum.UserInputType.Touch  
-    ) then  
-        local delta = input.Position - dragStart  
+        draggingWindow = true
+        dragStart = input.Position
+        startPos = Janela.Position
+    end
+end)
 
-        local viewport = Camera.ViewportSize  
-        local frameSize = Janela.AbsoluteSize  
+-- Movimento (SEM LIMITE)
+UserInputService.InputChanged:Connect(function(input)
+    if draggingWindow and (
+        input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch
+    ) then
+        local delta = input.Position - dragStart
 
-        -- Nova posição desejada  
-        local newX = startPos.X.Offset + delta.X  
-        local newY = startPos.Y.Offset + delta.Y  
+        local newX = startPos.X.Offset + delta.X
+        local newY = startPos.Y.Offset + delta.Y
 
-        -- LIMITES (clamp)  
-        newX = math.clamp(newX, 0, viewport.X - frameSize.X)  
-        newY = math.clamp(newY, 0, viewport.Y - frameSize.Y)  
+        -- Sem clamp = livre total
+        Janela.Position = UDim2.new(
+            startPos.X.Scale,
+            newX,
+            startPos.Y.Scale,
+            newY
+        )
+    end
+end)
 
-        Janela.Position = UDim2.new(0, newX, 0, newY)  
-    end  
-end)  
-
--- Fim do drag  
-UserInputService.InputEnded:Connect(function(input)  
-    if input.UserInputType == Enum.UserInputType.MouseButton1   
-    or input.UserInputType == Enum.UserInputType.Touch then  
-        draggingWindow = false  
-    end  
+-- Fim do drag
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        draggingWindow = false
+    end
 end)  
   
 -- FUNÇÃO PARA CRIAR NOVA TAB  
