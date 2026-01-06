@@ -280,17 +280,97 @@ function publicMethods:AddTab(tabName, iconId)
             TabLabel.Text = "Tab " .. tabIndex
         end
         
-        return hasValidImage
+-- FUNÇÃO PARA CRIAR NOVA TAB (ATUALIZADA com suporte flexível)
+function publicMethods:AddTab(tabName, iconId)  
+    local tabIndex = #tabs + 1  
+    local tabData = {  
+        name = tabName,  
+        elements = {},  
+        container = nil,  
+        button = nil,  
+        elementCount = 0  
+    }  
+
+    -- Determinar o tipo de conteúdo
+    local hasImage = false
+    local displayText = ""
+    
+    -- CASO 1: Apenas um parâmetro
+    if iconId == nil then
+        -- Verificar se o parâmetro é uma imagem ou texto
+        if type(tabName) == "string" then
+            -- Verifica se parece ser um asset ID
+            if tabName:match("^rbxassetid://%d+$") or tabName:match("^%d+$") then
+                -- É uma imagem
+                hasImage = true
+                displayText = ""  -- Sem texto quando só tem imagem
+            else
+                -- É texto
+                hasImage = false
+                displayText = tabName
+            end
+        end
+    -- CASO 2: Dois parâmetros (texto e imagem)
+    else
+        hasImage = true
+        displayText = tabName or ""
     end
 
-    -- Configura imagem (executa assincronamente para não travar)
-    spawn(configurarImagemTab)
+    -- Criar botão da tab (COR INICIAL: roxa normal - 144, 0, 181)  
+    local TabButton = Instance.new("ImageButton", LMG2L["Tabs_2a"])  
+    TabButton["BorderSizePixel"] = 0  
+    TabButton["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)  -- ROXA NORMAL inicial
+    TabButton["Size"] = UDim2.new(0, 40, 0, 40)  
+    TabButton["Name"] = "Tab" .. tabIndex  
+    TabButton["Position"] = UDim2.new(0, 6, 0, 8 + ((tabIndex - 1) * 48))  
+
+    -- Configurar imagem se existir
+    if hasImage then
+        if iconId then
+            -- Se tem iconId (segundo parâmetro)
+            TabButton["Image"] = iconId
+        else
+            -- Se só tem um parâmetro e é imagem
+            TabButton["Image"] = tabName:match("^%d+$") and ("rbxassetid://" .. tabName) or tabName
+        end
+    else
+        TabButton["Image"] = ""
+    end
+
+    local UICorner = Instance.new("UICorner", TabButton)  
+    UICorner["CornerRadius"] = UDim.new(0, 5)  
+
+    -- CRIAÇÃO DO TEXTLABEL SEPARADO (TabLabel)
+    local TabLabel = Instance.new("TextLabel", TabButton)
+    TabLabel["TextWrapped"] = true
+    TabLabel["BorderSizePixel"] = 0
+    TabLabel["TextScaled"] = true
+    TabLabel["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
+    TabLabel["FontFace"] = Font.new([[rbxasset://fonts/families/GothamSSm.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+    TabLabel["TextColor3"] = Color3.fromRGB(255, 255, 255)
+    TabLabel["BackgroundTransparency"] = 1
+    TabLabel["Size"] = UDim2.new(0, 36, 0, 36)
+    TabLabel["Text"] = displayText
+    TabLabel["Name"] = "TabLabel"
+    TabLabel["Position"] = UDim2.new(0, 2, 0, 2)
+    
+    -- Ajustar transparência baseado na presença de imagem
+    if hasImage and displayText ~= "" then
+        TabLabel["TextTransparency"] = 0.4  -- Levemente transparente quando tem imagem e texto
+    elseif hasImage then
+        TabLabel["TextTransparency"] = 1  -- Totalmente transparente quando só tem imagem
+    else
+        TabLabel["TextTransparency"] = 0  -- Totalmente visível quando só tem texto
+    end
+
+    local TabLabelUICorner = Instance.new("UICorner", TabLabel)
+    TabLabelUICorner["CornerRadius"] = UDim.new(0, 5)
 
     -- Container para elementos desta tab  
     local ElementsContainer = Instance.new("Frame", LMG2L["Main_7"])  
     ElementsContainer["BackgroundTransparency"] = 1  
     ElementsContainer["Size"] = UDim2.new(1, 0, 1, 0)  
-    ElementsContainer["Name"] = "Container_" .. tabName  
+    ElementsContainer["Name"] = "Container_" .. (displayText ~= "" and displayText or "Tab" .. tabIndex)
     ElementsContainer["Visible"] = false  
 
     tabData.container = ElementsContainer  
@@ -321,7 +401,7 @@ function publicMethods:AddTab(tabName, iconId)
     end  
 
     -- Retornar objeto da tab com métodos para adicionar elementos  
-    local tabMethods = {}   
+    local tabMethods = {}
 
         -- ADICIONAR TOGGLE (COM NOVO VISUAL - CORNERS 3)  
         function tabMethods:AddToggle(text, callback)  
