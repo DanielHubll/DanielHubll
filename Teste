@@ -214,69 +214,93 @@ function publicMethods:AddTab(tabName, iconId)
     -- Retornar objeto da tab com métodos para adicionar elementos  
     local tabMethods = {}  
       
-    -- ADICIONAR TOGGLE (COM NOVO VISUAL - CORNERS 3)  
-    function tabMethods:AddToggle(text, callback)  
-        local ToggleFrame = Instance.new("Frame")  
-        ToggleFrame.Name = "Toggle_" .. text  
-        ToggleFrame.BorderSizePixel = 0  
-        ToggleFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
-        ToggleFrame.Size = UDim2.new(0, 100, 0, 22)  
-        ToggleFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 30))  
-        ToggleFrame.BackgroundTransparency = 1  
-          
-        local InfoLabel = Instance.new("TextLabel")  
-        InfoLabel.Name = "InfoLabel"  
-        InfoLabel.BorderSizePixel = 0  
-        InfoLabel.TextSize = 10  
-        InfoLabel.TextXAlignment = Enum.TextXAlignment.Left  
-        InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
-        InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)  
-        InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)  
-        InfoLabel.BackgroundTransparency = 1  
-        InfoLabel.Size = UDim2.new(0, 88, 0, 22)  
-        InfoLabel.Text = text or "Toggle"  
-        InfoLabel.Position = UDim2.new(0, 28, 0, 0)  
-        InfoLabel.Parent = ToggleFrame  
-          
-        local ToggleButton = Instance.new("TextButton")  
-        ToggleButton.Name = "ToggleButton"  
-        ToggleButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)  -- Cor ajustada para 37,37,37  
-        ToggleButton.Size = UDim2.new(0, 22, 0, 22)  
-        ToggleButton.BorderSizePixel = 0  
-        ToggleButton.BorderColor3 = Color3.fromRGB(255, 255, 255)  -- Borda adicionada  
-        ToggleButton.Text = ""  
-        ToggleButton.AutoButtonColor = false  
-          
-        local UICorner = Instance.new("UICorner")  
-        UICorner.CornerRadius = UDim.new(0, 3)  -- Corner radius reduzido  
-        UICorner.Parent = ToggleButton  
-          
-        ToggleButton.Parent = ToggleFrame  
-        ToggleFrame.Parent = ElementsContainer  
-          
-        local toggleState = false  
-          
-        local function updateToggle()  
-            ToggleButton.BackgroundColor3 = toggleState and Color3.fromRGB(144, 0, 181) or Color3.fromRGB(37, 37, 37)  
-            if callback then callback(toggleState) end  
-        end  
-          
-        ToggleButton.MouseButton1Click:Connect(function()  
-            toggleState = not toggleState  
-            updateToggle()  
-        end)  
-          
-        tabData.elementCount = tabData.elementCount + 1  
-          
-        return {  
-            SetState = function(self, state)  
-                toggleState = state  
-                updateToggle()  
-            end,  
-            GetState = function(self)  
-                return toggleState  
-            end  
-        }  
+    -- ADICIONAR TOGGLE (COM OPÇÃO DE POSICIONAR AO LADO)
+function tabMethods:AddToggle(text, sideOption, callback)
+    -- Verificar se sideOption é uma função (caso antigo: apenas texto e callback)
+    local actualCallback = callback
+    local actualSideOption = sideOption
+    
+    if type(sideOption) == "function" then
+        -- Se sideOption é função, então não passou opção de lado
+        actualCallback = sideOption
+        actualSideOption = nil
+    end
+    
+    local ToggleFrame = Instance.new("Frame")
+    ToggleFrame.Name = "Toggle_" .. text
+    ToggleFrame.BorderSizePixel = 0
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    
+    -- Definir posição baseada na opção
+    if actualSideOption then
+        -- Se tem opção "lado", posiciona ao lado do último elemento
+        ToggleFrame.Size = UDim2.new(0, 100, 0, 22)
+        ToggleFrame.Position = UDim2.new(0, 130, 0, 20 + ((tabData.elementCount - 1) * 30))
+    else
+        -- Posição normal (embaixo)
+        ToggleFrame.Size = UDim2.new(0, 100, 0, 22)
+        ToggleFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 30))
+    end
+    
+    ToggleFrame.BackgroundTransparency = 1
+    
+    local InfoLabel = Instance.new("TextLabel")
+    InfoLabel.Name = "InfoLabel"
+    InfoLabel.BorderSizePixel = 0
+    InfoLabel.TextSize = 10
+    InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+    InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+    InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    InfoLabel.BackgroundTransparency = 1
+    InfoLabel.Size = UDim2.new(0, 88, 0, 22)
+    InfoLabel.Text = text or "Toggle"
+    InfoLabel.Position = UDim2.new(0, 28, 0, 0)
+    InfoLabel.Parent = ToggleFrame
+    
+    local ToggleButton = Instance.new("TextButton")
+    ToggleButton.Name = "ToggleButton"
+    ToggleButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+    ToggleButton.Size = UDim2.new(0, 22, 0, 22)
+    ToggleButton.BorderSizePixel = 0
+    ToggleButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleButton.Text = ""
+    ToggleButton.AutoButtonColor = false
+    
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 3)
+    UICorner.Parent = ToggleButton
+    
+    ToggleButton.Parent = ToggleFrame
+    ToggleFrame.Parent = ElementsContainer
+    
+    local toggleState = false
+    
+    local function updateToggle()
+        ToggleButton.BackgroundColor3 = toggleState and Color3.fromRGB(144, 0, 181) or Color3.fromRGB(37, 37, 37)
+        if actualCallback then actualCallback(toggleState) end
+    end
+    
+    ToggleButton.MouseButton1Click:Connect(function()
+        toggleState = not toggleState
+        updateToggle()
+    end)
+    
+    -- Aumentar contador de elementos apenas se for uma nova linha
+    if not actualSideOption then
+        tabData.elementCount = tabData.elementCount + 1
+    end
+    
+    return {
+        SetState = function(self, state)
+            toggleState = state
+            updateToggle()
+        end,
+        GetState = function(self)
+            return toggleState
+        end
+    }
+end  
     end  
       
     -- ADICIONAR SLIDER (COM NOVO VISUAL - CORNERS 3)  
