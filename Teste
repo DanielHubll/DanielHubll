@@ -359,7 +359,10 @@ function tabMethods:AddSlider(text, defaultValue, max, callback)
     Main.Parent = SliderFrame
     SliderFrame.Parent = ElementsContainer
 
-    -- Config - MÍNIMO SEMPRE 0
+    -- *** CORREÇÃO AQUI ***
+    -- Mínimo SEMPRE 0 (pode ir para trás até 0)
+    -- defaultValue é o valor inicial (60)
+    -- max é o limite máximo (360)
     local min = 0
     local max = max or 100
     local defaultValue = defaultValue or 0
@@ -454,7 +457,7 @@ function tabMethods:AddSlider(text, defaultValue, max, callback)
         end
     end)
 
-    -- Valor inicial
+    -- Valor inicial (mostra 60 já selecionado)
     updateValue(defaultValue)
     tabData.elementCount = tabData.elementCount + 1
 
