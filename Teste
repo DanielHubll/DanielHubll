@@ -1,36 +1,8 @@
 -- UI Library ATUALIZADA com NOVO VISUAL (última versão)
-
---// ================================
---// VLG UI - ANTI DUPLICAÇÃO GLOBAL
---// ================================
-
-_G.VLG_UILibrary = _G.VLG_UILibrary or {}
-_G.VLG_UI_STATE = _G.VLG_UI_STATE or {
-    Created = false,
-    Instance = nil
-}
-
-if _G.VLG_UI_LOADED then
-    -- Se já existe, só reabrir
-    if _G.VLG_UI_INSTANCE then
-        _G.VLG_UI_INSTANCE.Enabled = true
-    end
-    return _G.VLG_UILibrary
-end
-
-_G.VLG_UI_LOADED = true
-
 local UILibrary = {}
 local activeDropdowns = {}
 
 function UILibrary:CreateWindow(title)
-
-    -- 🚫 SE JÁ EXISTE UI, NÃO CRIA OUTRA
-    if _G.VLG_UI_STATE.Created and _G.VLG_UI_STATE.Instance then
-        _G.VLG_UI_STATE.Instance.Enabled = true
-        return _G.VLG_UI_STATE.Instance
-    end
-    
 local publicMethods = {}
 local tabs = {}
 local currentTab = nil
@@ -39,14 +11,9 @@ local currentTab = nil
 local LMG2L = {}  
   
 -- ScreenGui Principal  
-LMG2L["Floating_1"] = Instance.new("ScreenGui")
-LMG2L["Floating_1"].Name = "VLG_UI"
-LMG2L["Floating_1"].ResetOnSpawn = false
-LMG2L["Floating_1"].Parent = PlayerGui
-
--- 🔥 REGISTRO GLOBAL REAL
-_G.VLG_UI_STATE.Created = true
-_G.VLG_UI_STATE.Instance = LMG2L["Floating_1"]
+LMG2L["Floating_1"] = Instance.new("ScreenGui", game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"))  
+LMG2L["Floating_1"]["Name"] = [[Floating]]  
+LMG2L["Floating_1"]["ZIndexBehavior"] = Enum.ZIndexBehavior.Sibling  
 
 -- Frame Topo (LARGURA AUMENTADA para 316)  
 LMG2L["Topo_2"] = Instance.new("Frame", LMG2L["Floating_1"])  
@@ -130,8 +97,8 @@ LMG2L["OpenName_2d"]["Rotation"] = 180
 LMG2L["OpenName_2d"]["Position"] = UDim2.new(0, 4, 0, 4)  
 
 -- Funções do menu  
-LMG2L["CloseMenu_4"].MouseButton1Click:Connect(function()
-    _G.VLG_UI_STATE.Instance.Enabled = false
+LMG2L["CloseMenu_4"].MouseButton1Click:Connect(function()  
+    LMG2L["Topo_2"].Visible = false  
 end)  
   
 LMG2L["OpenName_2d"].MouseButton1Click:Connect(function()  
@@ -907,38 +874,3 @@ else
 _G.VLG_UILibrary = UILibrary
 return UILibrary
 end
-
-local UIS = game:GetService("UserInputService")
-
-local activeTouches = {}
-local lastTrigger = 0
-local COOLDOWN = 0.7
-local REQUIRED_TOUCHES = 4
-
-local function openMenu()
-    if _G.VLG_UI_STATE and _G.VLG_UI_STATE.Instance then
-        _G.VLG_UI_STATE.Instance.Enabled = true
-        print("MENU ABERTO 🔥")
-    end
-end
-
-UIS.TouchStarted:Connect(function(input)
-    activeTouches[input] = true
-
-    local count = 0
-    for _ in pairs(activeTouches) do
-        count += 1
-    end
-
-    if count >= REQUIRED_TOUCHES then
-        local now = tick()
-        if now - lastTrigger > COOLDOWN then
-            lastTrigger = now
-            openMenu()
-        end
-    end
-end)
-
-UIS.TouchEnded:Connect(function(input)
-    activeTouches[input] = nil
-end)
