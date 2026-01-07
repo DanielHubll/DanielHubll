@@ -698,148 +698,118 @@ function publicMethods:AddTab(tabName, iconId)
     }
 end
       
-    -- ADICIONAR RADIO BUTTONS (ATUALIZADO - com espaçamento corrigido)
-function tabMethods:AddRadioButtons(text, options, callback)
-    -- Aumentar altura base para acomodar melhor
-    local baseHeight = 32
-    local RadioFrame = Instance.new("Frame")
-    RadioFrame.Name = "RadioButtons_" .. text
-    RadioFrame.BorderSizePixel = 0
-    RadioFrame.BackgroundTransparency = 1
-    RadioFrame.Size = UDim2.new(0, 240, 0, baseHeight) -- Largura maior para mais opções
-    RadioFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 38)) -- Aumentado de 30 para 38
-    
-    -- Label do grupo (acima dos botões)
-    local InfoLabel = Instance.new("TextLabel")
-    InfoLabel.Name = "InfoLabel"
-    InfoLabel.TextWrapped = true
-    InfoLabel.BorderSizePixel = 0
-    InfoLabel.TextSize = 10
-    InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
-    InfoLabel.BackgroundTransparency = 1
-    InfoLabel.Size = UDim2.new(1, 0, 0, 12)
-    InfoLabel.Text = text or "Radio Buttons"
-    InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-    InfoLabel.Parent = RadioFrame
-    
-    -- Container para os botões de rádio
-    local RadioContainer = Instance.new("Frame")
-    RadioContainer.Name = "RadioContainer"
-    RadioContainer.BorderSizePixel = 0
-    RadioContainer.BackgroundTransparency = 1
-    RadioContainer.Size = UDim2.new(1, 0, 0, 20)
-    RadioContainer.Position = UDim2.new(0, 0, 0, 14) -- Abaixo do label
-    RadioContainer.Parent = RadioFrame
-    
-    local radioButtons = {}
-    local selectedOption = options[1]
-    
-    -- Calcular largura de cada botão baseado no número de opções
-    local buttonWidth = math.floor(236 / #options) - 4
-    buttonWidth = math.min(buttonWidth, 80) -- Limite máximo
-    buttonWidth = math.max(buttonWidth, 60) -- Limite mínimo
-    
-    for i, option in ipairs(options) do
-        local RadioOption = Instance.new("Frame")
-        RadioOption.Name = "Radio" .. i
-        RadioOption.BorderSizePixel = 0
-        RadioOption.BackgroundTransparency = 1
-        RadioOption.Size = UDim2.new(0, buttonWidth, 0, 16)
-        RadioOption.Position = UDim2.new(0, (i-1) * (buttonWidth + 4), 0, 0) -- Espaçamento de 4 pixels
-        
-        -- Círculo do rádio
-        local RadioButton = Instance.new("TextButton")
-        RadioButton.Name = "RadioCircle"
-        RadioButton.BorderSizePixel = 0
-        RadioButton.BackgroundColor3 = i == 1 and Color3.fromRGB(144, 0, 181) or Color3.fromRGB(53, 53, 53)
-        RadioButton.Size = UDim2.new(0, 16, 0, 16)
-        RadioButton.Text = ""
-        RadioButton.AutoButtonColor = false
-        
-        local UICorner = Instance.new("UICorner")
-        UICorner.CornerRadius = UDim.new(1, 0) -- Círculo perfeito
-        UICorner.Parent = RadioButton
-        
-        -- Label da opção (ao lado do círculo)
-        local OptionLabel = Instance.new("TextLabel")
-        OptionLabel.Name = "OptionLabel"
-        OptionLabel.BorderSizePixel = 0
-        OptionLabel.TextSize = 9
-        OptionLabel.TextXAlignment = Enum.TextXAlignment.Left
-        OptionLabel.BackgroundTransparency = 1
-        OptionLabel.Size = UDim2.new(1, -20, 1, 0)
-        OptionLabel.Position = UDim2.new(0, 20, 0, 0)
-        OptionLabel.Text = option
-        OptionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        OptionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-        OptionLabel.TextTruncate = Enum.TextTruncate.AtEnd -- Evitar overflow
-        
-        -- Organizar hierarquia
-        RadioButton.Parent = RadioOption
-        OptionLabel.Parent = RadioOption
-        RadioOption.Parent = RadioContainer
-        
-        table.insert(radioButtons, {
-            button = RadioButton,
-            option = option,
-            index = i
-        })
-        
-        -- Evento de clique
-        RadioButton.MouseButton1Click:Connect(function()
-            for _, rb in ipairs(radioButtons) do
-                rb.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
-            end
-            
-            RadioButton.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
-            selectedOption = option
-            
-            if callback then
-                callback(option)
-            end
-        end)
-        
-        -- Também permitir clicar no label
-        OptionLabel.MouseButton1Click:Connect(function()
-            for _, rb in ipairs(radioButtons) do
-                rb.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
-            end
-            
-            RadioButton.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
-            selectedOption = option
-            
-            if callback then
-                callback(option)
-            end
-        end)
-    end
-    
-    RadioFrame.Parent = ElementsContainer
-    
-    -- Aumentar o contador de elementos considerando que RadioButtons ocupa mais espaço
-    tabData.elementCount = tabData.elementCount + 1.2 -- Usar decimal para espaçamento melhor
-    
-    return {
-        SetValue = function(self, value)
-            for _, rb in ipairs(radioButtons) do
-                if rb.option == value then
-                    rb.button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
-                    selectedOption = value
-                else
-                    rb.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
-                end
-            end
-            
-            if callback then
-                callback(value)
-            end
-        end,
-        GetValue = function(self)
-            return selectedOption
-        end
-    }
-end  
+    -- ADICIONAR RADIO BUTTONS (ATUALIZADO - TextWrapped e TextScaled)  
+    function tabMethods:AddRadioButtons(text, options, callback)  
+        local RadioFrame = Instance.new("Frame")  
+        RadioFrame.Name = "RadioButtons_" .. text  
+        RadioFrame.BorderSizePixel = 0  
+        RadioFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
+        RadioFrame.Size = UDim2.new(0, 162, 0, 40)  -- Altura reduzida  
+        RadioFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 30))  
+        RadioFrame.BackgroundTransparency = 1  
+          
+        local InfoLabel = Instance.new("TextLabel")  
+        InfoLabel.Name = "InfoLabel"  
+        InfoLabel.TextWrapped = true  
+        InfoLabel.BorderSizePixel = 0  
+        InfoLabel.TextSize = 10  
+        InfoLabel.TextXAlignment = Enum.TextXAlignment.Left  
+        InfoLabel.TextScaled = true  
+        InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
+        InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)  
+        InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)  
+        InfoLabel.BackgroundTransparency = 1  
+        InfoLabel.Size = UDim2.new(0, 132, 0, 12)  -- Altura ajustada  
+        InfoLabel.Text = text or "Radio Buttons"  
+        InfoLabel.Position = UDim2.new(0, 0, 0, -2)  -- Posição ajustada  
+        InfoLabel.Parent = RadioFrame  
+          
+        local radioButtons = {}  
+        local selectedOption = options[1]  
+          
+        for i, option in ipairs(options) do  
+            local RadioOption = Instance.new("Frame")  
+            RadioOption.Name = "Radio" .. i  
+            RadioOption.BorderSizePixel = 0  
+            RadioOption.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
+            RadioOption.Size = UDim2.new(0, 70, 0, 16)  -- Largura aumentada  
+            RadioOption.Position = UDim2.new(0, (i-1) * 78, 0, 16)  
+            RadioOption.BackgroundTransparency = 1  
+              
+            local OptionLabel = Instance.new("TextLabel")  
+            OptionLabel.Name = "InfoLabel"  
+            OptionLabel.BorderSizePixel = 0  
+            OptionLabel.TextSize = 9  
+            OptionLabel.TextXAlignment = Enum.TextXAlignment.Left  
+            OptionLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
+            OptionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)  
+            OptionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)  
+            OptionLabel.BackgroundTransparency = 1  
+            OptionLabel.Size = UDim2.new(0, 58, 0, 16)  
+            OptionLabel.Text = option  
+            OptionLabel.Position = UDim2.new(0, 20, 0, 0)  
+            OptionLabel.Parent = RadioOption  
+              
+            local RadioButton = Instance.new("TextButton")  
+            RadioButton.Name = "Toggle"  
+            RadioButton.BorderSizePixel = 0  
+            RadioButton.BackgroundColor3 = i == 1 and Color3.fromRGB(144, 0, 181) or Color3.fromRGB(53, 53, 53)  
+            RadioButton.Size = UDim2.new(0, 16, 0, 16)  
+            RadioButton.Text = ""  
+            RadioButton.AutoButtonColor = false  
+              
+            local UICorner = Instance.new("UICorner")  
+            UICorner.CornerRadius = UDim.new(1, 9)  -- Círculo perfeito  
+            UICorner.Parent = RadioButton  
+              
+            RadioButton.Parent = RadioOption  
+            RadioOption.Parent = RadioFrame  
+              
+            table.insert(radioButtons, {  
+                button = RadioButton,  
+                option = option,  
+                index = i  
+            })  
+              
+            RadioButton.MouseButton1Click:Connect(function()  
+                for _, rb in ipairs(radioButtons) do  
+                    rb.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)  
+                end  
+                  
+                RadioButton.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  
+                selectedOption = option  
+                  
+                if callback then  
+                    callback(option)  
+                end  
+            end)  
+        end  
+          
+        RadioFrame.Size = UDim2.new(0, math.min(#options * 78, 162), 0, 40)  
+        RadioFrame.Parent = ElementsContainer  
+          
+        tabData.elementCount = tabData.elementCount + 1  
+          
+        return {  
+            SetValue = function(self, value)  
+                for _, rb in ipairs(radioButtons) do  
+                    if rb.option == value then  
+                        rb.button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  
+                        selectedOption = value  
+                    else  
+                        rb.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)  
+                    end  
+                end  
+                  
+                if callback then  
+                    callback(value)  
+                end  
+            end,  
+            GetValue = function(self)  
+                return selectedOption  
+            end  
+        }  
+    end  
       
     -- ADICIONAR BOTÃO (COM NOVO VISUAL - CORNER 3)  
     function tabMethods:AddButton(text, callback)  
