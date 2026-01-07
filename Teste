@@ -788,7 +788,8 @@ end
         RadioFrame.Size = UDim2.new(0, math.min(#options * 78, 162), 0, 40)  
         RadioFrame.Parent = ElementsContainer  
           
-        tabData.elementCount = tabData.elementCount + 1.6
+        tabData.elementCount = tabData.elementCount + 1.5
+
           
         return {  
             SetValue = function(self, value)  
