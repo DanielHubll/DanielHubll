@@ -1,5 +1,4 @@
 -- UI Library ATUALIZADA com NOVO VISUAL (última versão)
--- UI Library ATUALIZADA com NOVO VISUAL (última versão)
 local UILibrary = {}
 local activeDropdowns = {}
 
@@ -8,13 +7,21 @@ local publicMethods = {}
 local tabs = {}
 local currentTab = nil
 
-    -- Criar a interface
-local LMG2L = {}
+-- Criar a interface  
+local LMG2L = {}  
+  
+local CoreGui = game:GetService("CoreGui")
 
-    -- ScreenGui Principal - CORRIGIDO AQUI ↓
-LMG2L["Floating_1"] = Instance.new("ScreenGui", game:GetService("CoreGui"))  -- MUDADO PARA CoreGui
-LMG2L["Floating_1"]["Name"] = [[Floating]]
-LMG2L["Floating_1"]["ZIndexBehavior"] = Enum.ZIndexBehavior.Sibling
+-- evita duplicar UI
+if CoreGui:FindFirstChild("Floating") then
+    CoreGui.Floating:Destroy()
+end
+
+LMG2L["Floating_1"] = Instance.new("ScreenGui")
+LMG2L["Floating_1"].Name = "Floating"
+LMG2L["Floating_1"].ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+LMG2L["Floating_1"].ResetOnSpawn = false
+LMG2L["Floating_1"].Parent = CoreGui
 
 -- Frame Topo (LARGURA AUMENTADA para 316)  
 LMG2L["Topo_2"] = Instance.new("Frame", LMG2L["Floating_1"])  
