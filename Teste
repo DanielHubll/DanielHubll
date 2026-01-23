@@ -88,8 +88,8 @@ LMG2L["Main_7"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])
 LMG2L["Main_7"]["BorderSizePixel"] = 0  
 LMG2L["Main_7"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)  
 LMG2L["Main_7"]["Name"] = [[Main]]
-LMG2L["Main_7"]["Size"] = UDim2.new(0, 264, 0, 202)  
-LMG2L["Main_7"]["Position"] = UDim2.new(0, 52, 0, 0)  
+LMG2L["Main_7"]["Size"] = UDim2.new(0, 264, 0, 186) -- ALTURA AJUSTADA: 186
+LMG2L["Main_7"]["Position"] = UDim2.new(0, 52, 0, 12) -- POSIÇÃO AJUSTADA: Y=12
 LMG2L["Main_7"]["ScrollBarThickness"] = 0 -- SEMPRE invisível
 LMG2L["Main_7"]["BackgroundTransparency"] = 1  
 LMG2L["Main_7"]["CanvasSize"] = UDim2.new(0, 0, 0, 0) -- Será calculado dinamicamente
@@ -101,7 +101,8 @@ LMG2L["Main_7"]["ScrollBarImageTransparency"] = 1 -- Barra invisível
 LMG2L["Tabs_2a"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])  
 LMG2L["Tabs_2a"]["BorderSizePixel"] = 0  
 LMG2L["Tabs_2a"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)  
-LMG2L["Tabs_2a"]["Size"] = UDim2.new(0, 52, 0, 202)  
+LMG2L["Tabs_2a"]["Size"] = UDim2.new(0, 52, 0, 194) -- ALTURA AJUSTADA: 194
+LMG2L["Tabs_2a"]["Position"] = UDim2.new(0, 0, 0, 4) -- POSIÇÃO AJUSTADA: Y=4
 LMG2L["Tabs_2a"]["Name"] = [[Tabs]]  
 LMG2L["Tabs_2a"]["BackgroundTransparency"] = 1  
 LMG2L["Tabs_2a"]["ScrollBarThickness"] = 0 -- SEMPRE invisível
@@ -168,9 +169,11 @@ end)
   
 -- *** NOVA FUNÇÃO: Atualizar Scroll Adaptativo ***
 local function updateScrollability(container, elementCount)
+    -- AJUSTADO: Usa altura do container (186) ao invés de 202
+    local containerHeight = 186
     local totalHeight = elementCount * CONFIG.ELEMENT_HEIGHT + 20 -- +20 para padding
     
-    if totalHeight > CONFIG.CONTAINER_MAX_HEIGHT then
+    if totalHeight > containerHeight then
         -- ATIVAR SCROLL
         container.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
         -- Barra SEMPRE invisível (removido: container.ScrollBarThickness = 4)
@@ -198,7 +201,7 @@ function publicMethods:AddTab(tabName, iconId)
     TabButton["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)
     TabButton["Size"] = UDim2.new(0, 40, 0, 40)  
     TabButton["Name"] = "Tab" .. tabIndex  
-    TabButton["Position"] = UDim2.new(0, 6, 0, 8 + ((tabIndex - 1) * 48))  
+    TabButton["Position"] = UDim2.new(0, 6, 0, 4 + ((tabIndex - 1) * 48)) -- AJUSTADO: começa em Y=4
     TabButton["Image"] = iconId or "rbxassetid://10709852168"  
       
     local UICorner = Instance.new("UICorner", TabButton)  
@@ -237,8 +240,8 @@ function publicMethods:AddTab(tabName, iconId)
     end
     
     -- *** ATUALIZAR Canvas Size das tabs ***
-    local tabsHeight = tabIndex * 48 + 16
-    if tabsHeight > 202 then
+    local tabsHeight = tabIndex * 48 + 8 -- AJUSTADO: padding inicial de 8
+    if tabsHeight > 194 then -- AJUSTADO: altura do container de tabs é 194
         LMG2L["Tabs_2a"].CanvasSize = UDim2.new(0, 0, 0, tabsHeight)
         -- Barra SEMPRE invisível (removido: LMG2L["Tabs_2a"].ScrollBarThickness = 4)
     end
@@ -252,7 +255,7 @@ function publicMethods:AddTab(tabName, iconId)
         ToggleFrame.BorderSizePixel = 0  
         ToggleFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
         ToggleFrame.Size = UDim2.new(0, 100, 0, 22)  
-        ToggleFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 30))  
+        ToggleFrame.Position = UDim2.new(0, 6, 0, 8 + (tabData.elementCount * 30)) -- AJUSTADO: começa em Y=8
         ToggleFrame.BackgroundTransparency = 1  
           
         local InfoLabel = Instance.new("TextLabel")  
@@ -318,7 +321,7 @@ function tabMethods:AddSlider(text, defaultValue, max, callback)
     SliderFrame.BorderSizePixel = 0  
     SliderFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
     SliderFrame.Size = UDim2.new(0, 246, 0, 22)
-    SliderFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 30))  
+    SliderFrame.Position = UDim2.new(0, 6, 0, 8 + (tabData.elementCount * 30)) -- AJUSTADO: começa em Y=8
     SliderFrame.BackgroundTransparency = 1  
       
     local Main = Instance.new("Frame")  
@@ -467,7 +470,7 @@ end
     DropdownFrame.BorderSizePixel = 0
     DropdownFrame.BackgroundTransparency = 1
     DropdownFrame.Size = UDim2.new(0, 228, 0, 22)
-    DropdownFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 30))
+    DropdownFrame.Position = UDim2.new(0, 6, 0, 8 + (tabData.elementCount * 30)) -- AJUSTADO: começa em Y=8
     DropdownFrame.ZIndex = 10
 
     local InfoLabel = Instance.new("TextLabel")  
@@ -676,8 +679,8 @@ end
         RadioFrame.Name = "RadioButtons_" .. text  
         RadioFrame.BorderSizePixel = 0  
         RadioFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
-        RadioFrame.Size = UDim2.new(0, 162, 0, 40)
-        RadioFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 30))  
+        RadioFrame.Size = UDim2.new(0, 162, 0, 38) -- AJUSTADO: altura de 38
+        RadioFrame.Position = UDim2.new(0, 8, 0, 8 + (tabData.elementCount * 30)) -- AJUSTADO: começa em Y=8, X=8
         RadioFrame.BackgroundTransparency = 1  
           
         local InfoLabel = Instance.new("TextLabel")  
@@ -749,7 +752,7 @@ end
             end)  
         end  
           
-        RadioFrame.Size = UDim2.new(0, math.min(#options * 78, 162), 0, 40)  
+        RadioFrame.Size = UDim2.new(0, math.min(#options * 78, 162), 0, 38) -- AJUSTADO: altura 38
         RadioFrame.Parent = ElementsContainer  
         tabData.elementCount = tabData.elementCount + 1.3
         updateScrollability(LMG2L["Main_7"], tabData.elementCount)
@@ -777,7 +780,7 @@ end
         ButtonFrame.BorderSizePixel = 0  
         ButtonFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
         ButtonFrame.Size = UDim2.new(0, 236, 0, 22)
-        ButtonFrame.Position = UDim2.new(0, 6, 0, 20 + (tabData.elementCount * 35))  
+        ButtonFrame.Position = UDim2.new(0, 6, 0, 8 + (tabData.elementCount * 35)) -- AJUSTADO: começa em Y=8
         ButtonFrame.BackgroundTransparency = 0.9
           
         local Button = Instance.new("TextButton")  
