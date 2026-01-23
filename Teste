@@ -90,9 +90,12 @@ LMG2L["Main_7"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
 LMG2L["Main_7"]["Name"] = [[Main]]
 LMG2L["Main_7"]["Size"] = UDim2.new(0, 264, 0, 202)  
 LMG2L["Main_7"]["Position"] = UDim2.new(0, 52, 0, 0)  
-LMG2L["Main_7"]["ScrollBarThickness"] = 0 -- Invisível por padrão
+LMG2L["Main_7"]["ScrollBarThickness"] = 0 -- SEMPRE invisível
 LMG2L["Main_7"]["BackgroundTransparency"] = 1  
 LMG2L["Main_7"]["CanvasSize"] = UDim2.new(0, 0, 0, 0) -- Será calculado dinamicamente
+LMG2L["Main_7"]["ScrollingDirection"] = Enum.ScrollingDirection.Y -- SOMENTE VERTICAL
+LMG2L["Main_7"]["ElasticBehavior"] = Enum.ElasticBehavior.Never -- Remove elástico
+LMG2L["Main_7"]["ScrollBarImageTransparency"] = 1 -- Barra invisível
 
 -- Tabs Container  
 LMG2L["Tabs_2a"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])  
@@ -101,8 +104,11 @@ LMG2L["Tabs_2a"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
 LMG2L["Tabs_2a"]["Size"] = UDim2.new(0, 52, 0, 202)  
 LMG2L["Tabs_2a"]["Name"] = [[Tabs]]  
 LMG2L["Tabs_2a"]["BackgroundTransparency"] = 1  
-LMG2L["Tabs_2a"]["ScrollBarThickness"] = 0
+LMG2L["Tabs_2a"]["ScrollBarThickness"] = 0 -- SEMPRE invisível
 LMG2L["Tabs_2a"]["CanvasSize"] = UDim2.new(0, 0, 0, 0)
+LMG2L["Tabs_2a"]["ScrollingDirection"] = Enum.ScrollingDirection.Y -- SOMENTE VERTICAL
+LMG2L["Tabs_2a"]["ElasticBehavior"] = Enum.ElasticBehavior.Never -- Remove elástico
+LMG2L["Tabs_2a"]["ScrollBarImageTransparency"] = 1 -- Barra invisível
 
 -- OpenName Button  
 LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])  
@@ -167,7 +173,7 @@ local function updateScrollability(container, elementCount)
     if totalHeight > CONFIG.CONTAINER_MAX_HEIGHT then
         -- ATIVAR SCROLL
         container.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
-        container.ScrollBarThickness = 4 -- Mostrar scrollbar
+        -- Barra SEMPRE invisível (removido: container.ScrollBarThickness = 4)
     else
         -- DESATIVAR SCROLL
         container.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -234,7 +240,7 @@ function publicMethods:AddTab(tabName, iconId)
     local tabsHeight = tabIndex * 48 + 16
     if tabsHeight > 202 then
         LMG2L["Tabs_2a"].CanvasSize = UDim2.new(0, 0, 0, tabsHeight)
-        LMG2L["Tabs_2a"].ScrollBarThickness = 4
+        -- Barra SEMPRE invisível (removido: LMG2L["Tabs_2a"].ScrollBarThickness = 4)
     end
       
     local tabMethods = {}  
@@ -514,10 +520,13 @@ end
     Scroll.BackgroundColor3 = Color3.fromRGB(37,37,37)  
     Scroll.Position = UDim2.new(0,2,0,24)  
     Scroll.Size = UDim2.new(0,112,0,28)  
-    Scroll.ScrollBarThickness = 0  
+    Scroll.ScrollBarThickness = 0 -- SEMPRE invisível
     Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y  
     Scroll.CanvasSize = UDim2.new()  
     Scroll.ZIndex = 50  
+    Scroll.ScrollingDirection = Enum.ScrollingDirection.Y -- SOMENTE VERTICAL
+    Scroll.ElasticBehavior = Enum.ElasticBehavior.Never -- Remove elástico
+    Scroll.ScrollBarImageTransparency = 1 -- Barra invisível
     Scroll.Parent = Main  
     Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0,3)  
 
