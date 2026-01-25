@@ -780,7 +780,7 @@ end
         ButtonFrame.BorderSizePixel = 0  
         ButtonFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
         ButtonFrame.Size = UDim2.new(0, 236, 0, 22)
-        ButtonFrame.Position = UDim2.new(0, 6, 0, 8 + (tabData.elementCount * 35)) -- AJUSTADO: começa em Y=8
+        ButtonFrame.Position = UDim2.new(0, 6, 0, 8 + (tabData.elementCount * 30)) -- AJUSTADO: começa em Y=8
         ButtonFrame.BackgroundTransparency = 0.9
           
         local Button = Instance.new("TextButton")  
