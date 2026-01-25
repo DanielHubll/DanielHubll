@@ -90,13 +90,12 @@ LMG2L["Main_7"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
 LMG2L["Main_7"]["Name"] = [[Main]]
 LMG2L["Main_7"]["Size"] = UDim2.new(0, 264, 0, 186) -- ALTURA AJUSTADA: 186
 LMG2L["Main_7"]["Position"] = UDim2.new(0, 52, 0, 12) -- POSIÇÃO AJUSTADA: Y=12
-LMG2L["Main_7"]["ScrollBarThickness"] = 3 -- BARRA SEMPRE VISÍVEL (mas transparente)
+LMG2L["Main_7"]["ScrollBarThickness"] = 0 -- SEMPRE invisível
 LMG2L["Main_7"]["BackgroundTransparency"] = 1  
 LMG2L["Main_7"]["CanvasSize"] = UDim2.new(0, 0, 0, 0) -- Será calculado dinamicamente
 LMG2L["Main_7"]["ScrollingDirection"] = Enum.ScrollingDirection.Y -- SOMENTE VERTICAL
 LMG2L["Main_7"]["ElasticBehavior"] = Enum.ElasticBehavior.Never -- Remove elástico
-LMG2L["Main_7"]["ScrollBarImageTransparency"] = 0.7 -- Barra semi-transparente
-LMG2L["Main_7"]["ScrollBarImageColor3"] = Color3.fromRGB(144, 0, 181) -- Cor da barra
+LMG2L["Main_7"]["ScrollBarImageTransparency"] = 1 -- Barra invisível
 
 -- Tabs Container  
 LMG2L["Tabs_2a"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])  
@@ -106,12 +105,11 @@ LMG2L["Tabs_2a"]["Size"] = UDim2.new(0, 52, 0, 194) -- ALTURA AJUSTADA: 194
 LMG2L["Tabs_2a"]["Position"] = UDim2.new(0, 0, 0, 4) -- POSIÇÃO AJUSTADA: Y=4
 LMG2L["Tabs_2a"]["Name"] = [[Tabs]]  
 LMG2L["Tabs_2a"]["BackgroundTransparency"] = 1  
-LMG2L["Tabs_2a"]["ScrollBarThickness"] = 3 -- BARRA SEMPRE VISÍVEL (mas transparente)
+LMG2L["Tabs_2a"]["ScrollBarThickness"] = 0 -- SEMPRE invisível
 LMG2L["Tabs_2a"]["CanvasSize"] = UDim2.new(0, 0, 0, 0)
 LMG2L["Tabs_2a"]["ScrollingDirection"] = Enum.ScrollingDirection.Y -- SOMENTE VERTICAL
 LMG2L["Tabs_2a"]["ElasticBehavior"] = Enum.ElasticBehavior.Never -- Remove elástico
-LMG2L["Tabs_2a"]["ScrollBarImageTransparency"] = 0.7 -- Barra semi-transparente
-LMG2L["Tabs_2a"]["ScrollBarImageColor3"] = Color3.fromRGB(144, 0, 181) -- Cor da barra
+LMG2L["Tabs_2a"]["ScrollBarImageTransparency"] = 1 -- Barra invisível
 
 -- OpenName Button  
 LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])  
@@ -170,36 +168,30 @@ UserInputService.InputEnded:Connect(function(input)
 end)
   
 -- *** NOVA FUNÇÃO: Atualizar Scroll Adaptativo ***
-local function updateScrollability(container, elementCount)
-    -- AJUSTADO: Usa altura do container (186) ao invés de 202
-    local containerHeight = 186
-    local totalHeight = elementCount * CONFIG.ELEMENT_HEIGHT + 20 -- +20 para padding
+local function updateScrollability(container, tabData)
+    task.wait() -- garante que UI terminou de renderizar
+    
+    local totalHeight = 0
+    
+    -- soma altura REAL dos elementos visíveis
+    for _, child in ipairs(tabData.container:GetChildren()) do
+        if child:IsA("Frame") and child.Visible then
+            totalHeight += child.AbsoluteSize.Y + 8 -- +8 padding
+        end
+    end
+    
+    local containerHeight = container.AbsoluteWindowSize.Y
     
     if totalHeight > containerHeight then
-        -- ATIVAR SCROLL (já está ativado por padrão)
-        container.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
-        -- Barra sempre visível mas transparente
+        -- ativa scroll
+        container.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 10)
     else
-        -- DESATIVAR SCROLL mas mantendo barra
+        -- desativa scroll
         container.CanvasSize = UDim2.new(0, 0, 0, 0)
-        -- Barra continua visível mas transparente
     end
-end
-
--- *** FUNÇÃO PARA FORÇAR ATUALIZAÇÃO DO SCROLL ***
-local function forceScrollUpdate(container, elementCount)
-    -- Garantir que o CanvasSize seja atualizado
-    local containerHeight = 186
-    local totalHeight = elementCount * CONFIG.ELEMENT_HEIGHT + 20
     
-    if totalHeight > containerHeight then
-        container.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
-        -- Forçar atualização da propriedade
-        task.wait(0.05) -- Pequeno delay para garantir atualização
-        container.CanvasPosition = Vector2.new(0, 0) -- Resetar posição do scroll
-    else
-        container.CanvasSize = UDim2.new(0, 0, 0, 0)
-    end
+    -- reseta posição do scroll pra evitar bug inicial
+    container.CanvasPosition = Vector2.new(0, 0)
 end
 
 -- FUNÇÃO PARA CRIAR NOVA TAB  
@@ -228,34 +220,27 @@ function publicMethods:AddTab(tabName, iconId)
     -- *** ALTERADO: Container agora é Frame normal (filho do ScrollingFrame) ***
     local ElementsContainer = Instance.new("Frame", LMG2L["Main_7"])  
     ElementsContainer["BackgroundTransparency"] = 1  
-    ElementsContainer["Size"] = UDim2.new(1, 0, 0, 0) -- ALTURA INICIAL 0, será calculada
+    ElementsContainer["Size"] = UDim2.new(1, 0, 1, 0)  
     ElementsContainer["Name"] = "Container_" .. tabName  
     ElementsContainer["Visible"] = false  
-    ElementsContainer["AutomaticSize"] = Enum.AutomaticSize.Y -- Auto-ajuste de altura
-      
-    local UIListLayout = Instance.new("UIListLayout", ElementsContainer)
-    UIListLayout.Padding = UDim.new(0, 8)
-    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
       
     tabData.container = ElementsContainer  
     tabData.button = TabButton  
       
     -- Função para trocar de tab  
-    local function switchToTab()  
-        for _, tab in ipairs(tabs) do  
-            tab.container.Visible = false  
-            tab.button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
-        end  
-          
-        ElementsContainer.Visible = true  
-        TabButton.BackgroundColor3 = Color3.fromRGB(110, 0, 140)
-        currentTab = tabData
-        
-        -- *** ATUALIZAR SCROLL ao trocar de tab ***
-        task.wait(0.1) -- Pequeno delay para UIListLayout calcular
-        local contentHeight = UIListLayout.AbsoluteContentSize.Y
-        forceScrollUpdate(LMG2L["Main_7"], contentHeight / CONFIG.ELEMENT_HEIGHT)
+    local function switchToTab()
+    for _, tab in ipairs(tabs) do
+        tab.container.Visible = false
+        tab.button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
     end  
+
+    ElementsContainer.Visible = true  
+    TabButton.BackgroundColor3 = Color3.fromRGB(110, 0, 140)
+    currentTab = tabData
+
+    -- força recalcular scroll corretamente
+    updateScrollability(LMG2L["Main_7"], tabData)
+end  
       
     TabButton.MouseButton1Click:Connect(switchToTab)  
     table.insert(tabs, tabData)  
@@ -268,15 +253,8 @@ function publicMethods:AddTab(tabName, iconId)
     local tabsHeight = tabIndex * 48 + 8 -- AJUSTADO: padding inicial de 8
     if tabsHeight > 194 then -- AJUSTADO: altura do container de tabs é 194
         LMG2L["Tabs_2a"].CanvasSize = UDim2.new(0, 0, 0, tabsHeight)
+        -- Barra SEMPRE invisível (removido: LMG2L["Tabs_2a"].ScrollBarThickness = 4)
     end
-    
-    -- *** CONEXÃO PARA ATUALIZAR ALTURA DO CONTAINER ***
-    UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        if ElementsContainer.Visible then
-            local contentHeight = UIListLayout.AbsoluteContentSize.Y
-            forceScrollUpdate(LMG2L["Main_7"], contentHeight / CONFIG.ELEMENT_HEIGHT)
-        end
-    end)
       
     local tabMethods = {}  
       
@@ -289,7 +267,6 @@ function publicMethods:AddTab(tabName, iconId)
         ToggleFrame.Size = UDim2.new(0, 100, 0, 22)  
         ToggleFrame.Position = UDim2.new(0, 6, 0, 8 + (tabData.elementCount * 30)) -- AJUSTADO: começa em Y=8
         ToggleFrame.BackgroundTransparency = 1  
-        ToggleFrame.LayoutOrder = tabData.elementCount
           
         local InfoLabel = Instance.new("TextLabel")  
         InfoLabel.Name = "InfoLabel"  
@@ -334,6 +311,7 @@ function publicMethods:AddTab(tabName, iconId)
         end)  
           
         tabData.elementCount = tabData.elementCount + 1
+        updateScrollability(LMG2L["Main_7"], tabData)
           
         return {  
             SetState = function(self, state)  
@@ -355,7 +333,6 @@ function tabMethods:AddSlider(text, defaultValue, max, callback)
     SliderFrame.Size = UDim2.new(0, 246, 0, 22)
     SliderFrame.Position = UDim2.new(0, 6, 0, 8 + (tabData.elementCount * 30)) -- AJUSTADO: começa em Y=8
     SliderFrame.BackgroundTransparency = 1  
-    SliderFrame.LayoutOrder = tabData.elementCount
       
     local Main = Instance.new("Frame")  
     Main.Name = "Main"  
@@ -488,6 +465,7 @@ function tabMethods:AddSlider(text, defaultValue, max, callback)
 
     updateValue(defaultValue)
     tabData.elementCount = tabData.elementCount + 1
+    updateScrollability(LMG2L["Main_7"], tabData.elementCount)
 
     return {
         SetValue = function(self, value) updateValue(value) end,
@@ -504,7 +482,6 @@ end
     DropdownFrame.Size = UDim2.new(0, 228, 0, 22)
     DropdownFrame.Position = UDim2.new(0, 6, 0, 8 + (tabData.elementCount * 30)) -- AJUSTADO: começa em Y=8
     DropdownFrame.ZIndex = 10
-    DropdownFrame.LayoutOrder = tabData.elementCount
 
     local InfoLabel = Instance.new("TextLabel")  
     InfoLabel.BorderSizePixel = 0  
@@ -556,14 +533,13 @@ end
     Scroll.BackgroundColor3 = Color3.fromRGB(37,37,37)  
     Scroll.Position = UDim2.new(0,2,0,24)  
     Scroll.Size = UDim2.new(0,112,0,28)  
-    Scroll.ScrollBarThickness = 3 -- Barra visível
+    Scroll.ScrollBarThickness = 0 -- SEMPRE invisível
     Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y  
     Scroll.CanvasSize = UDim2.new()  
     Scroll.ZIndex = 50  
     Scroll.ScrollingDirection = Enum.ScrollingDirection.Y -- SOMENTE VERTICAL
     Scroll.ElasticBehavior = Enum.ElasticBehavior.Never -- Remove elástico
-    Scroll.ScrollBarImageTransparency = 0.7 -- Barra semi-transparente
-    Scroll.ScrollBarImageColor3 = Color3.fromRGB(144, 0, 181) -- Cor da barra
+    Scroll.ScrollBarImageTransparency = 1 -- Barra invisível
     Scroll.Parent = Main  
     Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0,3)  
 
@@ -687,6 +663,7 @@ end
     Main.Parent = DropdownFrame  
     DropdownFrame.Parent = ElementsContainer  
     tabData.elementCount = tabData.elementCount + 1
+    updateScrollability(LMG2L["Main_7"], tabData.elementCount)
 
     return {  
         SetValue = function(_, val)  
@@ -715,7 +692,6 @@ end
         RadioFrame.Size = UDim2.new(0, 162, 0, 38) -- AJUSTADO: altura de 38
         RadioFrame.Position = UDim2.new(0, 8, 0, 8 + (tabData.elementCount * 30)) -- AJUSTADO: começa em Y=8, X=8
         RadioFrame.BackgroundTransparency = 1  
-        RadioFrame.LayoutOrder = tabData.elementCount
           
         local InfoLabel = Instance.new("TextLabel")  
         InfoLabel.Name = "InfoLabel"  
@@ -789,6 +765,7 @@ end
         RadioFrame.Size = UDim2.new(0, math.min(#options * 78, 162), 0, 38) -- AJUSTADO: altura 38
         RadioFrame.Parent = ElementsContainer  
         tabData.elementCount = tabData.elementCount + 1.3
+        updateScrollability(LMG2L["Main_7"], tabData.elementCount)
           
         return {  
             SetValue = function(self, value)  
@@ -815,7 +792,6 @@ end
         ButtonFrame.Size = UDim2.new(0, 236, 0, 22)
         ButtonFrame.Position = UDim2.new(0, 6, 0, 8 + (tabData.elementCount * 30)) -- AJUSTADO: começa em Y=8
         ButtonFrame.BackgroundTransparency = 0.9
-        ButtonFrame.LayoutOrder = tabData.elementCount
           
         local Button = Instance.new("TextButton")  
         Button.Name = "Button"  
@@ -848,6 +824,7 @@ end
         Button.Parent = ButtonFrame  
         ButtonFrame.Parent = ElementsContainer  
         tabData.elementCount = tabData.elementCount + 1
+        updateScrollability(LMG2L["Main_7"], tabData.elementCount)
         return Button  
     end  
       
