@@ -8,7 +8,9 @@ local Themes = {
         ElementBackground = Color3.fromRGB(30, 30, 30),
         ElementBackgroundHover = Color3.fromRGB(40, 40, 40),
         TextColor = Color3.fromRGB(240, 240, 240),
-        SecondaryText = Color3.fromRGB(200, 200, 200)
+        SecondaryText = Color3.fromRGB(200, 200, 200),
+        ToggleOn = Color3.fromRGB(0, 200, 83),
+        ToggleOff = Color3.fromRGB(60, 60, 60)
     },
     
     Ocean = {
@@ -17,7 +19,9 @@ local Themes = {
         ElementBackground = Color3.fromRGB(25, 35, 45),
         ElementBackgroundHover = Color3.fromRGB(35, 45, 55),
         TextColor = Color3.fromRGB(230, 240, 250),
-        SecondaryText = Color3.fromRGB(180, 200, 220)
+        SecondaryText = Color3.fromRGB(180, 200, 220),
+        ToggleOn = Color3.fromRGB(0, 180, 200),
+        ToggleOff = Color3.fromRGB(40, 60, 80)
     },
     
     Fire = {
@@ -26,10 +30,1139 @@ local Themes = {
         ElementBackground = Color3.fromRGB(45, 25, 15),
         ElementBackgroundHover = Color3.fromRGB(55, 35, 20),
         TextColor = Color3.fromRGB(255, 240, 220),
-        SecondaryText = Color3.fromRGB(220, 180, 140)
+        SecondaryText = Color3.fromRGB(220, 180, 140),
+        ToggleOn = Color3.fromRGB(255, 60, 0),
+        ToggleOff = Color3.fromRGB(70, 30, 15)
     },
     
     Cyber = {
         MainColor = Color3.fromRGB(0, 255, 255),
         Background = Color3.fromRGB(10, 10, 20),
-        ElementBackground = Color
+        ElementBackground = Color3.fromRGB(25, 20, 40),
+        ElementBackgroundHover = Color3.fromRGB(35, 30, 50),
+        TextColor = Color3.fromRGB(220, 240, 255),
+        SecondaryText = Color3.fromRGB(180, 200, 220),
+        ToggleOn = Color3.fromRGB(0, 255, 200),
+        ToggleOff = Color3.fromRGB(40, 30, 60)
+    }
+}
+
+local CONFIG = {
+    MAX_ELEMENTS_WITHOUT_SCROLL = 6,
+    ELEMENT_HEIGHT = 30,
+    CONTAINER_MAX_HEIGHT = 202,
+}
+
+-- Serviços
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+-- Função para criar ícones como no Rayfield
+local function getIcon(name)
+    local icons = {
+        home = "rbxassetid://10734980072",
+        settings = "rbxassetid://10734982345",
+        user = "rbxassetid://10734983624",
+        bell = "rbxassetid://10734976238",
+        star = "rbxassetid://10734982857",
+        heart = "rbxassetid://10734977596",
+        folder = "rbxassetid://10734976542",
+        search = "rbxassetid://10734981960",
+        power = "rbxassetid://10734980898"
+    }
+    return icons[name] or "rbxassetid://10734980072"
+end
+
+function UILibrary:CreateWindow(settings)
+    local publicMethods = {}
+    local tabs = {}
+    local currentTab = nil
+    local currentTheme = Themes[settings.Theme or "Default"]
+    local isVisible = true
+    local isMinimized = false
+
+    -- Configurações
+    local windowSettings = {
+        Name = settings.Name or "VLG PAINEL",
+        Icon = settings.Icon or "home",
+        Theme = settings.Theme or "Default",
+        Size = settings.Size or UDim2.new(0, 316, 0, 224),
+        Position = settings.Position or UDim2.new(0.5, -158, 0.5, -112),
+        CanDrag = settings.CanDrag ~= false
+    }
+
+    -- Criar a interface  
+    local LMG2L = {}  
+    local CoreGui = game:GetService("CoreGui")
+
+    -- Evita duplicar UI
+    if CoreGui:FindFirstChild("Floating") then
+        CoreGui.Floating:Destroy()
+    end
+
+    LMG2L["Floating_1"] = Instance.new("ScreenGui")
+    LMG2L["Floating_1"].Name = "Floating"
+    LMG2L["Floating_1"].ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    LMG2L["Floating_1"].ResetOnSpawn = false
+    LMG2L["Floating_1"].Parent = CoreGui
+
+    -- Frame Topo  
+    LMG2L["Topo_2"] = Instance.new("Frame", LMG2L["Floating_1"])  
+    LMG2L["Topo_2"]["BorderSizePixel"] = 0  
+    LMG2L["Topo_2"]["BackgroundColor3"] = currentTheme.MainColor  
+    LMG2L["Topo_2"]["Size"] = UDim2.new(0, 316, 0, 22)  
+    LMG2L["Topo_2"]["Position"] = windowSettings.Position
+    LMG2L["Topo_2"]["Name"] = [[Topo]]
+    LMG2L["Topo_2"]["ZIndex"] = 100
+
+    -- Sombra do Topo
+    LMG2L["TopoShadow_2a"] = Instance.new("ImageLabel", LMG2L["Topo_2"])
+    LMG2L["TopoShadow_2a"]["Image"] = "rbxassetid://5554236805"
+    LMG2L["TopoShadow_2a"]["ImageColor3"] = Color3.fromRGB(0, 0, 0)
+    LMG2L["TopoShadow_2a"]["ImageTransparency"] = 0.8
+    LMG2L["TopoShadow_2a"]["ScaleType"] = Enum.ScaleType.Slice
+    LMG2L["TopoShadow_2a"]["SliceCenter"] = Rect.new(23, 23, 277, 277)
+    LMG2L["TopoShadow_2a"]["Size"] = UDim2.new(1, 10, 1, 10)
+    LMG2L["TopoShadow_2a"]["Position"] = UDim2.new(-0.016, 0, -0.1, 0)
+    LMG2L["TopoShadow_2a"]["BackgroundTransparency"] = 1
+    LMG2L["TopoShadow_2a"]["ZIndex"] = 99
+
+    -- TitleMenu  
+    LMG2L["TitleMenu_3"] = Instance.new("TextLabel", LMG2L["Topo_2"])  
+    LMG2L["TitleMenu_3"]["TextWrapped"] = true  
+    LMG2L["TitleMenu_3"]["BorderSizePixel"] = 0  
+    LMG2L["TitleMenu_3"]["TextSize"] = 11  
+    LMG2L["TitleMenu_3"]["TextXAlignment"] = Enum.TextXAlignment.Left  
+    LMG2L["TitleMenu_3"]["TextScaled"] = true  
+    LMG2L["TitleMenu_3"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)  
+    LMG2L["TitleMenu_3"]["FontFace"] = Font.new([[rbxasset://fonts/families/GothamSSm.json]], Enum.FontWeight.Bold, Enum.FontStyle.Normal)  
+    LMG2L["TitleMenu_3"]["TextColor3"] = currentTheme.TextColor  
+    LMG2L["TitleMenu_3"]["BackgroundTransparency"] = 1  
+    LMG2L["TitleMenu_3"]["Size"] = UDim2.new(0, 196, 0, 14)  
+    LMG2L["TitleMenu_3"]["Text"] = windowSettings.Name  
+    LMG2L["TitleMenu_3"]["Name"] = [[TitleMenu]]  
+    LMG2L["TitleMenu_3"]["Position"] = UDim2.new(0, 28, 0, 4)  
+
+    -- Ícone do Título
+    LMG2L["TitleIcon_3a"] = Instance.new("ImageLabel", LMG2L["Topo_2"])
+    LMG2L["TitleIcon_3a"]["Image"] = getIcon(windowSettings.Icon)
+    LMG2L["TitleIcon_3a"]["Size"] = UDim2.new(0, 16, 0, 16)
+    LMG2L["TitleIcon_3a"]["Position"] = UDim2.new(0, 6, 0, 3)
+    LMG2L["TitleIcon_3a"]["BackgroundTransparency"] = 1
+    LMG2L["TitleIcon_3a"]["ImageColor3"] = currentTheme.TextColor
+
+    -- CloseMenu  
+    LMG2L["CloseMenu_4"] = Instance.new("TextButton", LMG2L["Topo_2"])  
+    LMG2L["CloseMenu_4"]["BorderSizePixel"] = 0  
+    LMG2L["CloseMenu_4"]["TextSize"] = 10  
+    LMG2L["CloseMenu_4"]["TextColor3"] = currentTheme.TextColor  
+    LMG2L["CloseMenu_4"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)  
+    LMG2L["CloseMenu_4"]["BackgroundTransparency"] = 1  
+    LMG2L["CloseMenu_4"]["Size"] = UDim2.new(0, 14, 0, 14)  
+    LMG2L["CloseMenu_4"]["Text"] = [[×]]  -- Usando × ao invés de X
+    LMG2L["CloseMenu_4"]["Name"] = [[CloseMenu]]  
+    LMG2L["CloseMenu_4"]["Position"] = UDim2.new(1, -20, 0, 4)  
+
+    -- Minimize Button
+    LMG2L["MinimizeMenu_4a"] = Instance.new("TextButton", LMG2L["Topo_2"])
+    LMG2L["MinimizeMenu_4a"]["BorderSizePixel"] = 0
+    LMG2L["MinimizeMenu_4a"]["TextSize"] = 10
+    LMG2L["MinimizeMenu_4a"]["TextColor3"] = currentTheme.TextColor
+    LMG2L["MinimizeMenu_4a"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
+    LMG2L["MinimizeMenu_4a"]["BackgroundTransparency"] = 1
+    LMG2L["MinimizeMenu_4a"]["Size"] = UDim2.new(0, 14, 0, 14)
+    LMG2L["MinimizeMenu_4a"]["Text"] = [[−]]  -- Caractere de subtração
+    LMG2L["MinimizeMenu_4a"]["Name"] = [[MinimizeMenu]]
+    LMG2L["MinimizeMenu_4a"]["Position"] = UDim2.new(1, -38, 0, 4)
+
+    -- Main Frame  
+    LMG2L["Main_5"] = Instance.new("Frame", LMG2L["Topo_2"])  
+    LMG2L["Main_5"]["BorderSizePixel"] = 0  
+    LMG2L["Main_5"]["BackgroundColor3"] = currentTheme.Background  
+    LMG2L["Main_5"]["Size"] = UDim2.new(0, 316, 0, 202)  
+    LMG2L["Main_5"]["Position"] = UDim2.new(0, 0, 0, 22)  
+    LMG2L["Main_5"]["Name"] = [[Main]]  
+    LMG2L["Main_5"]["Visible"] = false
+    LMG2L["Main_5"]["ZIndex"] = 90
+
+    -- Sombra do Main
+    LMG2L["MainShadow_5a"] = Instance.new("ImageLabel", LMG2L["Main_5"])
+    LMG2L["MainShadow_5a"]["Image"] = "rbxassetid://5554236805"
+    LMG2L["MainShadow_5a"]["ImageColor3"] = Color3.fromRGB(0, 0, 0)
+    LMG2L["MainShadow_5a"]["ImageTransparency"] = 0.7
+    LMG2L["MainShadow_5a"]["ScaleType"] = Enum.ScaleType.Slice
+    LMG2L["MainShadow_5a"]["SliceCenter"] = Rect.new(23, 23, 277, 277)
+    LMG2L["MainShadow_5a"]["Size"] = UDim2.new(1, 14, 1, 14)
+    LMG2L["MainShadow_5a"]["Position"] = UDim2.new(-0.022, 0, -0.03, 0)
+    LMG2L["MainShadow_5a"]["BackgroundTransparency"] = 1
+    LMG2L["MainShadow_5a"]["ZIndex"] = 89
+
+    -- Effect Line  
+    LMG2L["Effect_6"] = Instance.new("Frame", LMG2L["Main_5"])  
+    LMG2L["Effect_6"]["BorderSizePixel"] = 0  
+    LMG2L["Effect_6"]["BackgroundColor3"] = currentTheme.MainColor  
+    LMG2L["Effect_6"]["Size"] = UDim2.new(0, 250, 0, 1)  
+    LMG2L["Effect_6"]["Position"] = UDim2.new(0, 54, 0, 10)  
+    LMG2L["Effect_6"]["Name"] = [[Effect]]  
+
+    -- *** NOVO: Main Content Area COM SCROLLING ***
+    LMG2L["Main_7"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])  
+    LMG2L["Main_7"]["BorderSizePixel"] = 0  
+    LMG2L["Main_7"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)  
+    LMG2L["Main_7"]["Name"] = [[Main]]
+    LMG2L["Main_7"]["Size"] = UDim2.new(0, 264, 0, 186)
+    LMG2L["Main_7"]["Position"] = UDim2.new(0, 52, 0, 12)
+    LMG2L["Main_7"]["ScrollBarThickness"] = 0
+    LMG2L["Main_7"]["BackgroundTransparency"] = 1  
+    LMG2L["Main_7"]["CanvasSize"] = UDim2.new(0, 0, 0, 0)
+    LMG2L["Main_7"]["ScrollingDirection"] = Enum.ScrollingDirection.Y
+    LMG2L["Main_7"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
+    LMG2L["Main_7"]["ScrollBarImageTransparency"] = 1
+
+    -- List Layout para conteúdo
+    LMG2L["MainList_7a"] = Instance.new("UIListLayout", LMG2L["Main_7"])
+    LMG2L["MainList_7a"]["Padding"] = UDim.new(0, 5)
+    LMG2L["MainList_7a"]["SortOrder"] = Enum.SortOrder.LayoutOrder
+
+    -- Tabs Container  
+    LMG2L["Tabs_2a"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])  
+    LMG2L["Tabs_2a"]["BorderSizePixel"] = 0  
+    LMG2L["Tabs_2a"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)  
+    LMG2L["Tabs_2a"]["Size"] = UDim2.new(0, 52, 0, 194)
+    LMG2L["Tabs_2a"]["Position"] = UDim2.new(0, 0, 0, 4)
+    LMG2L["Tabs_2a"]["Name"] = [[Tabs]]  
+    LMG2L["Tabs_2a"]["BackgroundTransparency"] = 1  
+    LMG2L["Tabs_2a"]["ScrollBarThickness"] = 0
+    LMG2L["Tabs_2a"]["CanvasSize"] = UDim2.new(0, 0, 0, 0)
+    LMG2L["Tabs_2a"]["ScrollingDirection"] = Enum.ScrollingDirection.Y
+    LMG2L["Tabs_2a"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
+    LMG2L["Tabs_2a"]["ScrollBarImageTransparency"] = 1
+
+    -- List Layout para tabs
+    LMG2L["TabsList_2b"] = Instance.new("UIListLayout", LMG2L["Tabs_2a"])
+    LMG2L["TabsList_2b"]["Padding"] = UDim.new(0, 5)
+    LMG2L["TabsList_2b"]["SortOrder"] = Enum.SortOrder.LayoutOrder
+
+    -- OpenName Button  
+    LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])  
+    LMG2L["OpenName_2d"]["BorderSizePixel"] = 0  
+    LMG2L["OpenName_2d"]["BackgroundTransparency"] = 1  
+    LMG2L["OpenName_2d"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)  
+    LMG2L["OpenName_2d"]["Image"] = [[rbxassetid://8539638324]]  
+    LMG2L["OpenName_2d"]["Size"] = UDim2.new(0, 14, 0, 14)  
+    LMG2L["OpenName_2d"]["Name"] = [[OpenName]]  
+    LMG2L["OpenName_2d"]["Rotation"] = 180  
+    LMG2L["OpenName_2d"]["Position"] = UDim2.new(0, 4, 0, 4)  
+
+    -- Funções do menu  
+    LMG2L["CloseMenu_4"].MouseButton1Click:Connect(function()  
+        LMG2L["Floating_1"]:Destroy()
+    end)  
+
+    LMG2L["MinimizeMenu_4a"].MouseButton1Click:Connect(function()
+        isMinimized = not isMinimized
+        if isMinimized then
+            LMG2L["Main_5"].Visible = false
+            LMG2L["OpenName_2d"].Rotation = 180
+            LMG2L["MinimizeMenu_4a"].Text = [[+]]
+        else
+            LMG2L["Main_5"].Visible = true
+            LMG2L["OpenName_2d"].Rotation = 0
+            LMG2L["MinimizeMenu_4a"].Text = [[−]]
+        end
+    end)
+  
+    LMG2L["OpenName_2d"].MouseButton1Click:Connect(function()  
+        LMG2L["Main_5"].Visible = not LMG2L["Main_5"].Visible  
+        LMG2L["OpenName_2d"].Rotation = LMG2L["Main_5"].Visible and 0 or 180  
+    end)  
+  
+    -- Sistema de Drag melhorado
+    if windowSettings.CanDrag then
+        local draggingWindow = false
+        local dragStart
+        local startPos
+        local Topo = LMG2L["Topo_2"]
+
+        Topo.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+                draggingWindow = true
+                dragStart = input.Position
+                startPos = Topo.Position
+                
+                -- Feedback visual
+                TweenService:Create(Topo, TweenInfo.new(0.2), {
+                    BackgroundColor3 = Color3.fromRGB(
+                        math.floor(currentTheme.MainColor.R * 255 * 0.9),
+                        math.floor(currentTheme.MainColor.G * 255 * 0.9),
+                        math.floor(currentTheme.MainColor.B * 255 * 0.9)
+                    )
+                }):Play()
+            end
+        end)
+
+        UserInputService.InputChanged:Connect(function(input)
+            if draggingWindow and (
+                input.UserInputType == Enum.UserInputType.MouseMovement
+                or input.UserInputType == Enum.UserInputType.Touch
+            ) then
+                local delta = input.Position - dragStart
+                local newX = math.clamp(startPos.X.Offset + delta.X, 0, workspace.CurrentCamera.ViewportSize.X - Topo.AbsoluteSize.X)
+                local newY = math.clamp(startPos.Y.Offset + delta.Y, 0, workspace.CurrentCamera.ViewportSize.Y - Topo.AbsoluteSize.Y)
+                Topo.Position = UDim2.new(0, newX, 0, newY)
+            end
+        end)
+
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+                draggingWindow = false
+                
+                -- Restaurar cor
+                TweenService:Create(Topo, TweenInfo.new(0.2), {
+                    BackgroundColor3 = currentTheme.MainColor
+                }):Play()
+            end
+        end)
+    end
+  
+    -- *** NOVA FUNÇÃO: Atualizar Scroll Adaptativo ***
+    local function updateScrollability(container, elementCount)
+        local containerHeight = 186
+        local totalHeight = elementCount * CONFIG.ELEMENT_HEIGHT + 20
+        
+        if totalHeight > containerHeight then
+            container.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
+            -- Barra de scroll estilizada
+            container.ScrollBarThickness = 3
+            container.ScrollBarImageColor3 = currentTheme.MainColor
+        else
+            container.CanvasSize = UDim2.new(0, 0, 0, 0)
+            container.ScrollBarThickness = 0
+        end
+    end
+
+    -- FUNÇÃO PARA CRIAR NOVA TAB  
+    function publicMethods:AddTab(tabName, iconId)  
+        local tabIndex = #tabs + 1  
+        local tabData = {  
+            name = tabName,  
+            elements = {},  
+            container = nil,  
+            button = nil,  
+            elementCount = 0  
+        }  
+          
+        -- Criar botão da tab
+        local TabButton = Instance.new("ImageButton", LMG2L["Tabs_2a"])  
+        TabButton["BorderSizePixel"] = 0  
+        TabButton["BackgroundColor3"] = currentTheme.MainColor
+        TabButton["Size"] = UDim2.new(0, 40, 0, 40)  
+        TabButton["Name"] = "Tab" .. tabIndex  
+        TabButton["LayoutOrder"] = tabIndex
+        TabButton["Image"] = iconId or getIcon("folder")  
+          
+        local UICorner = Instance.new("UICorner", TabButton)  
+        UICorner["CornerRadius"] = UDim.new(0, 5)  
+          
+        -- Efeito hover
+        TabButton.MouseEnter:Connect(function()
+            if currentTab ~= tabData then
+                TweenService:Create(TabButton, TweenInfo.new(0.2), {
+                    BackgroundColor3 = Color3.fromRGB(
+                        math.floor(currentTheme.MainColor.R * 255 * 1.2),
+                        math.floor(currentTheme.MainColor.G * 255 * 1.2),
+                        math.floor(currentTheme.MainColor.B * 255 * 1.2)
+                    )
+                }):Play()
+            end
+        end)
+        
+        TabButton.MouseLeave:Connect(function()
+            if currentTab ~= tabData then
+                TweenService:Create(TabButton, TweenInfo.new(0.2), {
+                    BackgroundColor3 = currentTab == tabData and Color3.fromRGB(110, 0, 140) or currentTheme.MainColor
+                }):Play()
+            end
+        end)
+        
+        -- *** ALTERADO: Container agora é Frame normal (filho do ScrollingFrame) ***
+        local ElementsContainer = Instance.new("Frame", LMG2L["Main_7"])  
+        ElementsContainer["BackgroundTransparency"] = 1  
+        ElementsContainer["Size"] = UDim2.new(1, 0, 1, 0)  
+        ElementsContainer["Name"] = "Container_" .. tabName  
+        ElementsContainer["Visible"] = false  
+          
+        tabData.container = ElementsContainer  
+        tabData.button = TabButton  
+          
+        -- Função para trocar de tab  
+        local function switchToTab()  
+            for _, tab in ipairs(tabs) do  
+                tab.container.Visible = false  
+                if tab.button then
+                    TweenService:Create(tab.button, TweenInfo.new(0.2), {
+                        BackgroundColor3 = currentTheme.MainColor
+                    }):Play()
+                end
+            end  
+              
+            ElementsContainer.Visible = true  
+            TweenService:Create(TabButton, TweenInfo.new(0.2), {
+                BackgroundColor3 = Color3.fromRGB(110, 0, 140)
+            }):Play()
+            currentTab = tabData
+            
+            -- *** ATUALIZAR SCROLL ao trocar de tab ***
+            updateScrollability(LMG2L["Main_7"], tabData.elementCount)
+        end  
+          
+        TabButton.MouseButton1Click:Connect(switchToTab)  
+        table.insert(tabs, tabData)  
+          
+        if tabIndex == 1 then  
+            switchToTab()  
+        end
+    
+        -- *** ATUALIZAR Canvas Size das tabs ***
+        local tabsHeight = tabIndex * 45 + 10
+        if tabsHeight > 194 then
+            LMG2L["Tabs_2a"].CanvasSize = UDim2.new(0, 0, 0, tabsHeight)
+        end
+          
+        local tabMethods = {}  
+          
+        -- ADICIONAR TOGGLE melhorado
+        function tabMethods:AddToggle(text, callback)  
+            local ToggleFrame = Instance.new("Frame")  
+            ToggleFrame.Name = "Toggle_" .. text  
+            ToggleFrame.BorderSizePixel = 0  
+            ToggleFrame.BackgroundColor3 = currentTheme.ElementBackground  
+            ToggleFrame.Size = UDim2.new(0, 250, 0, 25)
+            ToggleFrame.Position = UDim2.new(0, 7, 0, 5 + (tabData.elementCount * 30))
+            ToggleFrame.BackgroundTransparency = 0  
+            
+            local UICorner = Instance.new("UICorner", ToggleFrame)
+            UICorner.CornerRadius = UDim.new(0, 5)
+            
+            local InfoLabel = Instance.new("TextLabel")  
+            InfoLabel.Name = "InfoLabel"  
+            InfoLabel.BorderSizePixel = 0  
+            InfoLabel.TextSize = 11  
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left  
+            InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)  
+            InfoLabel.TextColor3 = currentTheme.TextColor  
+            InfoLabel.BackgroundTransparency = 1  
+            InfoLabel.Size = UDim2.new(0, 180, 0, 25)  
+            InfoLabel.Text = text or "Toggle"  
+            InfoLabel.Position = UDim2.new(0, 10, 0, 0)  
+            InfoLabel.Parent = ToggleFrame  
+              
+            local ToggleButton = Instance.new("Frame")
+            ToggleButton.Name = "ToggleButton"  
+            ToggleButton.BackgroundColor3 = currentTheme.ToggleOff
+            ToggleButton.Size = UDim2.new(0, 40, 0, 20)  
+            ToggleButton.BorderSizePixel = 0  
+            ToggleButton.Position = UDim2.new(1, -45, 0.5, -10)
+            
+            local ToggleUICorner = Instance.new("UICorner")  
+            ToggleUICorner.CornerRadius = UDim.new(1, 0)
+            ToggleUICorner.Parent = ToggleButton  
+            
+            local ToggleIndicator = Instance.new("Frame")
+            ToggleIndicator.Name = "ToggleIndicator"
+            ToggleIndicator.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            ToggleIndicator.Size = UDim2.new(0, 16, 0, 16)
+            ToggleIndicator.Position = UDim2.new(0, 2, 0.5, -8)
+            ToggleIndicator.BorderSizePixel = 0
+            
+            local IndicatorUICorner = Instance.new("UICorner")
+            IndicatorUICorner.CornerRadius = UDim.new(1, 0)
+            IndicatorUICorner.Parent = ToggleIndicator
+            
+            ToggleIndicator.Parent = ToggleButton
+            ToggleButton.Parent = ToggleFrame  
+            ToggleFrame.Parent = ElementsContainer  
+              
+            local toggleState = false  
+            
+            local function updateToggle()  
+                if toggleState then
+                    TweenService:Create(ToggleButton, TweenInfo.new(0.2), {
+                        BackgroundColor3 = currentTheme.ToggleOn
+                    }):Play()
+                    TweenService:Create(ToggleIndicator, TweenInfo.new(0.2), {
+                        Position = UDim2.new(1, -18, 0.5, -8)
+                    }):Play()
+                else
+                    TweenService:Create(ToggleButton, TweenInfo.new(0.2), {
+                        BackgroundColor3 = currentTheme.ToggleOff
+                    }):Play()
+                    TweenService:Create(ToggleIndicator, TweenInfo.new(0.2), {
+                        Position = UDim2.new(0, 2, 0.5, -8)
+                    }):Play()
+                end
+                if callback then callback(toggleState) end  
+            end  
+            
+            -- Efeitos hover
+            ToggleFrame.MouseEnter:Connect(function()
+                TweenService:Create(ToggleFrame, TweenInfo.new(0.2), {
+                    BackgroundColor3 = currentTheme.ElementBackgroundHover
+                }):Play()
+            end)
+            
+            ToggleFrame.MouseLeave:Connect(function()
+                TweenService:Create(ToggleFrame, TweenInfo.new(0.2), {
+                    BackgroundColor3 = currentTheme.ElementBackground
+                }):Play()
+            end)
+            
+            ToggleFrame.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    toggleState = not toggleState  
+                    updateToggle()
+                end
+            end)
+            
+            tabData.elementCount = tabData.elementCount + 1
+            updateScrollability(LMG2L["Main_7"], tabData.elementCount)
+              
+            return {  
+                SetState = function(self, state)  
+                    toggleState = state  
+                    updateToggle()  
+                end,  
+                GetState = function(self)  
+                    return toggleState  
+                end  
+            }  
+        end  
+          
+        -- ADICIONAR SLIDER melhorado
+        function tabMethods:AddSlider(text, defaultValue, max, callback)  
+            local SliderFrame = Instance.new("Frame")  
+            SliderFrame.Name = "Slider_" .. text  
+            SliderFrame.BorderSizePixel = 0  
+            SliderFrame.BackgroundColor3 = currentTheme.ElementBackground  
+            SliderFrame.Size = UDim2.new(0, 246, 0, 50)
+            SliderFrame.Position = UDim2.new(0, 6, 0, 5 + (tabData.elementCount * 30))
+            SliderFrame.BackgroundTransparency = 0
+            
+            local UICorner = Instance.new("UICorner", SliderFrame)
+            UICorner.CornerRadius = UDim.new(0, 5)
+            
+            local InfoLabel = Instance.new("TextLabel")  
+            InfoLabel.Name = "InfoLabel"  
+            InfoLabel.BorderSizePixel = 0  
+            InfoLabel.TextSize = 11  
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left  
+            InfoLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)  
+            InfoLabel.TextColor3 = currentTheme.TextColor  
+            InfoLabel.BackgroundTransparency = 1  
+            InfoLabel.Size = UDim2.new(1, -10, 0, 20)  
+            InfoLabel.Text = text or "Slider"  
+            InfoLabel.Position = UDim2.new(0, 10, 0, 5)
+            InfoLabel.Parent = SliderFrame  
+            
+            local ValueLabel = Instance.new("TextLabel")
+            ValueLabel.Name = "ValueLabel"
+            ValueLabel.BorderSizePixel = 0
+            ValueLabel.TextSize = 11
+            ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+            ValueLabel.BackgroundTransparency = 1
+            ValueLabel.Size = UDim2.new(0, 50, 0, 20)
+            ValueLabel.TextColor3 = currentTheme.SecondaryText
+            ValueLabel.Text = tostring(defaultValue or 0)
+            ValueLabel.Position = UDim2.new(1, -60, 0, 5)
+            ValueLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+            ValueLabel.Parent = SliderFrame
+            
+            local SliderTrack = Instance.new("Frame")  
+            SliderTrack.Name = "SliderTrack"  
+            SliderTrack.BorderSizePixel = 0  
+            SliderTrack.BackgroundColor3 = currentTheme.ElementBackgroundHover
+            SliderTrack.Size = UDim2.new(1, -20, 0, 6)
+            SliderTrack.Position = UDim2.new(0, 10, 0, 35)
+            
+            local TrackCorner = Instance.new("UICorner", SliderTrack)
+            TrackCorner.CornerRadius = UDim.new(1, 0)
+            
+            local SliderFill = Instance.new("Frame")  
+            SliderFill.Name = "SliderFill"  
+            SliderFill.BorderSizePixel = 0  
+            SliderFill.BackgroundColor3 = currentTheme.MainColor  
+            SliderFill.Size = UDim2.new(0, 0, 1, 0)  
+            
+            local FillCorner = Instance.new("UICorner", SliderFill)
+            FillCorner.CornerRadius = UDim.new(1, 0)
+            
+            local SliderThumb = Instance.new("Frame")
+            SliderThumb.Name = "SliderThumb"
+            SliderThumb.BorderSizePixel = 0
+            SliderThumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            SliderThumb.Size = UDim2.new(0, 14, 0, 14)
+            SliderThumb.Position = UDim2.new(0, -7, 0.5, -7)
+            
+            local ThumbCorner = Instance.new("UICorner", SliderThumb)
+            ThumbCorner.CornerRadius = UDim.new(1, 0)
+            
+            SliderFill.Parent = SliderTrack
+            SliderThumb.Parent = SliderTrack
+            SliderTrack.Parent = SliderFrame
+            SliderFrame.Parent = ElementsContainer
+
+            local min = 0
+            local max = max or 100
+            local defaultValue = defaultValue or 0
+            local sliderValue = defaultValue
+            local dragging = false
+
+            local function updateValue(newValue)
+                sliderValue = math.clamp(newValue, min, max)
+                local percentage = (sliderValue - min) / (max - min)
+                ValueLabel.Text = tostring(math.floor(sliderValue))
+                TweenService:Create(SliderFill, TweenInfo.new(0.1), {
+                    Size = UDim2.new(percentage, 0, 1, 0)
+                }):Play()
+                TweenService:Create(SliderThumb, TweenInfo.new(0.1), {
+                    Position = UDim2.new(percentage, -7, 0.5, -7)
+                }):Play()
+                if callback then callback(sliderValue) end
+            end
+
+            SliderTrack.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1
+                or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = true
+                    local mouse = UserInputService:GetMouseLocation()
+                    local trackAbsPos = SliderTrack.AbsolutePosition
+                    local trackAbsSize = SliderTrack.AbsoluteSize
+                    local relativeX = (mouse.X - trackAbsPos.X) / trackAbsSize.X
+                    relativeX = math.clamp(relativeX, 0, 1)
+                    local newValue = min + (relativeX * (max - min))
+                    updateValue(newValue)
+                end
+            end)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    local mouse = input.Position
+                    local trackAbsPos = SliderTrack.AbsolutePosition
+                    local trackAbsSize = SliderTrack.AbsoluteSize
+                    local relativeX = (mouse.X - trackAbsPos.X) / trackAbsSize.X
+                    relativeX = math.clamp(relativeX, 0, 1)
+                    local newValue = min + (relativeX * (max - min))
+                    updateValue(newValue)
+                end
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1
+                or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = false
+                end
+            end)
+
+            -- Efeitos hover
+            SliderFrame.MouseEnter:Connect(function()
+                TweenService:Create(SliderFrame, TweenInfo.new(0.2), {
+                    BackgroundColor3 = currentTheme.ElementBackgroundHover
+                }):Play()
+            end)
+            
+            SliderFrame.MouseLeave:Connect(function()
+                TweenService:Create(SliderFrame, TweenInfo.new(0.2), {
+                    BackgroundColor3 = currentTheme.ElementBackground
+                }):Play()
+            end)
+
+            updateValue(defaultValue)
+            tabData.elementCount = tabData.elementCount + 1.7
+            updateScrollability(LMG2L["Main_7"], tabData.elementCount)
+
+            return {
+                SetValue = function(self, value) 
+                    updateValue(value) 
+                end,
+                GetValue = function(self) 
+                    return sliderValue 
+                end
+            }
+        end  
+          
+        -- ADICIONAR DROPDOWN melhorado
+        function tabMethods:AddDropdown(text, options, callback)
+            local DropdownFrame = Instance.new("Frame")
+            DropdownFrame.Name = "Dropdown_" .. text
+            DropdownFrame.BorderSizePixel = 0
+            DropdownFrame.BackgroundColor3 = currentTheme.ElementBackground
+            DropdownFrame.Size = UDim2.new(0, 246, 0, 30)
+            DropdownFrame.Position = UDim2.new(0, 6, 0, 5 + (tabData.elementCount * 30))
+            
+            local DropdownCorner = Instance.new("UICorner", DropdownFrame)
+            DropdownCorner.CornerRadius = UDim.new(0, 5)
+
+            local InfoLabel = Instance.new("TextLabel")  
+            InfoLabel.BorderSizePixel = 0  
+            InfoLabel.TextSize = 11  
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left  
+            InfoLabel.BackgroundTransparency = 1  
+            InfoLabel.Size = UDim2.new(0, 150, 0, 30)  
+            InfoLabel.Position = UDim2.new(0, 10, 0, 0)  
+            InfoLabel.Text = text or "Dropdown"  
+            InfoLabel.TextColor3 = currentTheme.TextColor  
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)  
+            InfoLabel.Parent = DropdownFrame  
+
+            local Selected = Instance.new("TextLabel")  
+            Selected.BackgroundTransparency = 1  
+            Selected.Size = UDim2.new(0, 80, 0, 30)  
+            Selected.Position = UDim2.new(1, -90, 0, 0)  
+            Selected.TextXAlignment = Enum.TextXAlignment.Right  
+            Selected.TextTruncate = Enum.TextTruncate.AtEnd  
+            Selected.TextSize = 11  
+            Selected.TextColor3 = currentTheme.SecondaryText  
+            Selected.Text = options[1] or "Select"  
+            Selected.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular)  
+            Selected.Parent = DropdownFrame  
+
+            local Open = Instance.new("ImageButton")  
+            Open.BackgroundTransparency = 1
+            Open.Size = UDim2.new(0, 20, 0, 20)  
+            Open.Position = UDim2.new(1, -25, 0.5, -10)  
+            Open.Image = "rbxassetid://8539638324"  
+            Open.Rotation = 180
+            Open.ImageColor3 = currentTheme.SecondaryText
+            Open.BorderSizePixel = 0  
+            Open.Parent = DropdownFrame  
+
+            local DropdownContainer = Instance.new("Frame")
+            DropdownContainer.Visible = false  
+            DropdownContainer.BorderSizePixel = 0  
+            DropdownContainer.BackgroundColor3 = currentTheme.ElementBackground  
+            DropdownContainer.Position = UDim2.new(0, 0, 0, 35)  
+            DropdownContainer.Size = UDim2.new(1, 0, 0, 0)
+            DropdownContainer.ClipsDescendants = true
+            DropdownContainer.Parent = DropdownFrame  
+            
+            local DropdownContainerCorner = Instance.new("UICorner", DropdownContainer)
+            DropdownContainerCorner.CornerRadius = UDim.new(0, 5)
+            
+            local OptionsList = Instance.new("UIListLayout", DropdownContainer)
+            OptionsList.Padding = UDim.new(0, 2)
+            OptionsList.SortOrder = Enum.SortOrder.LayoutOrder
+
+            local function createOption(optionText, index)
+                local OptionButton = Instance.new("TextButton")  
+                OptionButton.Size = UDim2.new(1, -10, 0, 25)  
+                OptionButton.Position = UDim2.new(0, 5, 0, (index-1)*27)  
+                OptionButton.Text = optionText  
+                OptionButton.TextSize = 11  
+                OptionButton.TextColor3 = currentTheme.TextColor
+                OptionButton.BackgroundColor3 = currentTheme.ElementBackground
+                OptionButton.BorderSizePixel = 0  
+                OptionButton.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular)  
+                OptionButton.LayoutOrder = index
+                OptionButton.Parent = DropdownContainer
+                
+                local OptionCorner = Instance.new("UICorner", OptionButton)
+                OptionCorner.CornerRadius = UDim.new(0, 3)
+                
+                -- Efeitos hover
+                OptionButton.MouseEnter:Connect(function()
+                    TweenService:Create(OptionButton, TweenInfo.new(0.2), {
+                        BackgroundColor3 = currentTheme.ElementBackgroundHover
+                    }):Play()
+                end)
+                
+                OptionButton.MouseLeave:Connect(function()
+                    TweenService:Create(OptionButton, TweenInfo.new(0.2), {
+                        BackgroundColor3 = currentTheme.ElementBackground
+                    }):Play()
+                end)
+                
+                OptionButton.MouseButton1Click:Connect(function()  
+                    Selected.Text = optionText  
+                    if callback then callback(optionText) end  
+                    closeDropdown()
+                end)
+                
+                return OptionButton
+            end
+
+            for i, option in ipairs(options) do  
+                createOption(option, i)
+            end
+            
+            local function updateDropdownSize()
+                local optionCount = math.min(#options, 5)
+                DropdownContainer.Size = UDim2.new(1, 0, 0, optionCount * 27 + 5)
+            end
+            
+            updateDropdownSize()
+            
+            local dropdownOpen = false
+            
+            local function openDropdown()
+                dropdownOpen = true
+                DropdownContainer.Visible = true
+                TweenService:Create(Open, TweenInfo.new(0.3), {Rotation = 0}):Play()
+                TweenService:Create(DropdownContainer, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, math.min(#options, 5) * 27 + 5)}):Play()
+                TweenService:Create(DropdownFrame, TweenInfo.new(0.3), {
+                    Size = UDim2.new(0, 246, 0, 30 + math.min(#options, 5) * 27 + 10)
+                }):Play()
+            end
+            
+            local function closeDropdown()
+                dropdownOpen = false
+                TweenService:Create(Open, TweenInfo.new(0.3), {Rotation = 180}):Play()
+                TweenService:Create(DropdownContainer, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, 0)}):Play()
+                TweenService:Create(DropdownFrame, TweenInfo.new(0.3), {
+                    Size = UDim2.new(0, 246, 0, 30)
+                }):Play()
+                
+                task.wait(0.3)
+                if not dropdownOpen then
+                    DropdownContainer.Visible = false
+                end
+            end
+            
+            Open.MouseButton1Click:Connect(function()  
+                if dropdownOpen then
+                    closeDropdown()
+                else
+                    openDropdown()
+                end
+            end)
+            
+            -- Efeitos hover no frame principal
+            DropdownFrame.MouseEnter:Connect(function()
+                TweenService:Create(DropdownFrame, TweenInfo.new(0.2), {
+                    BackgroundColor3 = currentTheme.ElementBackgroundHover
+                }):Play()
+            end)
+            
+            DropdownFrame.MouseLeave:Connect(function()
+                if not dropdownOpen then
+                    TweenService:Create(DropdownFrame, TweenInfo.new(0.2), {
+                        BackgroundColor3 = currentTheme.ElementBackground
+                    }):Play()
+                end
+            end)
+            
+            -- Fechar dropdown ao clicar fora
+            local function onGlobalClick(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 and dropdownOpen then
+                    local mouse = UserInputService:GetMouseLocation()
+                    local framePos = DropdownFrame.AbsolutePosition
+                    local frameSize = DropdownFrame.AbsoluteSize
+                    
+                    if not (mouse.X >= framePos.X and mouse.X <= framePos.X + frameSize.X and
+                           mouse.Y >= framePos.Y and mouse.Y <= framePos.Y + frameSize.Y) then
+                        closeDropdown()
+                    end
+                end
+            end
+            
+            UserInputService.InputBegan:Connect(onGlobalClick)
+
+            DropdownFrame.Parent = ElementsContainer  
+            tabData.elementCount = tabData.elementCount + 1
+            updateScrollability(LMG2L["Main_7"], tabData.elementCount)
+
+            return {  
+                SetValue = function(_, val)  
+                    if table.find(options, val) then  
+                        Selected.Text = val  
+                        if callback then callback(val) end  
+                    end  
+                end,  
+                GetValue = function() 
+                    return Selected.Text 
+                end,
+                Refresh = function(self, newOptions)
+                    options = newOptions
+                    for _, child in ipairs(DropdownContainer:GetChildren()) do
+                        if child:IsA("TextButton") then
+                            child:Destroy()
+                        end
+                    end
+                    
+                    for i, option in ipairs(options) do  
+                        createOption(option, i)
+                    end
+                    updateDropdownSize()
+                    Selected.Text = options[1] or "Select"
+                end
+            }
+        end
+      
+        -- ADICIONAR BOTÃO melhorado
+        function tabMethods:AddButton(text, callback)  
+            local ButtonFrame = Instance.new("Frame")  
+            ButtonFrame.Name = "Button_" .. text  
+            ButtonFrame.BorderSizePixel = 0  
+            ButtonFrame.BackgroundColor3 = currentTheme.ElementBackground  
+            ButtonFrame.Size = UDim2.new(0, 246, 0, 35)
+            ButtonFrame.Position = UDim2.new(0, 6, 0, 5 + (tabData.elementCount * 30))
+            ButtonFrame.BackgroundTransparency = 0
+            
+            local ButtonCorner = Instance.new("UICorner", ButtonFrame)
+            ButtonCorner.CornerRadius = UDim.new(0, 5)
+              
+            local Button = Instance.new("TextButton")  
+            Button.Name = "Button"  
+            Button.TextWrapped = true  
+            Button.BorderSizePixel = 0  
+            Button.TextSize = 12  
+            Button.TextColor3 = currentTheme.TextColor  
+            Button.BackgroundTransparency = 1  
+            Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)  
+            Button.Size = UDim2.new(1, 0, 1, 0)  
+            Button.Text = text or "Button"  
+            Button.AutoButtonColor = false  
+              
+            Button.MouseEnter:Connect(function()  
+                TweenService:Create(ButtonFrame, TweenInfo.new(0.2), {
+                    BackgroundColor3 = currentTheme.ElementBackgroundHover
+                }):Play()
+            end)  
+              
+            Button.MouseLeave:Connect(function()  
+                TweenService:Create(ButtonFrame, TweenInfo.new(0.2), {
+                    BackgroundColor3 = currentTheme.ElementBackground
+                }):Play()
+            end)  
+              
+            Button.MouseButton1Click:Connect(function()  
+                if callback then 
+                    -- Efeito de clique
+                    TweenService:Create(ButtonFrame, TweenInfo.new(0.1), {
+                        BackgroundColor3 = currentTheme.MainColor
+                    }):Play()
+                    task.wait(0.1)
+                    TweenService:Create(ButtonFrame, TweenInfo.new(0.1), {
+                        BackgroundColor3 = currentTheme.ElementBackgroundHover
+                    }):Play()
+                    callback() 
+                end  
+            end)  
+              
+            Button.Parent = ButtonFrame  
+            ButtonFrame.Parent = ElementsContainer  
+            tabData.elementCount = tabData.elementCount + 1
+            updateScrollability(LMG2L["Main_7"], tabData.elementCount)
+            return ButtonFrame  
+        end  
+        
+        -- ADICIONAR LABEL
+        function tabMethods:AddLabel(text, color)
+            local LabelFrame = Instance.new("Frame")
+            LabelFrame.Name = "Label_" .. text
+            LabelFrame.BorderSizePixel = 0
+            LabelFrame.BackgroundTransparency = 1
+            LabelFrame.Size = UDim2.new(0, 246, 0, 25)
+            LabelFrame.Position = UDim2.new(0, 6, 0, 5 + (tabData.elementCount * 30))
+            
+            local Label = Instance.new("TextLabel")
+            Label.Name = "Label"
+            Label.TextWrapped = true
+            Label.BorderSizePixel = 0
+            Label.TextSize = 11
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.BackgroundTransparency = 1
+            Label.Size = UDim2.new(1, 0, 1, 0)
+            Label.TextColor3 = color or currentTheme.SecondaryText
+            Label.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+            Label.Text = text or "Label"
+            Label.Parent = LabelFrame
+            
+            LabelFrame.Parent = ElementsContainer
+            tabData.elementCount = tabData.elementCount + 0.7
+            updateScrollability(LMG2L["Main_7"], tabData.elementCount)
+            
+            return {
+                SetText = function(self, newText)
+                    Label.Text = newText
+                end,
+                SetColor = function(self, newColor)
+                    Label.TextColor3 = newColor
+                end
+            }
+        end
+        
+        -- ADICIONAR SEPARADOR
+        function tabMethods:AddSeparator()
+            local SeparatorFrame = Instance.new("Frame")
+            SeparatorFrame.Name = "Separator"
+            SeparatorFrame.BorderSizePixel = 0
+            SeparatorFrame.BackgroundTransparency = 1
+            SeparatorFrame.Size = UDim2.new(0, 246, 0, 15)
+            SeparatorFrame.Position = UDim2.new(0, 6, 0, 5 + (tabData.elementCount * 30))
+            
+            local SeparatorLine = Instance.new("Frame")
+            SeparatorLine.Name = "Line"
+            SeparatorLine.BorderSizePixel = 0
+            SeparatorLine.BackgroundColor3 = currentTheme.ElementBackgroundHover
+            SeparatorLine.Size = UDim2.new(1, 0, 0, 1)
+            SeparatorLine.Position = UDim2.new(0, 0, 0.5, 0)
+            SeparatorLine.Parent = SeparatorFrame
+            
+            SeparatorFrame.Parent = ElementsContainer
+            tabData.elementCount = tabData.elementCount + 0.5
+            updateScrollability(LMG2L["Main_7"], tabData.elementCount)
+            
+            return SeparatorFrame
+        end
+      
+        return tabMethods  
+    end
+    
+    -- Métodos públicos da janela
+    function publicMethods:SetVisibility(visible)
+        isVisible = visible
+        LMG2L["Topo_2"].Visible = visible
+        if not visible then
+            LMG2L["Main_5"].Visible = false
+        end
+    end
+    
+    function publicMethods:ToggleVisibility()
+        isVisible = not isVisible
+        publicMethods:SetVisibility(isVisible)
+    end
+    
+    function publicMethods:SetPosition(position)
+        LMG2L["Topo_2"].Position = position
+    end
+    
+    function publicMethods:Destroy()
+        LMG2L["Floating_1"]:Destroy()
+    end
+    
+    function publicMethods:ChangeTheme(themeName)
+        if Themes[themeName] then
+            currentTheme = Themes[themeName]
+            
+            -- Atualizar cores
+            LMG2L["Topo_2"].BackgroundColor3 = currentTheme.MainColor
+            LMG2L["TitleMenu_3"].TextColor3 = currentTheme.TextColor
+            LMG2L["TitleIcon_3a"].ImageColor3 = currentTheme.TextColor
+            LMG2L["CloseMenu_4"].TextColor3 = currentTheme.TextColor
+            LMG2L["MinimizeMenu_4a"].TextColor3 = currentTheme.TextColor
+            LMG2L["Main_5"].BackgroundColor3 = currentTheme.Background
+            LMG2L["Effect_6"].BackgroundColor3 = currentTheme.MainColor
+            
+            -- Atualizar botões das tabs
+            for _, tab in ipairs(tabs) do
+                if tab.button then
+                    tab.button.BackgroundColor3 = currentTheme.MainColor
+                end
+            end
+        end
+    end
+    
+    -- Auto mostrar/ocultar com tecla (exemplo: RightControl)
+    local toggleConnection
+    toggleConnection = UserInputService.InputBegan:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.RightControl then
+            publicMethods:ToggleVisibility()
+        end
+    end)
+    
+    -- Conectar destruição
+    LMG2L["Floating_1"].Destroying:Connect(function()
+        if toggleConnection then
+            toggleConnection:Disconnect()
+        end
+    end)
+  
+    return publicMethods
+end
+
+-- Função de notificação estilo Rayfield
+function UILibrary:Notify(title, message, duration)
+    duration = duration or 5
+    
+    local CoreGui = game:GetService("CoreGui")
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "NotificationGui"
+    ScreenGui.Parent = CoreGui
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
+    local NotificationFrame = Instance.new("Frame")
+    NotificationFrame.Size = UDim2.new(0, 300, 0, 0)
+    NotificationFrame.Position = UDim2.new(1, -320, 1, -80)
+    NotificationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    NotificationFrame.BackgroundTransparency = 0.1
+    NotificationFrame.BorderSizePixel = 0
+    NotificationFrame.ClipsDescendants = true
+    NotificationFrame.Parent = ScreenGui
+    
+    local UICorner = Instance.new("UICorner", NotificationFrame)
+    UICorner.CornerRadius = UDim.new(0, 8)
+    
+    local Shadow = Instance.new("ImageLabel", NotificationFrame)
+    Shadow.Image = "rbxassetid://5554236805"
+    Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    Shadow.ImageTransparency = 0.8
+    Shadow.ScaleType = Enum.ScaleType.Slice
+    Shadow.SliceCenter = Rect.new(23, 23, 277, 277)
+    Shadow.Size = UDim2.new(1, 14, 1, 14)
+    Shadow.Position = UDim2.new(-0.022, 0, -0.03, 0)
+    Shadow.BackgroundTransparency = 1
+    Shadow.ZIndex = -1
+    
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Text = title
+    TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TitleLabel.TextSize = 14
+    TitleLabel.Font = Enum.Font.GothamBold
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Size = UDim2.new(1, -20, 0, 30)
+    TitleLabel.Position = UDim2.new(0, 10, 0, 10)
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.Parent = NotificationFrame
+    
+    local MessageLabel = Instance.new("TextLabel")
+    MessageLabel.Text = message
+    MessageLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    MessageLabel.TextSize = 12
+    MessageLabel.Font = Enum.Font.Gotham
+    MessageLabel.BackgroundTransparency = 1
+    MessageLabel.Size = UDim2.new(1, -20, 0, 40)
+    MessageLabel.Position = UDim2.new(0, 10, 0, 40)
+    MessageLabel.TextXAlignment = Enum.TextXAlignment.Left
+    MessageLabel.TextYAlignment = Enum.TextYAlignment.Top
+    MessageLabel.TextWrapped = true
+    MessageLabel.Parent = NotificationFrame
+    
+    -- Animação de entrada
+    TweenService:Create(NotificationFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 300, 0, 90)
+    }):Play()
+    
+    task.wait(duration)
+    
+    -- Animação de saída
+    TweenService:Create(NotificationFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+        Size = UDim2.new(0, 300, 0, 0)
+    }):Play()
+    
+    task.wait(0.3)
+    ScreenGui:Destroy()
+end
+
+-- Versão para Loadstring
+if _G.VLG_UILibrary then
+    return _G.VLG_UILibrary
+else
+    _G.VLG_UILibrary = UILibrary
+    return UILibrary
+end
