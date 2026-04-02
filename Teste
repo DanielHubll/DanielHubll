@@ -1,8 +1,8 @@
--- UI Library ATUALIZADA com Sistema Adaptativo, Bind de Dropdown, COLOR PICKER, BOTOES, SLIDER E RADIO BUTTONS
+-- UI Library ATUALIZADA com Brush Icon Adaptativo e Confirmação de Cor Resturada
 local UILibrary = {}
 local activeDropdowns = {}
 
--- CONFIGURAÇÕES DO SISTEMA ADAPTATIVO
+-- CONFIGURAÇÕES DA UI
 local CONFIG = {
     MAX_ELEMENTS_WITHOUT_SCROLL = 6,
     ELEMENT_HEIGHT = 30,
@@ -10,9 +10,16 @@ local CONFIG = {
 }
 
 local UserInputService = game:GetService("UserInputService")
-local ContextActionService = game:GetService("ContextActionService")
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
+
+-- FUNÇÃO PARA O BRUSH ICON ADAPTATIVO
+local function GetContrastColor(color)
+    local r, g, b = color.R * 255, color.G * 255, color.B * 255
+    local luminance = (0.299 * r + 0.587 * g + 0.114 * b)
+    -- Se a cor for clara, retorna preto. Se for escura, retorna branco.
+    return (luminance > 128) and Color3.fromRGB(0, 0, 0) or Color3.fromRGB(255, 255, 255)
+end
 
 function UILibrary:CreateWindow(title)
     local publicMethods = {}
@@ -109,7 +116,7 @@ function UILibrary:CreateWindow(title)
     local Paleta_d = Instance.new("Frame", LMG2L["Floating_1"])  
     Paleta_d.BorderSizePixel = 0  
     Paleta_d.BackgroundColor3 = Color3.fromRGB(30, 30, 30)  
-    Paleta_d.Size = UDim2.new(0, 180, 0, 160)  
+    Paleta_d.Size = UDim2.new(0, 180, 0, 185)  
     Paleta_d.Position = UDim2.new(0, 600, 0, 100)  
     Paleta_d.Visible = false  
     Paleta_d.ZIndex = 100  
@@ -208,15 +215,38 @@ function UILibrary:CreateWindow(title)
     HueCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)   
     HueCursor.ZIndex = 102  
 
+    local HexLabel = Instance.new("TextLabel", Paleta_d)
+    HexLabel.Position = UDim2.new(0, 6, 0, 128)
+    HexLabel.Size = UDim2.new(0, 30, 0, 20)
+    HexLabel.BackgroundTransparency = 1
+    HexLabel.Text = "HEX:"
+    HexLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    HexLabel.TextSize = 10
+    HexLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+    HexLabel.ZIndex = 101
+
+    local HexInput = Instance.new("TextBox", Paleta_d)
+    HexInput.Position = UDim2.new(0, 38, 0, 128)
+    HexInput.Size = UDim2.new(0, 134, 0, 20)
+    HexInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    HexInput.BorderSizePixel = 0
+    HexInput.Text = "#FFFFFF"
+    HexInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    HexInput.TextSize = 10
+    HexInput.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold)
+    HexInput.ClearTextOnFocus = false
+    HexInput.ZIndex = 101
+    Instance.new("UICorner", HexInput).CornerRadius = UDim.new(0, 4)
+
     local ColorPreview = Instance.new("Frame", Paleta_d)  
-    ColorPreview.Position = UDim2.new(0, 6, 0, 128)  
+    ColorPreview.Position = UDim2.new(0, 6, 0, 153)  
     ColorPreview.Size = UDim2.new(0, 24, 0, 24)  
     ColorPreview.BackgroundColor3 = Color3.fromRGB(255,255,255)  
     ColorPreview.ZIndex = 101  
     Instance.new("UICorner", ColorPreview).CornerRadius = UDim.new(0, 4)  
 
     local ConfirmBtn = Instance.new("TextButton", Paleta_d)  
-    ConfirmBtn.Position = UDim2.new(0, 36, 0, 128)  
+    ConfirmBtn.Position = UDim2.new(0, 36, 0, 153)  
     ConfirmBtn.Size = UDim2.new(0, 136, 0, 24)  
     ConfirmBtn.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  
     ConfirmBtn.Text = "Confirmar Cor"  
@@ -234,10 +264,26 @@ function UILibrary:CreateWindow(title)
         local realColor = Color3.fromHSV(h, s, v)  
         local pureColor = Color3.fromHSV(h, s, 1)  
         HueGradient.Color = ColorSequence.new(pureColor, Color3.fromRGB(0, 0, 0))  
+        
+        -- Atualiza apenas o PREVIEW enquanto arrasta
         ColorPreview.BackgroundColor3 = realColor  
-        if activeColorTarget then activeColorTarget.BackgroundColor3 = realColor end  
-        if activeColorCallback then activeColorCallback(realColor) end  
+        HexInput.Text = "#" .. realColor:ToHex()
     end  
+
+    HexInput.FocusLost:Connect(function()
+        local success, newColor = pcall(function()
+            return Color3.fromHex(HexInput.Text)
+        end)
+        
+        if success and newColor then
+            h, s, v = newColor:ToHSV()
+            SVCursor.Position = UDim2.new(h, -2, s, -2)  
+            HueCursor.Position = UDim2.new(0, 0, 1-v, -1)
+            updateColorInternal()
+        else
+            HexInput.Text = "#" .. Color3.fromHSV(h, s, v):ToHex()
+        end
+    end)
 
     local function updateSV(input)  
         local relX = math.clamp((input.Position.X - SVMap.AbsolutePosition.X) / SVMap.AbsoluteSize.X, 0, 1)  
@@ -279,7 +325,27 @@ function UILibrary:CreateWindow(title)
         end  
     end)  
 
-    ConfirmBtn.MouseButton1Click:Connect(function() Paleta_d.Visible = false end)  
+    -- CONFIRMAÇÃO DE COR RESTAURADA (Só aplica ao confirmar)
+    ConfirmBtn.MouseButton1Click:Connect(function() 
+        local finalColor = Color3.fromHSV(h, s, v)
+        
+        -- Aplica a cor no botão da UI e altera a cor do BrushIcon
+        if activeColorTarget then 
+            activeColorTarget.BackgroundColor3 = finalColor 
+            local brush = activeColorTarget:FindFirstChild("BrushIcon")
+            if brush then
+                brush.ImageColor3 = GetContrastColor(finalColor)
+            end
+        end  
+        
+        -- Dispara o callback pro seu script
+        if activeColorCallback then 
+            activeColorCallback(finalColor) 
+        end
+        
+        -- Fecha a paleta
+        Paleta_d.Visible = false 
+    end)  
 
     local function OpenColorPicker(targetFrame, defaultColor, callback)  
         activeColorTarget = targetFrame; activeColorCallback = callback  
@@ -287,7 +353,10 @@ function UILibrary:CreateWindow(title)
         h, s, v = dh, ds, dv  
         local pureColor = Color3.fromHSV(h, s, 1)  
         HueGradient.Color = ColorSequence.new(pureColor, Color3.fromRGB(0, 0, 0))  
+        
         ColorPreview.BackgroundColor3 = defaultColor  
+        HexInput.Text = "#" .. defaultColor:ToHex()
+        
         SVCursor.Position = UDim2.new(h, -2, s, -2)  
         HueCursor.Position = UDim2.new(0, 0, 1-v, -1)   
         Paleta_d.Visible = true  
@@ -329,8 +398,9 @@ function UILibrary:CreateWindow(title)
         LMG2L["OpenName_2d"].Rotation = LMG2L["Main_5"].Visible and 0 or 180  
     end)  
 
-    local function updateScrollability(container, totalHeight)  
+    local function updateScrollability(container, elementCount)  
         local containerHeight = 186  
+        local totalHeight = elementCount * CONFIG.ELEMENT_HEIGHT + 20  
         if totalHeight > containerHeight then    
             container.CanvasSize = UDim2.new(0, 0, 0, totalHeight)    
         else    
@@ -343,7 +413,7 @@ function UILibrary:CreateWindow(title)
     -- ==========================================  
     function publicMethods:AddTab(tabName, iconId)  
         local tabIndex = #tabs + 1  
-        local tabData = { name = tabName, elements = {}, container = nil, button = nil, totalHeight = 0 }  
+        local tabData = { name = tabName, elements = {}, container = nil, button = nil, elementCount = 0 }  
 
         local TabButton = Instance.new("ImageButton", LMG2L["Tabs_2a"])      
         TabButton["BorderSizePixel"] = 0      
@@ -365,13 +435,13 @@ function UILibrary:CreateWindow(title)
             local y = 8    
             for _, element in ipairs(tabData.elements) do    
                 if element.visible then    
-                    local positionX = element.isSub and 15 or 6 
+                    local positionX = element.isSub and 24 or 6 
                     element.frame.Position = UDim2.new(0, positionX, 0, y)    
                     y = y + element.height    
                 end    
             end    
-            tabData.totalHeight = y + 10 -- Padding extra no final
-            updateScrollability(LMG2L["Main_7"], tabData.totalHeight)    
+            tabData.elementCount = math.floor(y / 30)    
+            updateScrollability(LMG2L["Main_7"], tabData.elementCount)    
         end    
               
         local function switchToTab()      
@@ -382,7 +452,7 @@ function UILibrary:CreateWindow(title)
             ElementsContainer.Visible = true      
             TabButton.BackgroundColor3 = Color3.fromRGB(110, 0, 140)    
             currentTab = tabData    
-            updateScrollability(LMG2L["Main_7"], tabData.totalHeight)    
+            updateScrollability(LMG2L["Main_7"], tabData.elementCount)    
         end      
               
         TabButton.MouseButton1Click:Connect(switchToTab)      
@@ -472,59 +542,73 @@ function UILibrary:CreateWindow(title)
             return ToggleObject    
         end      
           
-        function tabMethods:AddColorPicker(text, defaultColor, callback)  
-            local ColorFrame = Instance.new("Frame", ElementsContainer)      
-            ColorFrame.BorderSizePixel = 0      
-            ColorFrame.Size = UDim2.new(0, 140, 0, 22)      
-            ColorFrame.BackgroundTransparency = 1      
-                  
-            local InfoLabel = Instance.new("TextLabel", ColorFrame)      
-            InfoLabel.BorderSizePixel = 0      
-            InfoLabel.TextSize = 10      
-            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left      
-            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)      
-            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)      
-            InfoLabel.BackgroundTransparency = 1      
-            InfoLabel.Size = UDim2.new(0, 88, 0, 22)      
-            InfoLabel.Text = text or "Color Picker"      
-            InfoLabel.Position = UDim2.new(0, 28, 0, 0)      
-                  
-            local ColorBtn = Instance.new("TextButton", ColorFrame)      
-            ColorBtn.BackgroundColor3 = defaultColor or Color3.fromRGB(255, 255, 255)  
-            ColorBtn.Size = UDim2.new(0, 22, 0, 22)      
-            ColorBtn.BorderSizePixel = 0      
-            ColorBtn.Text = ""      
-            ColorBtn.AutoButtonColor = false      
-            Instance.new("UICorner", ColorBtn).CornerRadius = UDim.new(0, 3)    
-                  
-            ColorBtn.MouseButton1Click:Connect(function()  
-                OpenColorPicker(ColorBtn, ColorBtn.BackgroundColor3, callback)  
-            end)  
+        function tabMethods:AddColorPicker(text, defaultColor, callback)    
+            local ColorFrame = Instance.new("Frame", ElementsContainer)        
+            ColorFrame.BorderSizePixel = 0        
+            ColorFrame.Size = UDim2.new(0, 140, 0, 22)        
+            ColorFrame.BackgroundTransparency = 1        
+                    
+            local InfoLabel = Instance.new("TextLabel", ColorFrame)        
+            InfoLabel.BorderSizePixel = 0        
+            InfoLabel.TextSize = 10        
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left        
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)        
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)        
+            InfoLabel.BackgroundTransparency = 1        
+            InfoLabel.Size = UDim2.new(0, 88, 0, 22)        
+            InfoLabel.Text = text or "Color Picker"        
+            InfoLabel.Position = UDim2.new(0, 28, 0, 0)        
+                    
+            local initColor = defaultColor or Color3.fromRGB(255, 255, 255)
+            local ColorBtn = Instance.new("TextButton", ColorFrame)        
+            ColorBtn.BackgroundColor3 = initColor
+            ColorBtn.Size = UDim2.new(0, 22, 0, 22)        
+            ColorBtn.BorderSizePixel = 0        
+            ColorBtn.Text = ""        
+            ColorBtn.AutoButtonColor = false        
+            Instance.new("UICorner", ColorBtn).CornerRadius = UDim.new(0, 3)      
 
-            local elementData = { frame = ColorFrame, height = 30, visible = true, isSub = false }  
-            table.insert(tabData.elements, elementData)    
-            updateLayout()  
-              
-            local ColorPickerObject = {  
-                SetColor = function(self, color)  
-                    ColorBtn.BackgroundColor3 = color  
-                    if callback then callback(color) end  
+            local BrushIcon = Instance.new("ImageLabel", ColorBtn)  
+            BrushIcon.Name = "BrushIcon"  
+            BrushIcon.AnchorPoint = Vector2.new(0.5, 0.5)  
+            BrushIcon.Position = UDim2.new(0.5, 0, 0.5, 0)  
+            BrushIcon.Size = UDim2.new(0, 14, 0, 14)   
+            BrushIcon.BackgroundTransparency = 1  
+            BrushIcon.Image = "rbxassetid://105955025341798"  
+            -- 🔥 BRUSH ICON ADAPTATIVO RESTAURADO!
+            BrushIcon.ImageColor3 = GetContrastColor(initColor)
+            BrushIcon.ZIndex = 5   
+                    
+            ColorBtn.MouseButton1Click:Connect(function()    
+                OpenColorPicker(ColorBtn, ColorBtn.BackgroundColor3, callback)    
+            end)    
+
+            local elementData = { frame = ColorFrame, height = 30, visible = true, isSub = false }    
+            table.insert(tabData.elements, elementData)      
+            updateLayout()    
+                
+            local ColorPickerObject = {    
+                SetColor = function(self, color)    
+                    ColorBtn.BackgroundColor3 = color    
+                    -- 🔥 Sistema adaptativo do BrushIcon funcionando também via script/SetColor
+                    BrushIcon.ImageColor3 = GetContrastColor(color)
+                    if callback then callback(color) end    
+                end,    
+                SetVisible = function(self, state)    
+                    elementData.visible = state    
+                    ColorFrame.Visible = state    
+                    updateLayout()    
+                end,    
+                GetVisible = function(self)    
+                    return elementData.visible    
                 end,  
-                SetVisible = function(self, state)  
-                    elementData.visible = state  
-                    ColorFrame.Visible = state  
+                SetAsSubElement = function(self, state)  
+                    elementData.isSub = state  
                     updateLayout()  
-                end,  
-                GetVisible = function(self)  
-                    return elementData.visible  
-                end,
-                SetAsSubElement = function(self, state)
-                    elementData.isSub = state
-                    updateLayout()
-                end
-            }  
-            return ColorPickerObject  
-        end  
+                end  
+            }    
+            return ColorPickerObject    
+        end    
               
         function tabMethods:AddDropdown(text, options, callback)    
             local DropdownFrame = Instance.new("Frame", ElementsContainer)    
@@ -641,257 +725,6 @@ function UILibrary:CreateWindow(title)
             
             return DropdownObject  
         end  
-
-        -- ==========================================
-        -- ADICIONADOS DA VERSÃO ANTIGA (ADAPTADOS)
-        -- ==========================================
-
-        function tabMethods:AddSlider(text, defaultValue, max, callback)
-            local SliderFrame = Instance.new("Frame", ElementsContainer)
-            SliderFrame.BorderSizePixel = 0
-            SliderFrame.Size = UDim2.new(0, 246, 0, 22)
-            SliderFrame.BackgroundTransparency = 1
-
-            local Main = Instance.new("Frame", SliderFrame)    
-            Main.BorderSizePixel = 0    
-            Main.BackgroundColor3 = Color3.fromRGB(40, 40, 40)  
-            Main.Size = UDim2.new(0, 168, 0, 22)  
-            Main.BackgroundTransparency = 1    
-            Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)  
-                
-            local SliderTrack = Instance.new("Frame", Main)    
-            SliderTrack.BorderSizePixel = 0    
-            SliderTrack.BackgroundColor3 = Color3.fromRGB(37, 37, 37)  
-            SliderTrack.Size = UDim2.new(0, 168, 0, 22)  
-            Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(0, 3)  
-                
-            local SliderFill = Instance.new("Frame", SliderTrack)    
-            SliderFill.BorderSizePixel = 0    
-            SliderFill.BackgroundColor3 = Color3.fromRGB(144, 0, 181)    
-            SliderFill.Size = UDim2.new(0, 0, 1, 0)    
-            Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(0, 3)  
-                
-            local InfoNumber = Instance.new("TextLabel", Main)    
-            InfoNumber.BorderSizePixel = 0    
-            InfoNumber.TextColor3 = Color3.fromRGB(255, 255, 255)    
-            InfoNumber.BackgroundTransparency = 1    
-            InfoNumber.Size = UDim2.new(0, 168, 0, 22)  
-            InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)    
-            InfoNumber.TextSize = 20  
-            InfoNumber.TextTransparency = 0.3  
-                
-            local InfoLabel = Instance.new("TextLabel", SliderFrame)    
-            InfoLabel.BorderSizePixel = 0    
-            InfoLabel.TextSize = 10    
-            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left    
-            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)    
-            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)    
-            InfoLabel.BackgroundTransparency = 1    
-            InfoLabel.Size = UDim2.new(0, 70, 0, 20)    
-            InfoLabel.Text = text or "Slider"    
-            InfoLabel.Position = UDim2.new(0, 176, 0, 2)  
-
-            local min = 0  
-            local max = max or 100  
-            local defaultValue = defaultValue or 0  
-            local sliderValue = defaultValue  
-            local dragging = false  
-
-            local function blockCamera(_, inputState)  
-                if inputState == Enum.UserInputState.Begin or inputState == Enum.UserInputState.Change then  
-                    return Enum.ContextActionResult.Sink  
-                end  
-            end  
-
-            local function updateValue(newValue)  
-                sliderValue = math.clamp(newValue, min, max)  
-                local percentage = (sliderValue - min) / (max - min)  
-                SliderFill.Size = UDim2.new(percentage, 0, 1, 0)  
-                InfoNumber.Text = tostring(math.floor(sliderValue))  
-                if callback then callback(sliderValue) end  
-            end  
-
-            local function updateSliderFromPosition(input)  
-                if not SliderTrack:IsDescendantOf(game) then return end  
-                local absPos = SliderTrack.AbsolutePosition  
-                local absSize = SliderTrack.AbsoluteSize  
-                local relativeX = (input.Position.X - absPos.X) / absSize.X  
-                relativeX = math.clamp(relativeX, 0, 1)  
-                local newValue = min + (relativeX * (max - min))  
-                updateValue(newValue)  
-            end  
-
-            SliderTrack.InputBegan:Connect(function(input)  
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then  
-                    dragging = true  
-                    ContextActionService:BindAction("BlockCameraSlider", blockCamera, false, Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)  
-                    UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition  
-                    updateSliderFromPosition(input)  
-                end  
-            end)  
-
-            SliderTrack.InputEnded:Connect(function(input)  
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then  
-                    dragging = false  
-                    ContextActionService:UnbindAction("BlockCameraSlider")  
-                    UserInputService.MouseBehavior = Enum.MouseBehavior.Default  
-                end  
-            end)  
-
-            UserInputService.InputChanged:Connect(function(input)  
-                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then  
-                    updateSliderFromPosition(input)  
-                end  
-            end)  
-
-            UserInputService.TouchMoved:Connect(function(input)  
-                if dragging then  
-                    updateSliderFromPosition({Position = input.Position, UserInputType = Enum.UserInputType.Touch})  
-                end  
-            end)  
-
-            updateValue(defaultValue)  
-
-            local elementData = { frame = SliderFrame, height = 30, visible = true, isSub = false }    
-            table.insert(tabData.elements, elementData)    
-            updateLayout()  
-
-            return {  
-                SetValue = function(self, value) updateValue(value) end,  
-                GetValue = function(self) return sliderValue end,
-                SetVisible = function(self, state)    
-                    elementData.visible = state; SliderFrame.Visible = state; updateLayout()    
-                end,
-                SetAsSubElement = function(self, state)
-                    elementData.isSub = state; updateLayout()
-                end
-            }
-        end
-
-        function tabMethods:AddButton(text, callback)    
-            local ButtonFrame = Instance.new("Frame", ElementsContainer)    
-            ButtonFrame.BorderSizePixel = 0    
-            ButtonFrame.Size = UDim2.new(0, 236, 0, 22)  
-            ButtonFrame.BackgroundTransparency = 1  
-                
-            local Button = Instance.new("TextButton", ButtonFrame)    
-            Button.TextWrapped = true    
-            Button.BorderSizePixel = 0    
-            Button.TextSize = 13    
-            Button.TextColor3 = Color3.fromRGB(255, 255, 255)    
-            Button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)    
-            Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)    
-            Button.Size = UDim2.new(0, 238, 0, 22)  
-            Button.Text = text or "Button"    
-            Button.AutoButtonColor = false    
-            Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 3)  
-                
-            Button.MouseEnter:Connect(function() Button.BackgroundColor3 = Color3.fromRGB(164, 20, 201) end)    
-            Button.MouseLeave:Connect(function() Button.BackgroundColor3 = Color3.fromRGB(144, 0, 181) end)    
-            Button.MouseButton1Click:Connect(function() if callback then callback() end end)    
-                
-            local elementData = { frame = ButtonFrame, height = 30, visible = true, isSub = false }    
-            table.insert(tabData.elements, elementData)    
-            updateLayout()  
-
-            return {
-                SetVisible = function(self, state)    
-                    elementData.visible = state; ButtonFrame.Visible = state; updateLayout()    
-                end,
-                SetAsSubElement = function(self, state)
-                    elementData.isSub = state; updateLayout()
-                end
-            }    
-        end 
-
-        function tabMethods:AddRadioButtons(text, options, callback)    
-            local RadioFrame = Instance.new("Frame", ElementsContainer)    
-            RadioFrame.BorderSizePixel = 0    
-            RadioFrame.Size = UDim2.new(0, 162, 0, 38) 
-            RadioFrame.BackgroundTransparency = 1    
-                
-            local InfoLabel = Instance.new("TextLabel", RadioFrame)    
-            InfoLabel.TextWrapped = true    
-            InfoLabel.BorderSizePixel = 0    
-            InfoLabel.TextSize = 10    
-            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left    
-            InfoLabel.TextScaled = true    
-            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)    
-            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)    
-            InfoLabel.BackgroundTransparency = 1    
-            InfoLabel.Size = UDim2.new(0, 132, 0, 12)  
-            InfoLabel.Text = text or "Radio Buttons"    
-            InfoLabel.Position = UDim2.new(0, 0, 0, -2)  
-                
-            local radioButtons = {}    
-            local selectedOption = options[1]    
-                
-            for i, option in ipairs(options) do    
-                local RadioOption = Instance.new("Frame", RadioFrame)    
-                RadioOption.BorderSizePixel = 0    
-                RadioOption.Size = UDim2.new(0, 70, 0, 16)  
-                RadioOption.Position = UDim2.new(0, (i-1) * 78, 0, 16)    
-                RadioOption.BackgroundTransparency = 1    
-                    
-                local OptionLabel = Instance.new("TextLabel", RadioOption)    
-                OptionLabel.BorderSizePixel = 0    
-                OptionLabel.TextSize = 9    
-                OptionLabel.TextXAlignment = Enum.TextXAlignment.Left    
-                OptionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)    
-                OptionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)    
-                OptionLabel.BackgroundTransparency = 1    
-                OptionLabel.Size = UDim2.new(0, 58, 0, 16)    
-                OptionLabel.Text = option    
-                OptionLabel.Position = UDim2.new(0, 20, 0, 0)    
-                    
-                local RadioButton = Instance.new("TextButton", RadioOption)    
-                RadioButton.BorderSizePixel = 0    
-                RadioButton.BackgroundColor3 = i == 1 and Color3.fromRGB(144, 0, 181) or Color3.fromRGB(53, 53, 53)    
-                RadioButton.Size = UDim2.new(0, 16, 0, 16)    
-                RadioButton.Text = ""    
-                RadioButton.AutoButtonColor = false    
-                Instance.new("UICorner", RadioButton).CornerRadius = UDim.new(1, 9)  
-                    
-                table.insert(radioButtons, {button = RadioButton, option = option, index = i})    
-                    
-                RadioButton.MouseButton1Click:Connect(function()    
-                    for _, rb in ipairs(radioButtons) do    
-                        rb.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)    
-                    end    
-                    RadioButton.BackgroundColor3 = Color3.fromRGB(144, 0, 181)    
-                    selectedOption = option    
-                    if callback then callback(option) end    
-                end)    
-            end    
-                
-            RadioFrame.Size = UDim2.new(0, math.min(#options * 78, 162), 0, 38)
-
-            -- Ajustado a altura para 42, para garantir espaçamento vertical agradável como na V antiga
-            local elementData = { frame = RadioFrame, height = 42, visible = true, isSub = false }    
-            table.insert(tabData.elements, elementData)    
-            updateLayout()  
-                
-            return {    
-                SetValue = function(self, value)    
-                    for _, rb in ipairs(radioButtons) do    
-                        if rb.option == value then    
-                            rb.button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)    
-                            selectedOption = value    
-                        else    
-                            rb.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)    
-                        end    
-                    end    
-                    if callback then callback(value) end    
-                end,    
-                GetValue = function(self) return selectedOption end,
-                SetVisible = function(self, state)    
-                    elementData.visible = state; RadioFrame.Visible = state; updateLayout()    
-                end,
-                SetAsSubElement = function(self, state)
-                    elementData.isSub = state; updateLayout()
-                end
-            }    
-        end 
 
         return tabMethods  
     end  
