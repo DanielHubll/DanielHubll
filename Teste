@@ -1,4 +1,4 @@
--- UI Library ATUALIZADA com Sistema Adaptativo, Bind de Dropdown, COLOR PICKER e OPACIDADE
+-- UI Library ATUALIZADA com Sistema Adaptativo, Bind de Dropdown e COLOR PICKER
 local UILibrary = {}
 local activeDropdowns = {}
 
@@ -100,259 +100,244 @@ function UILibrary:CreateWindow(title)
     LMG2L["OpenName_2d"]["Position"] = UDim2.new(0, 4, 0, 4)
 
     -- ==========================================
-    -- PALETA DE CORES FLUTUANTE (COM OPACIDADE)
-    -- ==========================================
-    local activeColorTarget = nil
-    local activeColorCallback = nil
-    local UserInputService = game:GetService("UserInputService")
+-- PALETA DE CORES FLUTUANTE (CORES NO MEIO, ESCURO DO LADO)
+-- ==========================================
+local activeColorTarget = nil
+local activeColorCallback = nil
+local UserInputService = game:GetService("UserInputService")
 
-    local Paleta_d = Instance.new("Frame", LMG2L["Floating_1"])
-    Paleta_d.BorderSizePixel = 0
-    Paleta_d.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    Paleta_d.Size = UDim2.new(0, 206, 0, 160) -- Expandido para caber a nova barra
-    Paleta_d.Position = UDim2.new(0, 600, 0, 100)
+local Paleta_d = Instance.new("Frame", LMG2L["Floating_1"])
+Paleta_d.BorderSizePixel = 0
+Paleta_d.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Paleta_d.Size = UDim2.new(0, 180, 0, 160)
+Paleta_d.Position = UDim2.new(0, 600, 0, 100)
+Paleta_d.Visible = false
+Paleta_d.ZIndex = 100
+Instance.new("UICorner", Paleta_d).CornerRadius = UDim.new(0, 4)
+
+local PaletaTop = Instance.new("Frame", Paleta_d)
+PaletaTop.BorderSizePixel = 0
+PaletaTop.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
+PaletaTop.Size = UDim2.new(1, 0, 0, 16)
+PaletaTop.ZIndex = 101
+Instance.new("UICorner", PaletaTop).CornerRadius = UDim.new(0, 4)
+
+local PaletaTitle = Instance.new("TextLabel", PaletaTop)
+PaletaTitle.BackgroundTransparency = 1
+PaletaTitle.Size = UDim2.new(1, -20, 1, 0)
+PaletaTitle.Position = UDim2.new(0, 4, 0, 0)
+PaletaTitle.Text = "Seletor de Cor"
+PaletaTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+PaletaTitle.TextSize = 10
+PaletaTitle.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+PaletaTitle.TextXAlignment = Enum.TextXAlignment.Left
+PaletaTitle.ZIndex = 102
+
+local PaletaClose = Instance.new("TextButton", PaletaTop)
+PaletaClose.BackgroundTransparency = 1
+PaletaClose.Size = UDim2.new(0, 16, 0, 16)
+PaletaClose.Position = UDim2.new(1, -16, 0, 0)
+PaletaClose.Text = "X"
+PaletaClose.TextColor3 = Color3.fromRGB(255, 255, 255)
+PaletaClose.TextSize = 10
+PaletaClose.ZIndex = 102
+
+PaletaClose.MouseButton1Click:Connect(function()
     Paleta_d.Visible = false
-    Paleta_d.ZIndex = 100
-    Instance.new("UICorner", Paleta_d).CornerRadius = UDim.new(0, 4)
+end)
 
-    local PaletaTop = Instance.new("Frame", Paleta_d)
-    PaletaTop.BorderSizePixel = 0
-    PaletaTop.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
-    PaletaTop.Size = UDim2.new(1, 0, 0, 16)
-    PaletaTop.ZIndex = 101
-    Instance.new("UICorner", PaletaTop).CornerRadius = UDim.new(0, 4)
+-- Bloco Grande (Agora seleciona Matiz/Cor no eixo X e Saturação/Branco no eixo Y)
+local SVMap = Instance.new("TextButton", Paleta_d)
+SVMap.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SVMap.BorderSizePixel = 0
+SVMap.Position = UDim2.new(0, 6, 0, 22)
+SVMap.Size = UDim2.new(0, 140, 0, 100)
+SVMap.Text = ""
+SVMap.AutoButtonColor = false
+SVMap.ZIndex = 101
 
-    local PaletaTitle = Instance.new("TextLabel", PaletaTop)
-    PaletaTitle.BackgroundTransparency = 1
-    PaletaTitle.Size = UDim2.new(1, -20, 1, 0)
-    PaletaTitle.Position = UDim2.new(0, 4, 0, 0)
-    PaletaTitle.Text = "Seletor de Cor"
-    PaletaTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    PaletaTitle.TextSize = 10
-    PaletaTitle.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
-    PaletaTitle.TextXAlignment = Enum.TextXAlignment.Left
-    PaletaTitle.ZIndex = 102
+local SVLayer1 = Instance.new("Frame", SVMap)
+SVLayer1.Size = UDim2.new(1, 0, 1, 0)
+SVLayer1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SVLayer1.BackgroundTransparency = 0
+SVLayer1.BorderSizePixel = 0
+SVLayer1.ZIndex = 102
+local UIGradient1 = Instance.new("UIGradient", SVLayer1)
+-- Arco-íris na Horizontal
+UIGradient1.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+    ColorSequenceKeypoint.new(0.167, Color3.fromRGB(255, 255, 0)),
+    ColorSequenceKeypoint.new(0.333, Color3.fromRGB(0, 255, 0)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
+    ColorSequenceKeypoint.new(0.667, Color3.fromRGB(0, 0, 255)),
+    ColorSequenceKeypoint.new(0.833, Color3.fromRGB(255, 0, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
+})
+UIGradient1.Rotation = 0 -- 0 para horizontal
 
-    local PaletaClose = Instance.new("TextButton", PaletaTop)
-    PaletaClose.BackgroundTransparency = 1
-    PaletaClose.Size = UDim2.new(0, 16, 0, 16)
-    PaletaClose.Position = UDim2.new(1, -16, 0, 0)
-    PaletaClose.Text = "X"
-    PaletaClose.TextColor3 = Color3.fromRGB(255, 255, 255)
-    PaletaClose.TextSize = 10
-    PaletaClose.ZIndex = 102
+local SVLayer2 = Instance.new("Frame", SVMap)
+SVLayer2.Size = UDim2.new(1, 0, 1, 0)
+SVLayer2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SVLayer2.BackgroundTransparency = 0
+SVLayer2.BorderSizePixel = 0
+SVLayer2.ZIndex = 103
+local UIGradient2 = Instance.new("UIGradient", SVLayer2)
+-- Branco no topo desvanecendo para transparente (mostrando a cor) embaixo
+UIGradient2.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 255, 255))
+UIGradient2.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1)})
+UIGradient2.Rotation = 90
 
-    PaletaClose.MouseButton1Click:Connect(function()
-        Paleta_d.Visible = false
-    end)
+local SVCursor = Instance.new("Frame", SVMap)
+SVCursor.Size = UDim2.new(0, 4, 0, 4)
+SVCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SVCursor.ZIndex = 104
+Instance.new("UICorner", SVCursor).CornerRadius = UDim.new(1, 0)
 
-    -- SV Map (Saturação e Valor - Onde escolhe claro/escuro)
-    local SVMap = Instance.new("TextButton", Paleta_d)
-    SVMap.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    SVMap.BorderSizePixel = 0
-    SVMap.Position = UDim2.new(0, 6, 0, 22)
-    SVMap.Size = UDim2.new(0, 140, 0, 100)
-    SVMap.Text = ""
-    SVMap.AutoButtonColor = false
-    SVMap.ZIndex = 101
+-- Barra Lateral (Agora seleciona o quão Escuro/Claro a cor base fica)
+local HueMap = Instance.new("TextButton", Paleta_d)
+HueMap.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+HueMap.BorderSizePixel = 0
+HueMap.Position = UDim2.new(0, 152, 0, 22)
+HueMap.Size = UDim2.new(0, 20, 0, 100)
+HueMap.Text = ""
+HueMap.AutoButtonColor = false
+HueMap.ZIndex = 101
 
-    local SVLayer1 = Instance.new("Frame", SVMap)
-    SVLayer1.Size = UDim2.new(1, 0, 1, 0)
-    SVLayer1.BackgroundTransparency = 0
-    SVLayer1.BorderSizePixel = 0
-    SVLayer1.ZIndex = 102
-    local UIGradient1 = Instance.new("UIGradient", SVLayer1)
-    UIGradient1.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 255, 255))
-    UIGradient1.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1)})
+local HueGradient = Instance.new("UIGradient", HueMap)
+HueGradient.Rotation = 90
+-- Degradê do Transparente (em cima) para o Preto (embaixo)
+HueGradient.Color = ColorSequence.new(Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0))
+HueGradient.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0)})
 
-    local SVLayer2 = Instance.new("Frame", SVMap)
-    SVLayer2.Size = UDim2.new(1, 0, 1, 0)
-    SVLayer2.BackgroundTransparency = 0
-    SVLayer2.BorderSizePixel = 0
-    SVLayer2.ZIndex = 103
-    local UIGradient2 = Instance.new("UIGradient", SVLayer2)
-    UIGradient2.Color = ColorSequence.new(Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0))
-    UIGradient2.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0)})
-    UIGradient2.Rotation = 90
+local HueCursor = Instance.new("Frame", HueMap)
+HueCursor.Size = UDim2.new(1, 0, 0, 2)
+HueCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- Mudei pra branco para enxergar melhor no preto
+HueCursor.ZIndex = 102
 
-    local SVCursor = Instance.new("Frame", SVMap)
-    SVCursor.Size = UDim2.new(0, 4, 0, 4)
-    SVCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    SVCursor.ZIndex = 104
-    Instance.new("UICorner", SVCursor).CornerRadius = UDim.new(1, 0)
+-- Preview e Confirmar
+local ColorPreview = Instance.new("Frame", Paleta_d)
+ColorPreview.Position = UDim2.new(0, 6, 0, 128)
+ColorPreview.Size = UDim2.new(0, 24, 0, 24)
+ColorPreview.BackgroundColor3 = Color3.fromRGB(255,255,255)
+ColorPreview.ZIndex = 101
+Instance.new("UICorner", ColorPreview).CornerRadius = UDim.new(0, 4)
 
-    -- Hue Map (Barra lateral de cores)
-    local HueMap = Instance.new("TextButton", Paleta_d)
-    HueMap.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    HueMap.BorderSizePixel = 0
-    HueMap.Position = UDim2.new(0, 152, 0, 22)
-    HueMap.Size = UDim2.new(0, 20, 0, 100)
-    HueMap.Text = ""
-    HueMap.AutoButtonColor = false
-    HueMap.ZIndex = 101
+local ConfirmBtn = Instance.new("TextButton", Paleta_d)
+ConfirmBtn.Position = UDim2.new(0, 36, 0, 128)
+ConfirmBtn.Size = UDim2.new(0, 136, 0, 24)
+ConfirmBtn.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
+ConfirmBtn.Text = "Confirmar Cor"
+ConfirmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ConfirmBtn.TextSize = 11
+ConfirmBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+ConfirmBtn.ZIndex = 101
+Instance.new("UICorner", ConfirmBtn).CornerRadius = UDim.new(0, 4)
 
-    local HueGradient = Instance.new("UIGradient", HueMap)
-    HueGradient.Rotation = 90
-    HueGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
-        ColorSequenceKeypoint.new(0.167, Color3.fromRGB(255, 255, 0)),
-        ColorSequenceKeypoint.new(0.333, Color3.fromRGB(0, 255, 0)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
-        ColorSequenceKeypoint.new(0.667, Color3.fromRGB(0, 0, 255)),
-        ColorSequenceKeypoint.new(0.833, Color3.fromRGB(255, 0, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
-    })
+-- Lógica de Cor Ajustada
+local h, s, v = 0, 1, 1
+local colorDragging = false
+local hueDragging = false
 
-    local HueCursor = Instance.new("Frame", HueMap)
-    HueCursor.Size = UDim2.new(1, 0, 0, 2)
-    HueCursor.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    HueCursor.ZIndex = 102
-
-    -- Alpha Map (Barra lateral de transparência)
-    local AlphaMap = Instance.new("TextButton", Paleta_d)
-    AlphaMap.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    AlphaMap.BorderSizePixel = 0
-    AlphaMap.Position = UDim2.new(0, 178, 0, 22)
-    AlphaMap.Size = UDim2.new(0, 20, 0, 100)
-    AlphaMap.Text = ""
-    AlphaMap.AutoButtonColor = false
-    AlphaMap.ZIndex = 101
-
-    local AlphaGradient = Instance.new("UIGradient", AlphaMap)
-    AlphaGradient.Rotation = 90
-    AlphaGradient.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 0), -- Sólido no topo
-        NumberSequenceKeypoint.new(1, 1)  -- Transparente na base
-    })
-
-    local AlphaCursor = Instance.new("Frame", AlphaMap)
-    AlphaCursor.Size = UDim2.new(1, 0, 0, 2)
-    AlphaCursor.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    AlphaCursor.ZIndex = 102
-
-    -- Preview e Confirmar
-    local ColorPreview = Instance.new("Frame", Paleta_d)
-    ColorPreview.Position = UDim2.new(0, 6, 0, 128)
-    ColorPreview.Size = UDim2.new(0, 24, 0, 24)
-    ColorPreview.BackgroundColor3 = Color3.fromRGB(255,255,255)
-    ColorPreview.ZIndex = 101
-    Instance.new("UICorner", ColorPreview).CornerRadius = UDim.new(0, 4)
-
-    local ConfirmBtn = Instance.new("TextButton", Paleta_d)
-    ConfirmBtn.Position = UDim2.new(0, 36, 0, 128)
-    ConfirmBtn.Size = UDim2.new(0, 162, 0, 24) -- Ajustado para nova largura
-    ConfirmBtn.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
-    ConfirmBtn.Text = "Confirmar Cor"
-    ConfirmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ConfirmBtn.TextSize = 11
-    ConfirmBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
-    ConfirmBtn.ZIndex = 101
-    Instance.new("UICorner", ConfirmBtn).CornerRadius = UDim.new(0, 4)
-
-    -- Lógica de Cor (Com Alpha)
-    local h, s, v, a = 0, 1, 1, 1
-    local colorDragging = false
-    local hueDragging = false
-    local alphaDragging = false
-
-    local function updateColorInternal()
-        local realColor = Color3.fromHSV(h, s, v)
-        SVMap.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
-        AlphaMap.BackgroundColor3 = realColor -- Barra de alpha muda para a cor escolhida
-        ColorPreview.BackgroundColor3 = realColor
-        ColorPreview.BackgroundTransparency = 1 - a -- Atualiza o preview visualmente
-        
-        if activeColorTarget then
-            activeColorTarget.BackgroundColor3 = realColor
-        end
-        if activeColorCallback then
-            activeColorCallback(realColor, 1 - a) -- Retorna a Cor e a Transparência!
-        end
+local function updateColorInternal()
+    local realColor = Color3.fromHSV(h, s, v)
+    
+    -- Atualiza o fundo da barra lateral com a cor selecionada no quadrado central
+    HueMap.BackgroundColor3 = Color3.fromHSV(h, s, 1)
+    
+    ColorPreview.BackgroundColor3 = realColor
+    
+    if activeColorTarget then
+        activeColorTarget.BackgroundColor3 = realColor
     end
-
-    local function updateSV(input)
-        local relX = math.clamp((input.Position.X - SVMap.AbsolutePosition.X) / SVMap.AbsoluteSize.X, 0, 1)
-        local relY = math.clamp((input.Position.Y - SVMap.AbsolutePosition.Y) / SVMap.AbsoluteSize.Y, 0, 1)
-        s = relX
-        v = 1 - relY
-        SVCursor.Position = UDim2.new(relX, -2, relY, -2)
-        updateColorInternal()
+    if activeColorCallback then
+        activeColorCallback(realColor)
     end
+end
 
-    local function updateHue(input)
-        local relY = math.clamp((input.Position.Y - HueMap.AbsolutePosition.Y) / HueMap.AbsoluteSize.Y, 0, 1)
-        h = relY
-        HueCursor.Position = UDim2.new(0, 0, relY, -1)
-        updateColorInternal()
+local function updateSV(input)
+    -- Eixo X agora define a Cor (Matiz/h)
+    local relX = math.clamp((input.Position.X - SVMap.AbsolutePosition.X) / SVMap.AbsoluteSize.X, 0, 1)
+    -- Eixo Y agora define a Saturação (s) - topo é branco, base é colorido
+    local relY = math.clamp((input.Position.Y - SVMap.AbsolutePosition.Y) / SVMap.AbsoluteSize.Y, 0, 1)
+    
+    h = relX
+    s = relY
+    SVCursor.Position = UDim2.new(relX, -2, relY, -2)
+    updateColorInternal()
+end
+
+local function updateHue(input)
+    -- A barra lateral agora define a Opacidade/Escuro (Valor/v)
+    local relY = math.clamp((input.Position.Y - HueMap.AbsolutePosition.Y) / HueMap.AbsoluteSize.Y, 0, 1)
+    v = 1 - relY -- Topo = Claro (1), Base = Escuro (0)
+    
+    HueCursor.Position = UDim2.new(0, 0, relY, -1)
+    updateColorInternal()
+end
+
+-- Inputs
+SVMap.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        colorDragging = true
+        updateSV(input)
     end
+end)
 
-    local function updateAlpha(input)
-        local relY = math.clamp((input.Position.Y - AlphaMap.AbsolutePosition.Y) / AlphaMap.AbsoluteSize.Y, 0, 1)
-        a = 1 - relY -- a = 1 (Opaque) no topo, a = 0 (Transparent) na base
-        AlphaCursor.Position = UDim2.new(0, 0, relY, -1)
-        updateColorInternal()
+HueMap.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        hueDragging = true
+        updateHue(input)
     end
+end)
 
-    -- Inputs
-    SVMap.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            colorDragging = true
-            updateSV(input)
-        end
-    end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        colorDragging = false
+        hueDragging = false
+    end
+end)
 
-    HueMap.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            hueDragging = true
-            updateHue(input)
-        end
-    end)
+UserInputService.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        if colorDragging then updateSV(input) end
+        if hueDragging then updateHue(input) end
+    end
+end)
 
-    AlphaMap.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            alphaDragging = true
-            updateAlpha(input)
-        end
-    end)
+ConfirmBtn.MouseButton1Click:Connect(function()
+    Paleta_d.Visible = false
+end)
 
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            colorDragging = false
-            hueDragging = false
-            alphaDragging = false
-        end
-    end)
+-- Função global para abrir a paleta
+local function OpenColorPicker(targetFrame, defaultColor, callback)
+    activeColorTarget = targetFrame
+    activeColorCallback = callback
+    
+    local dh, ds, dv = defaultColor:ToHSV()
+    h, s, v = dh, ds, dv
+    
+    HueMap.BackgroundColor3 = Color3.fromHSV(h, s, 1)
+    ColorPreview.BackgroundColor3 = defaultColor
+    SVCursor.Position = UDim2.new(h, -2, s, -2)
+    HueCursor.Position = UDim2.new(0, 0, 1-v, -1) 
+    
+    Paleta_d.Visible = true
+end
 
-    UserInputService.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            if colorDragging then updateSV(input) end
-            if hueDragging then updateHue(input) end
-            if alphaDragging then updateAlpha(input) end
-        end
-    end)
-
-    ConfirmBtn.MouseButton1Click:Connect(function()
-        Paleta_d.Visible = false
-    end)
 
     -- Função global para abrir a paleta
-    local function OpenColorPicker(targetFrame, defaultColor, defaultTransparency, callback)
+    local function OpenColorPicker(targetFrame, defaultColor, callback)
         activeColorTarget = targetFrame
         activeColorCallback = callback
         
         -- Converte cor atual para HSV e ajusta UI
         local dh, ds, dv = defaultColor:ToHSV()
         h, s, v = dh, ds, dv
-        a = 1 - (defaultTransparency or 0)
         
         SVMap.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
-        AlphaMap.BackgroundColor3 = defaultColor
         ColorPreview.BackgroundColor3 = defaultColor
-        ColorPreview.BackgroundTransparency = 1 - a
-        
         SVCursor.Position = UDim2.new(s, -2, 1-v, -2)
-        HueCursor.Position = UDim2.new(0, 0, h, -1)
-        AlphaCursor.Position = UDim2.new(0, 0, 1-a, -1)
+        HueCursor.Position = UDim2.new(0, 0, 1-h, -1)
         
         Paleta_d.Visible = true
     end
@@ -568,12 +553,7 @@ function UILibrary:CreateWindow(title)
             Instance.new("UICorner", ColorBtn).CornerRadius = UDim.new(0, 3)  
                 
             ColorBtn.MouseButton1Click:Connect(function()
-                OpenColorPicker(ColorBtn, ColorBtn.BackgroundColor3, 0, function(color, transparency)
-                    -- Opcional: Aqui poderiamos deixar o próprio botão da aba transparente, 
-                    -- mas mantivemos a cor solida para a UI não ficar feia. A variavel é enviada.
-                    ColorBtn.BackgroundColor3 = color
-                    if callback then callback(color, transparency) end
-                end)
+                OpenColorPicker(ColorBtn, ColorBtn.BackgroundColor3, callback)
             end)
 
             local elementData = { frame = ColorFrame, height = 30, visible = true }
@@ -581,9 +561,9 @@ function UILibrary:CreateWindow(title)
             updateLayout()
             
             local ColorPickerObject = {
-                SetColor = function(self, color, transparency)
+                SetColor = function(self, color)
                     ColorBtn.BackgroundColor3 = color
-                    if callback then callback(color, transparency or 0) end
+                    if callback then callback(color) end
                 end,
                 SetVisible = function(self, state)
                     elementData.visible = state
@@ -696,8 +676,10 @@ function UILibrary:CreateWindow(title)
                 end  
             end)    
 
+            -- 👇 AQUI ESTÁ A SUA CORREÇÃO APLICADA 👇
             local elementData = { frame = DropdownFrame, height = 30, visible = true }  
             DropdownFrame.Visible = true  
+            -- 👆 AGORA ELE VAI APARECER NORMALMENTE 👆
 
             table.insert(tabData.elements, elementData)  
             updateLayout()  
