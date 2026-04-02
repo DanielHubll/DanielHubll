@@ -412,7 +412,7 @@ function UILibrary:CreateWindow(title)
             
         local tabMethods = {}    
             
-        -- ADICIONAR TOGGLE
+        -- ADICIONAR TOGGLE (COM MÉTODOS EMBUTIDOS)
         function tabMethods:AddToggle(text, callback)    
             local ToggleFrame = Instance.new("Frame", ElementsContainer)    
             ToggleFrame.BorderSizePixel = 0    
@@ -455,13 +455,14 @@ function UILibrary:CreateWindow(title)
             local ToggleObject = {}  
             function ToggleObject:SetState(state) toggleState = state; updateToggle() end  
             function ToggleObject:GetState() return toggleState end  
+            
             function ToggleObject:BindToDropdown(dropdownObject)  
                 if not dropdownObject then return end  
                 dropdownObject:SetVisible(toggleState)  
                 local oldCallback = callback  
                 callback = function(v) if oldCallback then oldCallback(v) end; dropdownObject:SetVisible(v) end  
             end  
-            -- NOVO: BindToColorPicker para atrelar um ColorPicker ao Toggle
+            
             function ToggleObject:BindToColorPicker(colorPickerObject)
                 if not colorPickerObject then return end
                 colorPickerObject:SetVisible(toggleState)
@@ -471,10 +472,25 @@ function UILibrary:CreateWindow(title)
                     colorPickerObject:SetVisible(v)
                 end
             end
+
+            -- 🔥 Criar Dropdown direto no Toggle
+            function ToggleObject:AddDropdown(dropdownText, options, dropCallback)
+                local dropdownObj = tabMethods:AddDropdown(dropdownText, options, dropCallback)
+                self:BindToDropdown(dropdownObj)
+                return dropdownObj
+            end
+
+            -- 🔥 Criar ColorPicker direto no Toggle
+            function ToggleObject:AddColorPicker(pickerText, defaultColor, pickerCallback)
+                local pickerObj = tabMethods:AddColorPicker(pickerText, defaultColor, pickerCallback)
+                self:BindToColorPicker(pickerObj)
+                return pickerObj
+            end
+
             return ToggleObject  
         end    
         
-        -- ADICIONAR SELETOR DE COR (ATUALIZADO)
+        -- ADICIONAR SELETOR DE COR
         function tabMethods:AddColorPicker(text, defaultColor, callback)
             local ColorFrame = Instance.new("Frame", ElementsContainer)    
             ColorFrame.BorderSizePixel = 0    
