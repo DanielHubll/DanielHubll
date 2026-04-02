@@ -1,4 +1,4 @@
--- UI Library ATUALIZADA com Brush Icon, Sistema Adaptativo, Binds e INPUT DE HEX (HTML)
+-- UI Library ATUALIZADA com Brush Icon, Sistema Adaptativo, Binds, INPUT HEX e Confirmação de Cor
 local UILibrary = {}
 local activeDropdowns = {}
 
@@ -108,7 +108,6 @@ function UILibrary:CreateWindow(title)
     local Paleta_d = Instance.new("Frame", LMG2L["Floating_1"])  
     Paleta_d.BorderSizePixel = 0  
     Paleta_d.BackgroundColor3 = Color3.fromRGB(30, 30, 30)  
-    -- Aumentei a altura da paleta de 160 para 185 para caber a caixa de HEX
     Paleta_d.Size = UDim2.new(0, 180, 0, 185)  
     Paleta_d.Position = UDim2.new(0, 600, 0, 100)  
     Paleta_d.Visible = false  
@@ -208,9 +207,6 @@ function UILibrary:CreateWindow(title)
     HueCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)   
     HueCursor.ZIndex = 102  
 
-    -- ==========================================
-    -- NOVO: SISTEMA DE INPUT HEX (HTML)
-    -- ==========================================
     local HexLabel = Instance.new("TextLabel", Paleta_d)
     HexLabel.Position = UDim2.new(0, 6, 0, 128)
     HexLabel.Size = UDim2.new(0, 30, 0, 20)
@@ -234,7 +230,6 @@ function UILibrary:CreateWindow(title)
     HexInput.ZIndex = 101
     Instance.new("UICorner", HexInput).CornerRadius = UDim.new(0, 4)
 
-    -- Movi esses dois mais para baixo para caber o HexInput
     local ColorPreview = Instance.new("Frame", Paleta_d)  
     ColorPreview.Position = UDim2.new(0, 6, 0, 153)  
     ColorPreview.Size = UDim2.new(0, 24, 0, 24)  
@@ -261,16 +256,12 @@ function UILibrary:CreateWindow(title)
         local realColor = Color3.fromHSV(h, s, v)  
         local pureColor = Color3.fromHSV(h, s, 1)  
         HueGradient.Color = ColorSequence.new(pureColor, Color3.fromRGB(0, 0, 0))  
-        ColorPreview.BackgroundColor3 = realColor  
         
-        -- Atualiza a caixinha de texto automaticamente com o código HEX
+        -- Atualiza apenas o PREVIEW (bolinha e caixinha de texto)
+        ColorPreview.BackgroundColor3 = realColor  
         HexInput.Text = "#" .. realColor:ToHex()
-
-        if activeColorTarget then activeColorTarget.BackgroundColor3 = realColor end  
-        if activeColorCallback then activeColorCallback(realColor) end  
     end  
 
-    -- Lógica para quando o usuário colar ou digitar o código HEX
     HexInput.FocusLost:Connect(function()
         local success, newColor = pcall(function()
             return Color3.fromHex(HexInput.Text)
@@ -278,12 +269,10 @@ function UILibrary:CreateWindow(title)
         
         if success and newColor then
             h, s, v = newColor:ToHSV()
-            -- Atualiza a posição dos cursores do mouse na paleta
             SVCursor.Position = UDim2.new(h, -2, s, -2)  
             HueCursor.Position = UDim2.new(0, 0, 1-v, -1)
             updateColorInternal()
         else
-            -- Se colar um código inválido, volta pra cor anterior
             HexInput.Text = "#" .. Color3.fromHSV(h, s, v):ToHex()
         end
     end)
@@ -328,7 +317,30 @@ function UILibrary:CreateWindow(title)
         end  
     end)  
 
-    ConfirmBtn.MouseButton1Click:Connect(function() Paleta_d.Visible = false end)  
+    -- LÓGICA NOVA DE CONFIRMAÇÃO DE COR AQUI:
+    ConfirmBtn.MouseButton1Click:Connect(function() 
+        local finalColor = Color3.fromHSV(h, s, v)
+        
+        -- Aplica a cor no botãozinho da UI
+        if activeColorTarget then 
+            activeColorTarget.BackgroundColor3 = finalColor 
+            
+            -- Se tiver o ícone do pincel, atualiza a cor dele (Preto ou Branco) para não sumir
+            local BrushIcon = activeColorTarget:FindFirstChild("BrushIcon")
+            if BrushIcon then
+                local luminance = (0.299 * finalColor.R) + (0.587 * finalColor.G) + (0.114 * finalColor.B)
+                BrushIcon.ImageColor3 = luminance > 0.7 and Color3.fromRGB(0, 0, 0) or Color3.fromRGB(255, 255, 255)
+            end
+        end  
+        
+        -- Dispara o callback pro seu script rodar
+        if activeColorCallback then 
+            activeColorCallback(finalColor) 
+        end
+        
+        -- Fecha a paleta
+        Paleta_d.Visible = false 
+    end)  
 
     local function OpenColorPicker(targetFrame, defaultColor, callback)  
         activeColorTarget = targetFrame; activeColorCallback = callback  
@@ -336,8 +348,10 @@ function UILibrary:CreateWindow(title)
         h, s, v = dh, ds, dv  
         local pureColor = Color3.fromHSV(h, s, 1)  
         HueGradient.Color = ColorSequence.new(pureColor, Color3.fromRGB(0, 0, 0))  
+        
         ColorPreview.BackgroundColor3 = defaultColor  
-        HexInput.Text = "#" .. defaultColor:ToHex() -- Seta o texto inicial
+        HexInput.Text = "#" .. defaultColor:ToHex()
+        
         SVCursor.Position = UDim2.new(h, -2, s, -2)  
         HueCursor.Position = UDim2.new(0, 0, 1-v, -1)   
         Paleta_d.Visible = true  
