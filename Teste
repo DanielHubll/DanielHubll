@@ -1,8 +1,8 @@
--- UI Library ATUALIZADA com Brush Icon, Sistema Adaptativo, Binds, INPUT HEX e Confirmação de Cor
+-- UI Library ATUALIZADA com Brush Icon Permanente Preto, Binds, INPUT HEX e Confirmação de Cor
 local UILibrary = {}
 local activeDropdowns = {}
 
--- CONFIGURAÇÕES DO SISTEMA ADAPTATIVO
+-- CONFIGURAÇÕES DA UI
 local CONFIG = {
     MAX_ELEMENTS_WITHOUT_SCROLL = 6,
     ELEMENT_HEIGHT = 30,
@@ -317,20 +317,13 @@ function UILibrary:CreateWindow(title)
         end  
     end)  
 
-    -- LÓGICA NOVA DE CONFIRMAÇÃO DE COR AQUI:
+    -- CONFIRMAÇÃO DE COR (Sistema adaptativo removido)
     ConfirmBtn.MouseButton1Click:Connect(function() 
         local finalColor = Color3.fromHSV(h, s, v)
         
         -- Aplica a cor no botãozinho da UI
         if activeColorTarget then 
             activeColorTarget.BackgroundColor3 = finalColor 
-            
-            -- Se tiver o ícone do pincel, atualiza a cor dele (Preto ou Branco) para não sumir
-            local BrushIcon = activeColorTarget:FindFirstChild("BrushIcon")
-            if BrushIcon then
-                local luminance = (0.299 * finalColor.R) + (0.587 * finalColor.G) + (0.114 * finalColor.B)
-                BrushIcon.ImageColor3 = luminance > 0.7 and Color3.fromRGB(0, 0, 0) or Color3.fromRGB(255, 255, 255)
-            end
         end  
         
         -- Dispara o callback pro seu script rodar
@@ -569,7 +562,8 @@ function UILibrary:CreateWindow(title)
             BrushIcon.Size = UDim2.new(0, 14, 0, 14) 
             BrushIcon.BackgroundTransparency = 1
             BrushIcon.Image = "rbxassetid://105955025341798"
-            BrushIcon.ImageColor3 = Color3.fromRGB(255, 255, 255) 
+            -- DEFININDO A COR PRETA PERMANENTE AQUI
+            BrushIcon.ImageColor3 = Color3.fromRGB(0, 0, 0) 
             BrushIcon.ZIndex = 5 
                   
             ColorBtn.MouseButton1Click:Connect(function()  
@@ -583,8 +577,7 @@ function UILibrary:CreateWindow(title)
             local ColorPickerObject = {  
                 SetColor = function(self, color)  
                     ColorBtn.BackgroundColor3 = color  
-                    local luminance = (0.299 * color.R) + (0.587 * color.G) + (0.114 * color.B)
-                    BrushIcon.ImageColor3 = luminance > 0.7 and Color3.fromRGB(0, 0, 0) or Color3.fromRGB(255, 255, 255)
+                    -- Sistema adaptativo removido para o BrushIcon sempre ficar preto
                     if callback then callback(color) end  
                 end,  
                 SetVisible = function(self, state)  
