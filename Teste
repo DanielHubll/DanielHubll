@@ -234,10 +234,26 @@ function UILibrary:CreateWindow(title)
         local realColor = Color3.fromHSV(h, s, v)  
         local pureColor = Color3.fromHSV(h, s, 1)  
         HueGradient.Color = ColorSequence.new(pureColor, Color3.fromRGB(0, 0, 0))  
+        
+        -- Atualiza apenas o PREVIEW (bolinha e caixinha de texto)
         ColorPreview.BackgroundColor3 = realColor  
-        if activeColorTarget then activeColorTarget.BackgroundColor3 = realColor end  
-        if activeColorCallback then activeColorCallback(realColor) end  
+        HexInput.Text = "#" .. realColor:ToHex()
     end  
+
+    HexInput.FocusLost:Connect(function()
+        local success, newColor = pcall(function()
+            return Color3.fromHex(HexInput.Text)
+        end)
+        
+        if success and newColor then
+            h, s, v = newColor:ToHSV()
+            SVCursor.Position = UDim2.new(h, -2, s, -2)  
+            HueCursor.Position = UDim2.new(0, 0, 1-v, -1)
+            updateColorInternal()
+        else
+            HexInput.Text = "#" .. Color3.fromHSV(h, s, v):ToHex()
+        end
+    end)
 
     local function updateSV(input)  
         local relX = math.clamp((input.Position.X - SVMap.AbsolutePosition.X) / SVMap.AbsoluteSize.X, 0, 1)  
@@ -279,7 +295,23 @@ function UILibrary:CreateWindow(title)
         end  
     end)  
 
-    ConfirmBtn.MouseButton1Click:Connect(function() Paleta_d.Visible = false end)  
+    -- CONFIRMAÇÃO DE COR (Sistema adaptativo removido)
+    ConfirmBtn.MouseButton1Click:Connect(function() 
+        local finalColor = Color3.fromHSV(h, s, v)
+        
+        -- Aplica a cor no botãozinho da UI
+        if activeColorTarget then 
+            activeColorTarget.BackgroundColor3 = finalColor 
+        end  
+        
+        -- Dispara o callback pro seu script rodar
+        if activeColorCallback then 
+            activeColorCallback(finalColor) 
+        end
+        
+        -- Fecha a paleta
+        Paleta_d.Visible = false 
+    end)  
 
     local function OpenColorPicker(targetFrame, defaultColor, callback)  
         activeColorTarget = targetFrame; activeColorCallback = callback  
@@ -287,11 +319,14 @@ function UILibrary:CreateWindow(title)
         h, s, v = dh, ds, dv  
         local pureColor = Color3.fromHSV(h, s, 1)  
         HueGradient.Color = ColorSequence.new(pureColor, Color3.fromRGB(0, 0, 0))  
+        
         ColorPreview.BackgroundColor3 = defaultColor  
+        HexInput.Text = "#" .. defaultColor:ToHex()
+        
         SVCursor.Position = UDim2.new(h, -2, s, -2)  
         HueCursor.Position = UDim2.new(0, 0, 1-v, -1)   
         Paleta_d.Visible = true  
-    end  
+    end    
 
     -- ==========================================  
     -- DRAG MENU & PALETA  
@@ -496,7 +531,17 @@ function UILibrary:CreateWindow(title)
             ColorBtn.Text = ""      
             ColorBtn.AutoButtonColor = false      
             Instance.new("UICorner", ColorBtn).CornerRadius = UDim.new(0, 3)    
-                  
+             
+            local BrushIcon = Instance.new("ImageLabel", ColorBtn)  
+            BrushIcon.Name = "BrushIcon"  
+            BrushIcon.AnchorPoint = Vector2.new(0.5, 0.5)  
+            BrushIcon.Position = UDim2.new(0.5, 0, 0.5, 0)  
+            BrushIcon.Size = UDim2.new(0, 14, 0, 14)   
+            BrushIcon.BackgroundTransparency = 1  
+            BrushIcon.Image = "rbxassetid://105955025341798"  
+            BrushIcon.ImageColor3 = Color3.fromRGB(0, 0, 0)  -- 🔥 FIXO: SEMPRE PRETO
+            BrushIcon.ZIndex = 5   
+     
             ColorBtn.MouseButton1Click:Connect(function()  
                 OpenColorPicker(ColorBtn, ColorBtn.BackgroundColor3, callback)  
             end)  
