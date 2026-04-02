@@ -461,10 +461,20 @@ function UILibrary:CreateWindow(title)
                 local oldCallback = callback  
                 callback = function(v) if oldCallback then oldCallback(v) end; dropdownObject:SetVisible(v) end  
             end  
+            -- NOVO: BindToColorPicker para atrelar um ColorPicker ao Toggle
+            function ToggleObject:BindToColorPicker(colorPickerObject)
+                if not colorPickerObject then return end
+                colorPickerObject:SetVisible(toggleState)
+                local oldCallback = callback
+                callback = function(v) 
+                    if oldCallback then oldCallback(v) end
+                    colorPickerObject:SetVisible(v)
+                end
+            end
             return ToggleObject  
         end    
         
-        -- ADICIONAR SELETOR DE COR (NOVO!)
+        -- ADICIONAR SELETOR DE COR (ATUALIZADO)
         function tabMethods:AddColorPicker(text, defaultColor, callback)
             local ColorFrame = Instance.new("Frame", ElementsContainer)    
             ColorFrame.BorderSizePixel = 0    
@@ -494,31 +504,25 @@ function UILibrary:CreateWindow(title)
                 OpenColorPicker(ColorBtn, ColorBtn.BackgroundColor3, callback)
             end)
 
-            table.insert(tabData.elements, {frame = ColorFrame, height = 30, visible = true})  
+            local elementData = { frame = ColorFrame, height = 30, visible = true }
+            table.insert(tabData.elements, elementData)  
             updateLayout()
             
-            return {
+            local ColorPickerObject = {
                 SetColor = function(self, color)
                     ColorBtn.BackgroundColor3 = color
                     if callback then callback(color) end
                 end,
-                BindToToggle = function(self, toggleObj)
-                    -- Permite atrelar visibilidade do ColorPicker a um Toggle (como você fez com Dropdown)
-                    self:SetVisible(toggleObj:GetState())
-                    -- Hacky: pegar a função nativa e embrulhar
-                    local oldCallback = toggleObj.callback -- Nota: requer adaptação se quiser interligar estrito.
-                end,
                 SetVisible = function(self, state)
-                    for _, el in ipairs(tabData.elements) do
-                        if el.frame == ColorFrame then
-                            el.visible = state
-                            ColorFrame.Visible = state
-                            updateLayout()
-                            break
-                        end
-                    end
+                    elementData.visible = state
+                    ColorFrame.Visible = state
+                    updateLayout()
+                end,
+                GetVisible = function(self)
+                    return elementData.visible
                 end
             }
+            return ColorPickerObject
         end
             
         -- ADICIONAR DROPDOWN
