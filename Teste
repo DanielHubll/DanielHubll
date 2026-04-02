@@ -1,4 +1,4 @@
--- UI Library ATUALIZADA com Brush Icon, Sistema Adaptativo e Binds
+-- UI Library ATUALIZADA com Brush Icon, Sistema Adaptativo, Binds e INPUT DE HEX (HTML)
 local UILibrary = {}
 local activeDropdowns = {}
 
@@ -108,7 +108,8 @@ function UILibrary:CreateWindow(title)
     local Paleta_d = Instance.new("Frame", LMG2L["Floating_1"])  
     Paleta_d.BorderSizePixel = 0  
     Paleta_d.BackgroundColor3 = Color3.fromRGB(30, 30, 30)  
-    Paleta_d.Size = UDim2.new(0, 180, 0, 160)  
+    -- Aumentei a altura da paleta de 160 para 185 para caber a caixa de HEX
+    Paleta_d.Size = UDim2.new(0, 180, 0, 185)  
     Paleta_d.Position = UDim2.new(0, 600, 0, 100)  
     Paleta_d.Visible = false  
     Paleta_d.ZIndex = 100  
@@ -207,15 +208,42 @@ function UILibrary:CreateWindow(title)
     HueCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)   
     HueCursor.ZIndex = 102  
 
+    -- ==========================================
+    -- NOVO: SISTEMA DE INPUT HEX (HTML)
+    -- ==========================================
+    local HexLabel = Instance.new("TextLabel", Paleta_d)
+    HexLabel.Position = UDim2.new(0, 6, 0, 128)
+    HexLabel.Size = UDim2.new(0, 30, 0, 20)
+    HexLabel.BackgroundTransparency = 1
+    HexLabel.Text = "HEX:"
+    HexLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    HexLabel.TextSize = 10
+    HexLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+    HexLabel.ZIndex = 101
+
+    local HexInput = Instance.new("TextBox", Paleta_d)
+    HexInput.Position = UDim2.new(0, 38, 0, 128)
+    HexInput.Size = UDim2.new(0, 134, 0, 20)
+    HexInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    HexInput.BorderSizePixel = 0
+    HexInput.Text = "#FFFFFF"
+    HexInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    HexInput.TextSize = 10
+    HexInput.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold)
+    HexInput.ClearTextOnFocus = false
+    HexInput.ZIndex = 101
+    Instance.new("UICorner", HexInput).CornerRadius = UDim.new(0, 4)
+
+    -- Movi esses dois mais para baixo para caber o HexInput
     local ColorPreview = Instance.new("Frame", Paleta_d)  
-    ColorPreview.Position = UDim2.new(0, 6, 0, 128)  
+    ColorPreview.Position = UDim2.new(0, 6, 0, 153)  
     ColorPreview.Size = UDim2.new(0, 24, 0, 24)  
     ColorPreview.BackgroundColor3 = Color3.fromRGB(255,255,255)  
     ColorPreview.ZIndex = 101  
     Instance.new("UICorner", ColorPreview).CornerRadius = UDim.new(0, 4)  
 
     local ConfirmBtn = Instance.new("TextButton", Paleta_d)  
-    ConfirmBtn.Position = UDim2.new(0, 36, 0, 128)  
+    ConfirmBtn.Position = UDim2.new(0, 36, 0, 153)  
     ConfirmBtn.Size = UDim2.new(0, 136, 0, 24)  
     ConfirmBtn.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  
     ConfirmBtn.Text = "Confirmar Cor"  
@@ -234,9 +262,31 @@ function UILibrary:CreateWindow(title)
         local pureColor = Color3.fromHSV(h, s, 1)  
         HueGradient.Color = ColorSequence.new(pureColor, Color3.fromRGB(0, 0, 0))  
         ColorPreview.BackgroundColor3 = realColor  
+        
+        -- Atualiza a caixinha de texto automaticamente com o código HEX
+        HexInput.Text = "#" .. realColor:ToHex()
+
         if activeColorTarget then activeColorTarget.BackgroundColor3 = realColor end  
         if activeColorCallback then activeColorCallback(realColor) end  
     end  
+
+    -- Lógica para quando o usuário colar ou digitar o código HEX
+    HexInput.FocusLost:Connect(function()
+        local success, newColor = pcall(function()
+            return Color3.fromHex(HexInput.Text)
+        end)
+        
+        if success and newColor then
+            h, s, v = newColor:ToHSV()
+            -- Atualiza a posição dos cursores do mouse na paleta
+            SVCursor.Position = UDim2.new(h, -2, s, -2)  
+            HueCursor.Position = UDim2.new(0, 0, 1-v, -1)
+            updateColorInternal()
+        else
+            -- Se colar um código inválido, volta pra cor anterior
+            HexInput.Text = "#" .. Color3.fromHSV(h, s, v):ToHex()
+        end
+    end)
 
     local function updateSV(input)  
         local relX = math.clamp((input.Position.X - SVMap.AbsolutePosition.X) / SVMap.AbsoluteSize.X, 0, 1)  
@@ -287,6 +337,7 @@ function UILibrary:CreateWindow(title)
         local pureColor = Color3.fromHSV(h, s, 1)  
         HueGradient.Color = ColorSequence.new(pureColor, Color3.fromRGB(0, 0, 0))  
         ColorPreview.BackgroundColor3 = defaultColor  
+        HexInput.Text = "#" .. defaultColor:ToHex() -- Seta o texto inicial
         SVCursor.Position = UDim2.new(h, -2, s, -2)  
         HueCursor.Position = UDim2.new(0, 0, 1-v, -1)   
         Paleta_d.Visible = true  
@@ -497,7 +548,6 @@ function UILibrary:CreateWindow(title)
             ColorBtn.AutoButtonColor = false      
             Instance.new("UICorner", ColorBtn).CornerRadius = UDim.new(0, 3)    
 
-            -- 🔥 NOVO: Ícone de Pincel (Brush Icon)
             local BrushIcon = Instance.new("ImageLabel", ColorBtn)
             BrushIcon.Name = "BrushIcon"
             BrushIcon.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -519,7 +569,6 @@ function UILibrary:CreateWindow(title)
             local ColorPickerObject = {  
                 SetColor = function(self, color)  
                     ColorBtn.BackgroundColor3 = color  
-                    -- Ajuste inteligente de cor do ícone para visibilidade (Branco ou Preto)
                     local luminance = (0.299 * color.R) + (0.587 * color.G) + (0.114 * color.B)
                     BrushIcon.ImageColor3 = luminance > 0.7 and Color3.fromRGB(0, 0, 0) or Color3.fromRGB(255, 255, 255)
                     if callback then callback(color) end  
