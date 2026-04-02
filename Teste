@@ -1,4 +1,4 @@
--- UI Library COMPLETA - Merge: Novo (ColorPicker/Paleta/SubElementos) + Antigo (Slider/RadioButtons/Button)
+-- UI Library CORRIGIDA - Layout Automático com ScrollingFrame
 local UILibrary = {}
 local activeDropdowns = {}
 
@@ -29,9 +29,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Floating_1"].ResetOnSpawn = false
     LMG2L["Floating_1"].Parent = CoreGui
 
-    -- ==========================================
     -- MENU PRINCIPAL
-    -- ==========================================
     LMG2L["Topo_2"] = Instance.new("Frame", LMG2L["Floating_1"])
     LMG2L["Topo_2"]["BorderSizePixel"] = 0
     LMG2L["Topo_2"]["BackgroundColor3"] = Color3.fromRGB(144, 0, 181)
@@ -74,6 +72,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Effect_6"]["Size"] = UDim2.new(0, 250, 0, 1)
     LMG2L["Effect_6"]["Position"] = UDim2.new(0, 54, 0, 10)
 
+    -- ScrollingFrame para elementos (CORRIGIDO)
     LMG2L["Main_7"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])
     LMG2L["Main_7"]["BorderSizePixel"] = 0
     LMG2L["Main_7"]["Size"] = UDim2.new(0, 264, 0, 186)
@@ -81,7 +80,10 @@ function UILibrary:CreateWindow(title)
     LMG2L["Main_7"]["ScrollBarThickness"] = 0
     LMG2L["Main_7"]["BackgroundTransparency"] = 1
     LMG2L["Main_7"]["ScrollingDirection"] = Enum.ScrollingDirection.Y
+    LMG2L["Main_7"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
+    LMG2L["Main_7"]["CanvasSize"] = UDim2.new(0, 0, 0, 0)
 
+    -- Container para tabs
     LMG2L["Tabs_2a"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])
     LMG2L["Tabs_2a"]["BorderSizePixel"] = 0
     LMG2L["Tabs_2a"]["Size"] = UDim2.new(0, 52, 0, 194)
@@ -89,6 +91,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Tabs_2a"]["BackgroundTransparency"] = 1
     LMG2L["Tabs_2a"]["ScrollBarThickness"] = 0
     LMG2L["Tabs_2a"]["ScrollingDirection"] = Enum.ScrollingDirection.Y
+    LMG2L["Tabs_2a"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
 
     LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])
     LMG2L["OpenName_2d"]["BorderSizePixel"] = 0
@@ -98,9 +101,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["OpenName_2d"]["Rotation"] = 180
     LMG2L["OpenName_2d"]["Position"] = UDim2.new(0, 4, 0, 4)
 
-    -- ==========================================
     -- PALETA DE CORES FLUTUANTE
-    -- ==========================================
     local activeColorTarget = nil
     local activeColorCallback = nil
 
@@ -336,9 +337,7 @@ function UILibrary:CreateWindow(title)
         Paleta_d.Visible = true
     end
 
-    -- ==========================================
     -- DRAG MENU & PALETA
-    -- ==========================================
     local function MakeDraggable(frameToDrag, dragArea)
         local dragging = false
         local dragStart, startPos
@@ -372,9 +371,11 @@ function UILibrary:CreateWindow(title)
         LMG2L["OpenName_2d"].Rotation = LMG2L["Main_5"].Visible and 0 or 180
     end)
 
+    -- CORRIGIDO: Função de atualização de scroll
     local function updateScrollability(container, elementCount)
         local containerHeight = 186
         local totalHeight = elementCount * CONFIG.ELEMENT_HEIGHT + 20
+        
         if totalHeight > containerHeight then
             container.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
         else
@@ -382,12 +383,35 @@ function UILibrary:CreateWindow(title)
         end
     end
 
-    -- ==========================================
+    -- CORRIGIDO: Usando UIListLayout para layout automático
+    local function setupAutoLayout(container)
+        local layout = Instance.new("UIListLayout", container)
+        layout.SortOrder = Enum.SortOrder.LayoutOrder
+        layout.Padding = UDim.new(0, 8)
+        layout.VerticalAlignment = Enum.VerticalAlignment.Top
+        layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+        
+        -- Atualiza scroll quando o layout mudar
+        layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            if currentTab then
+                local elementCount = #currentTab.elements
+                updateScrollability(LMG2L["Main_7"], elementCount)
+            end
+        end)
+        
+        return layout
+    end
+
     -- MÉTODOS PÚBLICOS DAS TABS
-    -- ==========================================
     function publicMethods:AddTab(tabName, iconId)
         local tabIndex = #tabs + 1
-        local tabData = { name = tabName, elements = {}, container = nil, button = nil, elementCount = 0 }
+        local tabData = { 
+            name = tabName, 
+            elements = {}, 
+            container = nil, 
+            button = nil,
+            layout = nil
+        }
 
         local TabButton = Instance.new("ImageButton", LMG2L["Tabs_2a"])
         TabButton["BorderSizePixel"] = 0
@@ -399,24 +423,13 @@ function UILibrary:CreateWindow(title)
 
         local ElementsContainer = Instance.new("Frame", LMG2L["Main_7"])
         ElementsContainer["BackgroundTransparency"] = 1
-        ElementsContainer["Size"] = UDim2.new(1, 0, 1, 0)
+        ElementsContainer["Size"] = UDim2.new(1, -12, 0, 0) -- Largura total com margem
+        ElementsContainer["AutomaticSize"] = Enum.AutomaticSize.Y
         ElementsContainer["Visible"] = false
 
         tabData.container = ElementsContainer
         tabData.button = TabButton
-
-        local function updateLayout()
-            local y = 8
-            for _, element in ipairs(tabData.elements) do
-                if element.visible then
-                    local positionX = element.isSub and 24 or 6
-                    element.frame.Position = UDim2.new(0, positionX, 0, y)
-                    y = y + element.height
-                end
-            end
-            tabData.elementCount = math.floor(y / 30)
-            updateScrollability(LMG2L["Main_7"], tabData.elementCount)
-        end
+        tabData.layout = setupAutoLayout(ElementsContainer)
 
         local function switchToTab()
             for _, tab in ipairs(tabs) do
@@ -426,7 +439,7 @@ function UILibrary:CreateWindow(title)
             ElementsContainer.Visible = true
             TabButton.BackgroundColor3 = Color3.fromRGB(110, 0, 140)
             currentTab = tabData
-            updateScrollability(LMG2L["Main_7"], tabData.elementCount)
+            updateScrollability(LMG2L["Main_7"], #tabData.elements)
         end
 
         TabButton.MouseButton1Click:Connect(switchToTab)
@@ -435,18 +448,21 @@ function UILibrary:CreateWindow(title)
         if tabIndex == 1 then switchToTab() end
 
         local tabsHeight = tabIndex * 48 + 8
-        if tabsHeight > 194 then LMG2L["Tabs_2a"].CanvasSize = UDim2.new(0, 0, 0, tabsHeight) end
+        if tabsHeight > 194 then 
+            LMG2L["Tabs_2a"].CanvasSize = UDim2.new(0, 0, 0, tabsHeight)
+        end
 
         local tabMethods = {}
 
         -- ==========================================
-        -- TOGGLE
+        -- TOGGLE (CORRIGIDO)
         -- ==========================================
         function tabMethods:AddToggle(text, callback)
             local ToggleFrame = Instance.new("Frame", ElementsContainer)
             ToggleFrame.BorderSizePixel = 0
-            ToggleFrame.Size = UDim2.new(0, 100, 0, 22)
+            ToggleFrame.Size = UDim2.new(1, -12, 0, 30)
             ToggleFrame.BackgroundTransparency = 1
+            ToggleFrame.LayoutOrder = #tabData.elements + 1
 
             local InfoLabel = Instance.new("TextLabel", ToggleFrame)
             InfoLabel.BorderSizePixel = 0
@@ -455,13 +471,14 @@ function UILibrary:CreateWindow(title)
             InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
             InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
             InfoLabel.BackgroundTransparency = 1
-            InfoLabel.Size = UDim2.new(0, 88, 0, 22)
-            InfoLabel.Text = text or "Toggle"
+            InfoLabel.Size = UDim2.new(1, -40, 1, 0)
             InfoLabel.Position = UDim2.new(0, 28, 0, 0)
+            InfoLabel.Text = text or "Toggle"
 
             local ToggleButton = Instance.new("TextButton", ToggleFrame)
             ToggleButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
             ToggleButton.Size = UDim2.new(0, 22, 0, 22)
+            ToggleButton.Position = UDim2.new(0, 2, 0, 4)
             ToggleButton.BorderSizePixel = 0
             ToggleButton.Text = ""
             ToggleButton.AutoButtonColor = false
@@ -478,55 +495,23 @@ function UILibrary:CreateWindow(title)
                 updateToggle()
             end)
 
-            table.insert(tabData.elements, {frame = ToggleFrame, height = 30, visible = true, isSub = false})
-            updateLayout()
+            table.insert(tabData.elements, ToggleFrame)
 
             local ToggleObject = {}
             function ToggleObject:SetState(state) toggleState = state; updateToggle() end
             function ToggleObject:GetState() return toggleState end
-
-            function ToggleObject:BindToDropdown(dropdownObject)
-                if not dropdownObject then return end
-                if dropdownObject.SetAsSubElement then dropdownObject:SetAsSubElement(true) end
-                dropdownObject:SetVisible(toggleState)
-                local oldCallback = callback
-                callback = function(v) if oldCallback then oldCallback(v) end; dropdownObject:SetVisible(v) end
-            end
-
-            function ToggleObject:BindToColorPicker(colorPickerObject)
-                if not colorPickerObject then return end
-                if colorPickerObject.SetAsSubElement then colorPickerObject:SetAsSubElement(true) end
-                colorPickerObject:SetVisible(toggleState)
-                local oldCallback = callback
-                callback = function(v)
-                    if oldCallback then oldCallback(v) end
-                    colorPickerObject:SetVisible(v)
-                end
-            end
-
-            function ToggleObject:AddDropdown(dropdownText, options, dropCallback)
-                local dropdownObj = tabMethods:AddDropdown(dropdownText, options, dropCallback)
-                self:BindToDropdown(dropdownObj)
-                return dropdownObj
-            end
-
-            function ToggleObject:AddColorPicker(pickerText, defaultColor, pickerCallback)
-                local pickerObj = tabMethods:AddColorPicker(pickerText, defaultColor, pickerCallback)
-                self:BindToColorPicker(pickerObj)
-                return pickerObj
-            end
-
             return ToggleObject
         end
 
         -- ==========================================
-        -- COLOR PICKER
+        -- COLOR PICKER (CORRIGIDO)
         -- ==========================================
         function tabMethods:AddColorPicker(text, defaultColor, callback)
             local ColorFrame = Instance.new("Frame", ElementsContainer)
             ColorFrame.BorderSizePixel = 0
-            ColorFrame.Size = UDim2.new(0, 140, 0, 22)
+            ColorFrame.Size = UDim2.new(1, -12, 0, 30)
             ColorFrame.BackgroundTransparency = 1
+            ColorFrame.LayoutOrder = #tabData.elements + 1
 
             local InfoLabel = Instance.new("TextLabel", ColorFrame)
             InfoLabel.BorderSizePixel = 0
@@ -535,71 +520,50 @@ function UILibrary:CreateWindow(title)
             InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
             InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
             InfoLabel.BackgroundTransparency = 1
-            InfoLabel.Size = UDim2.new(0, 88, 0, 22)
-            InfoLabel.Text = text or "Color Picker"
+            InfoLabel.Size = UDim2.new(1, -40, 1, 0)
             InfoLabel.Position = UDim2.new(0, 28, 0, 0)
+            InfoLabel.Text = text or "Color Picker"
 
             local ColorBtn = Instance.new("TextButton", ColorFrame)
             ColorBtn.BackgroundColor3 = defaultColor or Color3.fromRGB(255, 255, 255)
             ColorBtn.Size = UDim2.new(0, 22, 0, 22)
+            ColorBtn.Position = UDim2.new(0, 2, 0, 4)
             ColorBtn.BorderSizePixel = 0
             ColorBtn.Text = ""
             ColorBtn.AutoButtonColor = false
             Instance.new("UICorner", ColorBtn).CornerRadius = UDim.new(0, 3)
 
-            local BrushIcon = Instance.new("ImageLabel", ColorBtn)
-            BrushIcon.Name = "BrushIcon"
-            BrushIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-            BrushIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
-            BrushIcon.Size = UDim2.new(0, 14, 0, 14)
-            BrushIcon.BackgroundTransparency = 1
-            BrushIcon.Image = "rbxassetid://105955025341798"
-            BrushIcon.ImageColor3 = Color3.fromRGB(0, 0, 0) -- Sempre preto
-            BrushIcon.ZIndex = 5
-
             ColorBtn.MouseButton1Click:Connect(function()
                 OpenColorPicker(ColorBtn, ColorBtn.BackgroundColor3, callback)
             end)
 
-            local elementData = {frame = ColorFrame, height = 30, visible = true, isSub = false}
-            table.insert(tabData.elements, elementData)
-            updateLayout()
+            table.insert(tabData.elements, ColorFrame)
 
             local ColorPickerObject = {
                 SetColor = function(self, color)
                     ColorBtn.BackgroundColor3 = color
                     if callback then callback(color) end
-                end,
-                SetVisible = function(self, state)
-                    elementData.visible = state
-                    ColorFrame.Visible = state
-                    updateLayout()
-                end,
-                GetVisible = function(self)
-                    return elementData.visible
-                end,
-                SetAsSubElement = function(self, state)
-                    elementData.isSub = state
-                    updateLayout()
                 end
             }
             return ColorPickerObject
         end
 
         -- ==========================================
-        -- SLIDER
+        -- SLIDER (CORRIGIDO)
         -- ==========================================
         function tabMethods:AddSlider(text, defaultValue, max, callback)
             local SliderFrame = Instance.new("Frame", ElementsContainer)
             SliderFrame.BorderSizePixel = 0
-            SliderFrame.Size = UDim2.new(0, 246, 0, 22)
+            SliderFrame.Size = UDim2.new(1, -12, 0, 30)
             SliderFrame.BackgroundTransparency = 1
+            SliderFrame.LayoutOrder = #tabData.elements + 1
 
             local SliderTrack = Instance.new("Frame", SliderFrame)
             SliderTrack.Name = "SliderTrack"
             SliderTrack.BorderSizePixel = 0
             SliderTrack.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
             SliderTrack.Size = UDim2.new(0, 168, 0, 22)
+            SliderTrack.Position = UDim2.new(0, 2, 0, 4)
             Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(0, 3)
 
             local SliderFill = Instance.new("Frame", SliderTrack)
@@ -628,7 +592,7 @@ function UILibrary:CreateWindow(title)
             InfoLabel.BackgroundTransparency = 1
             InfoLabel.Size = UDim2.new(0, 70, 0, 20)
             InfoLabel.Text = text or "Slider"
-            InfoLabel.Position = UDim2.new(0, 176, 0, 2)
+            InfoLabel.Position = UDim2.new(0, 176, 0, 6)
 
             local ContextActionService = game:GetService("ContextActionService")
             local minVal = 0
@@ -681,16 +645,9 @@ function UILibrary:CreateWindow(title)
                 end
             end)
 
-            UserInputService.TouchMoved:Connect(function(input)
-                if dragging then
-                    updateSliderFromPosition({Position = input.Position, UserInputType = Enum.UserInputType.Touch})
-                end
-            end)
-
             updateValue(sliderValue)
 
-            table.insert(tabData.elements, {frame = SliderFrame, height = 30, visible = true, isSub = false})
-            updateLayout()
+            table.insert(tabData.elements, SliderFrame)
 
             local SliderObject = {}
             function SliderObject:SetValue(value) updateValue(value) end
@@ -699,14 +656,15 @@ function UILibrary:CreateWindow(title)
         end
 
         -- ==========================================
-        -- DROPDOWN
+        -- DROPDOWN (CORRIGIDO)
         -- ==========================================
         function tabMethods:AddDropdown(text, options, callback)
             local DropdownFrame = Instance.new("Frame", ElementsContainer)
             DropdownFrame.BorderSizePixel = 0
             DropdownFrame.BackgroundTransparency = 1
-            DropdownFrame.Size = UDim2.new(0, 228, 0, 22)
+            DropdownFrame.Size = UDim2.new(1, -12, 0, 30)
             DropdownFrame.ZIndex = 10
+            DropdownFrame.LayoutOrder = #tabData.elements + 1
 
             local InfoLabel = Instance.new("TextLabel", DropdownFrame)
             InfoLabel.BorderSizePixel = 0
@@ -714,7 +672,7 @@ function UILibrary:CreateWindow(title)
             InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
             InfoLabel.BackgroundTransparency = 1
             InfoLabel.Size = UDim2.new(0, 88, 0, 20)
-            InfoLabel.Position = UDim2.new(0, 140, 0, 2)
+            InfoLabel.Position = UDim2.new(0, 140, 0, 5)
             InfoLabel.Text = text or "Dropdown"
             InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
             InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
@@ -724,6 +682,7 @@ function UILibrary:CreateWindow(title)
             Main.BorderSizePixel = 0
             Main.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
             Main.Size = UDim2.new(0, 136, 0, 22)
+            Main.Position = UDim2.new(0, 2, 0, 4)
             Main.ZIndex = 11
             Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)
 
@@ -781,7 +740,9 @@ function UILibrary:CreateWindow(title)
                     Selected.Text = opt
                     Scroll.Visible = false
                     Open.Rotation = 180
-                    DropdownFrame.ZIndex = 10; Main.ZIndex = 11; Scroll.ZIndex = 50
+                    DropdownFrame.ZIndex = 10
+                    Main.ZIndex = 11
+                    Scroll.ZIndex = 50
                     if callback then callback(opt) end
                 end)
             end
@@ -799,18 +760,9 @@ function UILibrary:CreateWindow(title)
                 end
             end)
 
-            local elementData = {frame = DropdownFrame, height = 30, visible = true, isSub = false}
-            DropdownFrame.Visible = true
-            table.insert(tabData.elements, elementData)
-            updateLayout()
+            table.insert(tabData.elements, DropdownFrame)
 
             local DropdownObject = {}
-            function DropdownObject:SetVisible(state)
-                elementData.visible = state; DropdownFrame.Visible = state; updateLayout()
-            end
-            function DropdownObject:SetAsSubElement(state)
-                elementData.isSub = state; updateLayout()
-            end
             function DropdownObject:SetValue(val)
                 if table.find(options, val) then
                     Selected.Text = val
@@ -818,18 +770,18 @@ function UILibrary:CreateWindow(title)
                 end
             end
             function DropdownObject:GetValue() return Selected.Text end
-
             return DropdownObject
         end
 
         -- ==========================================
-        -- RADIO BUTTONS
+        -- RADIO BUTTONS (CORRIGIDO)
         -- ==========================================
         function tabMethods:AddRadioButtons(text, options, callback)
             local RadioFrame = Instance.new("Frame", ElementsContainer)
             RadioFrame.BorderSizePixel = 0
-            RadioFrame.Size = UDim2.new(0, math.min(#options * 78, 162), 0, 38)
+            RadioFrame.Size = UDim2.new(1, -12, 0, 40)
             RadioFrame.BackgroundTransparency = 1
+            RadioFrame.LayoutOrder = #tabData.elements + 1
 
             local InfoLabel = Instance.new("TextLabel", RadioFrame)
             InfoLabel.TextWrapped = true
@@ -839,9 +791,9 @@ function UILibrary:CreateWindow(title)
             InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
             InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
             InfoLabel.BackgroundTransparency = 1
-            InfoLabel.Size = UDim2.new(0, 132, 0, 12)
+            InfoLabel.Size = UDim2.new(1, 0, 0, 12)
             InfoLabel.Text = text or "Radio Buttons"
-            InfoLabel.Position = UDim2.new(0, 0, 0, -2)
+            InfoLabel.Position = UDim2.new(0, 0, 0, 0)
 
             local radioButtons = {}
             local selectedOption = options[1]
@@ -849,7 +801,7 @@ function UILibrary:CreateWindow(title)
             for i, option in ipairs(options) do
                 local RadioOption = Instance.new("Frame", RadioFrame)
                 RadioOption.BorderSizePixel = 0
-                RadioOption.Size = UDim2.new(0, 70, 0, 16)
+                RadioOption.Size = UDim2.new(0, 70, 0, 20)
                 RadioOption.Position = UDim2.new(0, (i - 1) * 78, 0, 16)
                 RadioOption.BackgroundTransparency = 1
 
@@ -862,12 +814,13 @@ function UILibrary:CreateWindow(title)
                 OptionLabel.BackgroundTransparency = 1
                 OptionLabel.Size = UDim2.new(0, 58, 0, 16)
                 OptionLabel.Text = option
-                OptionLabel.Position = UDim2.new(0, 20, 0, 0)
+                OptionLabel.Position = UDim2.new(0, 20, 0, 2)
 
                 local RadioButton = Instance.new("TextButton", RadioOption)
                 RadioButton.BorderSizePixel = 0
                 RadioButton.BackgroundColor3 = i == 1 and Color3.fromRGB(144, 0, 181) or Color3.fromRGB(53, 53, 53)
                 RadioButton.Size = UDim2.new(0, 16, 0, 16)
+                RadioButton.Position = UDim2.new(0, 2, 0, 2)
                 RadioButton.Text = ""
                 RadioButton.AutoButtonColor = false
                 Instance.new("UICorner", RadioButton).CornerRadius = UDim.new(1, 9)
@@ -884,8 +837,8 @@ function UILibrary:CreateWindow(title)
                 end)
             end
 
-            table.insert(tabData.elements, {frame = RadioFrame, height = 40, visible = true, isSub = false})
-            updateLayout()
+            RadioFrame.Size = UDim2.new(1, -12, 0, 40)
+            table.insert(tabData.elements, RadioFrame)
 
             local RadioObject = {}
             function RadioObject:SetValue(value)
@@ -900,14 +853,14 @@ function UILibrary:CreateWindow(title)
         end
 
         -- ==========================================
-        -- BUTTON
+        -- BUTTON (CORRIGIDO)
         -- ==========================================
         function tabMethods:AddButton(text, callback)
             local ButtonFrame = Instance.new("Frame", ElementsContainer)
             ButtonFrame.BorderSizePixel = 0
-            ButtonFrame.Size = UDim2.new(0, 236, 0, 22)
-            ButtonFrame.BackgroundTransparency = 0.9
-            ButtonFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            ButtonFrame.Size = UDim2.new(1, -12, 0, 30)
+            ButtonFrame.BackgroundTransparency = 1
+            ButtonFrame.LayoutOrder = #tabData.elements + 1
 
             local Button = Instance.new("TextButton", ButtonFrame)
             Button.TextWrapped = true
@@ -916,7 +869,7 @@ function UILibrary:CreateWindow(title)
             Button.TextColor3 = Color3.fromRGB(255, 255, 255)
             Button.BackgroundColor3 = Color3.fromRGB(144, 0, 181)
             Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
-            Button.Size = UDim2.new(0, 238, 0, 22)
+            Button.Size = UDim2.new(1, 0, 1, 0)
             Button.Text = text or "Button"
             Button.AutoButtonColor = false
             Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 3)
@@ -931,8 +884,7 @@ function UILibrary:CreateWindow(title)
                 if callback then callback() end
             end)
 
-            table.insert(tabData.elements, {frame = ButtonFrame, height = 30, visible = true, isSub = false})
-            updateLayout()
+            table.insert(tabData.elements, ButtonFrame)
 
             return Button
         end
