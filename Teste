@@ -112,14 +112,12 @@ Paleta_d.Size = UDim2.new(0, 180, 0, 160)
 Paleta_d.Position = UDim2.new(0, 600, 0, 100)  
 Paleta_d.Visible = false  
 Paleta_d.ZIndex = 100  
-Instance.new("UICorner", Paleta_d).CornerRadius = UDim.new(0, 4)  
 
 local PaletaTop = Instance.new("Frame", Paleta_d)  
 PaletaTop.BorderSizePixel = 0  
 PaletaTop.BackgroundColor3 = Color3.fromRGB(144, 0, 181)  
 PaletaTop.Size = UDim2.new(1, 0, 0, 16)  
 PaletaTop.ZIndex = 101  
-Instance.new("UICorner", PaletaTop).CornerRadius = UDim.new(0, 4)  
 
 local PaletaTitle = Instance.new("TextLabel", PaletaTop)  
 PaletaTitle.BackgroundTransparency = 1  
@@ -366,7 +364,7 @@ function publicMethods:AddTab(tabName, iconId)
         local y = 8    
         for _, element in ipairs(tabData.elements) do    
             if element.visible then    
-                local positionX = element.isSub and 24 or 6 -- Se for sub (Drop/Color no Toggle), indenta para 24
+                local positionX = element.isSub and 20 or 6 -- Se for sub (Drop/Color no Toggle), indenta para 24
                 element.frame.Position = UDim2.new(0, positionX, 0, y)    
                 y = y + element.height    
             end    
