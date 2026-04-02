@@ -530,71 +530,71 @@ function UILibrary:CreateWindow(title)
             return ToggleObject    
         end      
           
-        function tabMethods:AddColorPicker(text, defaultColor, callback)  
-            local ColorFrame = Instance.new("Frame", ElementsContainer)      
-            ColorFrame.BorderSizePixel = 0      
-            ColorFrame.Size = UDim2.new(0, 140, 0, 22)      
-            ColorFrame.BackgroundTransparency = 1      
-                  
-            local InfoLabel = Instance.new("TextLabel", ColorFrame)      
-            InfoLabel.BorderSizePixel = 0      
-            InfoLabel.TextSize = 10      
-            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left      
-            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)      
-            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)      
-            InfoLabel.BackgroundTransparency = 1      
-            InfoLabel.Size = UDim2.new(0, 88, 0, 22)      
-            InfoLabel.Text = text or "Color Picker"      
-            InfoLabel.Position = UDim2.new(0, 28, 0, 0)      
-                  
-            local ColorBtn = Instance.new("TextButton", ColorFrame)      
-            ColorBtn.BackgroundColor3 = defaultColor or Color3.fromRGB(255, 255, 255)  
-            ColorBtn.Size = UDim2.new(0, 22, 0, 22)      
-            ColorBtn.BorderSizePixel = 0      
-            ColorBtn.Text = ""      
-            ColorBtn.AutoButtonColor = false      
-            Instance.new("UICorner", ColorBtn).CornerRadius = UDim.new(0, 3)    
+        function tabMethods:AddColorPicker(text, defaultColor, callback)    
+    local ColorFrame = Instance.new("Frame", ElementsContainer)        
+    ColorFrame.BorderSizePixel = 0        
+    ColorFrame.Size = UDim2.new(0, 140, 0, 22)        
+    ColorFrame.BackgroundTransparency = 1        
+            
+    local InfoLabel = Instance.new("TextLabel", ColorFrame)        
+    InfoLabel.BorderSizePixel = 0        
+    InfoLabel.TextSize = 10        
+    InfoLabel.TextXAlignment = Enum.TextXAlignment.Left        
+    InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)        
+    InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)        
+    InfoLabel.BackgroundTransparency = 1        
+    InfoLabel.Size = UDim2.new(0, 88, 0, 22)        
+    InfoLabel.Text = text or "Color Picker"        
+    InfoLabel.Position = UDim2.new(0, 28, 0, 0)        
+            
+    local ColorBtn = Instance.new("TextButton", ColorFrame)        
+    ColorBtn.BackgroundColor3 = defaultColor or Color3.fromRGB(255, 255, 255)    
+    ColorBtn.Size = UDim2.new(0, 22, 0, 22)        
+    ColorBtn.BorderSizePixel = 0        
+    ColorBtn.Text = ""        
+    ColorBtn.AutoButtonColor = false        
+    Instance.new("UICorner", ColorBtn).CornerRadius = UDim.new(0, 3)      
 
-            local BrushIcon = Instance.new("ImageLabel", ColorBtn)
-            BrushIcon.Name = "BrushIcon"
-            BrushIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-            BrushIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
-            BrushIcon.Size = UDim2.new(0, 14, 0, 14) 
-            BrushIcon.BackgroundTransparency = 1
-            BrushIcon.Image = "rbxassetid://105955025341798"
-            -- DEFININDO A COR PRETA PERMANENTE AQUI
-            BrushIcon.ImageColor3 = Color3.fromRGB(0, 0, 0) 
-            BrushIcon.ZIndex = 5 
-                  
-            ColorBtn.MouseButton1Click:Connect(function()  
-                OpenColorPicker(ColorBtn, ColorBtn.BackgroundColor3, callback)  
-            end)  
+    local BrushIcon = Instance.new("ImageLabel", ColorBtn)  
+    BrushIcon.Name = "BrushIcon"  
+    BrushIcon.AnchorPoint = Vector2.new(0.5, 0.5)  
+    BrushIcon.Position = UDim2.new(0.5, 0, 0.5, 0)  
+    BrushIcon.Size = UDim2.new(0, 14, 0, 14)   
+    BrushIcon.BackgroundTransparency = 1  
+    BrushIcon.Image = "rbxassetid://105955025341798"  
+    BrushIcon.ImageColor3 = Color3.fromRGB(0, 0, 0)  -- 🔥 FIXO: SEMPRE PRETO
+    BrushIcon.ZIndex = 5   
+            
+    ColorBtn.MouseButton1Click:Connect(function()    
+        OpenColorPicker(ColorBtn, ColorBtn.BackgroundColor3, callback)    
+    end)    
 
-            local elementData = { frame = ColorFrame, height = 30, visible = true, isSub = false }  
-            table.insert(tabData.elements, elementData)    
+    local elementData = { frame = ColorFrame, height = 30, visible = true, isSub = false }    
+    table.insert(tabData.elements, elementData)      
+    updateLayout()    
+        
+    local ColorPickerObject = {    
+        SetColor = function(self, color)    
+            ColorBtn.BackgroundColor3 = color    
+            -- 🚫 REMOVIDO: sistema adaptativo do BrushIcon  
+            -- Agora ele permanece PRETO permanentemente  
+            if callback then callback(color) end    
+        end,    
+        SetVisible = function(self, state)    
+            elementData.visible = state    
+            ColorFrame.Visible = state    
+            updateLayout()    
+        end,    
+        GetVisible = function(self)    
+            return elementData.visible    
+        end,  
+        SetAsSubElement = function(self, state)  
+            elementData.isSub = state  
             updateLayout()  
-              
-            local ColorPickerObject = {  
-                SetColor = function(self, color)  
-                    ColorBtn.BackgroundColor3 = color  
-                    -- Sistema adaptativo removido para o BrushIcon sempre ficar preto
-                    if callback then callback(color) end  
-                end,  
-                SetVisible = function(self, state)  
-                    elementData.visible = state  
-                    ColorFrame.Visible = state  
-                    updateLayout()  
-                end,  
-                GetVisible = function(self)  
-                    return elementData.visible  
-                end,
-                SetAsSubElement = function(self, state)
-                    elementData.isSub = state
-                    updateLayout()
-                end
-            }  
-            return ColorPickerObject  
         end  
+    }    
+    return ColorPickerObject    
+end    
               
         function tabMethods:AddDropdown(text, options, callback)    
             local DropdownFrame = Instance.new("Frame", ElementsContainer)    
