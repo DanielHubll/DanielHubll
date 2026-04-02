@@ -366,7 +366,7 @@ function publicMethods:AddTab(tabName, iconId)
         local y = 8    
         for _, element in ipairs(tabData.elements) do    
             if element.visible then    
-                local positionX = element.isSub and 24 or 6 -- Se for sub (Drop/Color no Toggle), indenta para 24
+                local positionX = element.isSub and 10 or 6 -- Se for sub (Drop/Color no Toggle), indenta para 24
                 element.frame.Position = UDim2.new(0, positionX, 0, y)    
                 y = y + element.height    
             end    
