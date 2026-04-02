@@ -640,8 +640,11 @@ function UILibrary:CreateWindow(title)
                 end  
             end)    
 
-            local elementData = { frame = DropdownFrame, height = 30, visible = false }  
-            DropdownFrame.Visible = false  
+            -- 👇 AQUI ESTÁ A SUA CORREÇÃO APLICADA 👇
+            local elementData = { frame = DropdownFrame, height = 30, visible = true }  
+            DropdownFrame.Visible = true  
+            -- 👆 AGORA ELE VAI APARECER NORMALMENTE 👆
+
             table.insert(tabData.elements, elementData)  
             updateLayout()  
 
