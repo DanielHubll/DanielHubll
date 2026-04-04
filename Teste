@@ -103,19 +103,19 @@ function UILibrary:CreateWindow(title)
 
     local Paleta_d = Instance.new("Frame", LMG2L["Floating_1"])    
     Paleta_d.BorderSizePixel = 0    
-    Paleta_d.BackgroundColor3 = Color3.fromRGB(30, 30, 30)    
+    Paleta_d.BackgroundColor3 = Color3.fromRGB(0, 0, 0)    
     Paleta_d.Size = UDim2.new(0, 180, 0, 185)    
     Paleta_d.Position = UDim2.new(0, 600, 0, 100)    
     Paleta_d.Visible = false    
     Paleta_d.ZIndex = 100    
-    Instance.new("UICorner", Paleta_d).CornerRadius = UDim.new(0, 4)    
+    Instance.new("UICorner", nil).CornerRadius = UDim.new(0, 4)    
 
     local PaletaTop = Instance.new("Frame", Paleta_d)    
     PaletaTop.BorderSizePixel = 0    
     PaletaTop.BackgroundColor3 = currentThemeColor    
     PaletaTop.Size = UDim2.new(1, 0, 0, 16)    
     PaletaTop.ZIndex = 101    
-    Instance.new("UICorner", PaletaTop).CornerRadius = UDim.new(0, 4)    
+    Instance.new("UICorner", nil).CornerRadius = UDim.new(0, 4)    
 
     local PaletaTitle = Instance.new("TextLabel", PaletaTop)    
     PaletaTitle.BackgroundTransparency = 1    
