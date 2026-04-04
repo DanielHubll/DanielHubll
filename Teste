@@ -247,6 +247,7 @@ function UILibrary:CreateWindow(title)
     local h, s, v = 0, 1, 1    
     local colorDragging = false    
     local hueDragging = false    
+    local currentDragInput = nil -- Adicionado para rastrear o toque exato
 
     local function updateColorInternal()    
         local realColor = Color3.fromHSV(h, s, v)    
@@ -285,30 +286,46 @@ function UILibrary:CreateWindow(title)
         updateColorInternal()    
     end    
 
+    -- ======= EVENTOS CORRIGIDOS AQUI =======
+
     SVMap.InputBegan:Connect(function(input)    
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then    
-            colorDragging = true; updateSV(input)    
+            if not hueDragging then -- Só arrasta se não estiver mexendo na barra de brilho
+                colorDragging = true
+                currentDragInput = input
+                updateSV(input)
+            end
         end    
     end)    
 
     HueMap.InputBegan:Connect(function(input)    
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then    
-            hueDragging = true; updateHue(input)    
+            if not colorDragging then -- Só arrasta se não estiver mexendo no quadrado principal
+                hueDragging = true
+                currentDragInput = input
+                updateHue(input)
+            end
         end    
     end)    
 
     UserInputService.InputEnded:Connect(function(input)    
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then    
-            colorDragging = false; hueDragging = false    
+        -- Só finaliza se soltar o mouse ou se o dedo solto for o mesmo que começou a arrastar
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input == currentDragInput then    
+            colorDragging = false
+            hueDragging = false
+            currentDragInput = nil
         end    
     end)    
 
     UserInputService.InputChanged:Connect(function(input)    
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then    
+        -- Só atualiza a posição se for o mouse ou se for o mesmo dedo que clicou primeiro
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input == currentDragInput then    
             if colorDragging then updateSV(input) end    
             if hueDragging then updateHue(input) end    
         end    
     end)    
+
+    -- =======================================
 
     ConfirmBtn.MouseButton1Click:Connect(function()   
         local finalColor = Color3.fromHSV(h, s, v)  
@@ -316,7 +333,7 @@ function UILibrary:CreateWindow(title)
         if activeColorCallback then activeColorCallback(finalColor) end  
         Paleta_d.Visible = false   
     end)    
-
+    
     local function OpenColorPicker(targetFrame, defaultColor, callback)    
         activeColorTarget = targetFrame; activeColorCallback = callback    
         local dh, ds, dv = defaultColor:ToHSV()    
