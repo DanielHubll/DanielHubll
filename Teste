@@ -182,7 +182,7 @@ function UILibrary:CreateWindow(title)
     SVCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)    
     SVCursor.ZIndex = 104    
     Instance.new("UICorner", SVCursor).CornerRadius = UDim.new(1, 0)    
-    Instance.new("UIStroke", SVCursor).Thickness = 0.2
+    Instance.new("UIStroke", SVCursor).Thickness = 0.5
 
     local HueMap = Instance.new("TextButton", Paleta_d)    
     HueMap.BackgroundColor3 = Color3.fromRGB(255, 255, 255)    
