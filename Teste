@@ -108,14 +108,12 @@ function UILibrary:CreateWindow(title)
     Paleta_d.Position = UDim2.new(0, 600, 0, 100)    
     Paleta_d.Visible = false    
     Paleta_d.ZIndex = 100    
-    Instance.new("UICorner", nil).CornerRadius = UDim.new(0, 4)    
 
     local PaletaTop = Instance.new("Frame", Paleta_d)    
     PaletaTop.BorderSizePixel = 0    
     PaletaTop.BackgroundColor3 = currentThemeColor    
     PaletaTop.Size = UDim2.new(1, 0, 0, 16)    
-    PaletaTop.ZIndex = 101    
-    Instance.new("UICorner", nil).CornerRadius = UDim.new(0, 4)    
+    PaletaTop.ZIndex = 101        
 
     local PaletaTitle = Instance.new("TextLabel", PaletaTop)    
     PaletaTitle.BackgroundTransparency = 1    
@@ -184,6 +182,7 @@ function UILibrary:CreateWindow(title)
     SVCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)    
     SVCursor.ZIndex = 104    
     Instance.new("UICorner", SVCursor).CornerRadius = UDim.new(1, 0)    
+    Instance.new("UIStroke", SVCursor).Thickness = 0.2
 
     local HueMap = Instance.new("TextButton", Paleta_d)    
     HueMap.BackgroundColor3 = Color3.fromRGB(255, 255, 255)    
