@@ -9,6 +9,8 @@ function UILibrary:CreateWindow(title)
     local publicMethods = {}
     local tabs = {}
     local currentTab = nil
+    local ActiveSlider = nil
+    local ActiveInput = nil
     
     -- SISTEMA DE TEMA GLOBAL
     local currentThemeColor = Color3.fromRGB(144, 0, 181)
@@ -749,119 +751,136 @@ function UILibrary:CreateWindow(title)
         end    
 
         function tabMethods:AddSlider(text, defaultValue, max, callback)  
-            local SliderFrame = Instance.new("Frame", ElementsContainer)  
-            SliderFrame.BorderSizePixel = 0  
-            SliderFrame.Size = UDim2.new(0, 246, 0, 22)  
-            SliderFrame.BackgroundTransparency = 1  
+    local SliderFrame = Instance.new("Frame", ElementsContainer)  
+    SliderFrame.BorderSizePixel = 0  
+    SliderFrame.Size = UDim2.new(0, 246, 0, 22)  
+    SliderFrame.BackgroundTransparency = 1  
 
-            local Main = Instance.new("Frame", SliderFrame)      
-            Main.BorderSizePixel = 0      
-            Main.BackgroundColor3 = Color3.fromRGB(40, 40, 40)    
-            Main.Size = UDim2.new(0, 168, 0, 22)    
-            Main.BackgroundTransparency = 1      
-            Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)    
-                  
-            local SliderTrack = Instance.new("Frame", Main)      
-            SliderTrack.BorderSizePixel = 0      
-            SliderTrack.BackgroundColor3 = Color3.fromRGB(37, 37, 37)    
-            SliderTrack.Size = UDim2.new(0, 168, 0, 22)    
-            Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(0, 3)    
-                  
-            local SliderFill = Instance.new("Frame", SliderTrack)      
-            SliderFill.BorderSizePixel = 0      
-            SliderFill.BackgroundColor3 = currentThemeColor      
-            SliderFill.Size = UDim2.new(0, 0, 1, 0)      
-            Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(0, 3)    
-            
-            table.insert(themeElements, { type = "Slider", instance = SliderFill })
-                  
-            local InfoNumber = Instance.new("TextLabel", Main)      
-            InfoNumber.BorderSizePixel = 0      
-            InfoNumber.TextColor3 = Color3.fromRGB(255, 255, 255)      
-            InfoNumber.BackgroundTransparency = 1      
-            InfoNumber.Size = UDim2.new(0, 168, 0, 22)    
-            InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)      
-            InfoNumber.TextSize = 20    
-            InfoNumber.TextTransparency = 0.3    
-                  
-            local InfoLabel = Instance.new("TextLabel", SliderFrame)      
-            InfoLabel.BorderSizePixel = 0      
-            InfoLabel.TextSize = 10      
-            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left      
-            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)      
-            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)      
-            InfoLabel.BackgroundTransparency = 1      
-            InfoLabel.Size = UDim2.new(0, 70, 0, 20)      
-            InfoLabel.Text = text or "Slider"      
-            InfoLabel.Position = UDim2.new(0, 176, 0, 2)    
+    local Main = Instance.new("Frame", SliderFrame)      
+    Main.BorderSizePixel = 0      
+    Main.BackgroundColor3 = Color3.fromRGB(40, 40, 40)    
+    Main.Size = UDim2.new(0, 168, 0, 22)    
+    Main.BackgroundTransparency = 1      
+    Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)    
+          
+    local SliderTrack = Instance.new("Frame", Main)      
+    SliderTrack.BorderSizePixel = 0      
+    SliderTrack.BackgroundColor3 = Color3.fromRGB(37, 37, 37)    
+    SliderTrack.Size = UDim2.new(0, 168, 0, 22)    
+    Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(0, 3)    
+          
+    local SliderFill = Instance.new("Frame", SliderTrack)      
+    SliderFill.BorderSizePixel = 0      
+    SliderFill.BackgroundColor3 = currentThemeColor      
+    SliderFill.Size = UDim2.new(0, 0, 1, 0)      
+    Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(0, 3)    
+    
+    table.insert(themeElements, { type = "Slider", instance = SliderFill })
+          
+    local InfoNumber = Instance.new("TextLabel", Main)      
+    InfoNumber.BorderSizePixel = 0      
+    InfoNumber.TextColor3 = Color3.fromRGB(255, 255, 255)      
+    InfoNumber.BackgroundTransparency = 1      
+    InfoNumber.Size = UDim2.new(0, 168, 0, 22)    
+    InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)      
+    InfoNumber.TextSize = 20    
+    InfoNumber.TextTransparency = 0.3    
+          
+    local InfoLabel = Instance.new("TextLabel", SliderFrame)      
+    InfoLabel.BorderSizePixel = 0      
+    InfoLabel.TextSize = 10      
+    InfoLabel.TextXAlignment = Enum.TextXAlignment.Left      
+    InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)      
+    InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)      
+    InfoLabel.BackgroundTransparency = 1      
+    InfoLabel.Size = UDim2.new(0, 70, 0, 20)      
+    InfoLabel.Text = text or "Slider"      
+    InfoLabel.Position = UDim2.new(0, 176, 0, 2)    
 
-            local min = 0    
-            local sliderValue = defaultValue or 0    
-            local max = max or 100    
-            local dragging = false    
+    local min = 0    
+    local sliderValue = defaultValue or 0    
+    local max = max or 100    
+    local dragging = false    
 
-            local function blockCamera(_, inputState)    
-                if inputState == Enum.UserInputState.Begin or inputState == Enum.UserInputState.Change then    
-                    return Enum.ContextActionResult.Sink    
-                end    
-            end    
+    local function blockCamera(_, inputState)    
+        if inputState == Enum.UserInputState.Begin or inputState == Enum.UserInputState.Change then    
+            return Enum.ContextActionResult.Sink    
+        end    
+    end    
 
-            local function updateValue(newValue)    
-                sliderValue = math.clamp(newValue, min, max)    
-                local percentage = (sliderValue - min) / (max - min)    
-                SliderFill.Size = UDim2.new(percentage, 0, 1, 0)    
-                InfoNumber.Text = tostring(math.floor(sliderValue))    
-                if callback then callback(sliderValue) end    
-            end    
+    local function updateValue(newValue)    
+        sliderValue = math.clamp(newValue, min, max)    
+        local percentage = (sliderValue - min) / (max - min)    
+        SliderFill.Size = UDim2.new(percentage, 0, 1, 0)    
+        InfoNumber.Text = tostring(math.floor(sliderValue))    
+        if callback then callback(sliderValue) end    
+    end    
 
-            local function updateSliderFromPosition(input)    
-                if not SliderTrack:IsDescendantOf(game) then return end    
-                local absPos = SliderTrack.AbsolutePosition    
-                local absSize = SliderTrack.AbsoluteSize    
-                local relativeX = (input.Position.X - absPos.X) / absSize.X    
-                relativeX = math.clamp(relativeX, 0, 1)    
-                local newValue = min + (relativeX * (max - min))    
-                updateValue(newValue)    
-            end    
+    local function updateSliderFromPosition(input)    
+        if not SliderTrack:IsDescendantOf(game) then return end    
+        local absPos = SliderTrack.AbsolutePosition    
+        local absSize = SliderTrack.AbsoluteSize    
+        local relativeX = (input.Position.X - absPos.X) / absSize.X    
+        relativeX = math.clamp(relativeX, 0, 1)    
+        local newValue = min + (relativeX * (max - min))    
+        updateValue(newValue)    
+    end    
 
-            SliderTrack.InputBegan:Connect(function(input)    
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then    
-                    dragging = true    
-                    ContextActionService:BindAction("BlockCameraSlider", blockCamera, false, Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)    
-                    UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition    
-                    updateSliderFromPosition(input)    
-                end    
-            end)    
+    -- 🟢 COMEÇO DO DRAG
+    SliderTrack.InputBegan:Connect(function(input)    
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then    
+            if ActiveSlider then return end -- 🚫 bloqueia outros sliders
 
-            SliderTrack.InputEnded:Connect(function(input)    
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then    
-                    dragging = false    
-                    ContextActionService:UnbindAction("BlockCameraSlider")    
-                    UserInputService.MouseBehavior = Enum.MouseBehavior.Default    
-                end    
-            end)    
+            ActiveSlider = SliderTrack
+            ActiveInput = input
+            dragging = true    
 
-            UserInputService.InputChanged:Connect(function(input)    
-                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then updateSliderFromPosition(input) end    
-            end)    
+            ContextActionService:BindAction("BlockCameraSlider", blockCamera, false, Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)    
+            UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition    
 
-            UserInputService.TouchMoved:Connect(function(input)    
-                if dragging then updateSliderFromPosition({Position = input.Position, UserInputType = Enum.UserInputType.Touch}) end    
-            end)    
+            updateSliderFromPosition(input)    
+        end    
+    end)    
 
-            updateValue(defaultValue or 0)    
+    -- 🔴 FIM DO DRAG
+    SliderTrack.InputEnded:Connect(function(input)    
+        if input == ActiveInput then
+            dragging = false    
+            ActiveSlider = nil    
+            ActiveInput = nil    
 
-            local elementData = { frame = SliderFrame, height = 30, visible = true, isSub = false }      
-            table.insert(tabData.elements, elementData)      
-            updateLayout()    
+            ContextActionService:UnbindAction("BlockCameraSlider")    
+            UserInputService.MouseBehavior = Enum.MouseBehavior.Default    
+        end    
+    end)    
 
-            return {    
-                SetValue = function(self, value) updateValue(value) end,    
-                GetValue = function(self) return sliderValue end,  
-                SetVisible = function(self, state) elementData.visible = state; SliderFrame.Visible = state; updateLayout() end,  
-                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end  
-            }  
-        end  
+    -- 🖱 MOUSE
+    UserInputService.InputChanged:Connect(function(input)    
+        if dragging and ActiveSlider == SliderTrack and input == ActiveInput and input.UserInputType == Enum.UserInputType.MouseMovement then 
+            updateSliderFromPosition(input) 
+        end    
+    end)    
+
+    -- 📱 MOBILE
+    UserInputService.TouchMoved:Connect(function(input)    
+        if dragging and ActiveSlider == SliderTrack and input == ActiveInput then 
+            updateSliderFromPosition({Position = input.Position}) 
+        end    
+    end)    
+
+    updateValue(defaultValue or 0)    
+
+    local elementData = { frame = SliderFrame, height = 30, visible = true, isSub = false }      
+    table.insert(tabData.elements, elementData)      
+    updateLayout()    
+
+    return {    
+        SetValue = function(self, value) updateValue(value) end,    
+        GetValue = function(self) return sliderValue end,  
+        SetVisible = function(self, state) elementData.visible = state; SliderFrame.Visible = state; updateLayout() end,  
+        SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end  
+    }  
+end
 
         function tabMethods:AddButton(text, callback)      
             local ButtonFrame = Instance.new("Frame", ElementsContainer)      
