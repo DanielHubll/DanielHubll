@@ -1,8 +1,9 @@
--- UI Library ATUALIZADA com Sistema de Tema Global, Bind de Dropdown, COLOR PICKER, BOTOES, SLIDER E RADIO BUTTONS
+-- UI Library ATUALIZADA com Sistema de Tema Global, Bind de Dropdown, COLOR PICKER, BOTOES, SLIDER, RADIO BUTTONS e FLOATING TOGGLE
 local UILibrary = {}
 
 local UserInputService = game:GetService("UserInputService")
 local ContextActionService = game:GetService("ContextActionService")
+local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
 
 function UILibrary:CreateWindow(title)
@@ -12,7 +13,7 @@ function UILibrary:CreateWindow(title)
     
     -- SISTEMA DE TEMA GLOBAL
     local currentThemeColor = Color3.fromRGB(144, 0, 181)
-    local themeElements = {} -- Salva tudo que precisa mudar de cor quando o tema atualizar
+    local themeElements = {} 
 
     local LMG2L = {}    
 
@@ -246,7 +247,7 @@ function UILibrary:CreateWindow(title)
     local h, s, v = 0, 1, 1    
     local colorDragging = false    
     local hueDragging = false    
-    local currentDragInput = nil -- Adicionado para rastrear o toque exato
+    local currentDragInput = nil
 
     local function updateColorInternal()    
         local realColor = Color3.fromHSV(h, s, v)    
@@ -285,11 +286,9 @@ function UILibrary:CreateWindow(title)
         updateColorInternal()    
     end    
 
-    -- ======= EVENTOS CORRIGIDOS AQUI =======
-
     SVMap.InputBegan:Connect(function(input)    
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then    
-            if not hueDragging then -- Só arrasta se não estiver mexendo na barra de brilho
+            if not hueDragging then
                 colorDragging = true
                 currentDragInput = input
                 updateSV(input)
@@ -299,7 +298,7 @@ function UILibrary:CreateWindow(title)
 
     HueMap.InputBegan:Connect(function(input)    
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then    
-            if not colorDragging then -- Só arrasta se não estiver mexendo no quadrado principal
+            if not colorDragging then
                 hueDragging = true
                 currentDragInput = input
                 updateHue(input)
@@ -308,7 +307,6 @@ function UILibrary:CreateWindow(title)
     end)    
 
     UserInputService.InputEnded:Connect(function(input)    
-        -- Só finaliza se soltar o mouse ou se o dedo solto for o mesmo que começou a arrastar
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input == currentDragInput then    
             colorDragging = false
             hueDragging = false
@@ -317,14 +315,11 @@ function UILibrary:CreateWindow(title)
     end)    
 
     UserInputService.InputChanged:Connect(function(input)    
-        -- Só atualiza a posição se for o mouse ou se for o mesmo dedo que clicou primeiro
         if input.UserInputType == Enum.UserInputType.MouseMovement or input == currentDragInput then    
             if colorDragging then updateSV(input) end    
             if hueDragging then updateHue(input) end    
         end    
     end)    
-
-    -- =======================================
 
     ConfirmBtn.MouseButton1Click:Connect(function()   
         local finalColor = Color3.fromHSV(h, s, v)  
@@ -346,9 +341,8 @@ function UILibrary:CreateWindow(title)
         Paleta_d.Visible = true    
     end    
 
-    -- FUNÇÃO DE ATUALIZAÇÃO DO TEMA (A Mágica acontece aqui)
+    -- FUNÇÃO DE ATUALIZAÇÃO DO TEMA
     local function applyTheme()
-        -- Calcula cor mais escura pra tab selecionada
         local th, ts, tv = currentThemeColor:ToHSV()
         local darkerTheme = Color3.fromHSV(th, ts, math.clamp(tv - 0.2, 0, 1))
 
@@ -357,7 +351,6 @@ function UILibrary:CreateWindow(title)
         PaletaTop.BackgroundColor3 = currentThemeColor
         ConfirmBtn.BackgroundColor3 = currentThemeColor
 
-        -- Atualiza Tabs
         for _, tab in ipairs(tabs) do
             if tab == currentTab then
                 tab.button.BackgroundColor3 = darkerTheme
@@ -366,15 +359,15 @@ function UILibrary:CreateWindow(title)
             end
         end
 
-        -- Atualiza Componentes
         for _, element in ipairs(themeElements) do
             if element.type == "Toggle" then
+                element.instance.BackgroundColor3 = element.getState() and currentThemeColor or Color3.fromRGB(37, 37, 37)
+            elseif element.type == "FloatingToggle" then 
                 element.instance.BackgroundColor3 = element.getState() and currentThemeColor or Color3.fromRGB(37, 37, 37)
             elseif element.type == "Slider" then
                 element.instance.BackgroundColor3 = currentThemeColor
             elseif element.type == "Button" then
                 element.instance.BackgroundColor3 = currentThemeColor
-                -- O Hover do botão é gerenciado localmente, mas a cor base é setada aqui
             elseif element.type == "DropdownIcon" then
                 element.instance.BackgroundColor3 = currentThemeColor
             elseif element.type == "RadioButton" then
@@ -474,7 +467,7 @@ function UILibrary:CreateWindow(title)
                 tab.container.Visible = false        
             end        
             ElementsContainer.Visible = true        
-            applyTheme() -- Aplica a cor certa ao mudar de tab (escuro pra selecionada, normal pra inativas)
+            applyTheme() 
             updateScrollability(LMG2L["Main_7"], tabData.totalHeight)      
         end        
                 
@@ -488,17 +481,18 @@ function UILibrary:CreateWindow(title)
                 
         local tabMethods = {}        
         
-        -- NOVA FUNÇÃO: ADICIONAR SELETOR DE TEMA
         function tabMethods:AddThemePicker(text, defaultColor)
             if defaultColor then currentThemeColor = defaultColor end
             local pickerObj = self:AddColorPicker(text or "Cor do Tema", currentThemeColor, function(color)
                 currentThemeColor = color
-                applyTheme() -- Atualiza tudo magicamente
+                applyTheme()
             end)
             return pickerObj
         end
                 
-        function tabMethods:AddToggle(text, callback)        
+        function tabMethods:AddToggle(text, callback, options)        
+            options = options or {}
+            
             local ToggleFrame = Instance.new("Frame", ElementsContainer)        
             ToggleFrame.BorderSizePixel = 0        
             ToggleFrame.Size = UDim2.new(0, 100, 0, 22)        
@@ -524,8 +518,57 @@ function UILibrary:CreateWindow(title)
             Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 3)      
                     
             local toggleState = false        
+            local floatingButton = nil
+            local floatingIcon = nil
+            
+            local function setupFloatingButton()
+                if floatingButton then return end
+                
+                floatingButton = Instance.new("ImageButton", LMG2L["Floating_1"])
+                floatingButton.Name = "Float_" .. text
+                floatingButton.Size = UDim2.new(0, 42, 0, 42)
+                floatingButton.Position = UDim2.new(0, 20, 0, 100) 
+                floatingButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+                floatingButton.BorderSizePixel = 0
+                floatingButton.AutoButtonColor = false
+                
+                Instance.new("UICorner", floatingButton).CornerRadius = UDim.new(1, 0)
+                
+                floatingIcon = Instance.new("ImageLabel", floatingButton)
+                floatingIcon.BackgroundTransparency = 1
+                floatingIcon.Size = UDim2.new(0, 20, 0, 20)
+                floatingIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+                floatingIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+                floatingIcon.Image = options.Icon or "rbxassetid://10709852168"
+                
+                MakeDraggable(floatingButton, floatingButton)
+                
+                table.insert(themeElements, { 
+                    type = "FloatingToggle", 
+                    instance = floatingButton, 
+                    getState = function() return toggleState end 
+                })
+                
+                floatingButton.MouseButton1Click:Connect(function()
+                    toggleState = not toggleState
+                    local targetColor = toggleState and currentThemeColor or Color3.fromRGB(37, 37, 37)
+                    
+                    TweenService:Create(floatingButton, TweenInfo.new(0.3), {BackgroundColor3 = targetColor}):Play()
+                    TweenService:Create(ToggleButton, TweenInfo.new(0.3), {BackgroundColor3 = targetColor}):Play()
+                    
+                    if callback then callback(toggleState) end
+                end)
+            end
+
             local function updateToggle()        
-                ToggleButton.BackgroundColor3 = toggleState and currentThemeColor or Color3.fromRGB(37, 37, 37)        
+                local targetColor = toggleState and currentThemeColor or Color3.fromRGB(37, 37, 37)
+                
+                TweenService:Create(ToggleButton, TweenInfo.new(0.3), {BackgroundColor3 = targetColor}):Play()
+                
+                if floatingButton then
+                    TweenService:Create(floatingButton, TweenInfo.new(0.3), {BackgroundColor3 = targetColor}):Play()
+                end
+                
                 if callback then callback(toggleState) end        
             end        
                     
@@ -541,6 +584,18 @@ function UILibrary:CreateWindow(title)
             local ToggleObject = {}      
             function ToggleObject:SetState(state) toggleState = state; updateToggle() end      
             function ToggleObject:GetState() return toggleState end      
+            
+            function ToggleObject:EnableFloating(state, iconId)
+                if state then
+                    if iconId then options.Icon = iconId end
+                    setupFloatingButton()
+                    floatingButton.Visible = true
+                    floatingButton.BackgroundColor3 = toggleState and currentThemeColor or Color3.fromRGB(37, 37, 37)
+                else
+                    if floatingButton then floatingButton.Visible = false end
+                end
+                return self
+            end
                 
             function ToggleObject:BindToDropdown(dropdownObject)      
                 if not dropdownObject then return end     
@@ -561,8 +616,8 @@ function UILibrary:CreateWindow(title)
                 end    
             end    
 
-            function ToggleObject:AddDropdown(dropdownText, options, dropCallback)    
-                local dropdownObj = tabMethods:AddDropdown(dropdownText, options, dropCallback)    
+            function ToggleObject:AddDropdown(dropdownText, dropOptions, dropCallback)    
+                local dropdownObj = tabMethods:AddDropdown(dropdownText, dropOptions, dropCallback)    
                 self:BindToDropdown(dropdownObj)    
                 return dropdownObj    
             end    
@@ -572,9 +627,13 @@ function UILibrary:CreateWindow(title)
                 self:BindToColorPicker(pickerObj)    
                 return pickerObj    
             end    
+            
+            if options.Floating then
+                ToggleObject:EnableFloating(true, options.Icon)
+            end
 
             return ToggleObject      
-        end        
+        end 
             
         function tabMethods:AddColorPicker(text, defaultColor, callback)    
             local ColorFrame = Instance.new("Frame", ElementsContainer)        
@@ -707,7 +766,7 @@ function UILibrary:CreateWindow(title)
                 Btn.Text = opt        
                 Btn.TextSize = 10        
                 Btn.BorderSizePixel = 0        
-                Btn.BackgroundColor3 = Color3.fromRGB(37,37,37) -- Sempre escuro, não rouba cor do tema      
+                Btn.BackgroundColor3 = Color3.fromRGB(37,37,37) 
                 Btn.TextColor3 = Color3.fromRGB(255,255,255)        
                 Btn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)        
                 Btn.ZIndex = 51        
@@ -885,7 +944,7 @@ function UILibrary:CreateWindow(title)
                   
             Button.MouseEnter:Connect(function() 
                 local h, s, v = currentThemeColor:ToHSV()
-                Button.BackgroundColor3 = Color3.fromHSV(h, s, math.clamp(v + 0.1, 0, 1)) -- Lighter on hover
+                Button.BackgroundColor3 = Color3.fromHSV(h, s, math.clamp(v + 0.1, 0, 1)) 
             end)      
             Button.MouseLeave:Connect(function() Button.BackgroundColor3 = currentThemeColor end)      
             Button.MouseButton1Click:Connect(function() if callback then callback() end end)      
