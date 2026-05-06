@@ -498,240 +498,83 @@ function UILibrary:CreateWindow(title)
             return pickerObj
         end
                 
-        function tabMethods:AddToggle(text, callback)          
-    local ToggleFrame = Instance.new("Frame", ElementsContainer)          
-    ToggleFrame.BorderSizePixel = 0          
-    ToggleFrame.Size = UDim2.new(0, 100, 0, 22)          
-    ToggleFrame.BackgroundTransparency = 1          
-              
-    local InfoLabel = Instance.new("TextLabel", ToggleFrame)          
-    InfoLabel.BorderSizePixel = 0          
-    InfoLabel.TextSize = 10          
-    InfoLabel.TextXAlignment = Enum.TextXAlignment.Left          
-    InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)          
-    InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)          
-    InfoLabel.BackgroundTransparency = 1          
-    InfoLabel.Size = UDim2.new(0, 64, 0, 22)          
-    InfoLabel.Text = text or "Toggle"          
-    InfoLabel.Position = UDim2.new(0, 28, 0, 0)          
-              
-    local ToggleButton = Instance.new("TextButton", ToggleFrame)          
-    ToggleButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)        
-    ToggleButton.Size = UDim2.new(0, 22, 0, 22)          
-    ToggleButton.BorderSizePixel = 0          
-    ToggleButton.Text = ""          
-    ToggleButton.AutoButtonColor = false          
-    Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 3)        
+        function tabMethods:AddToggle(text, callback)        
+            local ToggleFrame = Instance.new("Frame", ElementsContainer)        
+            ToggleFrame.BorderSizePixel = 0        
+            ToggleFrame.Size = UDim2.new(0, 100, 0, 22)        
+            ToggleFrame.BackgroundTransparency = 1        
+                    
+            local InfoLabel = Instance.new("TextLabel", ToggleFrame)        
+            InfoLabel.BorderSizePixel = 0        
+            InfoLabel.TextSize = 10        
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left        
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)        
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)        
+            InfoLabel.BackgroundTransparency = 1        
+            InfoLabel.Size = UDim2.new(0, 88, 0, 22)        
+            InfoLabel.Text = text or "Toggle"        
+            InfoLabel.Position = UDim2.new(0, 28, 0, 0)        
+                    
+            local ToggleButton = Instance.new("TextButton", ToggleFrame)        
+            ToggleButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)      
+            ToggleButton.Size = UDim2.new(0, 22, 0, 22)        
+            ToggleButton.BorderSizePixel = 0        
+            ToggleButton.Text = ""        
+            ToggleButton.AutoButtonColor = false        
+            Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 3)      
+                    
+            local toggleState = false        
+            local function updateToggle()        
+                ToggleButton.BackgroundColor3 = toggleState and currentThemeColor or Color3.fromRGB(37, 37, 37)        
+                if callback then callback(toggleState) end        
+            end        
+                    
+            ToggleButton.MouseButton1Click:Connect(function()        
+                toggleState = not toggleState        
+                updateToggle()        
+            end)        
 
-    -- ============================================
-    -- BOTÃO DE FLOAT (ao lado do toggle normal)
-    -- ============================================
-    local FloatBtn = Instance.new("ImageButton", ToggleFrame)
-    FloatBtn.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
-    FloatBtn.Size = UDim2.new(0, 18, 0, 18)
-    FloatBtn.Position = UDim2.new(0, 97, 0, 2) -- ao lado direito do toggle
-    FloatBtn.BorderSizePixel = 0
-    FloatBtn.Image = "rbxassetid://7733960981" -- ícone de "janela flutuante"
-    FloatBtn.ImageColor3 = Color3.fromRGB(180, 180, 180)
-    FloatBtn.AutoButtonColor = false
-    Instance.new("UICorner", FloatBtn).CornerRadius = UDim.new(0, 3)
+            table.insert(themeElements, { type = "Toggle", instance = ToggleButton, getState = function() return toggleState end })
+            table.insert(tabData.elements, {frame = ToggleFrame, height = 30, visible = true, isSub = false})      
+            updateLayout()      
+                    
+            local ToggleObject = {}      
+            function ToggleObject:SetState(state) toggleState = state; updateToggle() end      
+            function ToggleObject:GetState() return toggleState end      
+                
+            function ToggleObject:BindToDropdown(dropdownObject)      
+                if not dropdownObject then return end     
+                if dropdownObject.SetAsSubElement then dropdownObject:SetAsSubElement(true) end   
+                dropdownObject:SetVisible(toggleState)      
+                local oldCallback = callback      
+                callback = function(v) if oldCallback then oldCallback(v) end; dropdownObject:SetVisible(v) end      
+            end      
+                
+            function ToggleObject:BindToColorPicker(colorPickerObject)    
+                if not colorPickerObject then return end    
+                if colorPickerObject.SetAsSubElement then colorPickerObject:SetAsSubElement(true) end   
+                colorPickerObject:SetVisible(toggleState)    
+                local oldCallback = callback    
+                callback = function(v)     
+                    if oldCallback then oldCallback(v) end    
+                    colorPickerObject:SetVisible(v)    
+                end    
+            end    
 
-    local floatActive = false -- Controla se o floating está visível
+            function ToggleObject:AddDropdown(dropdownText, options, dropCallback)    
+                local dropdownObj = tabMethods:AddDropdown(dropdownText, options, dropCallback)    
+                self:BindToDropdown(dropdownObj)    
+                return dropdownObj    
+            end    
 
-    -- ============================================
-    -- FLOATING TOGGLE (fora do menu, arrastável)
-    -- ============================================
-    local FloatingWindow = Instance.new("Frame", LMG2L["Floating_1"])
-    FloatingWindow.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-    FloatingWindow.BorderSizePixel = 0
-    FloatingWindow.Size = UDim2.new(0, 140, 0, 32)
-    FloatingWindow.Position = UDim2.new(0, 400, 0, 200) -- posição inicial
-    FloatingWindow.Visible = false
-    FloatingWindow.ZIndex = 200
-    Instance.new("UICorner", FloatingWindow).CornerRadius = UDim.new(0, 6)
+            function ToggleObject:AddColorPicker(pickerText, defaultColor, pickerCallback)    
+                local pickerObj = tabMethods:AddColorPicker(pickerText, defaultColor, pickerCallback)    
+                self:BindToColorPicker(pickerObj)    
+                return pickerObj    
+            end    
 
-    -- Borda colorida no topo do floating
-    local FloatTopBar = Instance.new("Frame", FloatingWindow)
-    FloatTopBar.BackgroundColor3 = currentThemeColor
-    FloatTopBar.BorderSizePixel = 0
-    FloatTopBar.Size = UDim2.new(1, 0, 0, 3)
-    FloatTopBar.ZIndex = 201
-    Instance.new("UICorner", FloatTopBar).CornerRadius = UDim.new(0, 6)
-
-    -- Label do floating (nome do toggle)
-    local FloatLabel = Instance.new("TextLabel", FloatingWindow)
-    FloatLabel.BackgroundTransparency = 1
-    FloatLabel.Size = UDim2.new(0, 80, 0, 29)
-    FloatLabel.Position = UDim2.new(0, 6, 0, 3)
-    FloatLabel.Text = text or "Toggle"
-    FloatLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-    FloatLabel.TextSize = 9
-    FloatLabel.TextXAlignment = Enum.TextXAlignment.Left
-    FloatLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
-    FloatLabel.ZIndex = 201
-
-    -- Toggle button dentro do floating
-    local FloatToggle = Instance.new("TextButton", FloatingWindow)
-    FloatToggle.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
-    FloatToggle.BorderSizePixel = 0
-    FloatToggle.Size = UDim2.new(0, 22, 0, 22)
-    FloatToggle.Position = UDim2.new(1, -28, 0.5, -11)
-    FloatToggle.Text = ""
-    FloatToggle.AutoButtonColor = false
-    FloatToggle.ZIndex = 201
-    Instance.new("UICorner", FloatToggle).CornerRadius = UDim.new(0, 3)
-
-    -- Botão de fechar no floating (fecha o floating, não desativa o toggle)
-    local FloatClose = Instance.new("TextButton", FloatingWindow)
-    FloatClose.BackgroundTransparency = 1
-    FloatClose.Size = UDim2.new(0, 10, 0, 10)
-    FloatClose.Position = UDim2.new(1, -11, 0, 2)
-    FloatClose.Text = "×"
-    FloatClose.TextColor3 = Color3.fromRGB(150, 150, 150)
-    FloatClose.TextSize = 10
-    FloatClose.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
-    FloatClose.ZIndex = 202
-
-    -- ============================================
-    -- ESTADO COMPARTILHADO
-    -- ============================================
-    local toggleState = false
-
-    local function updateVisuals()
-        local color = toggleState and currentThemeColor or Color3.fromRGB(37, 37, 37)
-        ToggleButton.BackgroundColor3 = color
-        FloatToggle.BackgroundColor3 = color
-        -- Atualiza cor da barra do floating com o tema
-        FloatTopBar.BackgroundColor3 = currentThemeColor
-    end
-
-    local function setState(state, fromCallback)
-        toggleState = state
-        updateVisuals()
-        if fromCallback ~= false then
-            if callback then callback(toggleState) end
-        end
-    end
-
-    -- Toggle normal → sincroniza com floating
-    ToggleButton.MouseButton1Click:Connect(function()
-        setState(not toggleState)
-    end)
-
-    -- Toggle floating → sincroniza com normal
-    FloatToggle.MouseButton1Click:Connect(function()
-        setState(not toggleState)
-    end)
-
-    -- Botão Float → abre/fecha o floating
-    FloatBtn.MouseButton1Click:Connect(function()
-        floatActive = not floatActive
-        FloatingWindow.Visible = floatActive
-        FloatBtn.ImageColor3 = floatActive and currentThemeColor or Color3.fromRGB(180, 180, 180)
-        FloatBtn.BackgroundColor3 = floatActive and Color3.fromRGB(30, 30, 30) or Color3.fromRGB(37, 37, 37)
-    end)
-
-    -- Fechar floating via botão ×
-    FloatClose.MouseButton1Click:Connect(function()
-        floatActive = false
-        FloatingWindow.Visible = false
-        FloatBtn.ImageColor3 = Color3.fromRGB(180, 180, 180)
-        FloatBtn.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
-    end)
-
-    -- ============================================
-    -- ARRASTAR O FLOATING
-    -- ============================================
-    local floatDragging = false
-    local floatDragStart, floatStartPos
-
-    FloatingWindow.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            -- Não inicia drag se clicou no toggle ou no fechar
-            if input.UserInputType == Enum.UserInputType.Touch then
-                local pos = input.Position
-                local tw = FloatToggle.AbsolutePosition
-                local cw = FloatClose.AbsolutePosition
-                if (pos.X >= tw.X and pos.X <= tw.X + 22 and pos.Y >= tw.Y and pos.Y <= tw.Y + 22) then return end
-                if (pos.X >= cw.X and pos.X <= cw.X + 12 and pos.Y >= cw.Y and pos.Y <= cw.Y + 12) then return end
-            end
-            floatDragging = true
-            floatDragStart = input.Position
-            floatStartPos = FloatingWindow.Position
-        end
-    end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if floatDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            local delta = input.Position - floatDragStart
-            FloatingWindow.Position = UDim2.new(
-                0, floatStartPos.X.Offset + delta.X,
-                0, floatStartPos.Y.Offset + delta.Y
-            )
-        end
-    end)
-
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            floatDragging = false
-        end
-    end)
-
-    -- ============================================
-    -- REGISTRAR NO SISTEMA DE TEMA
-    -- ============================================
-    table.insert(themeElements, {
-        type = "Toggle",
-        instance = ToggleButton,
-        getState = function() return toggleState end
-    })
-    -- Floating também segue o tema (atualiza cor do fill e da barra)
-    table.insert(themeElements, {
-        type = "Toggle",
-        instance = FloatToggle,
-        getState = function() return toggleState end
-    })
-
-    table.insert(tabData.elements, {frame = ToggleFrame, height = 30, visible = true, isSub = false})        
-    updateLayout()        
-              
-    local ToggleObject = {}        
-    function ToggleObject:SetState(state) setState(state, true) end        
-    function ToggleObject:GetState() return toggleState end
-
-    function ToggleObject:BindToDropdown(dropdownObject)        
-        if not dropdownObject then return end       
-        if dropdownObject.SetAsSubElement then dropdownObject:SetAsSubElement(true) end     
-        dropdownObject:SetVisible(toggleState)        
-        local oldCallback = callback        
-        callback = function(v) if oldCallback then oldCallback(v) end; dropdownObject:SetVisible(v) end        
-    end        
-          
-    function ToggleObject:BindToColorPicker(colorPickerObject)      
-        if not colorPickerObject then return end      
-        if colorPickerObject.SetAsSubElement then colorPickerObject:SetAsSubElement(true) end     
-        colorPickerObject:SetVisible(toggleState)      
-        local oldCallback = callback      
-        callback = function(v)       
-            if oldCallback then oldCallback(v) end      
-            colorPickerObject:SetVisible(v)      
-        end      
-    end      
-
-    function ToggleObject:AddDropdown(dropdownText, options, dropCallback)      
-        local dropdownObj = tabMethods:AddDropdown(dropdownText, options, dropCallback)      
-        self:BindToDropdown(dropdownObj)      
-        return dropdownObj      
-    end      
-
-    function ToggleObject:AddColorPicker(pickerText, defaultColor, pickerCallback)      
-        local pickerObj = tabMethods:AddColorPicker(pickerText, defaultColor, pickerCallback)      
-        self:BindToColorPicker(pickerObj)      
-        return pickerObj      
-    end      
-
-    return ToggleObject        
-end   
+            return ToggleObject      
+        end        
             
         function tabMethods:AddColorPicker(text, defaultColor, callback)    
             local ColorFrame = Instance.new("Frame", ElementsContainer)        
