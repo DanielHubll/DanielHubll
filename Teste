@@ -1,4 +1,5 @@
--- UI Library ATUALIZADA com Sistema de Tema Global, Bind de Dropdown, COLOR PICKER, BOTOES, SLIDER E RADIO BUTTONS
+-- UI Library ATUALIZADA com Sistema de Tema Global, Bind, Config Automática e Auto-Save
+local HttpService = game:GetService("HttpService")
 local UILibrary = {}
 
 local UserInputService = game:GetService("UserInputService")
@@ -10,9 +11,29 @@ function UILibrary:CreateWindow(title)
     local tabs = {}
     local currentTab = nil
     
-    -- SISTEMA DE TEMA GLOBAL
+    -- SISTEMA DE TEMA GLOBAL E CONFIG
     local currentThemeColor = Color3.fromRGB(144, 0, 181)
-    local themeElements = {} -- Salva tudo que precisa mudar de cor quando o tema atualizar
+    local themeElements = {} 
+
+    local ConfigSystem = {
+        AutoSave = false,
+        ConfigName = "Default",
+        Folder = "VLGHubConfigs",
+        Flags = {}
+    }
+
+    if not isfolder(ConfigSystem.Folder) then
+        makefolder(ConfigSystem.Folder)
+    end
+
+    local function AddFlag(flag, getValue, setValue)
+        if flag then
+            ConfigSystem.Flags[flag] = {
+                Get = getValue,
+                Set = setValue
+            }
+        end
+    end
 
     local LMG2L = {}    
 
@@ -246,7 +267,7 @@ function UILibrary:CreateWindow(title)
     local h, s, v = 0, 1, 1    
     local colorDragging = false    
     local hueDragging = false    
-    local currentDragInput = nil -- Adicionado para rastrear o toque exato
+    local currentDragInput = nil
 
     local function updateColorInternal()    
         local realColor = Color3.fromHSV(h, s, v)    
@@ -285,11 +306,9 @@ function UILibrary:CreateWindow(title)
         updateColorInternal()    
     end    
 
-    -- ======= EVENTOS CORRIGIDOS AQUI =======
-
     SVMap.InputBegan:Connect(function(input)    
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then    
-            if not hueDragging then -- Só arrasta se não estiver mexendo na barra de brilho
+            if not hueDragging then
                 colorDragging = true
                 currentDragInput = input
                 updateSV(input)
@@ -299,7 +318,7 @@ function UILibrary:CreateWindow(title)
 
     HueMap.InputBegan:Connect(function(input)    
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then    
-            if not colorDragging then -- Só arrasta se não estiver mexendo no quadrado principal
+            if not colorDragging then 
                 hueDragging = true
                 currentDragInput = input
                 updateHue(input)
@@ -308,7 +327,6 @@ function UILibrary:CreateWindow(title)
     end)    
 
     UserInputService.InputEnded:Connect(function(input)    
-        -- Só finaliza se soltar o mouse ou se o dedo solto for o mesmo que começou a arrastar
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input == currentDragInput then    
             colorDragging = false
             hueDragging = false
@@ -317,14 +335,11 @@ function UILibrary:CreateWindow(title)
     end)    
 
     UserInputService.InputChanged:Connect(function(input)    
-        -- Só atualiza a posição se for o mouse ou se for o mesmo dedo que clicou primeiro
         if input.UserInputType == Enum.UserInputType.MouseMovement or input == currentDragInput then    
             if colorDragging then updateSV(input) end    
             if hueDragging then updateHue(input) end    
         end    
     end)    
-
-    -- =======================================
 
     ConfirmBtn.MouseButton1Click:Connect(function()   
         local finalColor = Color3.fromHSV(h, s, v)  
@@ -346,9 +361,8 @@ function UILibrary:CreateWindow(title)
         Paleta_d.Visible = true    
     end    
 
-    -- FUNÇÃO DE ATUALIZAÇÃO DO TEMA (A Mágica acontece aqui)
+    -- FUNÇÃO DE ATUALIZAÇÃO DO TEMA
     local function applyTheme()
-        -- Calcula cor mais escura pra tab selecionada
         local th, ts, tv = currentThemeColor:ToHSV()
         local darkerTheme = Color3.fromHSV(th, ts, math.clamp(tv - 0.2, 0, 1))
 
@@ -357,7 +371,6 @@ function UILibrary:CreateWindow(title)
         PaletaTop.BackgroundColor3 = currentThemeColor
         ConfirmBtn.BackgroundColor3 = currentThemeColor
 
-        -- Atualiza Tabs
         for _, tab in ipairs(tabs) do
             if tab == currentTab then
                 tab.button.BackgroundColor3 = darkerTheme
@@ -366,7 +379,6 @@ function UILibrary:CreateWindow(title)
             end
         end
 
-        -- Atualiza Componentes
         for _, element in ipairs(themeElements) do
             if element.type == "Toggle" then
                 element.instance.BackgroundColor3 = element.getState() and currentThemeColor or Color3.fromRGB(37, 37, 37)
@@ -374,7 +386,6 @@ function UILibrary:CreateWindow(title)
                 element.instance.BackgroundColor3 = currentThemeColor
             elseif element.type == "Button" then
                 element.instance.BackgroundColor3 = currentThemeColor
-                -- O Hover do botão é gerenciado localmente, mas a cor base é setada aqui
             elseif element.type == "DropdownIcon" then
                 element.instance.BackgroundColor3 = currentThemeColor
             elseif element.type == "RadioButton" then
@@ -384,6 +395,46 @@ function UILibrary:CreateWindow(title)
                     element.instance.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
                 end
             end
+        end
+    end
+
+    -- ==========================================    
+    -- SISTEMA DE SALVAMENTO (SAVE / LOAD / DELETE)    
+    -- ==========================================   
+    local function SaveConfig()
+        local Data = {}
+        for Flag, Info in pairs(ConfigSystem.Flags) do
+            Data[Flag] = Info.Get()
+        end
+        Data.Theme = currentThemeColor:ToHex()
+        writefile(ConfigSystem.Folder.."/"..ConfigSystem.ConfigName..".json", HttpService:JSONEncode(Data))
+    end
+
+    local function TriggerAutoSave()
+        if ConfigSystem.AutoSave then
+            SaveConfig()
+        end
+    end
+
+    local function LoadConfig()
+        local File = ConfigSystem.Folder.."/"..ConfigSystem.ConfigName..".json"
+        if not isfile(File) then return end
+        
+        local Data = HttpService:JSONDecode(readfile(File))
+        for Flag, Value in pairs(Data) do
+            if Flag == "Theme" then
+                currentThemeColor = Color3.fromHex(Value)
+                applyTheme()
+            elseif ConfigSystem.Flags[Flag] then
+                ConfigSystem.Flags[Flag].Set(Value)
+            end
+        end
+    end
+
+    local function DeleteConfig()
+        local File = ConfigSystem.Folder.."/"..ConfigSystem.ConfigName..".json"
+        if isfile(File) then
+            delfile(File)
         end
     end
 
@@ -474,7 +525,7 @@ function UILibrary:CreateWindow(title)
                 tab.container.Visible = false        
             end        
             ElementsContainer.Visible = true        
-            applyTheme() -- Aplica a cor certa ao mudar de tab (escuro pra selecionada, normal pra inativas)
+            applyTheme()
             updateScrollability(LMG2L["Main_7"], tabData.totalHeight)      
         end        
                 
@@ -487,13 +538,60 @@ function UILibrary:CreateWindow(title)
         if tabsHeight > 194 then LMG2L["Tabs_2a"].CanvasSize = UDim2.new(0, 0, 0, tabsHeight) end      
                 
         local tabMethods = {}        
+
+        -- NOVA FUNÇÃO: ADICIONAR TEXTBOX
+        function tabMethods:AddTextBox(text, default, callback)
+            local TextBoxFrame = Instance.new("Frame", ElementsContainer)
+            TextBoxFrame.BorderSizePixel = 0
+            TextBoxFrame.Size = UDim2.new(0, 246, 0, 26)
+            TextBoxFrame.BackgroundTransparency = 1
+
+            local InfoLabel = Instance.new("TextLabel", TextBoxFrame)
+            InfoLabel.TextSize = 10
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            InfoLabel.BackgroundTransparency = 1
+            InfoLabel.Size = UDim2.new(0, 70, 0, 26)
+            InfoLabel.Text = text or "TextBox"
+            InfoLabel.Position = UDim2.new(0, 176, 0, 0)
+
+            local Main = Instance.new("Frame", TextBoxFrame)
+            Main.BorderSizePixel = 0
+            Main.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+            Main.Size = UDim2.new(0, 168, 0, 26)
+            Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)
+
+            local Input = Instance.new("TextBox", Main)
+            Input.BackgroundTransparency = 1
+            Input.Size = UDim2.new(1, -10, 1, 0)
+            Input.Position = UDim2.new(0, 5, 0, 0)
+            Input.Text = default or ""
+            Input.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Input.TextSize = 11
+            Input.TextXAlignment = Enum.TextXAlignment.Left
+            Input.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold)
+
+            Input.FocusLost:Connect(function()
+                if callback then callback(Input.Text) end
+            end)
+
+            local elementData = { frame = TextBoxFrame, height = 34, visible = true, isSub = false }
+            table.insert(tabData.elements, elementData)
+            updateLayout()
+
+            return {
+                SetText = function(self, txt) Input.Text = txt; if callback then callback(txt) end end,
+                GetText = function(self) return Input.Text end
+            }
+        end
         
-        -- NOVA FUNÇÃO: ADICIONAR SELETOR DE TEMA
         function tabMethods:AddThemePicker(text, defaultColor)
             if defaultColor then currentThemeColor = defaultColor end
             local pickerObj = self:AddColorPicker(text or "Cor do Tema", currentThemeColor, function(color)
                 currentThemeColor = color
-                applyTheme() -- Atualiza tudo magicamente
+                applyTheme() 
+                TriggerAutoSave()
             end)
             return pickerObj
         end
@@ -526,8 +624,13 @@ function UILibrary:CreateWindow(title)
             local toggleState = false        
             local function updateToggle()        
                 ToggleButton.BackgroundColor3 = toggleState and currentThemeColor or Color3.fromRGB(37, 37, 37)        
-                if callback then callback(toggleState) end        
+                if callback then callback(toggleState) end     
+                TriggerAutoSave()   
             end        
+
+            -- BIND FLAG
+            local Flag = text:gsub("%s+", "_")
+            AddFlag(Flag, function() return toggleState end, function(v) toggleState = v; updateToggle() end)
                     
             ToggleButton.MouseButton1Click:Connect(function()        
                 toggleState = not toggleState        
@@ -611,8 +714,15 @@ function UILibrary:CreateWindow(title)
             BrushIcon.ImageColor3 = Color3.fromRGB(0, 0, 0)  
             BrushIcon.ZIndex = 5     
 
+            -- BIND FLAG
+            local Flag = text:gsub("%s+", "_")
+            AddFlag(Flag, function() return ColorBtn.BackgroundColor3:ToHex() end, function(v) ColorBtn.BackgroundColor3 = Color3.fromHex(v) end)
+
             ColorBtn.MouseButton1Click:Connect(function()    
-                OpenColorPicker(ColorBtn, ColorBtn.BackgroundColor3, callback)    
+                OpenColorPicker(ColorBtn, ColorBtn.BackgroundColor3, function(color)
+                    if callback then callback(color) end
+                    TriggerAutoSave()
+                end)    
             end)    
 
             local elementData = { frame = ColorFrame, height = 30, visible = true, isSub = false }    
@@ -622,7 +732,8 @@ function UILibrary:CreateWindow(title)
             local ColorPickerObject = {    
                 SetColor = function(self, color)    
                     ColorBtn.BackgroundColor3 = color    
-                    if callback then callback(color) end    
+                    if callback then callback(color) end  
+                    TriggerAutoSave()  
                 end,    
                 SetVisible = function(self, state)    
                     elementData.visible = state    
@@ -686,6 +797,10 @@ function UILibrary:CreateWindow(title)
             
             table.insert(themeElements, { type = "DropdownIcon", instance = Open })
 
+            -- BIND FLAG
+            local Flag = text:gsub("%s+", "_")
+            AddFlag(Flag, function() return Selected.Text end, function(v) Selected.Text = tostring(v) end)
+
             local Scroll = Instance.new("ScrollingFrame", Main)        
             Scroll.Visible = false        
             Scroll.BorderSizePixel = 0        
@@ -707,7 +822,7 @@ function UILibrary:CreateWindow(title)
                 Btn.Text = opt        
                 Btn.TextSize = 10        
                 Btn.BorderSizePixel = 0        
-                Btn.BackgroundColor3 = Color3.fromRGB(37,37,37) -- Sempre escuro, não rouba cor do tema      
+                Btn.BackgroundColor3 = Color3.fromRGB(37,37,37)      
                 Btn.TextColor3 = Color3.fromRGB(255,255,255)        
                 Btn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)        
                 Btn.ZIndex = 51        
@@ -720,7 +835,8 @@ function UILibrary:CreateWindow(title)
                     Scroll.Visible = false        
                     Open.Rotation = 180      
                     DropdownFrame.ZIndex = 10; Main.ZIndex = 11; Scroll.ZIndex = 50      
-                    if callback then callback(opt) end        
+                    if callback then callback(opt) end  
+                    TriggerAutoSave()      
                 end)        
             end        
 
@@ -800,18 +916,23 @@ function UILibrary:CreateWindow(title)
             local max = max or 100    
             local dragging = false    
 
-            local function blockCamera(_, inputState)    
-                if inputState == Enum.UserInputState.Begin or inputState == Enum.UserInputState.Change then    
-                    return Enum.ContextActionResult.Sink    
-                end    
-            end    
-
             local function updateValue(newValue)    
                 sliderValue = math.clamp(newValue, min, max)    
                 local percentage = (sliderValue - min) / (max - min)    
                 SliderFill.Size = UDim2.new(percentage, 0, 1, 0)    
                 InfoNumber.Text = tostring(math.floor(sliderValue))    
                 if callback then callback(sliderValue) end    
+                TriggerAutoSave()
+            end    
+
+            -- BIND FLAG
+            local Flag = text:gsub("%s+", "_")
+            AddFlag(Flag, function() return sliderValue end, function(v) updateValue(v) end)
+
+            local function blockCamera(_, inputState)    
+                if inputState == Enum.UserInputState.Begin or inputState == Enum.UserInputState.Change then    
+                    return Enum.ContextActionResult.Sink    
+                end    
             end    
 
             local function updateSliderFromPosition(input)    
@@ -885,7 +1006,7 @@ function UILibrary:CreateWindow(title)
                   
             Button.MouseEnter:Connect(function() 
                 local h, s, v = currentThemeColor:ToHSV()
-                Button.BackgroundColor3 = Color3.fromHSV(h, s, math.clamp(v + 0.1, 0, 1)) -- Lighter on hover
+                Button.BackgroundColor3 = Color3.fromHSV(h, s, math.clamp(v + 0.1, 0, 1)) 
             end)      
             Button.MouseLeave:Connect(function() Button.BackgroundColor3 = currentThemeColor end)      
             Button.MouseButton1Click:Connect(function() if callback then callback() end end)      
@@ -958,8 +1079,22 @@ function UILibrary:CreateWindow(title)
                     RadioButton.BackgroundColor3 = currentThemeColor      
                     selectedOption = option      
                     if callback then callback(option) end      
+                    TriggerAutoSave()
                 end)      
             end      
+
+            -- BIND FLAG
+            local Flag = text:gsub("%s+", "_")
+            AddFlag(Flag, function() return selectedOption end, function(v)
+                for _, rb in ipairs(radioButtons) do      
+                    if rb.option == v then      
+                        rb.button.BackgroundColor3 = currentThemeColor      
+                        selectedOption = v      
+                    else      
+                        rb.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)      
+                    end      
+                end
+            end)
                   
             RadioFrame.Size = UDim2.new(0, math.min(#options * 78, 162), 0, 38)  
             local elementData = { frame = RadioFrame, height = 42, visible = true, isSub = false }      
@@ -976,7 +1111,8 @@ function UILibrary:CreateWindow(title)
                             rb.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)      
                         end      
                     end      
-                    if callback then callback(value) end      
+                    if callback then callback(value) end     
+                    TriggerAutoSave() 
                 end,      
                 GetValue = function(self) return selectedOption end,  
                 SetVisible = function(self, state) elementData.visible = state; RadioFrame.Visible = state; updateLayout() end,  
@@ -986,6 +1122,25 @@ function UILibrary:CreateWindow(title)
 
         return tabMethods    
     end    
+
+    -- ==========================================    
+    -- CONFIG TAB (GERADA AUTOMATICAMENTE)    
+    -- ==========================================  
+    local ConfigTab = publicMethods:AddTab("Config", "rbxassetid://7734053495")
+    
+    ConfigTab:AddThemePicker("Theme Color", currentThemeColor)
+
+    ConfigTab:AddTextBox("Config Name", "Default", function(v)
+        ConfigSystem.ConfigName = v
+    end)
+
+    ConfigTab:AddButton("Save Config", SaveConfig)
+    ConfigTab:AddButton("Load Config", LoadConfig)
+    ConfigTab:AddButton("Delete Config", DeleteConfig)
+
+    ConfigTab:AddToggle("Auto Save", function(v)
+        ConfigSystem.AutoSave = v
+    end)
 
     return publicMethods
 end
