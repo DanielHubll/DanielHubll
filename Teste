@@ -1,4 +1,4 @@
--- UI Library ATUALIZADA com Sistema de Tema Global, Bind, Config Automática, Auto-Save e Dropdown Dinâmico
+-- UI Library ATUALIZADA com Sistema de Tema Global e Dropdown Dinâmico (Sem Sistema de Config)
 local HttpService = game:GetService("HttpService")
 local UILibrary = {}
 
@@ -11,29 +11,9 @@ function UILibrary:CreateWindow(title)
     local tabs = {}
     local currentTab = nil
     
-    -- SISTEMA DE TEMA GLOBAL E CONFIG
+    -- SISTEMA DE TEMA GLOBAL
     local currentThemeColor = Color3.fromRGB(144, 0, 181)
     local themeElements = {} 
-
-    local ConfigSystem = {
-        AutoSave = false,
-        ConfigName = "Default",
-        Folder = "VLGHubConfigs",
-        Flags = {}
-    }
-
-    if not isfolder(ConfigSystem.Folder) then
-        makefolder(ConfigSystem.Folder)
-    end
-
-    local function AddFlag(flag, getValue, setValue)
-        if flag then
-            ConfigSystem.Flags[flag] = {
-                Get = getValue,
-                Set = setValue
-            }
-        end
-    end
 
     local LMG2L = {}    
 
@@ -399,46 +379,6 @@ function UILibrary:CreateWindow(title)
     end
 
     -- ==========================================    
-    -- SISTEMA DE SALVAMENTO (SAVE / LOAD / DELETE)    
-    -- ==========================================   
-    local function SaveConfig()
-        local Data = {}
-        for Flag, Info in pairs(ConfigSystem.Flags) do
-            Data[Flag] = Info.Get()
-        end
-        Data.Theme = currentThemeColor:ToHex()
-        writefile(ConfigSystem.Folder.."/"..ConfigSystem.ConfigName..".json", HttpService:JSONEncode(Data))
-    end
-
-    local function TriggerAutoSave()
-        if ConfigSystem.AutoSave then
-            SaveConfig()
-        end
-    end
-
-    local function LoadConfig()
-        local File = ConfigSystem.Folder.."/"..ConfigSystem.ConfigName..".json"
-        if not isfile(File) then return end
-        
-        local Data = HttpService:JSONDecode(readfile(File))
-        for Flag, Value in pairs(Data) do
-            if Flag == "Theme" then
-                currentThemeColor = Color3.fromHex(Value)
-                applyTheme()
-            elseif ConfigSystem.Flags[Flag] then
-                ConfigSystem.Flags[Flag].Set(Value)
-            end
-        end
-    end
-
-    local function DeleteConfig()
-        local File = ConfigSystem.Folder.."/"..ConfigSystem.ConfigName..".json"
-        if isfile(File) then
-            delfile(File)
-        end
-    end
-
-    -- ==========================================    
     -- DRAG MENU & PALETA    
     -- ==========================================    
     local function MakeDraggable(frameToDrag, dragArea)    
@@ -590,7 +530,6 @@ function UILibrary:CreateWindow(title)
             local pickerObj = self:AddColorPicker(text or "Cor do Tema", currentThemeColor, function(color)
                 currentThemeColor = color
                 applyTheme() 
-                TriggerAutoSave()
             end)
             return pickerObj
         end
@@ -624,11 +563,7 @@ function UILibrary:CreateWindow(title)
             local function updateToggle()        
                 ToggleButton.BackgroundColor3 = toggleState and currentThemeColor or Color3.fromRGB(37, 37, 37)        
                 if callback then callback(toggleState) end     
-                TriggerAutoSave()   
             end        
-
-            local Flag = text:gsub("%s+", "_")
-            AddFlag(Flag, function() return toggleState end, function(v) toggleState = v; updateToggle() end)
                     
             ToggleButton.MouseButton1Click:Connect(function()        
                 toggleState = not toggleState        
@@ -712,13 +647,9 @@ function UILibrary:CreateWindow(title)
             BrushIcon.ImageColor3 = Color3.fromRGB(0, 0, 0)  
             BrushIcon.ZIndex = 5     
 
-            local Flag = text:gsub("%s+", "_")
-            AddFlag(Flag, function() return ColorBtn.BackgroundColor3:ToHex() end, function(v) ColorBtn.BackgroundColor3 = Color3.fromHex(v) end)
-
             ColorBtn.MouseButton1Click:Connect(function()    
                 OpenColorPicker(ColorBtn, ColorBtn.BackgroundColor3, function(color)
                     if callback then callback(color) end
-                    TriggerAutoSave()
                 end)    
             end)    
 
@@ -730,7 +661,6 @@ function UILibrary:CreateWindow(title)
                 SetColor = function(self, color)    
                     ColorBtn.BackgroundColor3 = color    
                     if callback then callback(color) end  
-                    TriggerAutoSave()  
                 end,    
                 SetVisible = function(self, state)    
                     elementData.visible = state    
@@ -794,9 +724,6 @@ function UILibrary:CreateWindow(title)
             
             table.insert(themeElements, { type = "DropdownIcon", instance = Open })
 
-            local Flag = text:gsub("%s+", "_")
-            AddFlag(Flag, function() return Selected.Text end, function(v) Selected.Text = tostring(v) end)
-
             local Scroll = Instance.new("ScrollingFrame", Main)        
             Scroll.Visible = false        
             Scroll.BorderSizePixel = 0        
@@ -833,7 +760,6 @@ function UILibrary:CreateWindow(title)
                 SetVisible = function(self, state) elementData.visible = state; DropdownFrame.Visible = state; updateLayout() end,  
                 SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end,
                 
-                -- NOVO METODO ADICIONADO: Refresh
                 Refresh = function(self, NewOptions)
                     options = NewOptions
                     
@@ -864,7 +790,6 @@ function UILibrary:CreateWindow(title)
                             Open.Rotation = 180
                             DropdownFrame.ZIndex = 10; Main.ZIndex = 11; Scroll.ZIndex = 50
                             if callback then callback(opt) end
-                            TriggerAutoSave()
                         end)
                     end
                     
@@ -938,11 +863,7 @@ function UILibrary:CreateWindow(title)
                 SliderFill.Size = UDim2.new(percentage, 0, 1, 0)    
                 InfoNumber.Text = tostring(math.floor(sliderValue))    
                 if callback then callback(sliderValue) end    
-                TriggerAutoSave()
             end    
-
-            local Flag = text:gsub("%s+", "_")
-            AddFlag(Flag, function() return sliderValue end, function(v) updateValue(v) end)
 
             local function blockCamera(_, inputState)    
                 if inputState == Enum.UserInputState.Begin or inputState == Enum.UserInputState.Change then    
@@ -1094,21 +1015,8 @@ function UILibrary:CreateWindow(title)
                     RadioButton.BackgroundColor3 = currentThemeColor      
                     selectedOption = option      
                     if callback then callback(option) end      
-                    TriggerAutoSave()
                 end)      
             end      
-
-            local Flag = text:gsub("%s+", "_")
-            AddFlag(Flag, function() return selectedOption end, function(v)
-                for _, rb in ipairs(radioButtons) do      
-                    if rb.option == v then      
-                        rb.button.BackgroundColor3 = currentThemeColor      
-                        selectedOption = v      
-                    else      
-                        rb.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)      
-                    end      
-                end
-            end)
                   
             RadioFrame.Size = UDim2.new(0, math.min(#options * 78, 162), 0, 38)  
             local elementData = { frame = RadioFrame, height = 42, visible = true, isSub = false }      
@@ -1126,7 +1034,6 @@ function UILibrary:CreateWindow(title)
                         end      
                     end      
                     if callback then callback(value) end     
-                    TriggerAutoSave() 
                 end,      
                 GetValue = function(self) return selectedOption end,  
                 SetVisible = function(self, state) elementData.visible = state; RadioFrame.Visible = state; updateLayout() end,  
@@ -1136,69 +1043,6 @@ function UILibrary:CreateWindow(title)
 
         return tabMethods    
     end    
-
-    -- ==========================================    
-    -- CONFIG TAB (GERADA AUTOMATICAMENTE)    
-    -- ==========================================  
-    local ConfigTab = publicMethods:AddTab("Config", "rbxassetid://7734053495")
-    
-    ConfigTab:AddThemePicker("Theme Color", currentThemeColor)
-
-    local ConfigNameBox = ConfigTab:AddTextBox("Config Name", "Default", function(v)
-        ConfigSystem.ConfigName = v
-    end)
-
-    local function GetConfigs()
-        local Configs = {}
-        if isfolder(ConfigSystem.Folder) then
-            for _, File in ipairs(listfiles(ConfigSystem.Folder)) do
-                local Name = File:match("([^\\/]+)%.json$")
-                if Name then
-                    table.insert(Configs, Name)
-                end
-            end
-        end
-        table.sort(Configs)
-        if #Configs == 0 then table.insert(Configs, "Nenhuma Config") end
-        return Configs
-    end
-
-    local ConfigDropdown -- Declarando antes pra ser acessível nos botões
-
-    ConfigTab:AddButton("Save Config", function()
-        SaveConfig()
-        if ConfigDropdown and ConfigDropdown.Refresh then
-            ConfigDropdown:Refresh(GetConfigs())
-        end
-    end)
-
-    ConfigDropdown = ConfigTab:AddDropdown(
-        "Load Configs",
-        GetConfigs(),
-        function(ConfigName)
-            if ConfigName == "Nenhuma Config" then return end
-            ConfigSystem.ConfigName = ConfigName
-            ConfigNameBox:SetText(ConfigName) -- Atualiza o TextBox visualmente pra ficar igual
-            LoadConfig()
-        end
-    )
-
-    ConfigTab:AddButton("Delete Config", function()
-        DeleteConfig()
-        if ConfigDropdown and ConfigDropdown.Refresh then
-            ConfigDropdown:Refresh(GetConfigs())
-        end
-    end)
-
-    ConfigTab:AddButton("Refresh Configs", function()
-        if ConfigDropdown and ConfigDropdown.Refresh then
-            ConfigDropdown:Refresh(GetConfigs())
-        end
-    end)
-
-    ConfigTab:AddToggle("Auto Save", function(v)
-        ConfigSystem.AutoSave = v
-    end)
 
     return publicMethods
 end
