@@ -108,6 +108,15 @@ function UILibrary:CreateWindow(title)
     LMG2L["Tabs_2a"]["ScrollBarThickness"] = 0    
     LMG2L["Tabs_2a"]["ScrollingDirection"] = Enum.ScrollingDirection.Y    
 
+    -- UTILIZANDO UILISTLAYOUT PARA ORDENAÇÃO FÁCIL (Config vai pro final)
+    local TabsListLayout = Instance.new("UIListLayout", LMG2L["Tabs_2a"])
+    TabsListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    TabsListLayout.Padding = UDim.new(0, 4)
+
+    local TabsPadding = Instance.new("UIPadding", LMG2L["Tabs_2a"])
+    TabsPadding.PaddingLeft = UDim.new(0, 6)
+    TabsPadding.PaddingTop = UDim.new(0, 4)
+
     LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])    
     LMG2L["OpenName_2d"]["BorderSizePixel"] = 0    
     LMG2L["OpenName_2d"]["BackgroundTransparency"] = 1    
@@ -438,6 +447,21 @@ function UILibrary:CreateWindow(title)
         end
     end
 
+    -- Função para listar as configs
+    local function GetConfigs()
+        local list = {}
+        if isfolder(ConfigSystem.Folder) then
+            for _, file in ipairs(listfiles(ConfigSystem.Folder)) do
+                local fileName = file:match("([^/\\]+)%.json$")
+                if fileName then
+                    table.insert(list, fileName)
+                end
+            end
+        end
+        if #list == 0 then table.insert(list, "Default") end
+        return list
+    end
+
     -- ==========================================    
     -- DRAG MENU & PALETA    
     -- ==========================================    
@@ -494,8 +518,8 @@ function UILibrary:CreateWindow(title)
         TabButton["BorderSizePixel"] = 0        
         TabButton["BackgroundColor3"] = currentThemeColor      
         TabButton["Size"] = UDim2.new(0, 40, 0, 40)        
-        TabButton["Position"] = UDim2.new(0, 6, 0, 4 + ((tabIndex - 1) * 48))    
-        TabButton["Image"] = iconId or "rbxassetid://10709852168"        
+        TabButton["Image"] = iconId or "rbxassetid://10709852168"  
+        TabButton.LayoutOrder = tabIndex      
         Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 5)        
                 
         local ElementsContainer = Instance.new("Frame", LMG2L["Main_7"])        
@@ -815,32 +839,40 @@ function UILibrary:CreateWindow(title)
 
             local btnHeight, padding = 16, 2        
 
-            for i, opt in ipairs(options) do        
-                local Btn = Instance.new("TextButton", Scroll)        
-                Btn.Size = UDim2.new(1,-4,0,btnHeight)        
-                Btn.Position = UDim2.new(0,2,0,(i-1)*(btnHeight+padding))        
-                Btn.Text = opt        
-                Btn.TextSize = 10        
-                Btn.BorderSizePixel = 0        
-                Btn.BackgroundColor3 = Color3.fromRGB(37,37,37)      
-                Btn.TextColor3 = Color3.fromRGB(255,255,255)        
-                Btn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)        
-                Btn.ZIndex = 51        
+            local function populateList(opts)
+                for _, child in ipairs(Scroll:GetChildren()) do
+                    if child:IsA("TextButton") then child:Destroy() end
+                end
+                
+                for i, opt in ipairs(opts) do        
+                    local Btn = Instance.new("TextButton", Scroll)        
+                    Btn.Size = UDim2.new(1,-4,0,btnHeight)        
+                    Btn.Position = UDim2.new(0,2,0,(i-1)*(btnHeight+padding))        
+                    Btn.Text = opt        
+                    Btn.TextSize = 10        
+                    Btn.BorderSizePixel = 0        
+                    Btn.BackgroundColor3 = Color3.fromRGB(37,37,37)      
+                    Btn.TextColor3 = Color3.fromRGB(255,255,255)        
+                    Btn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)        
+                    Btn.ZIndex = 51        
 
-                Btn.MouseEnter:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(50,50,50) end)        
-                Btn.MouseLeave:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(37,37,37) end)        
+                    Btn.MouseEnter:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(50,50,50) end)        
+                    Btn.MouseLeave:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(37,37,37) end)        
 
-                Btn.MouseButton1Click:Connect(function()        
-                    Selected.Text = opt        
-                    Scroll.Visible = false        
-                    Open.Rotation = 180      
-                    DropdownFrame.ZIndex = 10; Main.ZIndex = 11; Scroll.ZIndex = 50      
-                    if callback then callback(opt) end  
-                    TriggerAutoSave()      
-                end)        
-            end        
+                    Btn.MouseButton1Click:Connect(function()        
+                        Selected.Text = opt        
+                        Scroll.Visible = false        
+                        Open.Rotation = 180      
+                        DropdownFrame.ZIndex = 10; Main.ZIndex = 11; Scroll.ZIndex = 50      
+                        if callback then callback(opt) end  
+                        TriggerAutoSave()      
+                    end)        
+                end  
+            end
+            
+            populateList(options)
 
-            local function getHeight() return math.min(#options,3)*(btnHeight+padding)+4 end        
+            local function getHeight(count) return math.min(count,3)*(btnHeight+padding)+4 end        
 
             Open.MouseButton1Click:Connect(function()        
                 if Scroll.Visible then      
@@ -849,7 +881,10 @@ function UILibrary:CreateWindow(title)
                 else      
                     Scroll.Visible = true; Open.Rotation = 0      
                     DropdownFrame.ZIndex = 100; Main.ZIndex = 101; Scroll.ZIndex = 102      
-                    Scroll.Size = UDim2.new(0,112,0,getHeight())      
+                    
+                    local currentCount = 0
+                    for _, v in ipairs(Scroll:GetChildren()) do if v:IsA("TextButton") then currentCount = currentCount + 1 end end
+                    Scroll.Size = UDim2.new(0,112,0,getHeight(currentCount))      
                 end      
             end)        
 
@@ -860,7 +895,11 @@ function UILibrary:CreateWindow(title)
 
             return {      
                 SetVisible = function(self, state) elementData.visible = state; DropdownFrame.Visible = state; updateLayout() end,  
-                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end  
+                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end,
+                Refresh = function(self, newOpts) 
+                    populateList(newOpts) 
+                    Selected.Text = newOpts[1] or "Selecionar"
+                end
             }    
         end    
 
@@ -1127,16 +1166,37 @@ function UILibrary:CreateWindow(title)
     -- CONFIG TAB (GERADA AUTOMATICAMENTE)    
     -- ==========================================  
     local ConfigTab = publicMethods:AddTab("Config", "rbxassetid://7734053495")
+    -- A Mágica do LayoutOrder para colocar a config no final sempre:
+    ConfigTab.button.LayoutOrder = 9999 
     
     ConfigTab:AddThemePicker("Theme Color", currentThemeColor)
 
-    ConfigTab:AddTextBox("Config Name", "Default", function(v)
+    local ConfigInput = ConfigTab:AddTextBox("Config Name", "Default", function(v)
         ConfigSystem.ConfigName = v
     end)
 
-    ConfigTab:AddButton("Save Config", SaveConfig)
+    -- Dropdown Inteligente de Configs
+    local ConfigDropdown
+    ConfigDropdown = ConfigTab:AddDropdown("Load Config", GetConfigs(), function(selected)
+        if selected then
+            ConfigSystem.ConfigName = selected
+            ConfigInput:SetText(selected)
+        end
+    end)
+
+    ConfigTab:AddButton("Save Config", function()
+        SaveConfig()
+        ConfigDropdown:Refresh(GetConfigs()) -- Atualiza a lista!
+    end)
+    
     ConfigTab:AddButton("Load Config", LoadConfig)
-    ConfigTab:AddButton("Delete Config", DeleteConfig)
+    
+    ConfigTab:AddButton("Delete Config", function()
+        DeleteConfig()
+        ConfigDropdown:Refresh(GetConfigs()) -- Atualiza a lista!
+        ConfigInput:SetText("Default")
+        ConfigSystem.ConfigName = "Default"
+    end)
 
     ConfigTab:AddToggle("Auto Save", function(v)
         ConfigSystem.AutoSave = v
