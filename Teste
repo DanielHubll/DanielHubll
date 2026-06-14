@@ -1,4 +1,4 @@
--- UI Library ATUALIZADA com Sistema de Tema Global, Bind, Config Automática e Auto-Save
+-- UI Library ATUALIZADA com Sistema de Tema Global, Bind, Config Automática, Auto-Save e Dropdown Dinâmico
 local HttpService = game:GetService("HttpService")
 local UILibrary = {}
 
@@ -539,7 +539,6 @@ function UILibrary:CreateWindow(title)
                 
         local tabMethods = {}        
 
-        -- NOVA FUNÇÃO: ADICIONAR TEXTBOX
         function tabMethods:AddTextBox(text, default, callback)
             local TextBoxFrame = Instance.new("Frame", ElementsContainer)
             TextBoxFrame.BorderSizePixel = 0
@@ -628,7 +627,6 @@ function UILibrary:CreateWindow(title)
                 TriggerAutoSave()   
             end        
 
-            -- BIND FLAG
             local Flag = text:gsub("%s+", "_")
             AddFlag(Flag, function() return toggleState end, function(v) toggleState = v; updateToggle() end)
                     
@@ -714,7 +712,6 @@ function UILibrary:CreateWindow(title)
             BrushIcon.ImageColor3 = Color3.fromRGB(0, 0, 0)  
             BrushIcon.ZIndex = 5     
 
-            -- BIND FLAG
             local Flag = text:gsub("%s+", "_")
             AddFlag(Flag, function() return ColorBtn.BackgroundColor3:ToHex() end, function(v) ColorBtn.BackgroundColor3 = Color3.fromHex(v) end)
 
@@ -797,7 +794,6 @@ function UILibrary:CreateWindow(title)
             
             table.insert(themeElements, { type = "DropdownIcon", instance = Open })
 
-            -- BIND FLAG
             local Flag = text:gsub("%s+", "_")
             AddFlag(Flag, function() return Selected.Text end, function(v) Selected.Text = tostring(v) end)
 
@@ -814,32 +810,7 @@ function UILibrary:CreateWindow(title)
             Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0,3)        
 
             local btnHeight, padding = 16, 2        
-
-            for i, opt in ipairs(options) do        
-                local Btn = Instance.new("TextButton", Scroll)        
-                Btn.Size = UDim2.new(1,-4,0,btnHeight)        
-                Btn.Position = UDim2.new(0,2,0,(i-1)*(btnHeight+padding))        
-                Btn.Text = opt        
-                Btn.TextSize = 10        
-                Btn.BorderSizePixel = 0        
-                Btn.BackgroundColor3 = Color3.fromRGB(37,37,37)      
-                Btn.TextColor3 = Color3.fromRGB(255,255,255)        
-                Btn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)        
-                Btn.ZIndex = 51        
-
-                Btn.MouseEnter:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(50,50,50) end)        
-                Btn.MouseLeave:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(37,37,37) end)        
-
-                Btn.MouseButton1Click:Connect(function()        
-                    Selected.Text = opt        
-                    Scroll.Visible = false        
-                    Open.Rotation = 180      
-                    DropdownFrame.ZIndex = 10; Main.ZIndex = 11; Scroll.ZIndex = 50      
-                    if callback then callback(opt) end  
-                    TriggerAutoSave()      
-                end)        
-            end        
-
+            
             local function getHeight() return math.min(#options,3)*(btnHeight+padding)+4 end        
 
             Open.MouseButton1Click:Connect(function()        
@@ -858,10 +829,55 @@ function UILibrary:CreateWindow(title)
             table.insert(tabData.elements, elementData)      
             updateLayout()      
 
-            return {      
+            local DropdownObject = {      
                 SetVisible = function(self, state) elementData.visible = state; DropdownFrame.Visible = state; updateLayout() end,  
-                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end  
-            }    
+                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end,
+                
+                -- NOVO METODO ADICIONADO: Refresh
+                Refresh = function(self, NewOptions)
+                    options = NewOptions
+                    
+                    for _, child in ipairs(Scroll:GetChildren()) do
+                        if child:IsA("TextButton") then
+                            child:Destroy()
+                        end
+                    end
+
+                    for i, opt in ipairs(options) do
+                        local Btn = Instance.new("TextButton", Scroll)
+                        Btn.Size = UDim2.new(1,-4,0,btnHeight)
+                        Btn.Position = UDim2.new(0,2,0,(i-1)*(btnHeight+padding))
+                        Btn.Text = opt
+                        Btn.TextSize = 10
+                        Btn.BorderSizePixel = 0
+                        Btn.BackgroundColor3 = Color3.fromRGB(37,37,37)
+                        Btn.TextColor3 = Color3.fromRGB(255,255,255)
+                        Btn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+                        Btn.ZIndex = 51
+
+                        Btn.MouseEnter:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(50,50,50) end)
+                        Btn.MouseLeave:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(37,37,37) end)
+
+                        Btn.MouseButton1Click:Connect(function()
+                            Selected.Text = opt
+                            Scroll.Visible = false
+                            Open.Rotation = 180
+                            DropdownFrame.ZIndex = 10; Main.ZIndex = 11; Scroll.ZIndex = 50
+                            if callback then callback(opt) end
+                            TriggerAutoSave()
+                        end)
+                    end
+                    
+                    if Scroll.Visible then
+                        Scroll.Size = UDim2.new(0,112,0,getHeight())
+                    end
+                end
+            }
+
+            -- Inicializar populating dropdown
+            DropdownObject:Refresh(options)
+
+            return DropdownObject
         end    
 
         function tabMethods:AddSlider(text, defaultValue, max, callback)  
@@ -925,7 +941,6 @@ function UILibrary:CreateWindow(title)
                 TriggerAutoSave()
             end    
 
-            -- BIND FLAG
             local Flag = text:gsub("%s+", "_")
             AddFlag(Flag, function() return sliderValue end, function(v) updateValue(v) end)
 
@@ -1083,7 +1098,6 @@ function UILibrary:CreateWindow(title)
                 end)      
             end      
 
-            -- BIND FLAG
             local Flag = text:gsub("%s+", "_")
             AddFlag(Flag, function() return selectedOption end, function(v)
                 for _, rb in ipairs(radioButtons) do      
@@ -1130,13 +1144,57 @@ function UILibrary:CreateWindow(title)
     
     ConfigTab:AddThemePicker("Theme Color", currentThemeColor)
 
-    ConfigTab:AddTextBox("Config Name", "Default", function(v)
+    local ConfigNameBox = ConfigTab:AddTextBox("Config Name", "Default", function(v)
         ConfigSystem.ConfigName = v
     end)
 
-    ConfigTab:AddButton("Save Config", SaveConfig)
-    ConfigTab:AddButton("Load Config", LoadConfig)
-    ConfigTab:AddButton("Delete Config", DeleteConfig)
+    local function GetConfigs()
+        local Configs = {}
+        if isfolder(ConfigSystem.Folder) then
+            for _, File in ipairs(listfiles(ConfigSystem.Folder)) do
+                local Name = File:match("([^\\/]+)%.json$")
+                if Name then
+                    table.insert(Configs, Name)
+                end
+            end
+        end
+        table.sort(Configs)
+        if #Configs == 0 then table.insert(Configs, "Nenhuma Config") end
+        return Configs
+    end
+
+    local ConfigDropdown -- Declarando antes pra ser acessível nos botões
+
+    ConfigTab:AddButton("Save Config", function()
+        SaveConfig()
+        if ConfigDropdown and ConfigDropdown.Refresh then
+            ConfigDropdown:Refresh(GetConfigs())
+        end
+    end)
+
+    ConfigDropdown = ConfigTab:AddDropdown(
+        "Load Configs",
+        GetConfigs(),
+        function(ConfigName)
+            if ConfigName == "Nenhuma Config" then return end
+            ConfigSystem.ConfigName = ConfigName
+            ConfigNameBox:SetText(ConfigName) -- Atualiza o TextBox visualmente pra ficar igual
+            LoadConfig()
+        end
+    )
+
+    ConfigTab:AddButton("Delete Config", function()
+        DeleteConfig()
+        if ConfigDropdown and ConfigDropdown.Refresh then
+            ConfigDropdown:Refresh(GetConfigs())
+        end
+    end)
+
+    ConfigTab:AddButton("Refresh Configs", function()
+        if ConfigDropdown and ConfigDropdown.Refresh then
+            ConfigDropdown:Refresh(GetConfigs())
+        end
+    end)
 
     ConfigTab:AddToggle("Auto Save", function(v)
         ConfigSystem.AutoSave = v
