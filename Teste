@@ -595,7 +595,7 @@ function UILibrary:CreateWindow(title)
             local finalWidth = math.max(calculatedTextSize.X + 42, 85) -- Garante largura para o botão fechar 'X'
 
             FloatingUI.Size = UDim2.new(0, finalWidth, 0, 42) -- Top bar (16px) + Espaço de Controle (26px)
-            FloatingUI.Position = UDim2.new(0, math.random(50, 250), 0, math.random(50, 250)
+            FloatingUI.Position = UDim2.new(0, math.random(50, 250), 0, math.random(50, 250))
 
             -- BARRA DE CIMA (Topo igual ao Menu)
             local FTopo = Instance.new("Frame", FloatingUI)
