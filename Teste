@@ -1,6 +1,5 @@
--- UI Library ATUALIZADA com Sistema de Tema Global, Dropdown Flutuante, Auto-Size e Floating Windows Customizadas
--- CORREÇÃO: ElasticBehavior = Never em todos os ScrollingFrames
--- CORREÇÃO: Dropdown não é mais cortado pelo menu (flutuante)
+-- UI Library ATUALIZADA com Sistema de Tema Global, Dropdown Dinâmico, Auto-Size e Floating Windows Customizadas
+-- CORREÇÃO: ElasticBehavior = Never em todos os ScrollingFrames e Dropdown corrigido para não ser cortado
 
 local HttpService = game:GetService("HttpService")
 local UILibrary = {}
@@ -533,9 +532,7 @@ function UILibrary:CreateWindow(title)
 
             return {  
                 SetText = function(self, txt) Input.Text = txt; if callback then callback(txt) end end,  
-                GetText = function(self) return Input.Text end,  
-                SetVisible = function(self, state) elementData.visible = state; TextBoxFrame.Visible = state; updateLayout() end,  
-                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end  
+                GetText = function(self) return Input.Text end  
             }  
         end  
           
@@ -725,24 +722,7 @@ function UILibrary:CreateWindow(title)
                 local pickerObj = tabMethods:AddColorPicker(pickerText, defaultColor, pickerCallback)      
                 self:BindToColorPicker(pickerObj)      
                 return pickerObj      
-            end  
-
-            function ToggleObject:AddSlider(sliderText, defaultValue, maxValue, sliderCallback)
-                local sliderObj = tabMethods:AddSlider(sliderText, defaultValue, maxValue, sliderCallback)
-                self:BindToSlider(sliderObj)
-                return sliderObj
-            end
-
-            function ToggleObject:BindToSlider(sliderObject)
-                if not sliderObject then return end
-                if sliderObject.SetAsSubElement then sliderObject:SetAsSubElement(true) end
-                sliderObject:SetVisible(toggleState)
-                local oldCallback = callback
-                callback = function(v)
-                    if oldCallback then oldCallback(v) end
-                    sliderObject:SetVisible(v)
-                end
-            end
+            end      
 
             return ToggleObject        
         end          
@@ -860,136 +840,59 @@ function UILibrary:CreateWindow(title)
             table.insert(themeElements, { type = "DropdownIcon", instance = Open })  
 
             -- ==========================================
-            -- DROPDOWN FLUTUANTE (NÃO É CORTADO)
+            -- CORREÇÃO AQUI: O Scroll vai pro LMG2L["Main_5"] para burlar o limite do menu
             -- ==========================================
-            local FloatingDropdown = Instance.new("Frame", LMG2L["Floating_1"])
-            FloatingDropdown.Visible = false
-            FloatingDropdown.BackgroundColor3 = Color3.fromRGB(37,37,37)
-            FloatingDropdown.BorderSizePixel = 0
-            FloatingDropdown.ZIndex = 200
-            Instance.new("UICorner", FloatingDropdown).CornerRadius = UDim.new(0,4)
-            
-            local DropdownScroll = Instance.new("ScrollingFrame", FloatingDropdown)
-            DropdownScroll.BackgroundTransparency = 1
-            DropdownScroll.BorderSizePixel = 0
-            DropdownScroll.Size = UDim2.new(1,0,1,0)
-            DropdownScroll.ScrollBarThickness = 3
-            DropdownScroll.ScrollingDirection = Enum.ScrollingDirection.Y
-            DropdownScroll.ElasticBehavior = Enum.ElasticBehavior.Never
-            DropdownScroll.CanvasSize = UDim2.new(0,0,0,0)
-            
-            local btnHeight, padding = 18, 2
-            local dropdownButtons = {}
-            local isOpen = false
+            local Scroll = Instance.new("ScrollingFrame", LMG2L["Main_5"])          
+            Scroll.Visible = false          
+            Scroll.BorderSizePixel = 0          
+            Scroll.BackgroundColor3 = Color3.fromRGB(37,37,37)          
+            Scroll.Size = UDim2.new(0,112,0,28)          
+            Scroll.ScrollBarThickness = 0       
+            Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y          
+            Scroll.ZIndex = 105 -- ZIndex alto pra ficar por cima de tudo
+            Scroll.ScrollingDirection = Enum.ScrollingDirection.Y       
+            Scroll.ElasticBehavior = Enum.ElasticBehavior.Never 
+            Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0,3)          
 
-            local function updateFloatingPosition()
-                local absPos = Main.AbsolutePosition
-                local absSize = Main.AbsoluteSize
-                
-                local totalHeight = math.min(#options, 6) * (btnHeight + padding) + 4
-                local dropdownWidth = 136
-                
-                local x = absPos.X
-                local y = absPos.Y + absSize.Y + 2
-                
-                local screenHeight = game:GetService("GuiService"):GetScreenResolution().Y
-                if y + totalHeight > screenHeight then
-                    y = absPos.Y - totalHeight - 2
+            local btnHeight, padding = 16, 2          
+              
+            local function getHeight() return math.min(#options,3)*(btnHeight+padding)+4 end          
+
+            -- ==========================================
+            -- LÓGICA DE POSICIONAMENTO DINÂMICO
+            -- ==========================================
+            local function updateScrollPos()
+                if Scroll.Visible then
+                    -- Calcula a posição real na tela pra lista sempre seguir o botão
+                    Scroll.Position = UDim2.new(
+                        0, Main.AbsolutePosition.X - LMG2L["Main_5"].AbsolutePosition.X + 2,
+                        0, Main.AbsolutePosition.Y - LMG2L["Main_5"].AbsolutePosition.Y + 24
+                    )
                 end
-                
-                local screenWidth = game:GetService("GuiService"):GetScreenResolution().X
-                if x + dropdownWidth > screenWidth then
-                    x = screenWidth - dropdownWidth - 5
-                end
-                if x < 0 then x = 5 end
-                
-                FloatingDropdown.Position = UDim2.new(0, x, 0, y)
-                FloatingDropdown.Size = UDim2.new(0, dropdownWidth, 0, totalHeight)
             end
 
-            local function refreshFloatingButtons()
-                for _, btn in ipairs(dropdownButtons) do
-                    btn:Destroy()
-                end
-                dropdownButtons = {}
-                
-                local scrollHeight = 0
-                local maxVisible = 6
-                local visibleCount = math.min(#options, maxVisible)
-                
-                for i, opt in ipairs(options) do
-                    local Btn = Instance.new("TextButton", DropdownScroll)
-                    Btn.Size = UDim2.new(1, -8, 0, btnHeight)
-                    Btn.Position = UDim2.new(0, 4, 0, (i-1) * (btnHeight + padding) + 2)
-                    Btn.Text = opt
-                    Btn.TextSize = 12
-                    Btn.BorderSizePixel = 0
-                    Btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-                    Btn.TextColor3 = Color3.fromRGB(255,255,255)
-                    Btn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
-                    Btn.ZIndex = 201
-                    Btn.AutoButtonColor = false
-                    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0,3)
-                    
-                    Btn.MouseEnter:Connect(function() 
-                        Btn.BackgroundColor3 = currentThemeColor
-                    end)
-                    Btn.MouseLeave:Connect(function() 
-                        Btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
-                    end)
-                    
-                    Btn.MouseButton1Click:Connect(function()
-                        Selected.Text = opt
-                        FloatingDropdown.Visible = false
-                        isOpen = false
-                        Open.Rotation = 180
-                        if callback then callback(opt) end
-                    end)
-                    
-                    table.insert(dropdownButtons, Btn)
-                    scrollHeight = scrollHeight + btnHeight + padding
-                end
-                
-                DropdownScroll.CanvasSize = UDim2.new(0, 0, 0, scrollHeight + 4)
-            end
+            -- Faz a lista acompanhar se o usuário rolar o menu para cima e para baixo
+            LMG2L["Main_7"]:GetPropertyChangedSignal("CanvasPosition"):Connect(updateScrollPos)
 
-            Open.MouseButton1Click:Connect(function()
-                if isOpen then
-                    FloatingDropdown.Visible = false
+            -- Esconde o dropdown solto se o usuário trocar de aba no menu
+            tabData.container:GetPropertyChangedSignal("Visible"):Connect(function()
+                if not tabData.container.Visible then
+                    Scroll.Visible = false
                     Open.Rotation = 180
-                    isOpen = false
-                else
-                    refreshFloatingButtons()
-                    updateFloatingPosition()
-                    FloatingDropdown.Visible = true
-                    Open.Rotation = 0
-                    isOpen = true
-                    
-                    local closeConnection
-                    closeConnection = UserInputService.InputBegan:Connect(function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                            local mousePos = input.Position
-                            local dropdownAbs = FloatingDropdown.AbsolutePosition
-                            local dropdownSize = FloatingDropdown.AbsoluteSize
-                            
-                            local isInside = mousePos.X >= dropdownAbs.X and mousePos.X <= dropdownAbs.X + dropdownSize.X and
-                                            mousePos.Y >= dropdownAbs.Y and mousePos.Y <= dropdownAbs.Y + dropdownSize.Y
-                            
-                            local mainAbs = Main.AbsolutePosition
-                            local mainSize = Main.AbsoluteSize
-                            local isInsideButton = mousePos.X >= mainAbs.X and mousePos.X <= mainAbs.X + mainSize.X and
-                                                  mousePos.Y >= mainAbs.Y and mousePos.Y <= mainAbs.Y + mainSize.Y
-                            
-                            if not isInside and not isInsideButton then
-                                FloatingDropdown.Visible = false
-                                Open.Rotation = 180
-                                isOpen = false
-                                closeConnection:Disconnect()
-                            end
-                        end
-                    end)
                 end
             end)
+
+            Open.MouseButton1Click:Connect(function()          
+                if Scroll.Visible then        
+                    Scroll.Visible = false; Open.Rotation = 180        
+                    DropdownFrame.ZIndex = 10; Main.ZIndex = 11        
+                else        
+                    Scroll.Visible = true; Open.Rotation = 0        
+                    DropdownFrame.ZIndex = 100; Main.ZIndex = 101       
+                    Scroll.Size = UDim2.new(0,112,0,getHeight()) 
+                    updateScrollPos() -- Atualiza a posição na hora que clica       
+                end        
+            end)          
 
             local elementData = { frame = DropdownFrame, height = 30, visible = true, isSub = false }        
             DropdownFrame.Visible = true        
@@ -997,50 +900,54 @@ function UILibrary:CreateWindow(title)
             updateLayout()        
 
             local DropdownObject = {        
-                SetVisible = function(self, state) 
-                    elementData.visible = state
-                    DropdownFrame.Visible = state
-                    updateLayout()
-                end,
-                SetAsSubElement = function(self, state)
-                    elementData.isSub = state
-                    updateLayout()
-                end,
+                SetVisible = function(self, state) elementData.visible = state; DropdownFrame.Visible = state; updateLayout() end,    
+                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end,  
+                  
                 Refresh = function(self, NewOptions)  
-                    options = NewOptions
-                    if #options > 0 then
-                        Selected.Text = options[1]
-                        if callback then callback(options[1]) end
-                    end
-                    refreshFloatingButtons()
-                    if isOpen then
-                        updateFloatingPosition()
-                    end
-                end,
-                SetValue = function(self, value)
-                    for _, opt in ipairs(options) do
-                        if opt == value then
-                            Selected.Text = value
-                            if callback then callback(value) end
-                            break
-                        end
-                    end
-                end,
-                GetValue = function(self)
-                    return Selected.Text
-                end
-            }
+                    options = NewOptions  
+                      
+                    for _, child in ipairs(Scroll:GetChildren()) do  
+                        if child:IsA("TextButton") then  
+                            child:Destroy()  
+                        end  
+                    end  
 
-            game:GetService("RunService").RenderStepped:Connect(function()
-                if isOpen and FloatingDropdown.Visible then
-                    updateFloatingPosition()
-                end
-            end)
+                    for i, opt in ipairs(options) do  
+                        local Btn = Instance.new("TextButton", Scroll)  
+                        Btn.Size = UDim2.new(1,-4,0,btnHeight)  
+                        Btn.Position = UDim2.new(0,2,0,(i-1)*(btnHeight+padding))  
+                        Btn.Text = opt  
+                        Btn.TextSize = 10  
+                        Btn.BorderSizePixel = 0  
+                        Btn.BackgroundColor3 = Color3.fromRGB(37,37,37)  
+                        Btn.TextColor3 = Color3.fromRGB(255,255,255)  
+                        Btn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)  
+                        Btn.ZIndex = 106 -- Mantém os textos acima do fundo
+
+                        Btn.MouseEnter:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(50,50,50) end)  
+                        Btn.MouseLeave:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(37,37,37) end)  
+
+                        Btn.MouseButton1Click:Connect(function()  
+                            Selected.Text = opt  
+                            Scroll.Visible = false  
+                            Open.Rotation = 180  
+                            DropdownFrame.ZIndex = 10; Main.ZIndex = 11 
+                            if callback then callback(opt) end  
+                        end)  
+                    end  
+                      
+                    if Scroll.Visible then  
+                        Scroll.Size = UDim2.new(0,112,0,getHeight())  
+                    end  
+                end  
+            }  
+
+            DropdownObject:Refresh(options)  
 
             return DropdownObject  
         end      
 
-        function tabMethods:AddSlider(text, defaultValue, maxValue, callback)    
+        function tabMethods:AddSlider(text, defaultValue, max, callback)    
             local SliderFrame = Instance.new("Frame", ElementsContainer)    
             SliderFrame.BorderSizePixel = 0    
             SliderFrame.Size = UDim2.new(0, 246, 0, 22)    
@@ -1089,7 +996,7 @@ function UILibrary:CreateWindow(title)
 
             local min = 0      
             local sliderValue = defaultValue or 0      
-            local max = maxValue or 100      
+            local max = max or 100      
             local dragging = false      
 
             local function updateValue(newValue)      
