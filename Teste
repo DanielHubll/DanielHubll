@@ -582,7 +582,7 @@ function UILibrary:CreateWindow(title)
             -- INTERFACE DO FLOATING TOGGLE
             -- ==========================================
             local FloatingUI = Instance.new("Frame", LMG2L["Floating_1"])
-            FloatingUI.Size = UDim2.new(0, 130, 0, 32)
+            FloatingUI.Size = UDim2.new(0, 246, 0, 22)
             -- Start Position espalhada levemente para evitar sobreposição total se o user abrir vários
             FloatingUI.Position = UDim2.new(0, math.random(50, 250), 0, math.random(50, 250)) 
             FloatingUI.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
