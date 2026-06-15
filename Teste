@@ -567,8 +567,8 @@ function UILibrary:CreateWindow(title)
             Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 3)      
 
             -- ==========================================
-            -- BOTÃO SHOW/HIDE (NO MENU PRINCIPAL)
-            -- ==========================================
+-- BOTÃO SHOW/HIDE (NO MENU PRINCIPAL)
+-- ==========================================
 local ShowBtn = Instance.new("TextButton", ToggleFrame)
 ShowBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 ShowBtn.Size = UDim2.new(0, 40, 0, 18)
@@ -583,62 +583,59 @@ local ShowBtnCorner = Instance.new("UICorner", ShowBtn)
 ShowBtnCorner.CornerRadius = UDim.new(0, 3)
 
 -- ==========================================
--- INTERFACE DO FLOATING TOGGLE (ATUALIZADA)
+-- INTERFACE DO FLOATING TOGGLE (ATUALIZADA - AUMENTADA)
 -- ==========================================
 local FloatingUI = Instance.new("Frame", LMG2L["Floating_1"])
-FloatingUI.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Fundo Preto igual ao menu principal
+FloatingUI.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 FloatingUI.BorderSizePixel = 0
 FloatingUI.Visible = false
 FloatingUI.Active = true
 
--- SISTEMA AVANÇADO DE AUTO-SIZE (Respeita o tamanho exato do texto)
-local calculatedTextSize = TextService:GetTextSize(text or "Toggle", 10, Enum.Font.GothamBold, Vector2.new(500, 14))
-local finalWidth = math.max(calculatedTextSize.X + 42, 85) -- Garante largura para o botão fechar 'X'
+-- SISTEMA AVANÇADO DE AUTO-SIZE (Aumentado de 10 para 12 no texto, 14 para 16 na altura)
+local calculatedTextSize = TextService:GetTextSize(text or "Toggle", 12, Enum.Font.GothamBold, Vector2.new(500, 16))
+local finalWidth = math.max(calculatedTextSize.X + 50, 95) -- Margens aumentadas
 
-FloatingUI.Size = UDim2.new(0, finalWidth, 0, 42) -- Top bar (16px) + Espaço de Controle (26px)
+FloatingUI.Size = UDim2.new(0, finalWidth, 0, 50) -- Altura total aumentada (Top bar 20px + Espaço 30px)
 FloatingUI.Position = UDim2.new(0, math.random(50, 250), 0, math.random(50, 250)) 
 
--- Contorno que segue o Tema Global
--- REMOVIDO: FloatingStroke
-
--- BARRA DE CIMA (Topo igual ao Menu)
+-- BARRA DE CIMA (Mais alta)
 local FTopo = Instance.new("Frame", FloatingUI)
 FTopo.Name = "FTopo"
 FTopo.BorderSizePixel = 0
 FTopo.BackgroundColor3 = currentThemeColor
-FTopo.Size = UDim2.new(1, 0, 0, 16)
+FTopo.Size = UDim2.new(1, 0, 0, 20) -- Aumentado de 16 para 20
 
--- BOTÃO FECHAR (X)
+-- BOTÃO FECHAR (X) (Maior)
 local FClose = Instance.new("TextButton", FTopo)
 FClose.BackgroundTransparency = 1
-FClose.Size = UDim2.new(0, 14, 0, 14)
-FClose.Position = UDim2.new(1, -16, 0, 1)
+FClose.Size = UDim2.new(0, 18, 0, 18) -- Aumentado de 14 para 18
+FClose.Position = UDim2.new(1, -20, 0, 1) -- Ajustado para centralizar
 FClose.Text = "X"
 FClose.TextColor3 = Color3.fromRGB(255, 255, 255)
-FClose.TextSize = 9
+FClose.TextSize = 11 -- Aumentado de 9 para 11
 FClose.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
 
--- TEXTO DO FLOATING
+-- TEXTO DO FLOATING (Maior)
 local FLabel = Instance.new("TextLabel", FloatingUI)
 FLabel.BackgroundTransparency = 1
-FLabel.Size = UDim2.new(0, calculatedTextSize.X, 0, 14)
-FLabel.Position = UDim2.new(0, 26, 0, 22)
+FLabel.Size = UDim2.new(0, calculatedTextSize.X, 0, 16) -- Aumentado de 14 para 16
+FLabel.Position = UDim2.new(0, 30, 0, 28) -- Ajustado (era 26, 22)
 FLabel.Text = text or "Toggle"
 FLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-FLabel.TextSize = 10
+FLabel.TextSize = 12 -- Aumentado de 10 para 12
 FLabel.TextXAlignment = Enum.TextXAlignment.Left
 FLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
 
--- QUADRADO DE SELEÇÃO (Checkbox) - AGORA COM UICORNER
+-- QUADRADO DE SELEÇÃO (Checkbox Maior)
 local FButton = Instance.new("TextButton", FloatingUI)
 FButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
-FButton.Size = UDim2.new(0, 14, 0, 14)
-FButton.Position = UDim2.new(0, 6, 0, 22)
+FButton.Size = UDim2.new(0, 18, 0, 18) -- Aumentado de 14 para 18
+FButton.Position = UDim2.new(0, 6, 0, 27) -- Ajustado (era 6, 22)
 FButton.BorderSizePixel = 0
 FButton.Text = ""
 FButton.AutoButtonColor = false
 local CheckboxCorner = Instance.new("UICorner", FButton)
-CheckboxCorner.CornerRadius = UDim.new(0, 3)  -- Ajuste o valor conforme necessário
+CheckboxCorner.CornerRadius = UDim.new(0, 3)
 
 -- Torna o Floating Toggle Arrastável pela barra superior
 MakeDraggable(FloatingUI, FTopo)
