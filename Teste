@@ -567,8 +567,8 @@ function UILibrary:CreateWindow(title)
             Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 3)      
 
             -- ==========================================
--- BOTÃO SHOW/HIDE (NO MENU PRINCIPAL)
--- ==========================================
+            -- BOTÃO SHOW/HIDE (NO MENU PRINCIPAL)
+            -- ==========================================
 local ShowBtn = Instance.new("TextButton", ToggleFrame)
 ShowBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 ShowBtn.Size = UDim2.new(0, 40, 0, 18)
@@ -616,6 +616,7 @@ FClose.Position = UDim2.new(1, -16, 0, 1)
 FClose.Text = "X"
 FClose.TextColor3 = Color3.fromRGB(255, 255, 255)
 FClose.TextSize = 9
+FClose.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
 
 -- TEXTO DO FLOATING
 local FLabel = Instance.new("TextLabel", FloatingUI)
