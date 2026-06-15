@@ -589,7 +589,6 @@ function UILibrary:CreateWindow(title)
             FloatingUI.BorderSizePixel = 0
             FloatingUI.Visible = false
             FloatingUI.Active = true
-            Instance.new("UICorner", FloatingUI).CornerRadius = UDim.new(0, 4)
 
             local FLabel = Instance.new("TextLabel", FloatingUI)
             FLabel.BackgroundTransparency = 1
@@ -603,7 +602,7 @@ function UILibrary:CreateWindow(title)
 
             local FButton = Instance.new("TextButton", FloatingUI)
             FButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
-            FButton.Size = UDim2.new(0, 18, 0, 18)
+            FButton.Size = UDim2.new(0, 22, 0, 22)
             FButton.Position = UDim2.new(0, 8, 0.5, -9)
             FButton.BorderSizePixel = 0
             FButton.Text = ""
