@@ -342,7 +342,7 @@ function UILibrary:CreateWindow(title)
         Paleta_d.Visible = true    
     end    
 
-    -- FUNÇÃO DE ATUALIZAÇÃO DO TEMA
+    -- FUNÇÃO DE ATUALIZAÇÃO DO TEMA (CORRIGIDA)
     local function applyTheme()
         local th, ts, tv = currentThemeColor:ToHSV()
         local darkerTheme = Color3.fromHSV(th, ts, math.clamp(tv - 0.2, 0, 1))
@@ -360,7 +360,16 @@ function UILibrary:CreateWindow(title)
             end
         end
 
-        for _, element in ipairs(themeElements) do
+        -- Loop iterativo seguro: Remove instâncias mortas (evita crash ao modificar Dropdowns que sofreram refresh)
+        for i = #themeElements, 1, -1 do
+            local element = themeElements[i]
+            
+            -- Se a instância foi destruída ou é nula, limpamos da tabela e pulamos
+            if typeof(element.instance) ~= "Instance" or not element.instance:IsDescendantOf(game) then
+                table.remove(themeElements, i)
+                continue
+            end
+
             if element.type == "Toggle" then
                 element.instance.BackgroundColor3 = element.getState() and currentThemeColor or Color3.fromRGB(37, 37, 37)
             elseif element.type == "FloatingStroke" then
@@ -567,118 +576,123 @@ function UILibrary:CreateWindow(title)
             Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 3)      
 
             -- ==========================================
--- BOTÃO SHOW/HIDE (NO MENU PRINCIPAL)
--- ==========================================
-local ShowBtn = Instance.new("TextButton", ToggleFrame)
-ShowBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-ShowBtn.Size = UDim2.new(0, 50, 0, 22) -- Maior
-ShowBtn.Position = UDim2.new(1, -50, 0, 2)
-ShowBtn.BorderSizePixel = 0
-ShowBtn.Text = "Show"
-ShowBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-ShowBtn.TextSize = 11 -- Maior
-ShowBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
-ShowBtn.AutoButtonColor = false
-local ShowBtnCorner = Instance.new("UICorner", ShowBtn)
-ShowBtnCorner.CornerRadius = UDim.new(0, 4)
+            -- BOTÃO SHOW/HIDE (NO MENU PRINCIPAL)
+            -- ==========================================
+            local ShowBtn = Instance.new("TextButton", ToggleFrame)
+            ShowBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            ShowBtn.Size = UDim2.new(0, 50, 0, 22) -- Maior
+            ShowBtn.Position = UDim2.new(1, -50, 0, 2)
+            ShowBtn.BorderSizePixel = 0
+            ShowBtn.Text = "Show"
+            ShowBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+            ShowBtn.TextSize = 11 -- Maior
+            ShowBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            ShowBtn.AutoButtonColor = false
+            local ShowBtnCorner = Instance.new("UICorner", ShowBtn)
+            ShowBtnCorner.CornerRadius = UDim.new(0, 4)
 
--- ==========================================
--- INTERFACE DO FLOATING TOGGLE (BEM MAIOR)
--- ==========================================
-local FloatingUI = Instance.new("Frame", LMG2L["Floating_1"])
-FloatingUI.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-FloatingUI.BorderSizePixel = 0
-FloatingUI.Visible = false
-FloatingUI.Active = true
+            -- ==========================================
+            -- INTERFACE DO FLOATING TOGGLE (BEM MAIOR)
+            -- ==========================================
+            local FloatingUI = Instance.new("Frame", LMG2L["Floating_1"])
+            FloatingUI.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            FloatingUI.BorderSizePixel = 0
+            FloatingUI.Visible = false
+            FloatingUI.Active = true
 
--- TEXTO GRANDE (16px)
-local calculatedTextSize = TextService:GetTextSize(text or "Toggle", 16, Enum.Font.GothamBold, Vector2.new(500, 20))
-local finalWidth = math.max(calculatedTextSize.X + 64, 120)
+            -- ADICIONANDO O UIStroke (agora real)
+            local FloatingStroke = Instance.new("UIStroke", FloatingUI)
+            FloatingStroke.Color = currentThemeColor
+            FloatingStroke.Thickness = 1.5
 
-FloatingUI.Size = UDim2.new(0, finalWidth, 0, 50)
-FloatingUI.Position = UDim2.new(0, math.random(50, 250), 0, math.random(50, 250)) 
+            -- TEXTO GRANDE (16px)
+            local calculatedTextSize = TextService:GetTextSize(text or "Toggle", 16, Enum.Font.GothamBold, Vector2.new(500, 20))
+            local finalWidth = math.max(calculatedTextSize.X + 64, 120)
 
--- BARRA DE CIMA (BEM MAIS ALTA)
-local FTopo = Instance.new("Frame", FloatingUI)
-FTopo.Name = "FTopo"
-FTopo.BorderSizePixel = 0
-FTopo.BackgroundColor3 = currentThemeColor
-FTopo.Size = UDim2.new(1, 0, 0, 15)
+            FloatingUI.Size = UDim2.new(0, finalWidth, 0, 50)
+            FloatingUI.Position = UDim2.new(0, math.random(50, 250), 0, math.random(50, 250)) 
 
--- BOTÃO FECHAR (X) GRANDÃO
-local FClose = Instance.new("TextButton", FTopo)
-FClose.BackgroundTransparency = 1
-FClose.Size = UDim2.new(0, 22, 0, 22)
-FClose.Position = UDim2.new(1.050, -25, 0, -4)
-FClose.Text = "X"
-FClose.TextColor3 = Color3.fromRGB(255, 255, 255)
-FClose.TextSize = 9
+            -- BARRA DE CIMA (BEM MAIS ALTA)
+            local FTopo = Instance.new("Frame", FloatingUI)
+            FTopo.Name = "FTopo"
+            FTopo.BorderSizePixel = 0
+            FTopo.BackgroundColor3 = currentThemeColor
+            FTopo.Size = UDim2.new(1, 0, 0, 15)
 
--- TEXTO DO FLOATING (GRANDE)
-local FLabel = Instance.new("TextLabel", FloatingUI)
-FLabel.BackgroundTransparency = 1
-FLabel.Size = UDim2.new(0, calculatedTextSize.X, 0, 20)
-FLabel.Position = UDim2.new(0, 40, 0, 22)
-FLabel.Text = text or "Toggle"
-FLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-FLabel.TextSize = 16
-FLabel.TextXAlignment = Enum.TextXAlignment.Left
-FLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            -- BOTÃO FECHAR (X) GRANDÃO
+            local FClose = Instance.new("TextButton", FTopo)
+            FClose.BackgroundTransparency = 1
+            FClose.Size = UDim2.new(0, 22, 0, 22)
+            FClose.Position = UDim2.new(1.050, -25, 0, -4)
+            FClose.Text = "X"
+            FClose.TextColor3 = Color3.fromRGB(255, 255, 255)
+            FClose.TextSize = 10
 
--- CHECKBOX GRANDÃO (24x24)
-local FButton = Instance.new("TextButton", FloatingUI)
-FButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
-FButton.Size = UDim2.new(0, 24, 0, 24)
-FButton.Position = UDim2.new(0, 8, 0, 20)
-FButton.BorderSizePixel = 0
-FButton.Text = ""
-FButton.AutoButtonColor = false
-local CheckboxCorner = Instance.new("UICorner", FButton)
-CheckboxCorner.CornerRadius = UDim.new(0, 4)
+            -- TEXTO DO FLOATING (GRANDE)
+            local FLabel = Instance.new("TextLabel", FloatingUI)
+            FLabel.BackgroundTransparency = 1
+            FLabel.Size = UDim2.new(0, calculatedTextSize.X, 0, 20)
+            FLabel.Position = UDim2.new(0, 40, 0, 22)
+            FLabel.Text = text or "Toggle"
+            FLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            FLabel.TextSize = 16
+            FLabel.TextXAlignment = Enum.TextXAlignment.Left
+            FLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
 
--- Torna o Floating Toggle Arrastável pela barra superior
-MakeDraggable(FloatingUI, FTopo)
+            -- CHECKBOX GRANDÃO (24x24)
+            local FButton = Instance.new("TextButton", FloatingUI)
+            FButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+            FButton.Size = UDim2.new(0, 24, 0, 24)
+            FButton.Position = UDim2.new(0, 8, 0, 20)
+            FButton.BorderSizePixel = 0
+            FButton.Text = ""
+            FButton.AutoButtonColor = false
+            local CheckboxCorner = Instance.new("UICorner", FButton)
+            CheckboxCorner.CornerRadius = UDim.new(0, 4)
 
--- ==========================================
--- LÓGICA E SINCRONIZAÇÃO
--- ==========================================
-local toggleState = false        
-local isFloating = false
+            -- Torna o Floating Toggle Arrastável pela barra superior
+            MakeDraggable(FloatingUI, FTopo)
 
-local function updateToggle()        
-    local activeColor = toggleState and currentThemeColor or Color3.fromRGB(37, 37, 37)
-    ToggleButton.BackgroundColor3 = activeColor
-    FButton.BackgroundColor3 = activeColor
-    if callback then callback(toggleState) end     
-end        
-            
-ToggleButton.MouseButton1Click:Connect(function()        
-    toggleState = not toggleState        
-    updateToggle()        
-end)        
+            -- ==========================================
+            -- LÓGICA E SINCRONIZAÇÃO
+            -- ==========================================
+            local toggleState = false        
+            local isFloating = false
 
-FButton.MouseButton1Click:Connect(function()        
-    toggleState = not toggleState        
-    updateToggle()        
-end)   
+            local function updateToggle()        
+                local activeColor = toggleState and currentThemeColor or Color3.fromRGB(37, 37, 37)
+                ToggleButton.BackgroundColor3 = activeColor
+                FButton.BackgroundColor3 = activeColor
+                if callback then callback(toggleState) end     
+            end        
+                        
+            ToggleButton.MouseButton1Click:Connect(function()        
+                toggleState = not toggleState        
+                updateToggle()        
+            end)        
 
--- Ação do botão Show/Hide do menu
-local function toggleFloatingVisibility(state)
-    isFloating = state
-    FloatingUI.Visible = isFloating
-    ShowBtn.Text = isFloating and "Hide" or "Show"
-    ShowBtn.BackgroundColor3 = isFloating and currentThemeColor or Color3.fromRGB(45, 45, 45)
-    ShowBtn.TextColor3 = isFloating and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
-end
+            FButton.MouseButton1Click:Connect(function()        
+                toggleState = not toggleState        
+                updateToggle()        
+            end)   
 
-ShowBtn.MouseButton1Click:Connect(function()
-    toggleFloatingVisibility(not isFloating)
-end)
+            -- Ação do botão Show/Hide do menu
+            local function toggleFloatingVisibility(state)
+                isFloating = state
+                FloatingUI.Visible = isFloating
+                ShowBtn.Text = isFloating and "Hide" or "Show"
+                ShowBtn.BackgroundColor3 = isFloating and currentThemeColor or Color3.fromRGB(45, 45, 45)
+                ShowBtn.TextColor3 = isFloating and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
+            end
 
--- Fechar pelo 'X' sincroniza de volta para o menu original
-FClose.MouseButton1Click:Connect(function()
-    toggleFloatingVisibility(false)
-end)
+            ShowBtn.MouseButton1Click:Connect(function()
+                toggleFloatingVisibility(not isFloating)
+            end)
+
+            -- Fechar pelo 'X' sincroniza de volta para o menu original
+            FClose.MouseButton1Click:Connect(function()
+                toggleFloatingVisibility(false)
+            end)
 
             -- Inserindo os novos objetos no sistema de tema Global dinâmico
             table.insert(themeElements, { type = "Toggle", instance = ToggleButton, getState = function() return toggleState end })
