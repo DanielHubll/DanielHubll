@@ -613,7 +613,6 @@ FClose.Position = UDim2.new(1, -25, 0, -4)
 FClose.Text = "X"
 FClose.TextColor3 = Color3.fromRGB(255, 255, 255)
 FClose.TextSize = 9
-FClose.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
 
 -- TEXTO DO FLOATING (GRANDE)
 local FLabel = Instance.new("TextLabel", FloatingUI)
