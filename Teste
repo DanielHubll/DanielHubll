@@ -612,7 +612,7 @@ FClose.Size = UDim2.new(0, 22, 0, 22)
 FClose.Position = UDim2.new(1.050, -25, 0, -4)
 FClose.Text = "X"
 FClose.TextColor3 = Color3.fromRGB(255, 255, 255)
-FClose.TextSize = 10
+FClose.TextSize = 9
 
 -- TEXTO DO FLOATING (GRANDE)
 local FLabel = Instance.new("TextLabel", FloatingUI)
