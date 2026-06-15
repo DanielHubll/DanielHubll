@@ -591,11 +591,6 @@ function UILibrary:CreateWindow(title)
             FloatingUI.Active = true
             Instance.new("UICorner", FloatingUI).CornerRadius = UDim.new(0, 4)
 
-            -- Contorno que segue o Tema Global
-            local FloatingStroke = Instance.new("UIStroke", FloatingUI)
-            FloatingStroke.Color = currentThemeColor
-            FloatingStroke.Thickness = 1.2
-
             local FLabel = Instance.new("TextLabel", FloatingUI)
             FLabel.BackgroundTransparency = 1
             FLabel.Size = UDim2.new(1, -36, 1, 0)
