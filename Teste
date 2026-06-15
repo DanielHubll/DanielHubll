@@ -595,7 +595,7 @@ FloatingUI.Active = true
 local calculatedTextSize = TextService:GetTextSize(text or "Toggle", 16, Enum.Font.GothamBold, Vector2.new(500, 20))
 local finalWidth = math.max(calculatedTextSize.X + 64, 120)
 
-FloatingUI.Size = UDim2.new(0, finalWidth, 0, 30)
+FloatingUI.Size = UDim2.new(0, finalWidth, 0, 10)
 FloatingUI.Position = UDim2.new(0, math.random(50, 250), 0, math.random(50, 250)) 
 
 -- BARRA DE CIMA (BEM MAIS ALTA)
