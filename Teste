@@ -603,7 +603,7 @@ local FTopo = Instance.new("Frame", FloatingUI)
 FTopo.Name = "FTopo"
 FTopo.BorderSizePixel = 0
 FTopo.BackgroundColor3 = currentThemeColor
-FTopo.Size = UDim2.new(1, 0, 0, 15)
+FTopo.Size = UDim2.new(1, 0, 0, 8)
 
 -- BOTÃO FECHAR (X) GRANDÃO
 local FClose = Instance.new("TextButton", FTopo)
