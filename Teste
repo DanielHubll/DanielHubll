@@ -1,4 +1,4 @@
--- UI Library ATUALIZADA com Sistema de Tema Global, Dropdown Dinâmico, Auto-Size e Floating Windows Customizadas
+-- UI Library COMPLETA com Tema Global, ColorPicker (HSV+HEX), Floating Windows, Dropdown, Sliders e mais
 -- CORREÇÃO: ElasticBehavior = Never em todos os ScrollingFrames
 
 local HttpService = game:GetService("HttpService")
@@ -82,7 +82,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Main_7"]["ScrollBarThickness"] = 0      
     LMG2L["Main_7"]["BackgroundTransparency"] = 1      
     LMG2L["Main_7"]["ScrollingDirection"] = Enum.ScrollingDirection.Y      
-    LMG2L["Main_7"]["ElasticBehavior"] = Enum.ElasticBehavior.Never -- CORREÇÃO: Remove efeito elástico
+    LMG2L["Main_7"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
 
     LMG2L["Tabs_2a"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])      
     LMG2L["Tabs_2a"]["BorderSizePixel"] = 0      
@@ -91,7 +91,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Tabs_2a"]["BackgroundTransparency"] = 1      
     LMG2L["Tabs_2a"]["ScrollBarThickness"] = 0      
     LMG2L["Tabs_2a"]["ScrollingDirection"] = Enum.ScrollingDirection.Y      
-    LMG2L["Tabs_2a"]["ElasticBehavior"] = Enum.ElasticBehavior.Never -- CORREÇÃO: Remove efeito elástico
+    LMG2L["Tabs_2a"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
 
     LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])      
     LMG2L["OpenName_2d"]["BorderSizePixel"] = 0      
@@ -849,7 +849,7 @@ function UILibrary:CreateWindow(title)
             Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y          
             Scroll.ZIndex = 50          
             Scroll.ScrollingDirection = Enum.ScrollingDirection.Y       
-            Scroll.ElasticBehavior = Enum.ElasticBehavior.Never -- CORREÇÃO: Remove efeito elástico
+            Scroll.ElasticBehavior = Enum.ElasticBehavior.Never
             Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0,3)          
 
             local btnHeight, padding = 16, 2          
