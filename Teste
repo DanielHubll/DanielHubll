@@ -1,4 +1,4 @@
--- UI Library ATUALIZADA com Sistema de Tema Global, Dropdown Dinâmico e Floating Toggle Integrado
+-- UI Library ATUALIZADA com Sistema de Tema Global e Dropdown Dinâmico (Sem Sistema de Config)
 local HttpService = game:GetService("HttpService")
 local UILibrary = {}
 
@@ -341,7 +341,7 @@ function UILibrary:CreateWindow(title)
         Paleta_d.Visible = true    
     end    
 
-    -- FUNÇÃO DE ATUALIZAÇÃO DO TEMA ATUALIZADA COM FLOATING
+    -- FUNÇÃO DE ATUALIZAÇÃO DO TEMA
     local function applyTheme()
         local th, ts, tv = currentThemeColor:ToHSV()
         local darkerTheme = Color3.fromHSV(th, ts, math.clamp(tv - 0.2, 0, 1))
@@ -373,12 +373,6 @@ function UILibrary:CreateWindow(title)
                     element.instance.BackgroundColor3 = currentThemeColor
                 else
                     element.instance.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
-                end
-            elseif element.type == "FloatingShowHide" then
-                element.instance.BackgroundColor3 = element.getVisible() and currentThemeColor or Color3.fromRGB(45, 45, 45)
-            elseif element.type == "FloatingStroke" then
-                if element.instance and element.instance.Parent then
-                    element.instance.Color = currentThemeColor
                 end
             end
         end
@@ -540,13 +534,10 @@ function UILibrary:CreateWindow(title)
             return pickerObj
         end
                 
-        -- =========================================================================
-        -- FUNÇÃO ADDTOGGLE ATUALIZADA COM FLOATING COMPLETO E SINCRONIZADO
-        -- =========================================================================
         function tabMethods:AddToggle(text, callback)        
             local ToggleFrame = Instance.new("Frame", ElementsContainer)        
             ToggleFrame.BorderSizePixel = 0        
-            ToggleFrame.Size = UDim2.new(0, 240, 0, 22)        
+            ToggleFrame.Size = UDim2.new(0, 100, 0, 22)        
             ToggleFrame.BackgroundTransparency = 1        
                     
             local InfoLabel = Instance.new("TextLabel", ToggleFrame)        
@@ -556,7 +547,7 @@ function UILibrary:CreateWindow(title)
             InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)        
             InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)        
             InfoLabel.BackgroundTransparency = 1        
-            InfoLabel.Size = UDim2.new(0, 150, 0, 22)        
+            InfoLabel.Size = UDim2.new(0, 88, 0, 22)        
             InfoLabel.Text = text or "Toggle"        
             InfoLabel.Position = UDim2.new(0, 28, 0, 0)        
                     
@@ -569,15 +560,8 @@ function UILibrary:CreateWindow(title)
             Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 3)      
                     
             local toggleState = false        
-            local floatingVisible = false
-            local floatingFrame = nil
-            local updateFloatingVisual = nil
-
             local function updateToggle()        
                 ToggleButton.BackgroundColor3 = toggleState and currentThemeColor or Color3.fromRGB(37, 37, 37)        
-                if updateFloatingVisual then
-                    updateFloatingVisual()
-                end
                 if callback then callback(toggleState) end     
             end        
                     
@@ -586,87 +570,7 @@ function UILibrary:CreateWindow(title)
                 updateToggle()        
             end)        
 
-            -- BOTAO SHOW/HIDE AO LADO DO TOGGLE ORIGINAL
-            local ShowHide = Instance.new("TextButton", ToggleFrame)
-            ShowHide.Size = UDim2.new(0, 45, 0, 18)
-            ShowHide.Position = UDim2.new(0, 185, 0, 2)
-            ShowHide.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-            ShowHide.TextColor3 = Color3.fromRGB(255, 255, 255)
-            ShowHide.Text = "Show"
-            ShowHide.TextSize = 10
-            ShowHide.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
-            Instance.new("UICorner", ShowHide).CornerRadius = UDim.new(0, 4)
-
-            -- LOGICA INTERNA DO FLOATING DIRECIONADO PARA ESTE TOGGLE
-            local function CreateFloating()
-                local frame = Instance.new("Frame")
-                frame.Parent = LMG2L["Floating_1"]
-                frame.Size = UDim2.new(0, 130, 0, 35)
-                frame.Position = UDim2.new(0, 400, 0, 200)
-                frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-                frame.BorderSizePixel = 0
-                
-                local stroke = Instance.new("UIStroke", frame)
-                stroke.Thickness = 1.5
-                stroke.Color = currentThemeColor
-                
-                Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
-
-                local FloatToggle = Instance.new("TextButton", frame)
-                FloatToggle.Size = UDim2.new(0, 22, 0, 22)
-                FloatToggle.Position = UDim2.new(0, 6, 0, 6.5)
-                FloatToggle.Text = ""
-                FloatToggle.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
-                FloatToggle.AutoButtonColor = false
-                Instance.new("UICorner", FloatToggle).CornerRadius = UDim.new(0, 4)
-
-                local Label = Instance.new("TextLabel", frame)
-                Label.BackgroundTransparency = 1
-                Label.Position = UDim2.new(0, 35, 0, 0)
-                Label.Size = UDim2.new(1, -35, 1, 0)
-                Label.Text = text or "Toggle"
-                Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-                Label.TextSize = 10
-                Label.TextXAlignment = Enum.TextXAlignment.Left
-                Label.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
-
-                local function UpdateFloatingVisual()
-                    FloatToggle.BackgroundColor3 = toggleState and currentThemeColor or Color3.fromRGB(37, 37, 37)
-                    stroke.Color = currentThemeColor
-                end
-
-                FloatToggle.MouseButton1Click:Connect(function()
-                    toggleState = not toggleState
-                    updateToggle()
-                end)
-
-                MakeDraggable(frame, frame)
-                table.insert(themeElements, { type = "FloatingStroke", instance = stroke })
-
-                return frame, UpdateFloatingVisual
-            end
-
-            ShowHide.MouseButton1Click:Connect(function()
-                floatingVisible = not floatingVisible
-                if floatingVisible then
-                    ShowHide.Text = "Hide"
-                    ShowHide.BackgroundColor3 = currentThemeColor
-                    if not floatingFrame then
-                        floatingFrame, updateFloatingVisual = CreateFloating()
-                    end
-                    floatingFrame.Visible = true
-                    updateFloatingVisual()
-                else
-                    ShowHide.Text = "Show"
-                    ShowHide.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-                    if floatingFrame then
-                        floatingFrame.Visible = false
-                    end
-                end
-            end)
-
             table.insert(themeElements, { type = "Toggle", instance = ToggleButton, getState = function() return toggleState end })
-            table.insert(themeElements, { type = "FloatingShowHide", instance = ShowHide, getVisible = function() return floatingVisible end })
             table.insert(tabData.elements, {frame = ToggleFrame, height = 30, visible = true, isSub = false})      
             updateLayout()      
                     
@@ -901,4 +805,251 @@ function UILibrary:CreateWindow(title)
             return DropdownObject
         end    
 
-        function tabMethods:AddSlider(text, defaultValue, max, callback)
+        function tabMethods:AddSlider(text, defaultValue, max, callback)  
+            local SliderFrame = Instance.new("Frame", ElementsContainer)  
+            SliderFrame.BorderSizePixel = 0  
+            SliderFrame.Size = UDim2.new(0, 246, 0, 22)  
+            SliderFrame.BackgroundTransparency = 1  
+
+            local Main = Instance.new("Frame", SliderFrame)      
+            Main.BorderSizePixel = 0      
+            Main.BackgroundColor3 = Color3.fromRGB(40, 40, 40)    
+            Main.Size = UDim2.new(0, 168, 0, 22)    
+            Main.BackgroundTransparency = 1      
+            Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)    
+                  
+            local SliderTrack = Instance.new("Frame", Main)      
+            SliderTrack.BorderSizePixel = 0      
+            SliderTrack.BackgroundColor3 = Color3.fromRGB(37, 37, 37)    
+            SliderTrack.Size = UDim2.new(0, 168, 0, 22)    
+            Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(0, 3)    
+                  
+            local SliderFill = Instance.new("Frame", SliderTrack)      
+            SliderFill.BorderSizePixel = 0      
+            SliderFill.BackgroundColor3 = currentThemeColor      
+            SliderFill.Size = UDim2.new(0, 0, 1, 0)      
+            Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(0, 3)    
+            
+            table.insert(themeElements, { type = "Slider", instance = SliderFill })
+                  
+            local InfoNumber = Instance.new("TextLabel", Main)      
+            InfoNumber.BorderSizePixel = 0      
+            InfoNumber.TextColor3 = Color3.fromRGB(255, 255, 255)      
+            InfoNumber.BackgroundTransparency = 1      
+            InfoNumber.Size = UDim2.new(0, 168, 0, 22)    
+            InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)      
+            InfoNumber.TextSize = 20    
+            InfoNumber.TextTransparency = 0.3    
+                  
+            local InfoLabel = Instance.new("TextLabel", SliderFrame)      
+            InfoLabel.BorderSizePixel = 0      
+            InfoLabel.TextSize = 10      
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left      
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)      
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)      
+            InfoLabel.BackgroundTransparency = 1      
+            InfoLabel.Size = UDim2.new(0, 70, 0, 20)      
+            InfoLabel.Text = text or "Slider"      
+            InfoLabel.Position = UDim2.new(0, 176, 0, 2)    
+
+            local min = 0    
+            local sliderValue = defaultValue or 0    
+            local max = max or 100    
+            local dragging = false    
+
+            local function updateValue(newValue)    
+                sliderValue = math.clamp(newValue, min, max)    
+                local percentage = (sliderValue - min) / (max - min)    
+                SliderFill.Size = UDim2.new(percentage, 0, 1, 0)    
+                InfoNumber.Text = tostring(math.floor(sliderValue))    
+                if callback then callback(sliderValue) end    
+            end    
+
+            local function blockCamera(_, inputState)    
+                if inputState == Enum.UserInputState.Begin or inputState == Enum.UserInputState.Change then    
+                    return Enum.ContextActionResult.Sink    
+                end    
+            end    
+
+            local function updateSliderFromPosition(input)    
+                if not SliderTrack:IsDescendantOf(game) then return end    
+                local absPos = SliderTrack.AbsolutePosition    
+                local absSize = SliderTrack.AbsoluteSize    
+                local relativeX = (input.Position.X - absPos.X) / absSize.X    
+                relativeX = math.clamp(relativeX, 0, 1)    
+                local newValue = min + (relativeX * (max - min))    
+                updateValue(newValue)    
+            end    
+
+            SliderTrack.InputBegan:Connect(function(input)    
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then    
+                    dragging = true    
+                    ContextActionService:BindAction("BlockCameraSlider", blockCamera, false, Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)    
+                    UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition    
+                    updateSliderFromPosition(input)    
+                end    
+            end)    
+
+            SliderTrack.InputEnded:Connect(function(input)    
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then    
+                    dragging = false    
+                    ContextActionService:UnbindAction("BlockCameraSlider")    
+                    UserInputService.MouseBehavior = Enum.MouseBehavior.Default    
+                end    
+            end)    
+
+            UserInputService.InputChanged:Connect(function(input)    
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then updateSliderFromPosition(input) end    
+            end)    
+
+            UserInputService.TouchMoved:Connect(function(input)    
+                if dragging then updateSliderFromPosition({Position = input.Position, UserInputType = Enum.UserInputType.Touch}) end    
+            end)    
+
+            updateValue(defaultValue or 0)    
+
+            local elementData = { frame = SliderFrame, height = 30, visible = true, isSub = false }      
+            table.insert(tabData.elements, elementData)      
+            updateLayout()    
+
+            return {    
+                SetValue = function(self, value) updateValue(value) end,    
+                GetValue = function(self) return sliderValue end,  
+                SetVisible = function(self, state) elementData.visible = state; SliderFrame.Visible = state; updateLayout() end,  
+                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end  
+            }  
+        end  
+
+        function tabMethods:AddButton(text, callback)      
+            local ButtonFrame = Instance.new("Frame", ElementsContainer)      
+            ButtonFrame.BorderSizePixel = 0      
+            ButtonFrame.Size = UDim2.new(0, 236, 0, 22)    
+            ButtonFrame.BackgroundTransparency = 1    
+                  
+            local Button = Instance.new("TextButton", ButtonFrame)      
+            Button.TextWrapped = true      
+            Button.BorderSizePixel = 0      
+            Button.TextSize = 13      
+            Button.TextColor3 = Color3.fromRGB(255, 255, 255)      
+            Button.BackgroundColor3 = currentThemeColor      
+            Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)      
+            Button.Size = UDim2.new(0, 238, 0, 22)    
+            Button.Text = text or "Button"      
+            Button.AutoButtonColor = false      
+            Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 3)    
+            
+            table.insert(themeElements, { type = "Button", instance = Button })
+                  
+            Button.MouseEnter:Connect(function() 
+                local h, s, v = currentThemeColor:ToHSV()
+                Button.BackgroundColor3 = Color3.fromHSV(h, s, math.clamp(v + 0.1, 0, 1)) 
+            end)      
+            Button.MouseLeave:Connect(function() Button.BackgroundColor3 = currentThemeColor end)      
+            Button.MouseButton1Click:Connect(function() if callback then callback() end end)      
+                  
+            local elementData = { frame = ButtonFrame, height = 30, visible = true, isSub = false }      
+            table.insert(tabData.elements, elementData)      
+            updateLayout()    
+
+            return {  
+                SetVisible = function(self, state) elementData.visible = state; ButtonFrame.Visible = state; updateLayout() end,  
+                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end  
+            }      
+        end   
+
+        function tabMethods:AddRadioButtons(text, options, callback)      
+            local RadioFrame = Instance.new("Frame", ElementsContainer)      
+            RadioFrame.BorderSizePixel = 0      
+            RadioFrame.Size = UDim2.new(0, 162, 0, 38)   
+            RadioFrame.BackgroundTransparency = 1      
+                  
+            local InfoLabel = Instance.new("TextLabel", RadioFrame)      
+            InfoLabel.TextWrapped = true      
+            InfoLabel.BorderSizePixel = 0      
+            InfoLabel.TextSize = 10      
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left      
+            InfoLabel.TextScaled = true      
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)      
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)      
+            InfoLabel.BackgroundTransparency = 1      
+            InfoLabel.Size = UDim2.new(0, 132, 0, 12)    
+            InfoLabel.Text = text or "Radio Buttons"      
+            InfoLabel.Position = UDim2.new(0, 0, 0, -2)    
+                  
+            local radioButtons = {}      
+            local selectedOption = options[1]      
+                  
+            for i, option in ipairs(options) do      
+                local RadioOption = Instance.new("Frame", RadioFrame)      
+                RadioOption.BorderSizePixel = 0      
+                RadioOption.Size = UDim2.new(0, 70, 0, 16)    
+                RadioOption.Position = UDim2.new(0, (i-1) * 78, 0, 16)      
+                RadioOption.BackgroundTransparency = 1      
+                      
+                local OptionLabel = Instance.new("TextLabel", RadioOption)      
+                OptionLabel.BorderSizePixel = 0      
+                OptionLabel.TextSize = 9      
+                OptionLabel.TextXAlignment = Enum.TextXAlignment.Left      
+                OptionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)      
+                OptionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)      
+                OptionLabel.BackgroundTransparency = 1      
+                OptionLabel.Size = UDim2.new(0, 58, 0, 16)      
+                OptionLabel.Text = option      
+                OptionLabel.Position = UDim2.new(0, 20, 0, 0)      
+                      
+                local RadioButton = Instance.new("TextButton", RadioOption)      
+                RadioButton.BorderSizePixel = 0      
+                RadioButton.BackgroundColor3 = i == 1 and currentThemeColor or Color3.fromRGB(53, 53, 53)      
+                RadioButton.Size = UDim2.new(0, 16, 0, 16)      
+                RadioButton.Text = ""      
+                RadioButton.AutoButtonColor = false      
+                Instance.new("UICorner", RadioButton).CornerRadius = UDim.new(1, 9)    
+                
+                table.insert(themeElements, { type = "RadioButton", instance = RadioButton, getState = function() return selectedOption == option end })
+                table.insert(radioButtons, {button = RadioButton, option = option, index = i})      
+                      
+                RadioButton.MouseButton1Click:Connect(function()      
+                    for _, rb in ipairs(radioButtons) do      
+                        rb.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)      
+                    end      
+                    RadioButton.BackgroundColor3 = currentThemeColor      
+                    selectedOption = option      
+                    if callback then callback(option) end      
+                end)      
+            end      
+                  
+            RadioFrame.Size = UDim2.new(0, math.min(#options * 78, 162), 0, 38)  
+            local elementData = { frame = RadioFrame, height = 42, visible = true, isSub = false }      
+            table.insert(tabData.elements, elementData)      
+            updateLayout()    
+                  
+            return {      
+                SetValue = function(self, value)      
+                    for _, rb in ipairs(radioButtons) do      
+                        if rb.option == value then      
+                            rb.button.BackgroundColor3 = currentThemeColor      
+                            selectedOption = value      
+                        else      
+                            rb.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)      
+                        end      
+                    end      
+                    if callback then callback(value) end     
+                end,      
+                GetValue = function(self) return selectedOption end,  
+                SetVisible = function(self, state) elementData.visible = state; RadioFrame.Visible = state; updateLayout() end,  
+                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end  
+            }      
+        end   
+
+        return tabMethods    
+    end    
+
+    return publicMethods
+end
+
+if _G.VLG_UILibrary then
+    return _G.VLG_UILibrary
+else
+    _G.VLG_UILibrary = UILibrary
+    return UILibrary
+end
