@@ -595,7 +595,7 @@ FloatingUI.Active = true
 local calculatedTextSize = TextService:GetTextSize(text or "Toggle", 16, Enum.Font.GothamBold, Vector2.new(500, 20))
 local finalWidth = math.max(calculatedTextSize.X + 64, 120)
 
-FloatingUI.Size = UDim2.new(0, finalWidth, 0, 10)
+FloatingUI.Size = UDim2.new(0, finalWidth, 0, 50)
 FloatingUI.Position = UDim2.new(0, math.random(50, 250), 0, math.random(50, 250)) 
 
 -- BARRA DE CIMA (BEM MAIS ALTA)
@@ -603,7 +603,7 @@ local FTopo = Instance.new("Frame", FloatingUI)
 FTopo.Name = "FTopo"
 FTopo.BorderSizePixel = 0
 FTopo.BackgroundColor3 = currentThemeColor
-FTopo.Size = UDim2.new(1, 0, 0, 8)
+FTopo.Size = UDim2.new(1, 0, 0, 15)
 
 -- BOTÃO FECHAR (X) GRANDÃO
 local FClose = Instance.new("TextButton", FTopo)
@@ -613,12 +613,13 @@ FClose.Position = UDim2.new(1, -25, 0, 2)
 FClose.Text = "X"
 FClose.TextColor3 = Color3.fromRGB(255, 255, 255)
 FClose.TextSize = 14
+FClose.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
 
 -- TEXTO DO FLOATING (GRANDE)
 local FLabel = Instance.new("TextLabel", FloatingUI)
 FLabel.BackgroundTransparency = 1
 FLabel.Size = UDim2.new(0, calculatedTextSize.X, 0, 20)
-FLabel.Position = UDim2.new(0, 40, 0, 36)
+FLabel.Position = UDim2.new(0, 40, 0, 22)
 FLabel.Text = text or "Toggle"
 FLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 FLabel.TextSize = 16
@@ -629,7 +630,7 @@ FLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.Font
 local FButton = Instance.new("TextButton", FloatingUI)
 FButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
 FButton.Size = UDim2.new(0, 24, 0, 24)
-FButton.Position = UDim2.new(0, 8, 0, 34)
+FButton.Position = UDim2.new(0, 8, 0, 20)
 FButton.BorderSizePixel = 0
 FButton.Text = ""
 FButton.AutoButtonColor = false
