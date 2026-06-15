@@ -1,5 +1,4 @@
 -- UI Library ATUALIZADA com Sistema de Tema Global, Dropdown Dinâmico, Auto-Size e Floating Windows Customizadas
--- ADICIONADO: Campos RGB na paleta de cores + sincronização completa RGB <-> HEX <-> Picker
 -- CORREÇÃO: ElasticBehavior = Never em todos os ScrollingFrames
 
 local HttpService = game:GetService("HttpService")
@@ -83,7 +82,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Main_7"]["ScrollBarThickness"] = 0      
     LMG2L["Main_7"]["BackgroundTransparency"] = 1      
     LMG2L["Main_7"]["ScrollingDirection"] = Enum.ScrollingDirection.Y      
-    LMG2L["Main_7"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
+    LMG2L["Main_7"]["ElasticBehavior"] = Enum.ElasticBehavior.Never -- CORREÇÃO: Remove efeito elástico
 
     LMG2L["Tabs_2a"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])      
     LMG2L["Tabs_2a"]["BorderSizePixel"] = 0      
@@ -92,7 +91,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Tabs_2a"]["BackgroundTransparency"] = 1      
     LMG2L["Tabs_2a"]["ScrollBarThickness"] = 0      
     LMG2L["Tabs_2a"]["ScrollingDirection"] = Enum.ScrollingDirection.Y      
-    LMG2L["Tabs_2a"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
+    LMG2L["Tabs_2a"]["ElasticBehavior"] = Enum.ElasticBehavior.Never -- CORREÇÃO: Remove efeito elástico
 
     LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])      
     LMG2L["OpenName_2d"]["BorderSizePixel"] = 0      
@@ -103,17 +102,15 @@ function UILibrary:CreateWindow(title)
     LMG2L["OpenName_2d"]["Position"] = UDim2.new(0, 4, 0, 4)      
 
     -- ==========================================      
-    -- PALETA DE CORES FLUTUANTE (com RGB)
-    -- Altura aumentada de 185 para 215 para caber o RGB
+    -- PALETA DE CORES FLUTUANTE       
     -- ==========================================      
     local activeColorTarget = nil      
     local activeColorCallback = nil      
 
-    -- Paleta agora tem 215px de altura (30 a mais para a linha RGB)
     local Paleta_d = Instance.new("Frame", LMG2L["Floating_1"])      
     Paleta_d.BorderSizePixel = 0      
     Paleta_d.BackgroundColor3 = Color3.fromRGB(0, 0, 0)      
-    Paleta_d.Size = UDim2.new(0, 180, 0, 215)      
+    Paleta_d.Size = UDim2.new(0, 180, 0, 185)      
     Paleta_d.Position = UDim2.new(0, 600, 0, 100)      
     Paleta_d.Visible = false      
     Paleta_d.ZIndex = 100      
@@ -148,7 +145,6 @@ function UILibrary:CreateWindow(title)
         Paleta_d.Visible = false      
     end)      
 
-    -- Mapa SV (Saturação/Valor) - mesmo de antes
     local SVMap = Instance.new("TextButton", Paleta_d)      
     SVMap.BackgroundColor3 = Color3.fromRGB(255, 255, 255)      
     SVMap.BorderSizePixel = 0      
@@ -212,9 +208,6 @@ function UILibrary:CreateWindow(title)
     HueCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)       
     HueCursor.ZIndex = 102      
 
-    -- ==========================================
-    -- LINHA HEX (posição Y = 128, mesmo de antes)
-    -- ==========================================
     local HexLabel = Instance.new("TextLabel", Paleta_d)    
     HexLabel.Position = UDim2.new(0, 6, 0, 128)    
     HexLabel.Size = UDim2.new(0, 30, 0, 20)    
@@ -238,65 +231,15 @@ function UILibrary:CreateWindow(title)
     HexInput.ZIndex = 101    
     Instance.new("UICorner", HexInput).CornerRadius = UDim.new(0, 4)    
 
-    -- ==========================================
-    -- LINHA RGB (posição Y = 153, entre HEX e preview antigo)
-    -- Layout: "R" [input] "G" [input] "B" [input]
-    -- Cada label = 10px, cada input = 34px, espaçamento = 4px
-    -- Total = 6 + 10 + 2 + 34 + 4 + 10 + 2 + 34 + 4 + 10 + 2 + 34 + 6 = 180px ✓
-    -- ==========================================
-    local RGBRowY = 153
-
-    local function makeRGBLabel(parent, text, posX, posY)
-        local lbl = Instance.new("TextLabel", parent)
-        lbl.BackgroundTransparency = 1
-        lbl.Position = UDim2.new(0, posX, 0, posY)
-        lbl.Size = UDim2.new(0, 10, 0, 20)
-        lbl.Text = text
-        lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
-        lbl.TextSize = 10
-        lbl.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
-        lbl.ZIndex = 101
-        return lbl
-    end
-
-    local function makeRGBInput(parent, posX, posY)
-        local box = Instance.new("TextBox", parent)
-        box.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-        box.BorderSizePixel = 0
-        box.Position = UDim2.new(0, posX, 0, posY)
-        box.Size = UDim2.new(0, 38, 0, 20)
-        box.Text = "255"
-        box.TextColor3 = Color3.fromRGB(255, 255, 255)
-        box.TextSize = 10
-        box.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold)
-        box.ClearTextOnFocus = false
-        box.ZIndex = 101
-        Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
-        return box
-    end
-
-    -- Posições X calculadas para caber em 180px:
-    -- R label=6, R input=18, G label=64, G input=76, B label=122, B input=134
-    makeRGBLabel(Paleta_d, "R", 6,  RGBRowY)
-    makeRGBLabel(Paleta_d, "G", 65, RGBRowY)
-    makeRGBLabel(Paleta_d, "B", 124, RGBRowY)
-
-    local RInput = makeRGBInput(Paleta_d, 18,  RGBRowY)
-    local GInput = makeRGBInput(Paleta_d, 77,  RGBRowY)
-    local BInput = makeRGBInput(Paleta_d, 136, RGBRowY)
-
-    -- ==========================================
-    -- PREVIEW + CONFIRMAR (movidos 30px pra baixo)
-    -- ==========================================
     local ColorPreview = Instance.new("Frame", Paleta_d)      
-    ColorPreview.Position = UDim2.new(0, 6, 0, 183)      
+    ColorPreview.Position = UDim2.new(0, 6, 0, 153)      
     ColorPreview.Size = UDim2.new(0, 24, 0, 24)      
     ColorPreview.BackgroundColor3 = Color3.fromRGB(255,255,255)      
     ColorPreview.ZIndex = 101      
     Instance.new("UICorner", ColorPreview).CornerRadius = UDim.new(0, 4)      
 
     local ConfirmBtn = Instance.new("TextButton", Paleta_d)      
-    ConfirmBtn.Position = UDim2.new(0, 36, 0, 183)      
+    ConfirmBtn.Position = UDim2.new(0, 36, 0, 153)      
     ConfirmBtn.Size = UDim2.new(0, 136, 0, 24)      
     ConfirmBtn.BackgroundColor3 = currentThemeColor      
     ConfirmBtn.Text = "Confirmar Cor"      
@@ -306,87 +249,37 @@ function UILibrary:CreateWindow(title)
     ConfirmBtn.ZIndex = 101      
     Instance.new("UICorner", ConfirmBtn).CornerRadius = UDim.new(0, 4)         
 
-    -- ==========================================
-    -- LÓGICA DE COR (HSV internamente, expõe RGB + HEX)
-    -- ==========================================
     local h, s, v = 0, 1, 1      
     local colorDragging = false      
     local hueDragging = false      
-    local currentDragInput = nil
-    local suppressUpdate = false  -- evita loop de atualização entre inputs
+    local currentDragInput = nil  
 
-    -- Atualiza TUDO a partir de h,s,v atuais
-    local function updateColorInternal()
-        if suppressUpdate then return end
-        local realColor = Color3.fromHSV(h, s, v)
-        local pureColor = Color3.fromHSV(h, s, 1)
-        HueGradient.Color = ColorSequence.new(pureColor, Color3.fromRGB(0, 0, 0))
-        ColorPreview.BackgroundColor3 = realColor
+    local function updateColorInternal()      
+        local realColor = Color3.fromHSV(h, s, v)      
+        local pureColor = Color3.fromHSV(h, s, 1)      
+        HueGradient.Color = ColorSequence.new(pureColor, Color3.fromRGB(0, 0, 0))      
+        ColorPreview.BackgroundColor3 = realColor      
+        HexInput.Text = "#" .. realColor:ToHex()    
+    end      
 
-        suppressUpdate = true
+    HexInput.FocusLost:Connect(function()    
+        local success, newColor = pcall(function()    
+            return Color3.fromHex(HexInput.Text)    
+        end)    
+        if success and newColor then    
+            h, s, v = newColor:ToHSV()    
+            SVCursor.Position = UDim2.new(h, -2, s, -2)      
+            HueCursor.Position = UDim2.new(0, 0, 1-v, -1)    
+            updateColorInternal()    
+        else    
+            HexInput.Text = "#" .. Color3.fromHSV(h, s, v):ToHex()    
+        end    
+    end)    
 
-        -- Atualiza HEX
-        HexInput.Text = "#" .. realColor:ToHex():upper()
-
-        -- Atualiza RGB (0-255)
-        local r255 = math.floor(realColor.R * 255 + 0.5)
-        local g255 = math.floor(realColor.G * 255 + 0.5)
-        local b255 = math.floor(realColor.B * 255 + 0.5)
-        RInput.Text = tostring(r255)
-        GInput.Text = tostring(g255)
-        BInput.Text = tostring(b255)
-
-        suppressUpdate = false
-    end
-
-    -- Aplica cor a partir de um Color3 (atualiza h,s,v e cursores)
-    local function applyColor3(color)
-        local nh, ns, nv = color:ToHSV()
-        h, s, v = nh, ns, nv
-        -- Cursores
-        SVCursor.Position = UDim2.new(h, -2, 1 - s, -2)
-        HueCursor.Position = UDim2.new(0, 0, 1 - v, -1)
-        updateColorInternal()
-    end
-
-    -- HEX input -> atualiza cor
-    HexInput.FocusLost:Connect(function()
-        if suppressUpdate then return end
-        local txt = HexInput.Text:gsub("#", "")
-        local ok, col = pcall(function() return Color3.fromHex(txt) end)
-        if ok and col then
-            applyColor3(col)
-        else
-            -- Reverte para cor atual
-            HexInput.Text = "#" .. Color3.fromHSV(h, s, v):ToHex():upper()
-        end
-    end)
-
-    -- Função genérica para quando um RGB input perde foco
-    local function onRGBInputChanged()
-        if suppressUpdate then return end
-        local r = math.clamp(tonumber(RInput.Text) or 0, 0, 255)
-        local g = math.clamp(tonumber(GInput.Text) or 0, 0, 255)
-        local b = math.clamp(tonumber(BInput.Text) or 0, 0, 255)
-        -- Garante que o texto reflita o valor clampado
-        suppressUpdate = true
-        RInput.Text = tostring(r)
-        GInput.Text = tostring(g)
-        BInput.Text = tostring(b)
-        suppressUpdate = false
-        applyColor3(Color3.fromRGB(r, g, b))
-    end
-
-    RInput.FocusLost:Connect(onRGBInputChanged)
-    GInput.FocusLost:Connect(onRGBInputChanged)
-    BInput.FocusLost:Connect(onRGBInputChanged)
-
-    -- Atualiza picker SV a partir do mouse/toque
     local function updateSV(input)      
         local relX = math.clamp((input.Position.X - SVMap.AbsolutePosition.X) / SVMap.AbsoluteSize.X, 0, 1)      
         local relY = math.clamp((input.Position.Y - SVMap.AbsolutePosition.Y) / SVMap.AbsoluteSize.Y, 0, 1)      
-        h = relX
-        s = 1 - relY  -- Y 0 = topo = saturação alta
+        h = relX; s = relY      
         SVCursor.Position = UDim2.new(relX, -2, relY, -2)      
         updateColorInternal()      
     end      
@@ -441,9 +334,15 @@ function UILibrary:CreateWindow(title)
     end)      
       
     local function OpenColorPicker(targetFrame, defaultColor, callback)      
-        activeColorTarget = targetFrame
-        activeColorCallback = callback
-        applyColor3(defaultColor or Color3.fromRGB(255, 255, 255))
+        activeColorTarget = targetFrame; activeColorCallback = callback      
+        local dh, ds, dv = defaultColor:ToHSV()      
+        h, s, v = dh, ds, dv      
+        local pureColor = Color3.fromHSV(h, s, 1)      
+        HueGradient.Color = ColorSequence.new(pureColor, Color3.fromRGB(0, 0, 0))      
+        ColorPreview.BackgroundColor3 = defaultColor      
+        HexInput.Text = "#" .. defaultColor:ToHex()    
+        SVCursor.Position = UDim2.new(h, -2, s, -2)      
+        HueCursor.Position = UDim2.new(0, 0, 1-v, -1)       
         Paleta_d.Visible = true      
     end      
 
@@ -671,6 +570,9 @@ function UILibrary:CreateWindow(title)
             ToggleButton.AutoButtonColor = false          
             Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 3)        
 
+            -- ==========================================  
+            -- BOTÃO SHOW/HIDE (NO MENU PRINCIPAL)  
+            -- ==========================================  
             local ShowBtn = Instance.new("TextButton", ToggleFrame)  
             ShowBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)  
             ShowBtn.Size = UDim2.new(0, 50, 0, 22)  
@@ -684,6 +586,9 @@ function UILibrary:CreateWindow(title)
             local ShowBtnCorner = Instance.new("UICorner", ShowBtn)  
             ShowBtnCorner.CornerRadius = UDim.new(0, 4)  
 
+            -- ==========================================  
+            -- INTERFACE DO FLOATING TOGGLE  
+            -- ==========================================  
             local FloatingUI = Instance.new("Frame", LMG2L["Floating_1"])  
             FloatingUI.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  
             FloatingUI.BorderSizePixel = 0  
@@ -728,14 +633,13 @@ function UILibrary:CreateWindow(title)
             FButton.Text = ""  
             FButton.AutoButtonColor = false  
             local CheckboxCorner = Instance.new("UICorner", FButton)  
-            CheckboxCorner.CornerRadius = UDim.new(0, 4)  
-
-            local FloatingStroke = Instance.new("UIStroke", FloatingUI)  
-            FloatingStroke.Color = currentThemeColor  
-            FloatingStroke.Thickness = 1  
+            CheckboxCorner.CornerRadius = UDim.new(0, 4) 
 
             MakeDraggable(FloatingUI, FTopo)  
 
+            -- ==========================================  
+            -- LÓGICA E SINCRONIZAÇÃO  
+            -- ==========================================  
             local toggleState = false          
             local isFloating = false  
 
@@ -941,7 +845,7 @@ function UILibrary:CreateWindow(title)
             Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y          
             Scroll.ZIndex = 50          
             Scroll.ScrollingDirection = Enum.ScrollingDirection.Y       
-            Scroll.ElasticBehavior = Enum.ElasticBehavior.Never
+            Scroll.ElasticBehavior = Enum.ElasticBehavior.Never -- CORREÇÃO: Remove efeito elástico
             Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0,3)          
 
             local btnHeight, padding = 16, 2          
@@ -1148,8 +1052,8 @@ function UILibrary:CreateWindow(title)
             table.insert(themeElements, { type = "Button", instance = Button })  
                     
             Button.MouseEnter:Connect(function()   
-                local bh, bs, bv = currentThemeColor:ToHSV()  
-                Button.BackgroundColor3 = Color3.fromHSV(bh, bs, math.clamp(bv + 0.1, 0, 1))   
+                local h, s, v = currentThemeColor:ToHSV()  
+                Button.BackgroundColor3 = Color3.fromHSV(h, s, math.clamp(v + 0.1, 0, 1))   
             end)        
             Button.MouseLeave:Connect(function() Button.BackgroundColor3 = currentThemeColor end)        
             Button.MouseButton1Click:Connect(function() if callback then callback() end end)        
