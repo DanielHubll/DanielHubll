@@ -633,7 +633,11 @@ function UILibrary:CreateWindow(title)
             FButton.Text = ""  
             FButton.AutoButtonColor = false  
             local CheckboxCorner = Instance.new("UICorner", FButton)  
-            CheckboxCorner.CornerRadius = UDim.new(0, 4) 
+            CheckboxCorner.CornerRadius = UDim.new(0, 4)  
+
+            local FloatingStroke = Instance.new("UIStroke", FloatingUI)  
+            FloatingStroke.Color = currentThemeColor  
+            FloatingStroke.Thickness = 1  
 
             MakeDraggable(FloatingUI, FTopo)  
 
