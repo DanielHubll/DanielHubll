@@ -1,4 +1,4 @@
--- UI Library ATUALIZADA com Sistema de Tema Global e Dropdown Dinâmico (Sem Sistema de Config)
+-- UI Library ATUALIZADA com Sistema de Tema Global, Dropdown Dinâmico e Floating Toggles
 local HttpService = game:GetService("HttpService")
 local UILibrary = {}
 
@@ -362,6 +362,10 @@ function UILibrary:CreateWindow(title)
         for _, element in ipairs(themeElements) do
             if element.type == "Toggle" then
                 element.instance.BackgroundColor3 = element.getState() and currentThemeColor or Color3.fromRGB(37, 37, 37)
+            elseif element.type == "FloatingStroke" then
+                element.instance.Color = currentThemeColor
+            elseif element.type == "ShowButton" then
+                element.instance.BackgroundColor3 = element.getState() and currentThemeColor or Color3.fromRGB(45, 45, 45)
             elseif element.type == "Slider" then
                 element.instance.BackgroundColor3 = currentThemeColor
             elseif element.type == "Button" then
@@ -537,7 +541,7 @@ function UILibrary:CreateWindow(title)
         function tabMethods:AddToggle(text, callback)        
             local ToggleFrame = Instance.new("Frame", ElementsContainer)        
             ToggleFrame.BorderSizePixel = 0        
-            ToggleFrame.Size = UDim2.new(0, 100, 0, 22)        
+            ToggleFrame.Size = UDim2.new(0, 246, 0, 22) -- Expandido para preencher o espaço inteiro
             ToggleFrame.BackgroundTransparency = 1        
                     
             local InfoLabel = Instance.new("TextLabel", ToggleFrame)        
@@ -547,7 +551,7 @@ function UILibrary:CreateWindow(title)
             InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)        
             InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)        
             InfoLabel.BackgroundTransparency = 1        
-            InfoLabel.Size = UDim2.new(0, 88, 0, 22)        
+            InfoLabel.Size = UDim2.new(0, 130, 0, 22)        
             InfoLabel.Text = text or "Toggle"        
             InfoLabel.Position = UDim2.new(0, 28, 0, 0)        
                     
@@ -558,10 +562,72 @@ function UILibrary:CreateWindow(title)
             ToggleButton.Text = ""        
             ToggleButton.AutoButtonColor = false        
             Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 3)      
-                    
+
+            -- ==========================================
+            -- BOTÃO SHOW/HIDE (NO MENU PRINCIPAL)
+            -- ==========================================
+            local ShowBtn = Instance.new("TextButton", ToggleFrame)
+            ShowBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            ShowBtn.Size = UDim2.new(0, 40, 0, 18)
+            ShowBtn.Position = UDim2.new(1, -40, 0, 2)
+            ShowBtn.BorderSizePixel = 0
+            ShowBtn.Text = "Show"
+            ShowBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+            ShowBtn.TextSize = 9
+            ShowBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            ShowBtn.AutoButtonColor = false
+            Instance.new("UICorner", ShowBtn).CornerRadius = UDim.new(0, 3)
+
+            -- ==========================================
+            -- INTERFACE DO FLOATING TOGGLE
+            -- ==========================================
+            local FloatingUI = Instance.new("Frame", LMG2L["Floating_1"])
+            FloatingUI.Size = UDim2.new(0, 130, 0, 32)
+            -- Start Position espalhada levemente para evitar sobreposição total se o user abrir vários
+            FloatingUI.Position = UDim2.new(0, math.random(50, 250), 0, math.random(50, 250)) 
+            FloatingUI.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+            FloatingUI.BorderSizePixel = 0
+            FloatingUI.Visible = false
+            FloatingUI.Active = true
+            Instance.new("UICorner", FloatingUI).CornerRadius = UDim.new(0, 4)
+
+            -- Contorno que segue o Tema Global
+            local FloatingStroke = Instance.new("UIStroke", FloatingUI)
+            FloatingStroke.Color = currentThemeColor
+            FloatingStroke.Thickness = 1.2
+
+            local FLabel = Instance.new("TextLabel", FloatingUI)
+            FLabel.BackgroundTransparency = 1
+            FLabel.Size = UDim2.new(1, -36, 1, 0)
+            FLabel.Position = UDim2.new(0, 34, 0, 0)
+            FLabel.Text = text or "Toggle"
+            FLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            FLabel.TextSize = 10
+            FLabel.TextXAlignment = Enum.TextXAlignment.Left
+            FLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+
+            local FButton = Instance.new("TextButton", FloatingUI)
+            FButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+            FButton.Size = UDim2.new(0, 18, 0, 18)
+            FButton.Position = UDim2.new(0, 8, 0.5, -9)
+            FButton.BorderSizePixel = 0
+            FButton.Text = ""
+            FButton.AutoButtonColor = false
+            Instance.new("UICorner", FButton).CornerRadius = UDim.new(0, 3)
+
+            -- Torna o Floating Toggle Arrastável em qualquer dispositivo
+            MakeDraggable(FloatingUI, FloatingUI)
+
+            -- ==========================================
+            -- LÓGICA E SINCRONIZAÇÃO
+            -- ==========================================
             local toggleState = false        
+            local isFloating = false
+
             local function updateToggle()        
-                ToggleButton.BackgroundColor3 = toggleState and currentThemeColor or Color3.fromRGB(37, 37, 37)        
+                local activeColor = toggleState and currentThemeColor or Color3.fromRGB(37, 37, 37)
+                ToggleButton.BackgroundColor3 = activeColor
+                FButton.BackgroundColor3 = activeColor
                 if callback then callback(toggleState) end     
             end        
                     
@@ -570,7 +636,25 @@ function UILibrary:CreateWindow(title)
                 updateToggle()        
             end)        
 
+            FButton.MouseButton1Click:Connect(function()        
+                toggleState = not toggleState        
+                updateToggle()        
+            end)   
+
+            ShowBtn.MouseButton1Click:Connect(function()
+                isFloating = not isFloating
+                FloatingUI.Visible = isFloating
+                ShowBtn.Text = isFloating and "Hide" or "Show"
+                ShowBtn.BackgroundColor3 = isFloating and currentThemeColor or Color3.fromRGB(45, 45, 45)
+                ShowBtn.TextColor3 = isFloating and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
+            end)
+
+            -- Inserindo no sistema de tema Global
             table.insert(themeElements, { type = "Toggle", instance = ToggleButton, getState = function() return toggleState end })
+            table.insert(themeElements, { type = "Toggle", instance = FButton, getState = function() return toggleState end })
+            table.insert(themeElements, { type = "FloatingStroke", instance = FloatingStroke })
+            table.insert(themeElements, { type = "ShowButton", instance = ShowBtn, getState = function() return isFloating end })
+
             table.insert(tabData.elements, {frame = ToggleFrame, height = 30, visible = true, isSub = false})      
             updateLayout()      
                     
@@ -799,7 +883,6 @@ function UILibrary:CreateWindow(title)
                 end
             }
 
-            -- Inicializar populating dropdown
             DropdownObject:Refresh(options)
 
             return DropdownObject
