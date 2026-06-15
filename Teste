@@ -342,7 +342,7 @@ function UILibrary:CreateWindow(title)
         Paleta_d.Visible = true    
     end    
 
-    -- FUNÇÃO DE ATUALIZAÇÃO DO TEMA (CORRIGIDA)
+    -- FUNÇÃO DE ATUALIZAÇÃO DO TEMA
     local function applyTheme()
         local th, ts, tv = currentThemeColor:ToHSV()
         local darkerTheme = Color3.fromHSV(th, ts, math.clamp(tv - 0.2, 0, 1))
@@ -360,16 +360,7 @@ function UILibrary:CreateWindow(title)
             end
         end
 
-        -- Loop iterativo seguro: Remove instâncias mortas (evita crash ao modificar Dropdowns que sofreram refresh)
-        for i = #themeElements, 1, -1 do
-            local element = themeElements[i]
-            
-            -- Se a instância foi destruída ou é nula, limpamos da tabela e pulamos
-            if typeof(element.instance) ~= "Instance" or not element.instance:IsDescendantOf(game) then
-                table.remove(themeElements, i)
-                continue
-            end
-
+        for _, element in ipairs(themeElements) do
             if element.type == "Toggle" then
                 element.instance.BackgroundColor3 = element.getState() and currentThemeColor or Color3.fromRGB(37, 37, 37)
             elseif element.type == "FloatingStroke" then
@@ -600,11 +591,6 @@ function UILibrary:CreateWindow(title)
             FloatingUI.Visible = false
             FloatingUI.Active = true
 
-            -- ADICIONANDO O UIStroke (agora real)
-            local FloatingStroke = Instance.new("UIStroke", FloatingUI)
-            FloatingStroke.Color = currentThemeColor
-            FloatingStroke.Thickness = 1.5
-
             -- TEXTO GRANDE (16px)
             local calculatedTextSize = TextService:GetTextSize(text or "Toggle", 16, Enum.Font.GothamBold, Vector2.new(500, 20))
             local finalWidth = math.max(calculatedTextSize.X + 64, 120)
@@ -623,7 +609,7 @@ function UILibrary:CreateWindow(title)
             local FClose = Instance.new("TextButton", FTopo)
             FClose.BackgroundTransparency = 1
             FClose.Size = UDim2.new(0, 22, 0, 22)
-            FClose.Position = UDim2.new(1.050, -25, 0, -4)
+            FClose.Position = UDim2.new(1, -25, 0, -4)
             FClose.Text = "X"
             FClose.TextColor3 = Color3.fromRGB(255, 255, 255)
             FClose.TextSize = 10
@@ -649,6 +635,11 @@ function UILibrary:CreateWindow(title)
             FButton.AutoButtonColor = false
             local CheckboxCorner = Instance.new("UICorner", FButton)
             CheckboxCorner.CornerRadius = UDim.new(0, 4)
+
+            -- CORREÇÃO: Criar o FloatingStroke para a borda do FloatingUI
+            local FloatingStroke = Instance.new("UIStroke", FloatingUI)
+            FloatingStroke.Color = currentThemeColor
+            FloatingStroke.Thickness = 1
 
             -- Torna o Floating Toggle Arrastável pela barra superior
             MakeDraggable(FloatingUI, FTopo)
@@ -697,7 +688,7 @@ function UILibrary:CreateWindow(title)
             -- Inserindo os novos objetos no sistema de tema Global dinâmico
             table.insert(themeElements, { type = "Toggle", instance = ToggleButton, getState = function() return toggleState end })
             table.insert(themeElements, { type = "Toggle", instance = FButton, getState = function() return toggleState end })
-            table.insert(themeElements, { type = "FloatingStroke", instance = FloatingStroke })
+            table.insert(themeElements, { type = "FloatingStroke", instance = FloatingStroke }) -- AGORA EXISTE!
             table.insert(themeElements, { type = "FloatingTopo", instance = FTopo })
             table.insert(themeElements, { type = "ShowButton", instance = ShowBtn, getState = function() return isFloating end })
 
