@@ -1,4 +1,4 @@
--- UI Library COMPLETA (Dropdown Exato + Kill Switch + Dinâmicos + Section/Separator)
+-- UI Library COMPLETA (com Separator + Section)
 
 local HttpService = game:GetService("HttpService")
 local UILibrary = {}
@@ -411,11 +411,8 @@ function UILibrary:CreateWindow(title)
                 else  
                     element.instance.BackgroundColor3 = Color3.fromRGB(53, 53, 53)  
                 end  
-            -- ADICIONADOS: SEPARATOR E SECTION 
-            elseif element.type == "Separator" then
-                element.instance.BackgroundColor3 = currentThemeColor
-            elseif element.type == "SectionText" then
-                element.instance.TextColor3 = currentThemeColor
+            elseif element.type == "Separator" then  
+                element.instance.BackgroundColor3 = currentThemeColor  
             end  
         end  
     end  
@@ -538,63 +535,6 @@ function UILibrary:CreateWindow(title)
         if tabsHeight > 194 then LMG2L["Tabs_2a"].CanvasSize = UDim2.new(0, 0, 0, tabsHeight) end        
                   
         local tabMethods = {}          
-
-        -- ==========================================
-        -- NOVOS MÉTODOS: SEPARATOR E SECTION
-        -- ==========================================
-        function tabMethods:AddSeparator()
-            local SeparatorFrame = Instance.new("Frame", ElementsContainer)
-            SeparatorFrame.BorderSizePixel = 0
-            SeparatorFrame.Size = UDim2.new(0, 246, 0, 12)
-            SeparatorFrame.BackgroundTransparency = 1
-
-            local Line = Instance.new("Frame", SeparatorFrame)
-            Line.BorderSizePixel = 0
-            Line.BackgroundColor3 = currentThemeColor
-            Line.Size = UDim2.new(0, 236, 0, 1) 
-            Line.Position = UDim2.new(0, 5, 0.5, 0) 
-
-            table.insert(themeElements, { type = "Separator", instance = Line })
-
-            local elementData = { frame = SeparatorFrame, height = 16, visible = true, isSub = false }
-            table.insert(tabData.elements, elementData)
-            updateLayout()
-
-            return {
-                SetVisible = function(self, state) elementData.visible = state; SeparatorFrame.Visible = state; updateLayout() end,
-                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end
-            }
-        end
-
-        function tabMethods:AddSection(text)
-            local SectionFrame = Instance.new("Frame", ElementsContainer)
-            SectionFrame.BorderSizePixel = 0
-            SectionFrame.Size = UDim2.new(0, 246, 0, 22)
-            SectionFrame.BackgroundTransparency = 1
-
-            local SectionLabel = Instance.new("TextLabel", SectionFrame)
-            SectionLabel.BackgroundTransparency = 1
-            SectionLabel.Size = UDim2.new(1, -10, 1, 0)
-            SectionLabel.Position = UDim2.new(0, 5, 0, 0)
-            SectionLabel.Text = text or "Section"
-            SectionLabel.TextColor3 = currentThemeColor 
-            SectionLabel.TextSize = 12
-            SectionLabel.TextXAlignment = Enum.TextXAlignment.Center
-            SectionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
-
-            table.insert(themeElements, { type = "SectionText", instance = SectionLabel })
-
-            local elementData = { frame = SectionFrame, height = 26, visible = true, isSub = false }
-            table.insert(tabData.elements, elementData)
-            updateLayout()
-
-            return {
-                SetText = function(self, newText) SectionLabel.Text = newText end,
-                SetVisible = function(self, state) elementData.visible = state; SectionFrame.Visible = state; updateLayout() end,
-                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end
-            }
-        end
-        -- ==========================================
 
         function tabMethods:AddTextBox(text, default, callback)  
             local TextBoxFrame = Instance.new("Frame", ElementsContainer)  
@@ -749,6 +689,7 @@ function UILibrary:CreateWindow(title)
                 if callback then callback(toggleState) end       
             end          
             
+            -- Registra no sistema de controle para o Kill Switch
             table.insert(activeToggles, {
                 setState = function(v) toggleState = v; updateToggle() end,
                 getState = function() return toggleState end
@@ -772,6 +713,7 @@ function UILibrary:CreateWindow(title)
                 ShowBtn.TextColor3 = isFloating and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)  
             end  
 
+            -- Registra o FloatingUI para ser escondido no Kill Switch
             table.insert(activeFloatingUIs, {
                 hide = function() toggleFloatingVisibility(false) end
             })
@@ -1313,6 +1255,55 @@ function UILibrary:CreateWindow(title)
                 SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end    
             }        
         end     
+
+        -- ============================
+        -- NOVOS MÉTODOS: Separator & Section
+        -- ============================
+        
+        function tabMethods:AddSeparator()
+            -- Linha fina estilizada como o "Effect" original
+            local SeparatorFrame = Instance.new("Frame", ElementsContainer)
+            SeparatorFrame.BorderSizePixel = 0
+            SeparatorFrame.Size = UDim2.new(0, 250, 0, 1)   -- igual ao Effect_6
+            SeparatorFrame.BackgroundColor3 = currentThemeColor
+            -- centraliza na área de conteúdo (largura total 264, diferença 14 -> offset 7)
+            SeparatorFrame.Position = UDim2.new(0, 7, 0, 0)
+            
+            -- Registra para que o tema atualize a cor
+            table.insert(themeElements, { type = "Separator", instance = SeparatorFrame })
+            
+            local elementData = { frame = SeparatorFrame, height = 5, visible = true, isSub = false }
+            table.insert(tabData.elements, elementData)
+            updateLayout()
+            
+            -- Objeto simples sem funções (apenas visual)
+            return {}
+        end
+
+        function tabMethods:AddSection(text)
+    local SectionFrame = Instance.new("Frame", ElementsContainer)
+    SectionFrame.BorderSizePixel = 0
+    SectionFrame.Size = UDim2.new(0, 246, 0, 20)   -- altura reduzida, sem linha extra
+    SectionFrame.BackgroundTransparency = 1
+
+    local SectionLabel = Instance.new("TextLabel", SectionFrame)
+    SectionLabel.BackgroundTransparency = 1
+    SectionLabel.Size = UDim2.new(0, 234, 0, 18)
+    SectionLabel.Position = UDim2.new(0, 6, 0, 0)
+    SectionLabel.Text = text or "Section"
+    SectionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SectionLabel.TextSize = 14
+    SectionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+    SectionLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- Removido o Underline (separador embutido)
+
+    local elementData = { frame = SectionFrame, height = 22, visible = true, isSub = false }
+    table.insert(tabData.elements, elementData)
+    updateLayout()
+
+    return {}
+end
 
         return tabMethods      
     end      
