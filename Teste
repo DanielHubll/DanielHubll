@@ -1,4 +1,4 @@
--- UI Library COMPLETA (Dropdown Exato + Kill Switch + RadioButtons Dinâmicos)
+-- UI Library COMPLETA (Dropdown Exato + Kill Switch + Dinâmicos + Section/Separator)
 
 local HttpService = game:GetService("HttpService")
 local UILibrary = {}
@@ -411,6 +411,11 @@ function UILibrary:CreateWindow(title)
                 else  
                     element.instance.BackgroundColor3 = Color3.fromRGB(53, 53, 53)  
                 end  
+            -- ADICIONADOS: SEPARATOR E SECTION 
+            elseif element.type == "Separator" then
+                element.instance.BackgroundColor3 = currentThemeColor
+            elseif element.type == "SectionText" then
+                element.instance.TextColor3 = currentThemeColor
             end  
         end  
     end  
@@ -533,6 +538,63 @@ function UILibrary:CreateWindow(title)
         if tabsHeight > 194 then LMG2L["Tabs_2a"].CanvasSize = UDim2.new(0, 0, 0, tabsHeight) end        
                   
         local tabMethods = {}          
+
+        -- ==========================================
+        -- NOVOS MÉTODOS: SEPARATOR E SECTION
+        -- ==========================================
+        function tabMethods:AddSeparator()
+            local SeparatorFrame = Instance.new("Frame", ElementsContainer)
+            SeparatorFrame.BorderSizePixel = 0
+            SeparatorFrame.Size = UDim2.new(0, 246, 0, 12)
+            SeparatorFrame.BackgroundTransparency = 1
+
+            local Line = Instance.new("Frame", SeparatorFrame)
+            Line.BorderSizePixel = 0
+            Line.BackgroundColor3 = currentThemeColor
+            Line.Size = UDim2.new(0, 236, 0, 1) 
+            Line.Position = UDim2.new(0, 5, 0.5, 0) 
+
+            table.insert(themeElements, { type = "Separator", instance = Line })
+
+            local elementData = { frame = SeparatorFrame, height = 16, visible = true, isSub = false }
+            table.insert(tabData.elements, elementData)
+            updateLayout()
+
+            return {
+                SetVisible = function(self, state) elementData.visible = state; SeparatorFrame.Visible = state; updateLayout() end,
+                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end
+            }
+        end
+
+        function tabMethods:AddSection(text)
+            local SectionFrame = Instance.new("Frame", ElementsContainer)
+            SectionFrame.BorderSizePixel = 0
+            SectionFrame.Size = UDim2.new(0, 246, 0, 22)
+            SectionFrame.BackgroundTransparency = 1
+
+            local SectionLabel = Instance.new("TextLabel", SectionFrame)
+            SectionLabel.BackgroundTransparency = 1
+            SectionLabel.Size = UDim2.new(1, -10, 1, 0)
+            SectionLabel.Position = UDim2.new(0, 5, 0, 0)
+            SectionLabel.Text = text or "Section"
+            SectionLabel.TextColor3 = currentThemeColor 
+            SectionLabel.TextSize = 12
+            SectionLabel.TextXAlignment = Enum.TextXAlignment.Center
+            SectionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+
+            table.insert(themeElements, { type = "SectionText", instance = SectionLabel })
+
+            local elementData = { frame = SectionFrame, height = 26, visible = true, isSub = false }
+            table.insert(tabData.elements, elementData)
+            updateLayout()
+
+            return {
+                SetText = function(self, newText) SectionLabel.Text = newText end,
+                SetVisible = function(self, state) elementData.visible = state; SectionFrame.Visible = state; updateLayout() end,
+                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end
+            }
+        end
+        -- ==========================================
 
         function tabMethods:AddTextBox(text, default, callback)  
             local TextBoxFrame = Instance.new("Frame", ElementsContainer)  
@@ -687,7 +749,6 @@ function UILibrary:CreateWindow(title)
                 if callback then callback(toggleState) end       
             end          
             
-            -- Registra no sistema de controle para o Kill Switch
             table.insert(activeToggles, {
                 setState = function(v) toggleState = v; updateToggle() end,
                 getState = function() return toggleState end
@@ -711,7 +772,6 @@ function UILibrary:CreateWindow(title)
                 ShowBtn.TextColor3 = isFloating and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)  
             end  
 
-            -- Registra o FloatingUI para ser escondido no Kill Switch
             table.insert(activeFloatingUIs, {
                 hide = function() toggleFloatingVisibility(false) end
             })
@@ -1175,22 +1235,15 @@ function UILibrary:CreateWindow(title)
             local radioButtons = {}        
             local selectedOption = options[1]        
             
-            -- Sistema de wrap e medição dinâmica do texto
             local currentX = 0
             local currentY = 16
             local maxContainerWidth = 246
 
             for i, option in ipairs(options) do
                 local textStr = tostring(option)
-                
-                -- Mede exatamente quantos pixels a string precisa
                 local textSize = TextService:GetTextSize(textStr, 9, Enum.Font.GothamBold, Vector2.new(500, 16))
-                
-                -- Calcula a largura total do container desta opção:
-                -- Botão (16) + Padding (4) + Texto + Margem pro próximo item (10)
                 local optionWidth = 16 + 4 + textSize.X + 10
 
-                -- Se a soma da posição atual com a largura desta opção ultrapassar o limite da UI, quebra a linha
                 if currentX + optionWidth > maxContainerWidth then
                     currentX = 0
                     currentY = currentY + 22 
@@ -1219,7 +1272,7 @@ function UILibrary:CreateWindow(title)
                 OptionLabel.BackgroundTransparency = 1        
                 OptionLabel.Size = UDim2.new(0, textSize.X, 0, 16)        
                 OptionLabel.Text = textStr        
-                OptionLabel.Position = UDim2.new(0, 20, 0, 0) -- Logo depois do botão (16) e do padding (4)
+                OptionLabel.Position = UDim2.new(0, 20, 0, 0) 
 
                 table.insert(themeElements, { type = "RadioButton", instance = RadioButton, getState = function() return selectedOption == option end })  
                 table.insert(radioButtons, {button = RadioButton, option = option, index = i})        
@@ -1233,11 +1286,9 @@ function UILibrary:CreateWindow(title)
                     if callback then callback(option) end        
                 end)        
                 
-                -- Atualiza a posição X pro próximo loop
                 currentX = currentX + optionWidth
             end        
             
-            -- Calcula e aplica a altura dinâmica pro Frame que segura as opções
             local finalHeight = currentY + 20
             RadioFrame.Size = UDim2.new(0, 246, 0, finalHeight)    
             
@@ -1266,12 +1317,4 @@ function UILibrary:CreateWindow(title)
         return tabMethods      
     end      
 
-    return publicMethods
-end
-
-if _G.VLG_UILibrary then
-    return _G.VLG_UILibrary
-else
-    _G.VLG_UILibrary = UILibrary
-    return UILibrary
-end
+    return
