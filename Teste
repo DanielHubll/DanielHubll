@@ -1264,7 +1264,7 @@ function UILibrary:CreateWindow(title)
             -- Linha fina estilizada como o "Effect" original
             local SeparatorFrame = Instance.new("Frame", ElementsContainer)
             SeparatorFrame.BorderSizePixel = 0
-            SeparatorFrame.Size = UDim2.new(0, 250, 0, 1)   -- igual ao Effect_6
+            SeparatorFrame.Size = UDim2.new(0, 240, 0, 1)   -- igual ao Effect_6
             SeparatorFrame.BackgroundColor3 = currentThemeColor
             -- centraliza na área de conteúdo (largura total 264, diferença 14 -> offset 7)
             SeparatorFrame.Position = UDim2.new(0, 7, 0, 0)
