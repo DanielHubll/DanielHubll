@@ -1,4 +1,4 @@
--- UI Library ATUALIZADA com Dropdown Inteligente (Auto-Close e Click-Outside) e Floating Toggle sem borda
+-- UI Library ATUALIZADA com Dropdown Inteligente e Rolagem Perfeita (CanvasSize Exato)
 
 local HttpService = game:GetService("HttpService")
 local UILibrary = {}
@@ -654,8 +654,6 @@ function UILibrary:CreateWindow(title)
             local CheckboxCorner = Instance.new("UICorner", FButton)  
             CheckboxCorner.CornerRadius = UDim.new(0, 4)  
 
-            -- O UIStroke FOI REMOVIDO DAQUI CONFORME O PEDIDO
-
             MakeDraggable(FloatingUI, FTopo)  
 
             local toggleState = false          
@@ -858,14 +856,18 @@ function UILibrary:CreateWindow(title)
             Scroll.BackgroundColor3 = Color3.fromRGB(37,37,37)          
             Scroll.Size = UDim2.new(0,112,0,28)          
             Scroll.ScrollBarThickness = 0       
-            Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y          
+            -- Sem AutomaticCanvasSize, calculamos manualmente
             Scroll.ZIndex = 105 
             Scroll.ScrollingDirection = Enum.ScrollingDirection.Y       
             Scroll.ElasticBehavior = Enum.ElasticBehavior.Never 
             Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0,3)          
 
             local btnHeight, padding = 16, 2          
-            local function getHeight() return math.min(#options,3)*(btnHeight+padding)+4 end          
+            
+            -- Limita a altura visível a no máximo 4 itens antes de rolar
+            local function getHeight() 
+                return math.min(#options, 4) * (btnHeight + padding) + 4 
+            end          
 
             local function updateScrollPos()
                 if Scroll.Visible then
@@ -878,7 +880,6 @@ function UILibrary:CreateWindow(title)
 
             LMG2L["Main_7"]:GetPropertyChangedSignal("CanvasPosition"):Connect(updateScrollPos)
 
-            -- FUNÇÃO LOCAL PARA FECHAR ESTE DROPDOWN ESPECÍFICO
             local function CloseDropdown()
                 Scroll.Visible = false
                 Open.Rotation = 180
@@ -889,7 +890,6 @@ function UILibrary:CreateWindow(title)
                 end
             end
 
-            -- Fecha se trocar de aba
             tabData.container:GetPropertyChangedSignal("Visible"):Connect(function()
                 if not tabData.container.Visible then
                     CloseDropdown()
@@ -900,7 +900,6 @@ function UILibrary:CreateWindow(title)
                 if Scroll.Visible then        
                     CloseDropdown()
                 else        
-                    -- Se já tiver outro dropdown aberto, fecha ele primeiro (AUTO-CLOSE)
                     if openDropdownInfo then
                         openDropdownInfo.Close()
                     end
@@ -910,7 +909,6 @@ function UILibrary:CreateWindow(title)
                     Scroll.Size = UDim2.new(0,112,0,getHeight()) 
                     updateScrollPos() 
 
-                    -- Registra este dropdown como o ativo atualmente
                     openDropdownInfo = {
                         Main = Main,
                         Scroll = Scroll,
@@ -958,6 +956,10 @@ function UILibrary:CreateWindow(title)
                             if callback then callback(opt) end  
                         end)  
                     end  
+                    
+                    -- CÁLCULO EXATO DA ÁREA DE ROLAGEM
+                    local totalContentHeight = #options * (btnHeight + padding)
+                    Scroll.CanvasSize = UDim2.new(0, 0, 0, totalContentHeight)
                       
                     if Scroll.Visible then  
                         Scroll.Size = UDim2.new(0,112,0,getHeight())  
