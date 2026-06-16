@@ -100,7 +100,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Effect_6"] = Instance.new("Frame", LMG2L["Main_5"])      
     LMG2L["Effect_6"]["BorderSizePixel"] = 0      
     LMG2L["Effect_6"]["BackgroundColor3"] = currentThemeColor      
-    LMG2L["Effect_6"]["Size"] = UDim2.new(0, 250, 0, 1)      
+    LMG2L["Effect_6"]["Size"] = UDim2.new(0, 256, 0, 1)      
     LMG2L["Effect_6"]["Position"] = UDim2.new(0, 54, 0, 10)      
 
     LMG2L["Main_7"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])      
@@ -1283,7 +1283,7 @@ function UILibrary:CreateWindow(title)
         function tabMethods:AddSection(text)
     local SectionFrame = Instance.new("Frame", ElementsContainer)
     SectionFrame.BorderSizePixel = 0
-    SectionFrame.Size = UDim2.new(0, 246, 0, 20)   -- altura reduzida, sem linha extra
+    SectionFrame.Size = UDim2.new(0, 240, 0, 20)   -- altura reduzida, sem linha extra
     SectionFrame.BackgroundTransparency = 1
 
     local SectionLabel = Instance.new("TextLabel", SectionFrame)
