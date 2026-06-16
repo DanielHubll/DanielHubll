@@ -1267,7 +1267,7 @@ function UILibrary:CreateWindow(title)
             SeparatorFrame.Size = UDim2.new(0, 100, 0, 1)   -- igual ao Effect_6
             SeparatorFrame.BackgroundColor3 = currentThemeColor
             -- centraliza na área de conteúdo (largura total 264, diferença 14 -> offset 7)
-            SeparatorFrame.Position = UDim2.new(0, 7, 0, 0)
+            SeparatorFrame.Position = UDim2.new(0, 6.050, 0, 0)
             
             -- Registra para que o tema atualize a cor
             table.insert(themeElements, { type = "Separator", instance = SeparatorFrame })
