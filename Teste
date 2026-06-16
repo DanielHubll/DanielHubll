@@ -1264,7 +1264,7 @@ function UILibrary:CreateWindow(title)
             -- Linha fina estilizada como o "Effect" original
             local SeparatorFrame = Instance.new("Frame", ElementsContainer)
             SeparatorFrame.BorderSizePixel = 0
-            SeparatorFrame.Size = UDim2.new(0, 245, 0, 1)   -- igual ao Effect_6
+            SeparatorFrame.Size = UDim2.new(0, 244.050, 0, 1)   -- igual ao Effect_6
             SeparatorFrame.BackgroundColor3 = currentThemeColor
             -- centraliza na área de conteúdo (largura total 264, diferença 14 -> offset 7)
             SeparatorFrame.Position = UDim2.new(0, 7, 0, 0)
@@ -1298,7 +1298,7 @@ function UILibrary:CreateWindow(title)
 
     -- Removido o Underline (separador embutido)
 
-    local elementData = { frame = SectionFrame, height = 22, visible = true, isSub = false }
+    local elementData = { frame = SectionFrame, height = 5, visible = true, isSub = false }
     table.insert(tabData.elements, elementData)
     updateLayout()
 
