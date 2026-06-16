@@ -1272,7 +1272,7 @@ function UILibrary:CreateWindow(title)
             -- Registra para que o tema atualize a cor
             table.insert(themeElements, { type = "Separator", instance = SeparatorFrame })
             
-            local elementData = { frame = SeparatorFrame, height = 1, visible = true, isSub = false }
+            local elementData = { frame = SeparatorFrame, height = 5, visible = true, isSub = false }
             table.insert(tabData.elements, elementData)
             updateLayout()
             
@@ -1298,7 +1298,7 @@ function UILibrary:CreateWindow(title)
 
     -- Removido o Underline (separador embutido)
 
-    local elementData = { frame = SectionFrame, height = 5, visible = true, isSub = false }
+    local elementData = { frame = SectionFrame, height = 22, visible = true, isSub = false }
     table.insert(tabData.elements, elementData)
     updateLayout()
 
