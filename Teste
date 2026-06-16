@@ -1,5 +1,4 @@
--- UI Library ATUALIZADA com Sistema de Tema Global, Dropdown Dinâmico, Auto-Size e Floating Windows Customizadas
--- CORREÇÃO: ElasticBehavior = Never em todos os ScrollingFrames e Dropdown corrigido para não ser cortado
+-- UI Library ATUALIZADA com Dropdown Inteligente (Auto-Close e Click-Outside) e Floating Toggle sem borda
 
 local HttpService = game:GetService("HttpService")
 local UILibrary = {}
@@ -17,6 +16,31 @@ function UILibrary:CreateWindow(title)
     -- SISTEMA DE TEMA GLOBAL  
     local currentThemeColor = Color3.fromRGB(144, 0, 181)  
     local themeElements = {}   
+    
+    -- SISTEMA GLOBAL DE DROPDOWN
+    local openDropdownInfo = nil
+
+    local function isInsideFrame(frame, posX, posY)
+        if not frame or not frame.Parent then return false end
+        local absPos = frame.AbsolutePosition
+        local absSize = frame.AbsoluteSize
+        return posX >= absPos.X and posX <= absPos.X + absSize.X and posY >= absPos.Y and posY <= absPos.Y + absSize.Y
+    end
+
+    UserInputService.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if openDropdownInfo then
+                local mx, my = input.Position.X, input.Position.Y
+                local inMain = isInsideFrame(openDropdownInfo.Main, mx, my)
+                local inScroll = isInsideFrame(openDropdownInfo.Scroll, mx, my)
+                
+                -- Se clicou fora do botão do dropdown e fora da lista, fecha ele
+                if not inMain and not inScroll then
+                    openDropdownInfo.Close()
+                end
+            end
+        end
+    end)
 
     local LMG2L = {}      
 
@@ -27,7 +51,8 @@ function UILibrary:CreateWindow(title)
     LMG2L["Floating_1"] = Instance.new("ScreenGui")      
     LMG2L["Floating_1"].Name = "Floating"      
     LMG2L["Floating_1"].ZIndexBehavior = Enum.ZIndexBehavior.Sibling      
-    LMG2L["Floating_1"].ResetOnSpawn = false      
+    LMG2L["Floating_1"].ResetOnSpawn = false 
+    LMG2L["Floating_1"].IgnoreGuiInset = true     
     LMG2L["Floating_1"].Parent = CoreGui      
 
     -- ==========================================      
@@ -367,8 +392,6 @@ function UILibrary:CreateWindow(title)
         for _, element in ipairs(themeElements) do  
             if element.type == "Toggle" then  
                 element.instance.BackgroundColor3 = element.getState() and currentThemeColor or Color3.fromRGB(37, 37, 37)  
-            elseif element.type == "FloatingStroke" then  
-                element.instance.Color = currentThemeColor  
             elseif element.type == "FloatingTopo" then  
                 element.instance.BackgroundColor3 = currentThemeColor  
             elseif element.type == "ShowButton" then  
@@ -570,9 +593,7 @@ function UILibrary:CreateWindow(title)
             ToggleButton.AutoButtonColor = false          
             Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 3)        
 
-            -- ==========================================  
             -- BOTÃO SHOW/HIDE (NO MENU PRINCIPAL)  
-            -- ==========================================  
             local ShowBtn = Instance.new("TextButton", ToggleFrame)  
             ShowBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)  
             ShowBtn.Size = UDim2.new(0, 50, 0, 22)  
@@ -586,9 +607,7 @@ function UILibrary:CreateWindow(title)
             local ShowBtnCorner = Instance.new("UICorner", ShowBtn)  
             ShowBtnCorner.CornerRadius = UDim.new(0, 4)  
 
-            -- ==========================================  
             -- INTERFACE DO FLOATING TOGGLE  
-            -- ==========================================  
             local FloatingUI = Instance.new("Frame", LMG2L["Floating_1"])  
             FloatingUI.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  
             FloatingUI.BorderSizePixel = 0  
@@ -635,15 +654,10 @@ function UILibrary:CreateWindow(title)
             local CheckboxCorner = Instance.new("UICorner", FButton)  
             CheckboxCorner.CornerRadius = UDim.new(0, 4)  
 
-            local FloatingStroke = Instance.new("UIStroke", FloatingUI)  
-            FloatingStroke.Color = currentThemeColor  
-            FloatingStroke.Thickness = 1  
+            -- O UIStroke FOI REMOVIDO DAQUI CONFORME O PEDIDO
 
             MakeDraggable(FloatingUI, FTopo)  
 
-            -- ==========================================  
-            -- LÓGICA E SINCRONIZAÇÃO  
-            -- ==========================================  
             local toggleState = false          
             local isFloating = false  
 
@@ -682,7 +696,6 @@ function UILibrary:CreateWindow(title)
 
             table.insert(themeElements, { type = "Toggle", instance = ToggleButton, getState = function() return toggleState end })  
             table.insert(themeElements, { type = "Toggle", instance = FButton, getState = function() return toggleState end })  
-            table.insert(themeElements, { type = "FloatingStroke", instance = FloatingStroke })  
             table.insert(themeElements, { type = "FloatingTopo", instance = FTopo })  
             table.insert(themeElements, { type = "ShowButton", instance = ShowBtn, getState = function() return isFloating end })  
 
@@ -839,9 +852,6 @@ function UILibrary:CreateWindow(title)
               
             table.insert(themeElements, { type = "DropdownIcon", instance = Open })  
 
-            -- ==========================================
-            -- CORREÇÃO AQUI: O Scroll vai pro LMG2L["Main_5"] para burlar o limite do menu
-            -- ==========================================
             local Scroll = Instance.new("ScrollingFrame", LMG2L["Main_5"])          
             Scroll.Visible = false          
             Scroll.BorderSizePixel = 0          
@@ -849,21 +859,16 @@ function UILibrary:CreateWindow(title)
             Scroll.Size = UDim2.new(0,112,0,28)          
             Scroll.ScrollBarThickness = 0       
             Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y          
-            Scroll.ZIndex = 105 -- ZIndex alto pra ficar por cima de tudo
+            Scroll.ZIndex = 105 
             Scroll.ScrollingDirection = Enum.ScrollingDirection.Y       
             Scroll.ElasticBehavior = Enum.ElasticBehavior.Never 
             Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0,3)          
 
             local btnHeight, padding = 16, 2          
-              
             local function getHeight() return math.min(#options,3)*(btnHeight+padding)+4 end          
 
-            -- ==========================================
-            -- LÓGICA DE POSICIONAMENTO DINÂMICO
-            -- ==========================================
             local function updateScrollPos()
                 if Scroll.Visible then
-                    -- Calcula a posição real na tela pra lista sempre seguir o botão
                     Scroll.Position = UDim2.new(
                         0, Main.AbsolutePosition.X - LMG2L["Main_5"].AbsolutePosition.X + 2,
                         0, Main.AbsolutePosition.Y - LMG2L["Main_5"].AbsolutePosition.Y + 24
@@ -871,26 +876,46 @@ function UILibrary:CreateWindow(title)
                 end
             end
 
-            -- Faz a lista acompanhar se o usuário rolar o menu para cima e para baixo
             LMG2L["Main_7"]:GetPropertyChangedSignal("CanvasPosition"):Connect(updateScrollPos)
 
-            -- Esconde o dropdown solto se o usuário trocar de aba no menu
+            -- FUNÇÃO LOCAL PARA FECHAR ESTE DROPDOWN ESPECÍFICO
+            local function CloseDropdown()
+                Scroll.Visible = false
+                Open.Rotation = 180
+                DropdownFrame.ZIndex = 10
+                Main.ZIndex = 11
+                if openDropdownInfo and openDropdownInfo.Main == Main then
+                    openDropdownInfo = nil
+                end
+            end
+
+            -- Fecha se trocar de aba
             tabData.container:GetPropertyChangedSignal("Visible"):Connect(function()
                 if not tabData.container.Visible then
-                    Scroll.Visible = false
-                    Open.Rotation = 180
+                    CloseDropdown()
                 end
             end)
 
             Open.MouseButton1Click:Connect(function()          
                 if Scroll.Visible then        
-                    Scroll.Visible = false; Open.Rotation = 180        
-                    DropdownFrame.ZIndex = 10; Main.ZIndex = 11        
+                    CloseDropdown()
                 else        
+                    -- Se já tiver outro dropdown aberto, fecha ele primeiro (AUTO-CLOSE)
+                    if openDropdownInfo then
+                        openDropdownInfo.Close()
+                    end
+
                     Scroll.Visible = true; Open.Rotation = 0        
                     DropdownFrame.ZIndex = 100; Main.ZIndex = 101       
                     Scroll.Size = UDim2.new(0,112,0,getHeight()) 
-                    updateScrollPos() -- Atualiza a posição na hora que clica       
+                    updateScrollPos() 
+
+                    -- Registra este dropdown como o ativo atualmente
+                    openDropdownInfo = {
+                        Main = Main,
+                        Scroll = Scroll,
+                        Close = CloseDropdown
+                    }
                 end        
             end)          
 
@@ -922,16 +947,14 @@ function UILibrary:CreateWindow(title)
                         Btn.BackgroundColor3 = Color3.fromRGB(37,37,37)  
                         Btn.TextColor3 = Color3.fromRGB(255,255,255)  
                         Btn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)  
-                        Btn.ZIndex = 106 -- Mantém os textos acima do fundo
+                        Btn.ZIndex = 106 
 
                         Btn.MouseEnter:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(50,50,50) end)  
                         Btn.MouseLeave:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(37,37,37) end)  
 
                         Btn.MouseButton1Click:Connect(function()  
                             Selected.Text = opt  
-                            Scroll.Visible = false  
-                            Open.Rotation = 180  
-                            DropdownFrame.ZIndex = 10; Main.ZIndex = 11 
+                            CloseDropdown()
                             if callback then callback(opt) end  
                         end)  
                     end  
