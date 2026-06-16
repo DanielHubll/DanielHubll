@@ -1292,6 +1292,7 @@ function UILibrary:CreateWindow(title)
     SectionLabel.Position = UDim2.new(0, 6, 0, 0)
     SectionLabel.Text = text or "Section"
     SectionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SectionLabel.TextTransparency = 0.5
     SectionLabel.TextSize = 14
     SectionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
     SectionLabel.TextXAlignment = Enum.TextXAlignment.Left
