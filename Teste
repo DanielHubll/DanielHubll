@@ -1,4 +1,4 @@
--- UI Library ATUALIZADA com Dropdown Inteligente e Rolagem Perfeita (CanvasSize Exato)
+-- UI Library COMPLETA (Dropdown Exato + Kill Switch / Botão de Pânico)
 
 local HttpService = game:GetService("HttpService")
 local UILibrary = {}
@@ -20,6 +20,10 @@ function UILibrary:CreateWindow(title)
     -- SISTEMA GLOBAL DE DROPDOWN
     local openDropdownInfo = nil
 
+    -- SISTEMA DE KILL SWITCH (NOVO)
+    local activeToggles = {}
+    local activeFloatingUIs = {}
+
     local function isInsideFrame(frame, posX, posY)
         if not frame or not frame.Parent then return false end
         local absPos = frame.AbsolutePosition
@@ -34,7 +38,6 @@ function UILibrary:CreateWindow(title)
                 local inMain = isInsideFrame(openDropdownInfo.Main, mx, my)
                 local inScroll = isInsideFrame(openDropdownInfo.Scroll, mx, my)
                 
-                -- Se clicou fora do botão do dropdown e fora da lista, fecha ele
                 if not inMain and not inScroll then
                     openDropdownInfo.Close()
                 end
@@ -413,7 +416,7 @@ function UILibrary:CreateWindow(title)
     end  
 
     -- ==========================================      
-    -- DRAG MENU & PALETA      
+    -- DRAG MENU E KILL SWITCH     
     -- ==========================================      
     local function MakeDraggable(frameToDrag, dragArea)      
         local dragging = false      
@@ -439,8 +442,26 @@ function UILibrary:CreateWindow(title)
     MakeDraggable(LMG2L["Topo_2"], LMG2L["Topo_2"])      
     MakeDraggable(Paleta_d, PaletaTop)      
 
+    -- ==========================================      
+    -- BOTÃO DE FECHAR (KILL SWITCH E HIDE FLOATINGS)
+    -- ========================================== 
     LMG2L["CloseMenu_4"].MouseButton1Click:Connect(function()      
-        LMG2L["Topo_2"].Visible = false; Paleta_d.Visible = false      
+        LMG2L["Topo_2"].Visible = false
+        Paleta_d.Visible = false      
+        
+        -- Fecha e sincroniza todos os Floating Toggles ativos
+        for _, floatingToggle in pairs(activeFloatingUIs) do
+            if floatingToggle.hide then
+                floatingToggle.hide()
+            end
+        end
+        
+        -- Desliga todos os Toggles que estiverem True (Panic Button)
+        for _, toggleData in pairs(activeToggles) do
+            if toggleData.getState() == true then
+                toggleData.setState(false)
+            end
+        end
     end)      
 
     LMG2L["OpenName_2d"].MouseButton1Click:Connect(function()      
@@ -665,6 +686,12 @@ function UILibrary:CreateWindow(title)
                 FButton.BackgroundColor3 = activeColor  
                 if callback then callback(toggleState) end       
             end          
+            
+            -- Registra no sistema de controle para o Kill Switch
+            table.insert(activeToggles, {
+                setState = function(v) toggleState = v; updateToggle() end,
+                getState = function() return toggleState end
+            })
                           
             ToggleButton.MouseButton1Click:Connect(function()          
                 toggleState = not toggleState          
@@ -683,6 +710,11 @@ function UILibrary:CreateWindow(title)
                 ShowBtn.BackgroundColor3 = isFloating and currentThemeColor or Color3.fromRGB(45, 45, 45)  
                 ShowBtn.TextColor3 = isFloating and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)  
             end  
+
+            -- Registra o FloatingUI para ser escondido no Kill Switch
+            table.insert(activeFloatingUIs, {
+                hide = function() toggleFloatingVisibility(false) end
+            })
 
             ShowBtn.MouseButton1Click:Connect(function()  
                 toggleFloatingVisibility(not isFloating)  
@@ -856,7 +888,6 @@ function UILibrary:CreateWindow(title)
             Scroll.BackgroundColor3 = Color3.fromRGB(37,37,37)          
             Scroll.Size = UDim2.new(0,112,0,28)          
             Scroll.ScrollBarThickness = 0       
-            -- Sem AutomaticCanvasSize, calculamos manualmente
             Scroll.ZIndex = 105 
             Scroll.ScrollingDirection = Enum.ScrollingDirection.Y       
             Scroll.ElasticBehavior = Enum.ElasticBehavior.Never 
@@ -864,7 +895,6 @@ function UILibrary:CreateWindow(title)
 
             local btnHeight, padding = 16, 2          
             
-            -- Limita a altura visível a no máximo 4 itens antes de rolar
             local function getHeight() 
                 return math.min(#options, 4) * (btnHeight + padding) + 4 
             end          
@@ -957,7 +987,6 @@ function UILibrary:CreateWindow(title)
                         end)  
                     end  
                     
-                    -- CÁLCULO EXATO DA ÁREA DE ROLAGEM
                     local totalContentHeight = #options * (btnHeight + padding)
                     Scroll.CanvasSize = UDim2.new(0, 0, 0, totalContentHeight)
                       
