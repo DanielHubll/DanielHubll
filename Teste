@@ -1283,7 +1283,7 @@ function UILibrary:CreateWindow(title)
         function tabMethods:AddSection(text)
     local SectionFrame = Instance.new("Frame", ElementsContainer)
     SectionFrame.BorderSizePixel = 0
-    SectionFrame.Size = UDim2.new(0, 240, 0, 20)   -- altura reduzida, sem linha extra
+    SectionFrame.Size = UDim2.new(0, 230, 0, 20)   -- altura reduzida, sem linha extra
     SectionFrame.BackgroundTransparency = 1
 
     local SectionLabel = Instance.new("TextLabel", SectionFrame)
