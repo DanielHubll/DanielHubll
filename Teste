@@ -1,4 +1,4 @@
--- UI Library COMPLETA (Dropdown Exato + Kill Switch / Botão de Pânico)
+-- UI Library COMPLETA (Dropdown Exato + Kill Switch + RadioButtons Dinâmicos)
 
 local HttpService = game:GetService("HttpService")
 local UILibrary = {}
@@ -1156,7 +1156,7 @@ function UILibrary:CreateWindow(title)
         function tabMethods:AddRadioButtons(text, options, callback)        
             local RadioFrame = Instance.new("Frame", ElementsContainer)        
             RadioFrame.BorderSizePixel = 0        
-            RadioFrame.Size = UDim2.new(0, 162, 0, 38)     
+            RadioFrame.Size = UDim2.new(0, 246, 0, 38)     
             RadioFrame.BackgroundTransparency = 1        
                     
             local InfoLabel = Instance.new("TextLabel", RadioFrame)        
@@ -1174,24 +1174,33 @@ function UILibrary:CreateWindow(title)
                     
             local radioButtons = {}        
             local selectedOption = options[1]        
-                    
-            for i, option in ipairs(options) do        
+            
+            -- Sistema de wrap e medição dinâmica do texto
+            local currentX = 0
+            local currentY = 16
+            local maxContainerWidth = 246
+
+            for i, option in ipairs(options) do
+                local textStr = tostring(option)
+                
+                -- Mede exatamente quantos pixels a string precisa
+                local textSize = TextService:GetTextSize(textStr, 9, Enum.Font.GothamBold, Vector2.new(500, 16))
+                
+                -- Calcula a largura total do container desta opção:
+                -- Botão (16) + Padding (4) + Texto + Margem pro próximo item (10)
+                local optionWidth = 16 + 4 + textSize.X + 10
+
+                -- Se a soma da posição atual com a largura desta opção ultrapassar o limite da UI, quebra a linha
+                if currentX + optionWidth > maxContainerWidth then
+                    currentX = 0
+                    currentY = currentY + 22 
+                end
+                
                 local RadioOption = Instance.new("Frame", RadioFrame)        
                 RadioOption.BorderSizePixel = 0        
-                RadioOption.Size = UDim2.new(0, 70, 0, 16)      
-                RadioOption.Position = UDim2.new(0, (i-1) * 78, 0, 16)        
+                RadioOption.Size = UDim2.new(0, optionWidth, 0, 16)      
+                RadioOption.Position = UDim2.new(0, currentX, 0, currentY)        
                 RadioOption.BackgroundTransparency = 1        
-                        
-                local OptionLabel = Instance.new("TextLabel", RadioOption)        
-                OptionLabel.BorderSizePixel = 0        
-                OptionLabel.TextSize = 9        
-                OptionLabel.TextXAlignment = Enum.TextXAlignment.Left        
-                OptionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)        
-                OptionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)        
-                OptionLabel.BackgroundTransparency = 1        
-                OptionLabel.Size = UDim2.new(0, 58, 0, 16)        
-                OptionLabel.Text = option        
-                OptionLabel.Position = UDim2.new(0, 20, 0, 0)        
                         
                 local RadioButton = Instance.new("TextButton", RadioOption)        
                 RadioButton.BorderSizePixel = 0        
@@ -1201,6 +1210,17 @@ function UILibrary:CreateWindow(title)
                 RadioButton.AutoButtonColor = false        
                 Instance.new("UICorner", RadioButton).CornerRadius = UDim.new(1, 9)      
                   
+                local OptionLabel = Instance.new("TextLabel", RadioOption)        
+                OptionLabel.BorderSizePixel = 0        
+                OptionLabel.TextSize = 9        
+                OptionLabel.TextXAlignment = Enum.TextXAlignment.Left        
+                OptionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)        
+                OptionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)        
+                OptionLabel.BackgroundTransparency = 1        
+                OptionLabel.Size = UDim2.new(0, textSize.X, 0, 16)        
+                OptionLabel.Text = textStr        
+                OptionLabel.Position = UDim2.new(0, 20, 0, 0) -- Logo depois do botão (16) e do padding (4)
+
                 table.insert(themeElements, { type = "RadioButton", instance = RadioButton, getState = function() return selectedOption == option end })  
                 table.insert(radioButtons, {button = RadioButton, option = option, index = i})        
                         
@@ -1212,10 +1232,16 @@ function UILibrary:CreateWindow(title)
                     selectedOption = option        
                     if callback then callback(option) end        
                 end)        
+                
+                -- Atualiza a posição X pro próximo loop
+                currentX = currentX + optionWidth
             end        
-                    
-            RadioFrame.Size = UDim2.new(0, math.min(#options * 78, 162), 0, 38)    
-            local elementData = { frame = RadioFrame, height = 42, visible = true, isSub = false }        
+            
+            -- Calcula e aplica a altura dinâmica pro Frame que segura as opções
+            local finalHeight = currentY + 20
+            RadioFrame.Size = UDim2.new(0, 246, 0, finalHeight)    
+            
+            local elementData = { frame = RadioFrame, height = finalHeight + 4, visible = true, isSub = false }        
             table.insert(tabData.elements, elementData)        
             updateLayout()      
                     
