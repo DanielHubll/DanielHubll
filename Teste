@@ -100,7 +100,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Effect_6"] = Instance.new("Frame", LMG2L["Main_5"])      
     LMG2L["Effect_6"]["BorderSizePixel"] = 0      
     LMG2L["Effect_6"]["BackgroundColor3"] = currentThemeColor      
-    LMG2L["Effect_6"]["Size"] = UDim2.new(0, 250, 0, 1)      
+    LMG2L["Effect_6"]["Size"] = UDim2.new(0, 255, 0, 1)      
     LMG2L["Effect_6"]["Position"] = UDim2.new(0, 54, 0, 10)      
 
     LMG2L["Main_7"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])      
@@ -1264,7 +1264,7 @@ function UILibrary:CreateWindow(title)
             -- Linha fina estilizada como o "Effect" original
             local SeparatorFrame = Instance.new("Frame", ElementsContainer)
             SeparatorFrame.BorderSizePixel = 0
-            SeparatorFrame.Size = UDim2.new(0, 240, 0, 1)   -- igual ao Effect_6
+            SeparatorFrame.Size = UDim2.new(0, 245, 0, 1)   -- igual ao Effect_6
             SeparatorFrame.BackgroundColor3 = currentThemeColor
             -- centraliza na área de conteúdo (largura total 264, diferença 14 -> offset 7)
             SeparatorFrame.Position = UDim2.new(0, 7, 0, 0)
