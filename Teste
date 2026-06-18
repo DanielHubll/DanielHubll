@@ -1,4 +1,5 @@
--- UI Library COMPLETA (com Separator, Section e Sistema de Configurações)
+-- UI Library COMPLETA com Sistema de Config Automático
+-- By VLG - Todos os direitos reservados
 
 local HttpService = game:GetService("HttpService")
 local UILibrary = {}
@@ -7,14 +8,6 @@ local UserInputService = game:GetService("UserInputService")
 local ContextActionService = game:GetService("ContextActionService")
 local CoreGui = game:GetService("CoreGui")
 local TextService = game:GetService("TextService")
-
--- Funções de arquivo (Prevenção de erro caso rode no Studio puro)
-local isfolder = isfolder or function() return false end
-local makefolder = makefolder or function() end
-local writefile = writefile or function() end
-local readfile = readfile or function() return "{}" end
-local listfiles = listfiles or function() return {} end
-local isfile = isfile or function() return false end
 
 function UILibrary:CreateWindow(title)
     local publicMethods = {}
@@ -31,7 +24,10 @@ function UILibrary:CreateWindow(title)
     -- SISTEMA DE KILL SWITCH E CONFIGS
     local activeToggles = {}
     local activeFloatingUIs = {}
-    local UI_Elements = {} -- Armazena todos os elementos para o sistema de Config
+    
+    -- SISTEMA DE CONFIG AUTOMÁTICO
+    local configElements = {} -- Registro de todos elementos para salvar/carregar
+    local savedConfigs = {} -- Configurações salvas em memória
 
     local function isInsideFrame(frame, posX, posY)
         if not frame or not frame.Parent then return false end
@@ -207,6 +203,7 @@ function UILibrary:CreateWindow(title)
         ColorSequenceKeypoint.new(0.833, Color3.fromRGB(255, 0, 255)),      
         ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))      
     })      
+    UIGradient1.Rotation = 0      
 
     local SVLayer2 = Instance.new("Frame", SVMap)      
     SVLayer2.Size = UDim2.new(1, 0, 1, 0)      
@@ -382,6 +379,7 @@ function UILibrary:CreateWindow(title)
         Paleta_d.Visible = true      
     end      
 
+    -- FUNÇÃO DE ATUALIZAÇÃO DO TEMA  
     local function applyTheme()  
         local th, ts, tv = currentThemeColor:ToHSV()  
         local darkerTheme = Color3.fromHSV(th, ts, math.clamp(tv - 0.2, 0, 1))  
@@ -424,6 +422,9 @@ function UILibrary:CreateWindow(title)
         end  
     end  
 
+    -- ==========================================      
+    -- DRAG MENU E KILL SWITCH     
+    -- ==========================================      
     local function MakeDraggable(frameToDrag, dragArea)      
         local dragging = false      
         local dragStart, startPos      
@@ -448,16 +449,25 @@ function UILibrary:CreateWindow(title)
     MakeDraggable(LMG2L["Topo_2"], LMG2L["Topo_2"])      
     MakeDraggable(Paleta_d, PaletaTop)      
 
+    -- ==========================================      
+    -- BOTÃO DE FECHAR (KILL SWITCH E HIDE FLOATINGS)
+    -- ========================================== 
     LMG2L["CloseMenu_4"].MouseButton1Click:Connect(function()      
         LMG2L["Topo_2"].Visible = false
         Paleta_d.Visible = false      
         
+        -- Fecha e sincroniza todos os Floating Toggles ativos
         for _, floatingToggle in pairs(activeFloatingUIs) do
-            if floatingToggle.hide then floatingToggle.hide() end
+            if floatingToggle.hide then
+                floatingToggle.hide()
+            end
         end
         
+        -- Desliga todos os Toggles que estiverem True (Panic Button)
         for _, toggleData in pairs(activeToggles) do
-            if toggleData.getState() == true then toggleData.setState(false) end
+            if toggleData.getState() == true then
+                toggleData.setState(false)
+            end
         end
     end)      
 
@@ -531,6 +541,22 @@ function UILibrary:CreateWindow(title)
                   
         local tabMethods = {}          
 
+        -- ==========================================
+        -- FUNÇÃO PARA REGISTRAR ELEMENTOS NO SISTEMA DE CONFIG
+        -- ==========================================
+        local function registerConfigElement(elementType, elementText, elementInstance, getterFunc, setterFunc)
+            if not configElements[tabName] then
+                configElements[tabName] = {}
+            end
+            table.insert(configElements[tabName], {
+                type = elementType,
+                text = elementText,
+                instance = elementInstance,
+                getValue = getterFunc,
+                setValue = setterFunc
+            })
+        end
+
         function tabMethods:AddTextBox(text, default, callback)  
             local TextBoxFrame = Instance.new("Frame", ElementsContainer)  
             TextBoxFrame.BorderSizePixel = 0  
@@ -576,8 +602,12 @@ function UILibrary:CreateWindow(title)
                 GetText = function(self) return Input.Text end  
             }
 
-            -- Salva elemento no sistema
-            UI_Elements[text] = { Type = "TextBox", Set = function(val) TextBoxObject:SetText(val) end, Get = function() return TextBoxObject:GetText() end }
+            -- Registra no sistema de config
+            registerConfigElement("TextBox", text, TextBoxObject, 
+                function() return TextBoxObject:GetText() end,
+                function(val) TextBoxObject:SetText(val) end
+            )
+
             return TextBoxObject  
         end  
           
@@ -615,6 +645,7 @@ function UILibrary:CreateWindow(title)
             ToggleButton.AutoButtonColor = false          
             Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 3)        
 
+            -- BOTÃO SHOW/HIDE (NO MENU PRINCIPAL)  
             local ShowBtn = Instance.new("TextButton", ToggleFrame)  
             ShowBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)  
             ShowBtn.Size = UDim2.new(0, 50, 0, 22)  
@@ -625,8 +656,10 @@ function UILibrary:CreateWindow(title)
             ShowBtn.TextSize = 11  
             ShowBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)  
             ShowBtn.AutoButtonColor = false  
-            Instance.new("UICorner", ShowBtn).CornerRadius = UDim.new(0, 4)  
+            local ShowBtnCorner = Instance.new("UICorner", ShowBtn)  
+            ShowBtnCorner.CornerRadius = UDim.new(0, 4)  
 
+            -- INTERFACE DO FLOATING TOGGLE  
             local FloatingUI = Instance.new("Frame", LMG2L["Floating_1"])  
             FloatingUI.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  
             FloatingUI.BorderSizePixel = 0  
@@ -635,6 +668,7 @@ function UILibrary:CreateWindow(title)
 
             local calculatedTextSize = TextService:GetTextSize(text or "Toggle", 16, Enum.Font.GothamBold, Vector2.new(500, 20))  
             local finalWidth = math.max(calculatedTextSize.X + 64, 120)  
+
             FloatingUI.Size = UDim2.new(0, finalWidth, 0, 50)  
             FloatingUI.Position = UDim2.new(0, math.random(50, 250), 0, math.random(50, 250))   
 
@@ -669,7 +703,8 @@ function UILibrary:CreateWindow(title)
             FButton.BorderSizePixel = 0  
             FButton.Text = ""  
             FButton.AutoButtonColor = false  
-            Instance.new("UICorner", FButton).CornerRadius = UDim.new(0, 4)  
+            local CheckboxCorner = Instance.new("UICorner", FButton)  
+            CheckboxCorner.CornerRadius = UDim.new(0, 4)  
 
             MakeDraggable(FloatingUI, FTopo)  
 
@@ -683,6 +718,7 @@ function UILibrary:CreateWindow(title)
                 if callback then callback(toggleState) end       
             end          
             
+            -- Registra no sistema de controle para o Kill Switch
             table.insert(activeToggles, {
                 setState = function(v) toggleState = v; updateToggle() end,
                 getState = function() return toggleState end
@@ -706,10 +742,18 @@ function UILibrary:CreateWindow(title)
                 ShowBtn.TextColor3 = isFloating and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)  
             end  
 
-            table.insert(activeFloatingUIs, { hide = function() toggleFloatingVisibility(false) end })
+            -- Registra o FloatingUI para ser escondido no Kill Switch
+            table.insert(activeFloatingUIs, {
+                hide = function() toggleFloatingVisibility(false) end
+            })
 
-            ShowBtn.MouseButton1Click:Connect(function() toggleFloatingVisibility(not isFloating) end)  
-            FClose.MouseButton1Click:Connect(function() toggleFloatingVisibility(false) end)  
+            ShowBtn.MouseButton1Click:Connect(function()  
+                toggleFloatingVisibility(not isFloating)  
+            end)  
+
+            FClose.MouseButton1Click:Connect(function()  
+                toggleFloatingVisibility(false)  
+            end)  
 
             table.insert(themeElements, { type = "Toggle", instance = ToggleButton, getState = function() return toggleState end })  
             table.insert(themeElements, { type = "Toggle", instance = FButton, getState = function() return toggleState end })  
@@ -742,7 +786,24 @@ function UILibrary:CreateWindow(title)
                 end      
             end      
 
-            UI_Elements[text] = { Type = "Toggle", Set = function(val) ToggleObject:SetState(val) end, Get = function() return ToggleObject:GetState() end }
+            function ToggleObject:AddDropdown(dropdownText, options, dropCallback)      
+                local dropdownObj = tabMethods:AddDropdown(dropdownText, options, dropCallback)      
+                self:BindToDropdown(dropdownObj)      
+                return dropdownObj      
+            end      
+
+            function ToggleObject:AddColorPicker(pickerText, defaultColor, pickerCallback)      
+                local pickerObj = tabMethods:AddColorPicker(pickerText, defaultColor, pickerCallback)      
+                self:BindToColorPicker(pickerObj)      
+                return pickerObj      
+            end      
+
+            -- Registra no sistema de config
+            registerConfigElement("Toggle", text, ToggleObject,
+                function() return ToggleObject:GetState() end,
+                function(val) ToggleObject:SetState(val) end
+            )
+
             return ToggleObject        
         end          
               
@@ -804,10 +865,16 @@ function UILibrary:CreateWindow(title)
                 GetVisible = function(self) return elementData.visible end,    
                 SetAsSubElement = function(self, state)    
                     elementData.isSub = state; updateLayout()    
-                end    
+                end,
+                GetColor = function(self) return ColorBtn.BackgroundColor3 end
             }      
 
-            UI_Elements[text] = { Type = "ColorPicker", Set = function(val) ColorPickerObject:SetColor(val) end, Get = function() return ColorBtn.BackgroundColor3 end }
+            -- Registra no sistema de config
+            registerConfigElement("ColorPicker", text, ColorPickerObject,
+                function() return ColorPickerObject:GetColor() end,
+                function(val) ColorPickerObject:SetColor(val) end
+            )
+
             return ColorPickerObject      
         end      
                   
@@ -872,7 +939,10 @@ function UILibrary:CreateWindow(title)
             Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0,3)          
 
             local btnHeight, padding = 16, 2          
-            local function getHeight() return math.min(#options, 4) * (btnHeight + padding) + 4 end          
+            
+            local function getHeight() 
+                return math.min(#options, 4) * (btnHeight + padding) + 4 
+            end          
 
             local function updateScrollPos()
                 if Scroll.Visible then
@@ -890,23 +960,35 @@ function UILibrary:CreateWindow(title)
                 Open.Rotation = 180
                 DropdownFrame.ZIndex = 10
                 Main.ZIndex = 11
-                if openDropdownInfo and openDropdownInfo.Main == Main then openDropdownInfo = nil end
+                if openDropdownInfo and openDropdownInfo.Main == Main then
+                    openDropdownInfo = nil
+                end
             end
 
             tabData.container:GetPropertyChangedSignal("Visible"):Connect(function()
-                if not tabData.container.Visible then CloseDropdown() end
+                if not tabData.container.Visible then
+                    CloseDropdown()
+                end
             end)
 
             Open.MouseButton1Click:Connect(function()          
                 if Scroll.Visible then        
                     CloseDropdown()
                 else        
-                    if openDropdownInfo then openDropdownInfo.Close() end
+                    if openDropdownInfo then
+                        openDropdownInfo.Close()
+                    end
+
                     Scroll.Visible = true; Open.Rotation = 0        
                     DropdownFrame.ZIndex = 100; Main.ZIndex = 101       
                     Scroll.Size = UDim2.new(0,112,0,getHeight()) 
                     updateScrollPos() 
-                    openDropdownInfo = { Main = Main, Scroll = Scroll, Close = CloseDropdown }
+
+                    openDropdownInfo = {
+                        Main = Main,
+                        Scroll = Scroll,
+                        Close = CloseDropdown
+                    }
                 end        
             end)          
 
@@ -921,9 +1003,13 @@ function UILibrary:CreateWindow(title)
                   
                 Refresh = function(self, NewOptions)  
                     options = NewOptions  
+                      
                     for _, child in ipairs(Scroll:GetChildren()) do  
-                        if child:IsA("TextButton") then child:Destroy() end  
+                        if child:IsA("TextButton") then  
+                            child:Destroy()  
+                        end  
                     end  
+
                     for i, opt in ipairs(options) do  
                         local Btn = Instance.new("TextButton", Scroll)  
                         Btn.Size = UDim2.new(1,-4,0,btnHeight)  
@@ -945,14 +1031,30 @@ function UILibrary:CreateWindow(title)
                             if callback then callback(opt) end  
                         end)  
                     end  
-                    Scroll.CanvasSize = UDim2.new(0, 0, 0, #options * (btnHeight + padding))
-                    if Scroll.Visible then Scroll.Size = UDim2.new(0,112,0,getHeight()) end  
-                end  
+                    
+                    local totalContentHeight = #options * (btnHeight + padding)
+                    Scroll.CanvasSize = UDim2.new(0, 0, 0, totalContentHeight)
+                      
+                    if Scroll.Visible then  
+                        Scroll.Size = UDim2.new(0,112,0,getHeight())  
+                    end  
+                end,
+                
+                GetValue = function(self) return Selected.Text end,
+                SetValue = function(self, val) 
+                    Selected.Text = val 
+                    if callback then callback(val) end
+                end
             }  
 
             DropdownObject:Refresh(options)  
-            
-            UI_Elements[text] = { Type = "Dropdown", Set = function(val) Selected.Text = val; if callback then callback(val) end end, Get = function() return Selected.Text end }
+
+            -- Registra no sistema de config
+            registerConfigElement("Dropdown", text, DropdownObject,
+                function() return DropdownObject:GetValue() end,
+                function(val) DropdownObject:SetValue(val) end
+            )
+
             return DropdownObject  
         end      
 
@@ -1017,7 +1119,9 @@ function UILibrary:CreateWindow(title)
             end      
 
             local function blockCamera(_, inputState)      
-                if inputState == Enum.UserInputState.Begin or inputState == Enum.UserInputState.Change then return Enum.ContextActionResult.Sink end      
+                if inputState == Enum.UserInputState.Begin or inputState == Enum.UserInputState.Change then      
+                    return Enum.ContextActionResult.Sink      
+                end      
             end      
 
             local function updateSliderFromPosition(input)      
@@ -1026,7 +1130,8 @@ function UILibrary:CreateWindow(title)
                 local absSize = SliderTrack.AbsoluteSize      
                 local relativeX = (input.Position.X - absPos.X) / absSize.X      
                 relativeX = math.clamp(relativeX, 0, 1)      
-                updateValue(min + (relativeX * (max - min)))      
+                local newValue = min + (relativeX * (max - min))      
+                updateValue(newValue)      
             end      
 
             SliderTrack.InputBegan:Connect(function(input)      
@@ -1060,14 +1165,20 @@ function UILibrary:CreateWindow(title)
             table.insert(tabData.elements, elementData)        
             updateLayout()      
 
-            UI_Elements[text] = { Type = "Slider", Set = function(val) updateValue(val) end, Get = function() return sliderValue end }
-
-            return {      
+            local SliderObject = {      
                 SetValue = function(self, value) updateValue(value) end,      
                 GetValue = function(self) return sliderValue end,    
                 SetVisible = function(self, state) elementData.visible = state; SliderFrame.Visible = state; updateLayout() end,    
                 SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end    
             }    
+
+            -- Registra no sistema de config
+            registerConfigElement("Slider", text, SliderObject,
+                function() return SliderObject:GetValue() end,
+                function(val) SliderObject:SetValue(val) end
+            )
+
+            return SliderObject
         end    
 
         function tabMethods:AddButton(text, callback)        
@@ -1207,14 +1318,23 @@ function UILibrary:CreateWindow(title)
                 SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end    
             }  
 
-            UI_Elements[text] = { Type = "RadioButton", Set = function(val) RadioObject:SetValue(val) end, Get = function() return RadioObject:GetValue() end }
+            -- Registra no sistema de config
+            registerConfigElement("RadioButton", text, RadioObject,
+                function() return RadioObject:GetValue() end,
+                function(val) RadioObject:SetValue(val) end
+            )
+
             return RadioObject      
         end     
 
+        -- ============================
+        -- NOVOS MÉTODOS: Separator & Section
+        -- ============================
+        
         function tabMethods:AddSeparator()
             local SeparatorFrame = Instance.new("Frame", ElementsContainer)
             SeparatorFrame.BorderSizePixel = 0
-            SeparatorFrame.Size = UDim2.new(0, 244.050, 0, 1)   
+            SeparatorFrame.Size = UDim2.new(0, 244.050, 0, 1)
             SeparatorFrame.BackgroundColor3 = currentThemeColor
             SeparatorFrame.Position = UDim2.new(0, 7, 0, 0)
             
@@ -1230,7 +1350,7 @@ function UILibrary:CreateWindow(title)
         function tabMethods:AddSection(text)
             local SectionFrame = Instance.new("Frame", ElementsContainer)
             SectionFrame.BorderSizePixel = 0
-            SectionFrame.Size = UDim2.new(0, 230, 0, 20)   
+            SectionFrame.Size = UDim2.new(0, 230, 0, 20)
             SectionFrame.BackgroundTransparency = 1
 
             local SectionLabel = Instance.new("TextLabel", SectionFrame)
@@ -1254,93 +1374,167 @@ function UILibrary:CreateWindow(title)
     end      
 
     -- ==========================================
-    -- SISTEMA DE SALVAR CONFIGS (NOVO)
+    -- SISTEMA DE CONFIGURAÇÃO AUTOMÁTICO
     -- ==========================================
-    function publicMethods:CreateConfigSystem(folderName)
-        folderName = folderName or "VLG_Configs"
-
-        -- Cria a aba por último usando o ícone de engrenagem
-        local ConfigTab = self:AddTab("Configurações", "rbxassetid://10709852168")
-        
-        ConfigTab:AddSection("Gerenciador")
-
-        local configNameInput = ""
-        ConfigTab:AddTextBox("Nome da Config", "MinhaConfig", function(val)
-            configNameInput = val
-        end)
-
-        local ConfigDropdown
-        local selectedLoadConfig = ""
-
-        local function GetConfigList()
-            local list = {}
-            if isfolder and listfiles then
-                if not isfolder(folderName) then makefolder(folderName) end
-                for _, file in ipairs(listfiles(folderName)) do
-                    local name = file:match("([^/\\]+)%.json$")
-                    if name then table.insert(list, name) end
+    
+    -- Função para coletar estado atual de todos os elementos
+    local function collectCurrentConfig()
+        local config = {}
+        for tabName, elements in pairs(configElements) do
+            config[tabName] = {}
+            for _, elem in ipairs(elements) do
+                local value = elem.getValue()
+                -- Converte Color3 para HEX se for ColorPicker
+                if elem.type == "ColorPicker" and typeof(value) == "Color3" then
+                    value = value:ToHex()
                 end
+                table.insert(config[tabName], {
+                    type = elem.type,
+                    text = elem.text,
+                    value = value
+                })
             end
-            if #list == 0 then table.insert(list, "Nenhuma") end
-            return list
         end
-
-        ConfigDropdown = ConfigTab:AddDropdown("Configs Salvas", GetConfigList(), function(val)
-            selectedLoadConfig = val
-        end)
-
-        ConfigTab:AddButton("Salvar Configuração", function()
-            if configNameInput == "" or configNameInput == "Nenhuma" then return end
-            
-            if writefile then
-                local dataToSave = {}
-                for key, elem in pairs(UI_Elements) do
-                    local val = elem.Get()
-                    -- Evita erro ao codificar o Color3 em JSON, passando pra Hexadecimal
-                    if elem.Type == "ColorPicker" then
-                        val = val:ToHex()
-                    end
-                    dataToSave[key] = { Type = elem.Type, Value = val }
-                end
-                
-                if not isfolder(folderName) then makefolder(folderName) end
-                writefile(folderName.."/"..configNameInput..".json", HttpService:JSONEncode(dataToSave))
-                
-                -- Atualiza a lista na hora
-                if ConfigDropdown then ConfigDropdown:Refresh(GetConfigList()) end
-            end
-        end)
-
-        ConfigTab:AddButton("Carregar Configuração", function()
-            if selectedLoadConfig == "" or selectedLoadConfig == "Nenhuma" then return end
-            local path = folderName.."/"..selectedLoadConfig..".json"
-            
-            if isfile and readfile and isfile(path) then
-                local success, decoded = pcall(function()
-                    return HttpService:JSONDecode(readfile(path))
-                end)
-                
-                if success and decoded then
-                    for key, savedElem in pairs(decoded) do
-                        local uiElem = UI_Elements[key]
-                        if uiElem and uiElem.Type == savedElem.Type then
-                            if savedElem.Type == "ColorPicker" then
-                                uiElem.Set(Color3.fromHex(savedElem.Value))
-                            else
-                                uiElem.Set(savedElem.Value)
+        return config
+    end
+    
+    -- Função para carregar configuração
+    local function loadConfiguration(config)
+        if not config then return end
+        
+        for tabName, elements in pairs(configElements) do
+            if config[tabName] then
+                for _, elem in ipairs(elements) do
+                    for _, savedElem in ipairs(config[tabName]) do
+                        if savedElem.text == elem.text and savedElem.type == elem.type then
+                            local value = savedElem.value
+                            -- Converte HEX de volta para Color3
+                            if elem.type == "ColorPicker" and type(value) == "string" then
+                                local success, color = pcall(Color3.fromHex, value)
+                                if success then value = color end
                             end
+                            elem.setValue(value)
+                            break
                         end
                     end
                 end
             end
+        end
+    end
+    
+    -- Cria a aba de configuração automática (sempre a última)
+    local autoConfigCreated = false
+    local function createAutoConfigTab()
+        if autoConfigCreated then return end
+        autoConfigCreated = true
+        
+        local configTab = publicMethods:AddTab("Config ⚙️", "rbxassetid://10709852168")
+        local currentConfigName = ""
+        local configDropdown = nil
+        
+        -- Variáveis para os elementos da UI de config
+        local nameInput = nil
+        
+        configTab:AddSection("Gerenciador de Configurações")
+        
+        -- TextBox para nome da config
+        nameInput = configTab:AddTextBox("Nome da Config", "MinhaConfig", function(text)
+            currentConfigName = text
         end)
         
-        ConfigTab:AddSeparator()
+        -- Função auxiliar para pegar lista de configs
+        local function getConfigList()
+            local list = {}
+            for name, _ in pairs(savedConfigs) do
+                table.insert(list, name)
+            end
+            if #list == 0 then
+                table.insert(list, "Nenhuma config salva")
+            end
+            return list
+        end
         
-        ConfigTab:AddButton("Atualizar Lista", function()
-            if ConfigDropdown then ConfigDropdown:Refresh(GetConfigList()) end
+        -- Dropdown de configs salvas
+        configDropdown = configTab:AddDropdown("Configs Salvas", getConfigList(), function(selected)
+            if selected ~= "Nenhuma config salva" then
+                currentConfigName = selected
+                nameInput:SetText(selected)
+            end
+        end)
+        
+        -- Função para atualizar o dropdown
+        local function updateDropdown()
+            local configList = getConfigList()
+            if configDropdown and configDropdown.Refresh then
+                configDropdown:Refresh(configList)
+            end
+        end
+        
+        configTab:AddSeparator()
+        
+        -- Botão Salvar
+        configTab:AddButton("💾 Salvar Configuração", function()
+            local name = nameInput:GetText()
+            if name and name ~= "" and name ~= "Nenhuma config salva" then
+                savedConfigs[name] = collectCurrentConfig()
+                updateDropdown()
+            end
+        end)
+        
+        -- Botão Carregar
+        configTab:AddButton("📂 Carregar Configuração", function()
+            local name = nameInput:GetText()
+            if name and savedConfigs[name] then
+                loadConfiguration(savedConfigs[name])
+            end
+        end)
+        
+        -- Botão Deletar
+        configTab:AddButton("🗑️ Deletar Configuração", function()
+            local name = nameInput:GetText()
+            if name and savedConfigs[name] then
+                savedConfigs[name] = nil
+                updateDropdown()
+                nameInput:SetText("")
+            end
+        end)
+        
+        configTab:AddSeparator()
+        
+        -- Botão Reset
+        configTab:AddButton("🔄 Resetar Tudo", function()
+            for _, elements in pairs(configElements) do
+                for _, elem in ipairs(elements) do
+                    if elem.type == "Toggle" then
+                        elem.setValue(false)
+                    elseif elem.type == "Slider" then
+                        elem.setValue(0)
+                    elseif elem.type == "TextBox" then
+                        elem.setValue("")
+                    elseif elem.type == "Dropdown" then
+                        elem.setValue("")
+                    elseif elem.type == "ColorPicker" then
+                        elem.setValue(Color3.fromRGB(255, 255, 255))
+                    elseif elem.type == "RadioButton" then
+                        elem.setValue("")
+                    end
+                end
+            end
+        end)
+        
+        configTab:AddSeparator()
+        
+        -- Botão Refresh List
+        configTab:AddButton("🔄 Atualizar Lista", function()
+            updateDropdown()
         end)
     end
+    
+    -- Cria a tab de config automaticamente após um pequeno delay
+    spawn(function()
+        wait(0.2)
+        createAutoConfigTab()
+    end)
 
     return publicMethods
 end
