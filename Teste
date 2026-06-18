@@ -1,4 +1,3 @@
--- Código completo melhorado
 local HttpService = game:GetService("HttpService")
 local UILibrary = {}
 
@@ -136,6 +135,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Main_5"]["Size"] = UDim2.new(0, 316, 0, 202)      
     LMG2L["Main_5"]["Position"] = UDim2.new(0, 0, 0, 22)      
     LMG2L["Main_5"]["Visible"] = false      
+    LMG2L["Main_5"]["ClipsDescendants"] = true -- CORREÇÃO ADICIONADA AQUI
 
     LMG2L["Effect_6"] = Instance.new("Frame", LMG2L["Main_5"])      
     LMG2L["Effect_6"]["BorderSizePixel"] = 0      
@@ -151,6 +151,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Main_7"]["BackgroundTransparency"] = 1      
     LMG2L["Main_7"]["ScrollingDirection"] = Enum.ScrollingDirection.Y      
     LMG2L["Main_7"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
+    LMG2L["Main_7"]["ClipsDescendants"] = true -- CORREÇÃO ADICIONADA AQUI
 
     LMG2L["Tabs_2a"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])      
     LMG2L["Tabs_2a"]["BorderSizePixel"] = 0      
@@ -160,6 +161,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Tabs_2a"]["ScrollBarThickness"] = 0      
     LMG2L["Tabs_2a"]["ScrollingDirection"] = Enum.ScrollingDirection.Y      
     LMG2L["Tabs_2a"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
+    LMG2L["Tabs_2a"]["ClipsDescendants"] = true -- CORREÇÃO ADICIONADA AQUI
 
     LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])      
     LMG2L["OpenName_2d"]["BorderSizePixel"] = 0      
@@ -972,6 +974,7 @@ function UILibrary:CreateWindow(title)
             Scroll.ZIndex = 105 
             Scroll.ScrollingDirection = Enum.ScrollingDirection.Y       
             Scroll.ElasticBehavior = Enum.ElasticBehavior.Never 
+            Scroll.ClipsDescendants = true -- CORREÇÃO ADICIONADA AQUI
             Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0,3)          
 
             local btnHeight = 22
@@ -981,17 +984,7 @@ function UILibrary:CreateWindow(title)
                 return math.min(#options, 4) * (btnHeight + padding) + 4 
             end          
 
-            local function updateScrollPos()
-                if Scroll.Visible then
-                    Scroll.Position = UDim2.new(
-                        0, Main.AbsolutePosition.X - LMG2L["Main_5"].AbsolutePosition.X + 2,
-                        0, Main.AbsolutePosition.Y - LMG2L["Main_5"].AbsolutePosition.Y + 24
-                    )
-                end
-            end
-
-            LMG2L["Main_7"]:GetPropertyChangedSignal("CanvasPosition"):Connect(updateScrollPos)
-
+            -- Função de fechar criada antes dos eventos
             local function CloseDropdown()
                 Scroll.Visible = false
                 Open.Rotation = 180
@@ -1001,6 +994,13 @@ function UILibrary:CreateWindow(title)
                     openDropdownInfo = nil
                 end
             end
+
+            -- UX Otimizada: Fecha o dropdown se o usuário rolar a tela
+            LMG2L["Main_7"]:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+                if Scroll.Visible then
+                    CloseDropdown()
+                end
+            end)
 
             tabData.container:GetPropertyChangedSignal("Visible"):Connect(function()
                 if not tabData.container.Visible then
@@ -1019,7 +1019,12 @@ function UILibrary:CreateWindow(title)
                     Scroll.Visible = true; Open.Rotation = 0        
                     DropdownFrame.ZIndex = 100; Main.ZIndex = 101       
                     Scroll.Size = UDim2.new(0,136,0,getHeight()) 
-                    updateScrollPos() 
+                    
+                    -- Posiciona o scroll baseado no pai global
+                    Scroll.Position = UDim2.new(
+                        0, Main.AbsolutePosition.X - LMG2L["Main_5"].AbsolutePosition.X + 2,
+                        0, Main.AbsolutePosition.Y - LMG2L["Main_5"].AbsolutePosition.Y + 24
+                    )
 
                     openDropdownInfo = {
                         Main = Main,
@@ -1380,34 +1385,32 @@ function UILibrary:CreateWindow(title)
             return {}
         end
 
-        -- SECTION MELHORADO - Mais compacto e proporcional
         function tabMethods:AddSection(text)
             local SectionFrame = Instance.new("Frame", ElementsContainer)
             SectionFrame.BorderSizePixel = 0
-            SectionFrame.Size = UDim2.new(0, 240, 0, 18)  -- Reduzido de 230x20 para 240x18
+            SectionFrame.Size = UDim2.new(0, 240, 0, 18) 
             SectionFrame.BackgroundTransparency = 1
 
             local SectionLabel = Instance.new("TextLabel", SectionFrame)
             SectionLabel.BackgroundTransparency = 1
-            SectionLabel.Size = UDim2.new(1, -10, 0, 14)  -- Reduzido de 18 para 14
+            SectionLabel.Size = UDim2.new(1, -10, 0, 14) 
             SectionLabel.Position = UDim2.new(0, 4, 0, 2)
             SectionLabel.Text = text or "Section"
             SectionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-            SectionLabel.TextSize = 12  -- Reduzido de 14 para 12
+            SectionLabel.TextSize = 12 
             SectionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
             SectionLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-            -- Linha sutil abaixo da section
             local SectionLine = Instance.new("Frame", SectionFrame)
             SectionLine.BorderSizePixel = 0
             SectionLine.Size = UDim2.new(1, 0, 0, 1)
             SectionLine.Position = UDim2.new(0, 0, 0, 17)
             SectionLine.BackgroundColor3 = currentThemeColor
-            SectionLine.BackgroundTransparency = 0.5  -- Mais sutil
+            SectionLine.BackgroundTransparency = 0.5 
 
             table.insert(themeElements, { type = "SectionLine", instance = SectionLine })
 
-            local elementData = { frame = SectionFrame, height = 20, visible = true, isSub = false }  -- Reduzido de 22 para 20
+            local elementData = { frame = SectionFrame, height = 20, visible = true, isSub = false } 
             table.insert(tabData.elements, elementData)
             updateLayout()
 
@@ -1477,7 +1480,6 @@ function UILibrary:CreateWindow(title)
         
         local function getConfigList()
             local list = {}
-            -- Carrega tanto da memória quanto do disco
             local diskConfigs = getConfigFiles()
             for _, name in ipairs(diskConfigs) do
                 if not savedConfigs[name] then
@@ -1515,7 +1517,6 @@ function UILibrary:CreateWindow(title)
             if name and name ~= "" and name ~= "Nenhuma config salva" then
                 local configData = collectCurrentConfig()
                 savedConfigs[name] = configData
-                -- Salva no disco para persistência
                 saveToFile(configData, name)
                 updateDropdown()
             end
@@ -1524,7 +1525,6 @@ function UILibrary:CreateWindow(title)
         configTab:AddButton("Carregar Configuracao", function()
             local name = nameInput:GetText()
             if name then
-                -- Tenta carregar da memória primeiro, depois do disco
                 local configToLoad = savedConfigs[name]
                 if not configToLoad then
                     configToLoad = loadFromFile(name)
@@ -1543,7 +1543,6 @@ function UILibrary:CreateWindow(title)
             local name = nameInput:GetText()
             if name and savedConfigs[name] then
                 savedConfigs[name] = nil
-                -- Remove do disco
                 pcall(function()
                     delfile("VLG_Configs/" .. name .. ".json")
                 end)
@@ -1580,7 +1579,6 @@ function UILibrary:CreateWindow(title)
             updateDropdown()
         end)
         
-        -- Atualiza dropdown inicial
         updateDropdown()
     end
     
