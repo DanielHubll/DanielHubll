@@ -1,5 +1,6 @@
 -- UI Library COMPLETA com Sistema de Config Automático
 -- By VLG - Todos os direitos reservados
+-- Versão Melhorada com Word Wrap nos Dropdowns e Toggle Flutuante Melhorado
 
 local HttpService = game:GetService("HttpService")
 local UILibrary = {}
@@ -26,8 +27,8 @@ function UILibrary:CreateWindow(title)
     local activeFloatingUIs = {}
     
     -- SISTEMA DE CONFIG AUTOMÁTICO
-    local configElements = {} -- Registro de todos elementos para salvar/carregar
-    local savedConfigs = {} -- Configurações salvas em memória
+    local configElements = {}
+    local savedConfigs = {}
 
     local function isInsideFrame(frame, posX, posY)
         if not frame or not frame.Parent then return false end
@@ -49,6 +50,17 @@ function UILibrary:CreateWindow(title)
             end
         end
     end)
+
+    -- Função utilitária para calcular altura do texto
+    local function getTextHeight(text, fontSize, font, maxWidth)
+        local textSize = TextService:GetTextSize(
+            text, 
+            fontSize, 
+            font or Enum.Font.GothamBold, 
+            Vector2.new(maxWidth, 10000)
+        )
+        return math.ceil(textSize.Y)
+    end
 
     local LMG2L = {}      
 
@@ -602,7 +614,6 @@ function UILibrary:CreateWindow(title)
                 GetText = function(self) return Input.Text end  
             }
 
-            -- Registra no sistema de config
             registerConfigElement("TextBox", text, TextBoxObject, 
                 function() return TextBoxObject:GetText() end,
                 function(val) TextBoxObject:SetText(val) end
@@ -656,20 +667,31 @@ function UILibrary:CreateWindow(title)
             ShowBtn.TextSize = 11  
             ShowBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)  
             ShowBtn.AutoButtonColor = false  
-            local ShowBtnCorner = Instance.new("UICorner", ShowBtn)  
-            ShowBtnCorner.CornerRadius = UDim.new(0, 4)  
+            Instance.new("UICorner", ShowBtn).CornerRadius = UDim.new(0, 4)  
 
-            -- INTERFACE DO FLOATING TOGGLE  
+            -- INTERFACE DO FLOATING TOGGLE MELHORADA
             local FloatingUI = Instance.new("Frame", LMG2L["Floating_1"])  
             FloatingUI.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  
             FloatingUI.BorderSizePixel = 0  
             FloatingUI.Visible = false  
             FloatingUI.Active = true  
 
-            local calculatedTextSize = TextService:GetTextSize(text or "Toggle", 16, Enum.Font.GothamBold, Vector2.new(500, 20))  
-            local finalWidth = math.max(calculatedTextSize.X + 64, 120)  
+            -- Calcula tamanho baseado no texto com word wrap
+            local maxFloatingWidth = 300
+            local floatingTextSize = 16
+            local calculatedTextSize = TextService:GetTextSize(
+                text or "Toggle", 
+                floatingTextSize, 
+                Enum.Font.GothamBold, 
+                Vector2.new(maxFloatingWidth - 64, 10000)
+            )
+            
+            -- Altura dinâmica baseada no texto
+            local textHeight = math.ceil(calculatedTextSize.Y)
+            local finalHeight = math.max(textHeight + 60, 80) -- Mínimo de 80 para espaço do toggle
+            local finalWidth = math.min(math.max(calculatedTextSize.X + 64, 120), maxFloatingWidth)
 
-            FloatingUI.Size = UDim2.new(0, finalWidth, 0, 50)  
+            FloatingUI.Size = UDim2.new(0, finalWidth, 0, finalHeight)  
             FloatingUI.Position = UDim2.new(0, math.random(50, 250), 0, math.random(50, 250))   
 
             local FTopo = Instance.new("Frame", FloatingUI)  
@@ -686,25 +708,27 @@ function UILibrary:CreateWindow(title)
             FClose.TextColor3 = Color3.fromRGB(255, 255, 255)  
             FClose.TextSize = 10  
 
+            -- Label flutuante com word wrap
             local FLabel = Instance.new("TextLabel", FloatingUI)  
             FLabel.BackgroundTransparency = 1  
-            FLabel.Size = UDim2.new(0, calculatedTextSize.X, 0, 20)  
-            FLabel.Position = UDim2.new(0, 40, 0, 22)  
+            FLabel.Size = UDim2.new(1, -64, 0, textHeight + 10)  
+            FLabel.Position = UDim2.new(0, 44, 0, 22)  
             FLabel.Text = text or "Toggle"  
             FLabel.TextColor3 = Color3.fromRGB(255, 255, 255)  
-            FLabel.TextSize = 16  
+            FLabel.TextSize = floatingTextSize  
             FLabel.TextXAlignment = Enum.TextXAlignment.Left  
+            FLabel.TextYAlignment = Enum.TextYAlignment.Center
+            FLabel.TextWrapped = true  -- ATIVADO WORD WRAP
             FLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)  
 
             local FButton = Instance.new("TextButton", FloatingUI)  
             FButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)  
-            FButton.Size = UDim2.new(0, 24, 0, 24)  
-            FButton.Position = UDim2.new(0, 8, 0, 20)  
+            FButton.Size = UDim2.new(0, 28, 0, 28)  
+            FButton.Position = UDim2.new(0, 8, 0, 22 + (textHeight + 10 - 28) / 2)  -- Centraliza verticalmente
             FButton.BorderSizePixel = 0  
             FButton.Text = ""  
             FButton.AutoButtonColor = false  
-            local CheckboxCorner = Instance.new("UICorner", FButton)  
-            CheckboxCorner.CornerRadius = UDim.new(0, 4)  
+            Instance.new("UICorner", FButton).CornerRadius = UDim.new(0, 5)  
 
             MakeDraggable(FloatingUI, FTopo)  
 
@@ -718,7 +742,6 @@ function UILibrary:CreateWindow(title)
                 if callback then callback(toggleState) end       
             end          
             
-            -- Registra no sistema de controle para o Kill Switch
             table.insert(activeToggles, {
                 setState = function(v) toggleState = v; updateToggle() end,
                 getState = function() return toggleState end
@@ -742,7 +765,6 @@ function UILibrary:CreateWindow(title)
                 ShowBtn.TextColor3 = isFloating and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)  
             end  
 
-            -- Registra o FloatingUI para ser escondido no Kill Switch
             table.insert(activeFloatingUIs, {
                 hide = function() toggleFloatingVisibility(false) end
             })
@@ -798,7 +820,6 @@ function UILibrary:CreateWindow(title)
                 return pickerObj      
             end      
 
-            -- Registra no sistema de config
             registerConfigElement("Toggle", text, ToggleObject,
                 function() return ToggleObject:GetState() end,
                 function(val) ToggleObject:SetState(val) end
@@ -869,7 +890,6 @@ function UILibrary:CreateWindow(title)
                 GetColor = function(self) return ColorBtn.BackgroundColor3 end
             }      
 
-            -- Registra no sistema de config
             registerConfigElement("ColorPicker", text, ColorPickerObject,
                 function() return ColorPickerObject:GetColor() end,
                 function(val) ColorPickerObject:SetColor(val) end
@@ -904,6 +924,7 @@ function UILibrary:CreateWindow(title)
             Main.ZIndex = 11          
             Instance.new("UICorner", Main).CornerRadius = UDim.new(0,3)          
 
+            -- Selected text com word wrap
             local Selected = Instance.new("TextLabel", Main)          
             Selected.BackgroundTransparency = 1          
             Selected.Size = UDim2.new(1,-28,1,0)          
@@ -912,6 +933,8 @@ function UILibrary:CreateWindow(title)
             Selected.TextSize = 13          
             Selected.TextColor3 = Color3.fromRGB(255,255,255)          
             Selected.Text = options[1] or "Selecionar"          
+            Selected.TextWrapped = true  -- WORD WRAP ATIVADO
+            Selected.TextTruncate = Enum.TextTruncate.None  -- Não corta o texto
             Selected.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)          
             Selected.ZIndex = 12          
 
@@ -938,11 +961,43 @@ function UILibrary:CreateWindow(title)
             Scroll.ElasticBehavior = Enum.ElasticBehavior.Never 
             Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0,3)          
 
-            local btnHeight, padding = 16, 2          
+            -- Altura dinâmica para botões com word wrap
+            local btnPadding = 4          
+            local fontSize = 12
             
-            local function getHeight() 
-                return math.min(#options, 4) * (btnHeight + padding) + 4 
-            end          
+            -- Calcula altura máxima entre todas as opções
+            local function calculateMaxButtonHeight()
+                local maxHeight = 22 -- altura mínima
+                local maxTextWidth = 112 - 8 -- Scroll width - padding
+                
+                for _, opt in ipairs(options) do
+                    local textSize = TextService:GetTextSize(
+                        opt,
+                        fontSize,
+                        Enum.Font.GothamBold,
+                        Vector2.new(maxTextWidth, 10000)
+                    )
+                    local buttonHeight = math.ceil(textSize.Y) + 8 -- padding vertical
+                    if buttonHeight > maxHeight then
+                        maxHeight = buttonHeight
+                    end
+                end
+                
+                return maxHeight
+            end
+            
+            local btnHeight = 22 -- valor default, será atualizado no Refresh
+            local function getVisibleHeight() 
+                local maxBtn = math.min(#options, 4)
+                local totalH = 0
+                for i = 1, maxBtn do
+                    totalH = totalH + btnHeight
+                    if i < maxBtn then
+                        totalH = totalH + btnPadding
+                    end
+                end
+                return totalH + 8
+            end
 
             local function updateScrollPos()
                 if Scroll.Visible then
@@ -981,7 +1036,7 @@ function UILibrary:CreateWindow(title)
 
                     Scroll.Visible = true; Open.Rotation = 0        
                     DropdownFrame.ZIndex = 100; Main.ZIndex = 101       
-                    Scroll.Size = UDim2.new(0,112,0,getHeight()) 
+                    Scroll.Size = UDim2.new(0,112,0, getVisibleHeight())
                     updateScrollPos() 
 
                     openDropdownInfo = {
@@ -1003,19 +1058,25 @@ function UILibrary:CreateWindow(title)
                   
                 Refresh = function(self, NewOptions)  
                     options = NewOptions  
-                      
+                    
+                    -- Recalcula altura dos botões
+                    btnHeight = calculateMaxButtonHeight()
+                    
                     for _, child in ipairs(Scroll:GetChildren()) do  
                         if child:IsA("TextButton") then  
                             child:Destroy()  
                         end  
                     end  
 
+                    local yPos = 2
                     for i, opt in ipairs(options) do  
                         local Btn = Instance.new("TextButton", Scroll)  
                         Btn.Size = UDim2.new(1,-4,0,btnHeight)  
-                        Btn.Position = UDim2.new(0,2,0,(i-1)*(btnHeight+padding))  
+                        Btn.Position = UDim2.new(0,2,0,yPos)  
                         Btn.Text = opt  
-                        Btn.TextSize = 10  
+                        Btn.TextSize = fontSize  
+                        Btn.TextWrapped = true  -- WORD WRAP ATIVADO
+                        Btn.TextTruncate = Enum.TextTruncate.None  -- Não corta texto
                         Btn.BorderSizePixel = 0  
                         Btn.BackgroundColor3 = Color3.fromRGB(37,37,37)  
                         Btn.TextColor3 = Color3.fromRGB(255,255,255)  
@@ -1030,13 +1091,15 @@ function UILibrary:CreateWindow(title)
                             CloseDropdown()
                             if callback then callback(opt) end  
                         end)  
+                        
+                        yPos = yPos + btnHeight + btnPadding
                     end  
                     
-                    local totalContentHeight = #options * (btnHeight + padding)
+                    local totalContentHeight = #options * (btnHeight + btnPadding) + 4
                     Scroll.CanvasSize = UDim2.new(0, 0, 0, totalContentHeight)
                       
                     if Scroll.Visible then  
-                        Scroll.Size = UDim2.new(0,112,0,getHeight())  
+                        Scroll.Size = UDim2.new(0,112,0, getVisibleHeight())  
                     end  
                 end,
                 
@@ -1049,7 +1112,6 @@ function UILibrary:CreateWindow(title)
 
             DropdownObject:Refresh(options)  
 
-            -- Registra no sistema de config
             registerConfigElement("Dropdown", text, DropdownObject,
                 function() return DropdownObject:GetValue() end,
                 function(val) DropdownObject:SetValue(val) end
@@ -1172,7 +1234,6 @@ function UILibrary:CreateWindow(title)
                 SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end    
             }    
 
-            -- Registra no sistema de config
             registerConfigElement("Slider", text, SliderObject,
                 function() return SliderObject:GetValue() end,
                 function(val) SliderObject:SetValue(val) end
@@ -1318,7 +1379,6 @@ function UILibrary:CreateWindow(title)
                 SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end    
             }  
 
-            -- Registra no sistema de config
             registerConfigElement("RadioButton", text, RadioObject,
                 function() return RadioObject:GetValue() end,
                 function(val) RadioObject:SetValue(val) end
@@ -1327,10 +1387,6 @@ function UILibrary:CreateWindow(title)
             return RadioObject      
         end     
 
-        -- ============================
-        -- NOVOS MÉTODOS: Separator & Section
-        -- ============================
-        
         function tabMethods:AddSeparator()
             local SeparatorFrame = Instance.new("Frame", ElementsContainer)
             SeparatorFrame.BorderSizePixel = 0
@@ -1377,14 +1433,12 @@ function UILibrary:CreateWindow(title)
     -- SISTEMA DE CONFIGURAÇÃO AUTOMÁTICO
     -- ==========================================
     
-    -- Função para coletar estado atual de todos os elementos
     local function collectCurrentConfig()
         local config = {}
         for tabName, elements in pairs(configElements) do
             config[tabName] = {}
             for _, elem in ipairs(elements) do
                 local value = elem.getValue()
-                -- Converte Color3 para HEX se for ColorPicker
                 if elem.type == "ColorPicker" and typeof(value) == "Color3" then
                     value = value:ToHex()
                 end
@@ -1398,7 +1452,6 @@ function UILibrary:CreateWindow(title)
         return config
     end
     
-    -- Função para carregar configuração
     local function loadConfiguration(config)
         if not config then return end
         
@@ -1408,7 +1461,6 @@ function UILibrary:CreateWindow(title)
                     for _, savedElem in ipairs(config[tabName]) do
                         if savedElem.text == elem.text and savedElem.type == elem.type then
                             local value = savedElem.value
-                            -- Converte HEX de volta para Color3
                             if elem.type == "ColorPicker" and type(value) == "string" then
                                 local success, color = pcall(Color3.fromHex, value)
                                 if success then value = color end
@@ -1422,7 +1474,6 @@ function UILibrary:CreateWindow(title)
         end
     end
     
-    -- Cria a aba de configuração automática (sempre a última)
     local autoConfigCreated = false
     local function createAutoConfigTab()
         if autoConfigCreated then return end
@@ -1430,19 +1481,13 @@ function UILibrary:CreateWindow(title)
         
         local configTab = publicMethods:AddTab("Config ⚙️", "rbxassetid://10709852168")
         local currentConfigName = ""
-        local configDropdown = nil
-        
-        -- Variáveis para os elementos da UI de config
-        local nameInput = nil
         
         configTab:AddSection("Gerenciador de Configurações")
         
-        -- TextBox para nome da config
-        nameInput = configTab:AddTextBox("Nome da Config", "MinhaConfig", function(text)
+        local nameInput = configTab:AddTextBox("Nome da Config", "MinhaConfig", function(text)
             currentConfigName = text
         end)
         
-        -- Função auxiliar para pegar lista de configs
         local function getConfigList()
             local list = {}
             for name, _ in pairs(savedConfigs) do
@@ -1454,15 +1499,13 @@ function UILibrary:CreateWindow(title)
             return list
         end
         
-        -- Dropdown de configs salvas
-        configDropdown = configTab:AddDropdown("Configs Salvas", getConfigList(), function(selected)
+        local configDropdown = configTab:AddDropdown("Configs Salvas", getConfigList(), function(selected)
             if selected ~= "Nenhuma config salva" then
                 currentConfigName = selected
                 nameInput:SetText(selected)
             end
         end)
         
-        -- Função para atualizar o dropdown
         local function updateDropdown()
             local configList = getConfigList()
             if configDropdown and configDropdown.Refresh then
@@ -1472,7 +1515,6 @@ function UILibrary:CreateWindow(title)
         
         configTab:AddSeparator()
         
-        -- Botão Salvar
         configTab:AddButton("💾 Salvar Configuração", function()
             local name = nameInput:GetText()
             if name and name ~= "" and name ~= "Nenhuma config salva" then
@@ -1481,7 +1523,6 @@ function UILibrary:CreateWindow(title)
             end
         end)
         
-        -- Botão Carregar
         configTab:AddButton("📂 Carregar Configuração", function()
             local name = nameInput:GetText()
             if name and savedConfigs[name] then
@@ -1489,7 +1530,6 @@ function UILibrary:CreateWindow(title)
             end
         end)
         
-        -- Botão Deletar
         configTab:AddButton("🗑️ Deletar Configuração", function()
             local name = nameInput:GetText()
             if name and savedConfigs[name] then
@@ -1501,7 +1541,6 @@ function UILibrary:CreateWindow(title)
         
         configTab:AddSeparator()
         
-        -- Botão Reset
         configTab:AddButton("🔄 Resetar Tudo", function()
             for _, elements in pairs(configElements) do
                 for _, elem in ipairs(elements) do
@@ -1524,13 +1563,11 @@ function UILibrary:CreateWindow(title)
         
         configTab:AddSeparator()
         
-        -- Botão Refresh List
         configTab:AddButton("🔄 Atualizar Lista", function()
             updateDropdown()
         end)
     end
     
-    -- Cria a tab de config automaticamente após um pequeno delay
     spawn(function()
         wait(0.2)
         createAutoConfigTab()
