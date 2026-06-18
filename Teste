@@ -54,17 +54,35 @@ function UILibrary:CreateWindow(title)
     local configElements = {}
     local savedConfigs = {}
 
+    -- NOVO: Armazena a última config carregada
+    local lastLoadedConfigName = nil
+    local lastSavedConfigName = nil
+
     -- Carrega configs do arquivo ao iniciar
     local function loadAllConfigsFromDisk()
         local files = getConfigFiles()
         for _, name in ipairs(files) do
-            local data = loadFromFile(name)
-            if data then
-                savedConfigs[name] = data
+            if name ~= "__last_config__" then
+                local data = loadFromFile(name)
+                if data then
+                    savedConfigs[name] = data
+                end
             end
+        end
+        -- Tenta carregar a última config usada
+        local lastConfigData = loadFromFile("__last_config__")
+        if lastConfigData and lastConfigData.lastLoaded then
+            lastLoadedConfigName = lastConfigData.lastLoaded
         end
     end
     loadAllConfigsFromDisk()
+
+    local function saveLastConfigName(name)
+        lastLoadedConfigName = name
+        lastSavedConfigName = name
+        local data = {lastLoaded = name}
+        saveToFile(data, "__last_config__")
+    end
 
     local function isInsideFrame(frame, posX, posY)
         if not frame or not frame.Parent then return false end
@@ -962,18 +980,16 @@ function UILibrary:CreateWindow(title)
               
             table.insert(themeElements, { type = "DropdownIcon", instance = Open })  
 
-            -- CORREÇÃO AQUI: Criar o Scroll dentro do Main_5 (menu principal) em vez de solto no CoreGui
             local Scroll = Instance.new("ScrollingFrame", LMG2L["Main_5"])          
             Scroll.Visible = false          
             Scroll.BorderSizePixel = 0          
             Scroll.BackgroundColor3 = Color3.fromRGB(37,37,37)          
             Scroll.Size = UDim2.new(0,136,0,28)          
             Scroll.ScrollBarThickness = 0       
-            Scroll.ZIndex = 999 -- ZIndex alto para ficar acima de tudo no menu
+            Scroll.ZIndex = 999
             Scroll.ScrollingDirection = Enum.ScrollingDirection.Y       
             Scroll.ElasticBehavior = Enum.ElasticBehavior.Never 
             Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0,3)          
-            -- Adicionar Clipping para não vazar
             Scroll.ClipsDescendants = true
 
             local btnHeight = 22
@@ -985,7 +1001,6 @@ function UILibrary:CreateWindow(title)
 
             local function updateScrollPos()
                 if Scroll.Visible then
-                    -- Posição ABSOLUTA baseada no menu principal para o dropdown não sair da tela
                     local mainAbsPos = LMG2L["Main_5"].AbsolutePosition
                     local mainAbsSize = LMG2L["Main_5"].AbsoluteSize
                     local btnAbsPos = Main.AbsolutePosition
@@ -993,7 +1008,6 @@ function UILibrary:CreateWindow(title)
                     local newY = (btnAbsPos.Y - mainAbsPos.Y) + 24
                     local newX = (btnAbsPos.X - mainAbsPos.X) + 2
 
-                    -- Limitar para não sair da borda inferior
                     if newY + getHeight() > mainAbsSize.Y then
                         newY = newY - getHeight() - 26
                     end
@@ -1392,7 +1406,6 @@ function UILibrary:CreateWindow(title)
             return {}
         end
 
-        -- SECTION MELHORADO - Mais compacto e proporcional
         function tabMethods:AddSection(text)
             local SectionFrame = Instance.new("Frame", ElementsContainer)
             SectionFrame.BorderSizePixel = 0
@@ -1409,7 +1422,6 @@ function UILibrary:CreateWindow(title)
             SectionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
             SectionLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-            -- Linha sutil abaixo da section
             local SectionLine = Instance.new("Frame", SectionFrame)
             SectionLine.BorderSizePixel = 0
             SectionLine.Size = UDim2.new(1, 0, 0, 1)
@@ -1429,7 +1441,7 @@ function UILibrary:CreateWindow(title)
         return tabMethods      
     end      
 
-    -- SISTEMA DE CONFIGURAÇÃO PERSISTENTE
+    -- SISTEMA DE CONFIGURAÇÃO PERSISTENTE (COMPLETO E CORRIGIDO)
     local function collectCurrentConfig()
         local config = {}
         for tabName, elements in pairs(configElements) do
@@ -1491,14 +1503,19 @@ function UILibrary:CreateWindow(title)
             local list = {}
             local diskConfigs = getConfigFiles()
             for _, name in ipairs(diskConfigs) do
-                if not savedConfigs[name] then
-                    local data = loadFromFile(name)
-                    if data then
-                        savedConfigs[name] = data
+                if name ~= "__last_config__" then
+                    if not savedConfigs[name] then
+                        local data = loadFromFile(name)
+                        if data then
+                            savedConfigs[name] = data
+                        end
                     end
+                    table.insert(list, name)
                 end
-                table.insert(list, name)
             end
+            
+            table.sort(list)
+            
             if #list == 0 then
                 table.insert(list, "Nenhuma config salva")
             end
@@ -1508,7 +1525,10 @@ function UILibrary:CreateWindow(title)
         configDropdown = configTab:AddDropdown("Configs Salvas", getConfigList(), function(selected)
             if selected ~= "Nenhuma config salva" then
                 currentConfigName = selected
-                nameInput:SetText(selected)
+                -- ATUALIZA O TEXTBOX QUANDO SELECIONA NO DROPDOWN
+                if nameInput then
+                    nameInput:SetText(selected)
+                end
             end
         end)
         
@@ -1516,6 +1536,19 @@ function UILibrary:CreateWindow(title)
             local configList = getConfigList()
             if configDropdown and configDropdown.Refresh then
                 configDropdown:Refresh(configList)
+            end
+            
+            -- SELECIONA AUTOMATICAMENTE A ÚLTIMA CONFIG NO DROPDOWN
+            if lastLoadedConfigName and configDropdown then
+                for _, name in ipairs(configList) do
+                    if name == lastLoadedConfigName then
+                        configDropdown:SetValue(name)
+                        if nameInput then
+                            nameInput:SetText(name)
+                        end
+                        break
+                    end
+                end
             end
         end
         
@@ -1527,13 +1560,20 @@ function UILibrary:CreateWindow(title)
                 local configData = collectCurrentConfig()
                 savedConfigs[name] = configData
                 saveToFile(configData, name)
+                saveLastConfigName(name)
+                currentConfigName = name
                 updateDropdown()
+                
+                -- GARANTE QUE O DROPDOWN MOSTRE A CONFIG SALVA
+                if configDropdown then
+                    configDropdown:SetValue(name)
+                end
             end
         end)
         
         configTab:AddButton("Carregar Configuracao", function()
             local name = nameInput:GetText()
-            if name then
+            if name and name ~= "Nenhuma config salva" then
                 local configToLoad = savedConfigs[name]
                 if not configToLoad then
                     configToLoad = loadFromFile(name)
@@ -1543,7 +1583,17 @@ function UILibrary:CreateWindow(title)
                 end
                 if configToLoad then
                     loadConfiguration(configToLoad)
-                    updateDropdown()
+                    saveLastConfigName(name)
+                    currentConfigName = name
+                    
+                    -- ATUALIZA O TEXTBOX COM O NOME DA CONFIG CARREGADA
+                    if nameInput then
+                        nameInput:SetText(name)
+                    end
+                    -- ATUALIZA O DROPDOWN PARA MOSTRAR A CONFIG CARREGADA
+                    if configDropdown then
+                        configDropdown:SetValue(name)
+                    end
                 end
             end
         end)
@@ -1555,8 +1605,18 @@ function UILibrary:CreateWindow(title)
                 pcall(function()
                     delfile("VLG_Configs/" .. name .. ".json")
                 end)
+                
+                if lastLoadedConfigName == name then
+                    lastLoadedConfigName = nil
+                    saveLastConfigName("")
+                end
+                
                 updateDropdown()
                 nameInput:SetText("")
+                
+                if configDropdown then
+                    configDropdown:SetValue("Nenhuma config salva")
+                end
             end
         end)
         
@@ -1588,7 +1648,33 @@ function UILibrary:CreateWindow(title)
             updateDropdown()
         end)
         
+        -- INICIALIZA O DROPDOWN
         updateDropdown()
+        
+        -- CARREGA A ÚLTIMA CONFIG AUTOMATICAMENTE APÓS CRIAR TODOS OS ELEMENTOS
+        spawn(function()
+            wait(0.5)
+            if lastLoadedConfigName then
+                local configToLoad = savedConfigs[lastLoadedConfigName]
+                if not configToLoad then
+                    configToLoad = loadFromFile(lastLoadedConfigName)
+                    if configToLoad then
+                        savedConfigs[lastLoadedConfigName] = configToLoad
+                    end
+                end
+                if configToLoad then
+                    loadConfiguration(configToLoad)
+                    if nameInput then
+                        nameInput:SetText(lastLoadedConfigName)
+                    end
+                    if configDropdown then
+                        configDropdown:SetValue(lastLoadedConfigName)
+                    end
+                end
+            end
+        end)
+        
+        return configTab
     end
     
     spawn(function()
