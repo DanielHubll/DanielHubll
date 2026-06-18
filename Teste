@@ -6,6 +6,13 @@ local ContextActionService = game:GetService("ContextActionService")
 local CoreGui = game:GetService("CoreGui")
 local TextService = game:GetService("TextService")
 
+-- Garante que a pasta base exista para não dar erro de diretório
+pcall(function()
+    if not isfolder("VLG_Configs") then
+        makefolder("VLG_Configs")
+    end
+end)
+
 -- Sistema de save usando writefile/readfile
 local function saveToFile(data, filename)
     local success, err = pcall(function()
@@ -22,6 +29,23 @@ local function loadFromFile(filename)
     return nil
 end
 
+-- Gerenciador exclusivo das preferências do sistema (Auto Load e Última Config)
+local function saveSystemSettings(settings)
+    pcall(function()
+        writefile("VLG_Configs/_sys_metadata.json", HttpService:JSONEncode(settings))
+    end)
+end
+
+local function loadSystemSettings()
+    local success, data = pcall(function()
+        return HttpService:JSONDecode(readfile("VLG_Configs/_sys_metadata.json"))
+    end)
+    if success and type(data) == "table" then 
+        return data 
+    end
+    return {autoLoad = false, lastConfig = ""}
+end
+
 local function getConfigFiles()
     local success, files = pcall(function()
         return listfiles("VLG_Configs")
@@ -29,7 +53,7 @@ local function getConfigFiles()
     if success then
         local configs = {}
         for _, file in ipairs(files) do
-            if file:match("%.json$") then
+            if file:match("%.json$") and not file:match("_sys_metadata%.json$") then
                 local name = file:match("VLG_Configs[/\\](.+)%.json$")
                 if name then
                     table.insert(configs, name)
@@ -54,35 +78,17 @@ function UILibrary:CreateWindow(title)
     local configElements = {}
     local savedConfigs = {}
 
-    -- NOVO: Armazena a última config carregada
-    local lastLoadedConfigName = nil
-    local lastSavedConfigName = nil
-
     -- Carrega configs do arquivo ao iniciar
     local function loadAllConfigsFromDisk()
         local files = getConfigFiles()
         for _, name in ipairs(files) do
-            if name ~= "__last_config__" then
-                local data = loadFromFile(name)
-                if data then
-                    savedConfigs[name] = data
-                end
+            local data = loadFromFile(name)
+            if data then
+                savedConfigs[name] = data
             end
-        end
-        -- Tenta carregar a última config usada
-        local lastConfigData = loadFromFile("__last_config__")
-        if lastConfigData and lastConfigData.lastLoaded then
-            lastLoadedConfigName = lastConfigData.lastLoaded
         end
     end
     loadAllConfigsFromDisk()
-
-    local function saveLastConfigName(name)
-        lastLoadedConfigName = name
-        lastSavedConfigName = name
-        local data = {lastLoaded = name}
-        saveToFile(data, "__last_config__")
-    end
 
     local function isInsideFrame(frame, posX, posY)
         if not frame or not frame.Parent then return false end
@@ -986,7 +992,7 @@ function UILibrary:CreateWindow(title)
             Scroll.BackgroundColor3 = Color3.fromRGB(37,37,37)          
             Scroll.Size = UDim2.new(0,136,0,28)          
             Scroll.ScrollBarThickness = 0       
-            Scroll.ZIndex = 999
+            Scroll.ZIndex = 999 
             Scroll.ScrollingDirection = Enum.ScrollingDirection.Y       
             Scroll.ElasticBehavior = Enum.ElasticBehavior.Never 
             Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0,3)          
@@ -1441,21 +1447,23 @@ function UILibrary:CreateWindow(title)
         return tabMethods      
     end      
 
-    -- SISTEMA DE CONFIGURAÇÃO PERSISTENTE (COMPLETO E CORRIGIDO)
+    -- SISTEMA DE CONFIGURAÇÃO PERSISTENTE (IGNORA COMPONENTES DA PROPRIA ABA DE DESIGNER)
     local function collectCurrentConfig()
         local config = {}
         for tabName, elements in pairs(configElements) do
-            config[tabName] = {}
-            for _, elem in ipairs(elements) do
-                local value = elem.getValue()
-                if elem.type == "ColorPicker" and typeof(value) == "Color3" then
-                    value = value:ToHex()
+            if tabName ~= "Config" then -- CORREÇÃO: Não salva elementos da aba Config do UI library
+                config[tabName] = {}
+                for _, elem in ipairs(elements) do
+                    local value = elem.getValue()
+                    if elem.type == "ColorPicker" and typeof(value) == "Color3" then
+                        value = value:ToHex()
+                    end
+                    table.insert(config[tabName], {
+                        type = elem.type,
+                        text = elem.text,
+                        value = value
+                    })
                 end
-                table.insert(config[tabName], {
-                    type = elem.type,
-                    text = elem.text,
-                    value = value
-                })
             end
         end
         return config
@@ -1465,7 +1473,7 @@ function UILibrary:CreateWindow(title)
         if not config then return end
         
         for tabName, elements in pairs(configElements) do
-            if config[tabName] then
+            if tabName ~= "Config" and config[tabName] then -- CORREÇÃO: Não altera os Inputs da aba Config ao dar load
                 for _, elem in ipairs(elements) do
                     for _, savedElem in ipairs(config[tabName]) do
                         if savedElem.text == elem.text and savedElem.type == elem.type then
@@ -1493,8 +1501,18 @@ function UILibrary:CreateWindow(title)
         local configDropdown = nil
         local nameInput = nil
         
+        -- Carrega metadados do sistema (Auto Load e último carregado)
+        local sysSettings = loadSystemSettings()
+
         configTab:AddSection("Gerenciador de Configuracoes")
         
+        -- Adicionado Toggle Auto Load
+        local autoLoadToggle = configTab:AddToggle("Auto Load", function(state)
+            sysSettings.autoLoad = state
+            saveSystemSettings(sysSettings)
+        end)
+        autoLoadToggle:SetState(sysSettings.autoLoad)
+
         nameInput = configTab:AddTextBox("Nome da Config", "MinhaConfig", function(text)
             currentConfigName = text
         end)
@@ -1503,19 +1521,14 @@ function UILibrary:CreateWindow(title)
             local list = {}
             local diskConfigs = getConfigFiles()
             for _, name in ipairs(diskConfigs) do
-                if name ~= "__last_config__" then
-                    if not savedConfigs[name] then
-                        local data = loadFromFile(name)
-                        if data then
-                            savedConfigs[name] = data
-                        end
+                if not savedConfigs[name] then
+                    local data = loadFromFile(name)
+                    if data then
+                        savedConfigs[name] = data
                     end
-                    table.insert(list, name)
                 end
+                table.insert(list, name)
             end
-            
-            table.sort(list)
-            
             if #list == 0 then
                 table.insert(list, "Nenhuma config salva")
             end
@@ -1525,10 +1538,11 @@ function UILibrary:CreateWindow(title)
         configDropdown = configTab:AddDropdown("Configs Salvas", getConfigList(), function(selected)
             if selected ~= "Nenhuma config salva" then
                 currentConfigName = selected
-                -- ATUALIZA O TEXTBOX QUANDO SELECIONA NO DROPDOWN
-                if nameInput then
-                    nameInput:SetText(selected)
-                end
+                nameInput:SetText(selected)
+                
+                -- Armazena qual foi a última clicada no dropdown
+                sysSettings.lastConfig = selected
+                saveSystemSettings(sysSettings)
             end
         end)
         
@@ -1536,19 +1550,6 @@ function UILibrary:CreateWindow(title)
             local configList = getConfigList()
             if configDropdown and configDropdown.Refresh then
                 configDropdown:Refresh(configList)
-            end
-            
-            -- SELECIONA AUTOMATICAMENTE A ÚLTIMA CONFIG NO DROPDOWN
-            if lastLoadedConfigName and configDropdown then
-                for _, name in ipairs(configList) do
-                    if name == lastLoadedConfigName then
-                        configDropdown:SetValue(name)
-                        if nameInput then
-                            nameInput:SetText(name)
-                        end
-                        break
-                    end
-                end
             end
         end
         
@@ -1560,20 +1561,19 @@ function UILibrary:CreateWindow(title)
                 local configData = collectCurrentConfig()
                 savedConfigs[name] = configData
                 saveToFile(configData, name)
-                saveLastConfigName(name)
-                currentConfigName = name
-                updateDropdown()
                 
-                -- GARANTE QUE O DROPDOWN MOSTRE A CONFIG SALVA
-                if configDropdown then
-                    configDropdown:SetValue(name)
-                end
+                -- Define como o último salvo com sucesso
+                sysSettings.lastConfig = name
+                saveSystemSettings(sysSettings)
+                
+                updateDropdown()
+                configDropdown:SetValue(name)
             end
         end)
         
         configTab:AddButton("Carregar Configuracao", function()
             local name = nameInput:GetText()
-            if name and name ~= "Nenhuma config salva" then
+            if name then
                 local configToLoad = savedConfigs[name]
                 if not configToLoad then
                     configToLoad = loadFromFile(name)
@@ -1583,17 +1583,12 @@ function UILibrary:CreateWindow(title)
                 end
                 if configToLoad then
                     loadConfiguration(configToLoad)
-                    saveLastConfigName(name)
-                    currentConfigName = name
                     
-                    -- ATUALIZA O TEXTBOX COM O NOME DA CONFIG CARREGADA
-                    if nameInput then
-                        nameInput:SetText(name)
-                    end
-                    -- ATUALIZA O DROPDOWN PARA MOSTRAR A CONFIG CARREGADA
-                    if configDropdown then
-                        configDropdown:SetValue(name)
-                    end
+                    sysSettings.lastConfig = name
+                    saveSystemSettings(sysSettings)
+                    
+                    updateDropdown()
+                    configDropdown:SetValue(name)
                 end
             end
         end)
@@ -1605,38 +1600,34 @@ function UILibrary:CreateWindow(title)
                 pcall(function()
                     delfile("VLG_Configs/" .. name .. ".json")
                 end)
-                
-                if lastLoadedConfigName == name then
-                    lastLoadedConfigName = nil
-                    saveLastConfigName("")
+                if sysSettings.lastConfig == name then
+                    sysSettings.lastConfig = ""
+                    saveSystemSettings(sysSettings)
                 end
-                
                 updateDropdown()
                 nameInput:SetText("")
-                
-                if configDropdown then
-                    configDropdown:SetValue("Nenhuma config salva")
-                end
             end
         end)
         
         configTab:AddSeparator()
         
         configTab:AddButton("Resetar Tudo", function()
-            for _, elements in pairs(configElements) do
-                for _, elem in ipairs(elements) do
-                    if elem.type == "Toggle" then
-                        elem.setValue(false)
-                    elseif elem.type == "Slider" then
-                        elem.setValue(0)
-                    elseif elem.type == "TextBox" then
-                        elem.setValue("")
-                    elseif elem.type == "Dropdown" then
-                        elem.setValue("")
-                    elseif elem.type == "ColorPicker" then
-                        elem.setValue(Color3.fromRGB(255, 255, 255))
-                    elseif elem.type == "RadioButton" then
-                        elem.setValue("")
+            for tabName, elements in pairs(configElements) do
+                if tabName ~= "Config" then
+                    for _, elem in ipairs(elements) do
+                        if elem.type == "Toggle" then
+                            elem.setValue(false)
+                        elseif elem.type == "Slider" then
+                            elem.setValue(0)
+                        elseif elem.type == "TextBox" then
+                            elem.setValue("")
+                        elseif elem.type == "Dropdown" then
+                            elem.setValue("")
+                        elseif elem.type == "ColorPicker" then
+                            elem.setValue(Color3.fromRGB(255, 255, 255))
+                        elseif elem.type == "RadioButton" then
+                            elem.setValue("")
+                        end
                     end
                 end
             end
@@ -1648,37 +1639,27 @@ function UILibrary:CreateWindow(title)
             updateDropdown()
         end)
         
-        -- INICIALIZA O DROPDOWN
+        -- SISTEMA INICIALIZADOR AUTOMÁTICO (Roda ao carregar a interface)
         updateDropdown()
         
-        -- CARREGA A ÚLTIMA CONFIG AUTOMATICAMENTE APÓS CRIAR TODOS OS ELEMENTOS
-        spawn(function()
-            wait(0.5)
-            if lastLoadedConfigName then
-                local configToLoad = savedConfigs[lastLoadedConfigName]
-                if not configToLoad then
-                    configToLoad = loadFromFile(lastLoadedConfigName)
-                    if configToLoad then
-                        savedConfigs[lastLoadedConfigName] = configToLoad
-                    end
-                end
-                if configToLoad then
-                    loadConfiguration(configToLoad)
-                    if nameInput then
-                        nameInput:SetText(lastLoadedConfigName)
-                    end
-                    if configDropdown then
-                        configDropdown:SetValue(lastLoadedConfigName)
-                    end
+        local validConfigs = getConfigList()
+        if sysSettings.lastConfig and sysSettings.lastConfig ~= "" and table.find(validConfigs, sysSettings.lastConfig) then
+            -- Restaura visualmente o estado da última config selecionada
+            configDropdown:SetValue(sysSettings.lastConfig)
+            nameInput:SetText(sysSettings.lastConfig)
+            
+            -- Executa o Auto Load se o toggle estiver ativo
+            if sysSettings.autoLoad then
+                local preLoad = savedConfigs[sysSettings.lastConfig] or loadFromFile(sysSettings.lastConfig)
+                if preLoad then
+                    loadConfiguration(preLoad)
                 end
             end
-        end)
-        
-        return configTab
+        end
     end
     
-    spawn(function()
-        wait(0.2)
+    task.spawn(function()
+        task.wait(0.2)
         createAutoConfigTab()
     end)
 
