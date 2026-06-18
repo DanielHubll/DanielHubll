@@ -6,15 +6,16 @@ local ContextActionService = game:GetService("ContextActionService")
 local CoreGui = game:GetService("CoreGui")
 local TextService = game:GetService("TextService")
 
--- Garante que a pasta base exista para não dar erro de diretório
-pcall(function()
-    if not isfolder("VLG_Configs") then
-        makefolder("VLG_Configs")
-    end
-end)
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- SISTEMA DE ARQUIVO
+-- ═══════════════════════════════════════════════════════════════════════════════
 
--- Sistema de save usando writefile/readfile
+local function ensureFolder()
+    if not isfolder("VLG_Configs") then makefolder("VLG_Configs") end
+end
+
 local function saveToFile(data, filename)
+    ensureFolder()
     local success, err = pcall(function()
         writefile("VLG_Configs/" .. filename .. ".json", HttpService:JSONEncode(data))
     end)
@@ -29,23 +30,6 @@ local function loadFromFile(filename)
     return nil
 end
 
--- Gerenciador exclusivo das preferências do sistema (Auto Load e Última Config)
-local function saveSystemSettings(settings)
-    pcall(function()
-        writefile("VLG_Configs/_sys_metadata.json", HttpService:JSONEncode(settings))
-    end)
-end
-
-local function loadSystemSettings()
-    local success, data = pcall(function()
-        return HttpService:JSONDecode(readfile("VLG_Configs/_sys_metadata.json"))
-    end)
-    if success and type(data) == "table" then 
-        return data 
-    end
-    return {autoLoad = false, lastConfig = ""}
-end
-
 local function getConfigFiles()
     local success, files = pcall(function()
         return listfiles("VLG_Configs")
@@ -53,9 +37,10 @@ local function getConfigFiles()
     if success then
         local configs = {}
         for _, file in ipairs(files) do
-            if file:match("%.json$") and not file:match("_sys_metadata%.json$") then
+            if file:match("%.json$") then
                 local name = file:match("VLG_Configs[/\\](.+)%.json$")
-                if name then
+                -- Ignora o arquivo de metadados interno
+                if name and name ~= "_meta" then
                     table.insert(configs, name)
                 end
             end
@@ -65,20 +50,42 @@ local function getConfigFiles()
     return {}
 end
 
+-- Metadados: última config selecionada + estado Auto Load
+local META_FILE = "VLG_Configs/_meta.json"
+
+local function saveMeta(data)
+    ensureFolder()
+    pcall(function()
+        writefile(META_FILE, HttpService:JSONEncode(data))
+    end)
+end
+
+local function loadMeta()
+    local ok, data = pcall(function()
+        return HttpService:JSONDecode(readfile(META_FILE))
+    end)
+    if ok and type(data) == "table" then return data end
+    return { lastConfig = nil, autoLoad = false }
+end
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- BIBLIOTECA
+-- ═══════════════════════════════════════════════════════════════════════════════
+
 function UILibrary:CreateWindow(title)
     local publicMethods = {}
     local tabs = {}
     local currentTab = nil
 
-    local currentThemeColor = Color3.fromRGB(144, 0, 181)  
-    local themeElements = {}   
+    local currentThemeColor = Color3.fromRGB(144, 0, 181)
+    local themeElements = {}
     local openDropdownInfo = nil
     local activeToggles = {}
     local activeFloatingUIs = {}
     local configElements = {}
     local savedConfigs = {}
 
-    -- Carrega configs do arquivo ao iniciar
+    -- Carrega configs do disco ao iniciar
     local function loadAllConfigsFromDisk()
         local files = getConfigFiles()
         for _, name in ipairs(files) do
@@ -94,16 +101,17 @@ function UILibrary:CreateWindow(title)
         if not frame or not frame.Parent then return false end
         local absPos = frame.AbsolutePosition
         local absSize = frame.AbsoluteSize
-        return posX >= absPos.X and posX <= absPos.X + absSize.X and posY >= absPos.Y and posY <= absPos.Y + absSize.Y
+        return posX >= absPos.X and posX <= absPos.X + absSize.X
+            and posY >= absPos.Y and posY <= absPos.Y + absSize.Y
     end
 
     UserInputService.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
             if openDropdownInfo then
                 local mx, my = input.Position.X, input.Position.Y
-                local inMain = isInsideFrame(openDropdownInfo.Main, mx, my)
+                local inMain   = isInsideFrame(openDropdownInfo.Main, mx, my)
                 local inScroll = isInsideFrame(openDropdownInfo.Scroll, mx, my)
-                
                 if not inMain and not inScroll then
                     openDropdownInfo.Close()
                 end
@@ -111,486 +119,486 @@ function UILibrary:CreateWindow(title)
         end
     end)
 
-    local LMG2L = {}      
+    local LMG2L = {}
 
-    if CoreGui:FindFirstChild("Floating") then      
-        CoreGui.Floating:Destroy()      
-    end      
+    if CoreGui:FindFirstChild("Floating") then
+        CoreGui.Floating:Destroy()
+    end
 
-    LMG2L["Floating_1"] = Instance.new("ScreenGui")      
-    LMG2L["Floating_1"].Name = "Floating"      
-    LMG2L["Floating_1"].ZIndexBehavior = Enum.ZIndexBehavior.Sibling      
-    LMG2L["Floating_1"].ResetOnSpawn = false 
-    LMG2L["Floating_1"].IgnoreGuiInset = true     
-    LMG2L["Floating_1"].Parent = CoreGui      
+    LMG2L["Floating_1"] = Instance.new("ScreenGui")
+    LMG2L["Floating_1"].Name = "Floating"
+    LMG2L["Floating_1"].ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    LMG2L["Floating_1"].ResetOnSpawn = false
+    LMG2L["Floating_1"].IgnoreGuiInset = true
+    LMG2L["Floating_1"].Parent = CoreGui
 
-    LMG2L["Topo_2"] = Instance.new("Frame", LMG2L["Floating_1"])      
-    LMG2L["Topo_2"]["BorderSizePixel"] = 0      
-    LMG2L["Topo_2"]["BackgroundColor3"] = currentThemeColor      
-    LMG2L["Topo_2"]["Size"] = UDim2.new(0, 316, 0, 22)      
-    LMG2L["Topo_2"]["Position"] = UDim2.new(0, 260, 0, 46)      
-    LMG2L["Topo_2"]["Name"] = "Topo"      
+    LMG2L["Topo_2"] = Instance.new("Frame", LMG2L["Floating_1"])
+    LMG2L["Topo_2"]["BorderSizePixel"] = 0
+    LMG2L["Topo_2"]["BackgroundColor3"] = currentThemeColor
+    LMG2L["Topo_2"]["Size"] = UDim2.new(0, 316, 0, 22)
+    LMG2L["Topo_2"]["Position"] = UDim2.new(0, 260, 0, 46)
+    LMG2L["Topo_2"]["Name"] = "Topo"
 
-    LMG2L["TitleMenu_3"] = Instance.new("TextLabel", LMG2L["Topo_2"])      
-    LMG2L["TitleMenu_3"]["TextWrapped"] = true      
-    LMG2L["TitleMenu_3"]["BorderSizePixel"] = 0      
-    LMG2L["TitleMenu_3"]["TextSize"] = 11      
-    LMG2L["TitleMenu_3"]["TextXAlignment"] = Enum.TextXAlignment.Left      
-    LMG2L["TitleMenu_3"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)      
-    LMG2L["TitleMenu_3"]["FontFace"] = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)      
-    LMG2L["TitleMenu_3"]["TextColor3"] = Color3.fromRGB(255, 254, 254)      
-    LMG2L["TitleMenu_3"]["BackgroundTransparency"] = 1      
-    LMG2L["TitleMenu_3"]["Size"] = UDim2.new(0, 196, 0, 14)      
-    LMG2L["TitleMenu_3"]["Text"] = title or "VLG PAINEL"      
-    LMG2L["TitleMenu_3"]["Position"] = UDim2.new(0, 28, 0, 4)      
+    LMG2L["TitleMenu_3"] = Instance.new("TextLabel", LMG2L["Topo_2"])
+    LMG2L["TitleMenu_3"]["TextWrapped"] = true
+    LMG2L["TitleMenu_3"]["BorderSizePixel"] = 0
+    LMG2L["TitleMenu_3"]["TextSize"] = 11
+    LMG2L["TitleMenu_3"]["TextXAlignment"] = Enum.TextXAlignment.Left
+    LMG2L["TitleMenu_3"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255)
+    LMG2L["TitleMenu_3"]["FontFace"] = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+    LMG2L["TitleMenu_3"]["TextColor3"] = Color3.fromRGB(255, 254, 254)
+    LMG2L["TitleMenu_3"]["BackgroundTransparency"] = 1
+    LMG2L["TitleMenu_3"]["Size"] = UDim2.new(0, 196, 0, 14)
+    LMG2L["TitleMenu_3"]["Text"] = title or "VLG PAINEL"
+    LMG2L["TitleMenu_3"]["Position"] = UDim2.new(0, 28, 0, 4)
 
-    LMG2L["CloseMenu_4"] = Instance.new("TextButton", LMG2L["Topo_2"])      
-    LMG2L["CloseMenu_4"]["BorderSizePixel"] = 0      
-    LMG2L["CloseMenu_4"]["TextSize"] = 10      
-    LMG2L["CloseMenu_4"]["TextColor3"] = Color3.fromRGB(255, 255, 255)      
-    LMG2L["CloseMenu_4"]["BackgroundTransparency"] = 1      
-    LMG2L["CloseMenu_4"]["Size"] = UDim2.new(0, 14, 0, 14)      
-    LMG2L["CloseMenu_4"]["Text"] = "X"      
-    LMG2L["CloseMenu_4"]["Position"] = UDim2.new(0, 296, 0, 4)      
+    LMG2L["CloseMenu_4"] = Instance.new("TextButton", LMG2L["Topo_2"])
+    LMG2L["CloseMenu_4"]["BorderSizePixel"] = 0
+    LMG2L["CloseMenu_4"]["TextSize"] = 10
+    LMG2L["CloseMenu_4"]["TextColor3"] = Color3.fromRGB(255, 255, 255)
+    LMG2L["CloseMenu_4"]["BackgroundTransparency"] = 1
+    LMG2L["CloseMenu_4"]["Size"] = UDim2.new(0, 14, 0, 14)
+    LMG2L["CloseMenu_4"]["Text"] = "X"
+    LMG2L["CloseMenu_4"]["Position"] = UDim2.new(0, 296, 0, 4)
 
-    LMG2L["Main_5"] = Instance.new("Frame", LMG2L["Topo_2"])      
-    LMG2L["Main_5"]["BorderSizePixel"] = 0      
-    LMG2L["Main_5"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0)      
-    LMG2L["Main_5"]["Size"] = UDim2.new(0, 316, 0, 202)      
-    LMG2L["Main_5"]["Position"] = UDim2.new(0, 0, 0, 22)      
-    LMG2L["Main_5"]["Visible"] = false      
+    LMG2L["Main_5"] = Instance.new("Frame", LMG2L["Topo_2"])
+    LMG2L["Main_5"]["BorderSizePixel"] = 0
+    LMG2L["Main_5"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0)
+    LMG2L["Main_5"]["Size"] = UDim2.new(0, 316, 0, 202)
+    LMG2L["Main_5"]["Position"] = UDim2.new(0, 0, 0, 22)
+    LMG2L["Main_5"]["Visible"] = false
 
-    LMG2L["Effect_6"] = Instance.new("Frame", LMG2L["Main_5"])      
-    LMG2L["Effect_6"]["BorderSizePixel"] = 0      
-    LMG2L["Effect_6"]["BackgroundColor3"] = currentThemeColor      
-    LMG2L["Effect_6"]["Size"] = UDim2.new(0, 252, 0, 1)      
-    LMG2L["Effect_6"]["Position"] = UDim2.new(0, 54, 0, 10)      
+    LMG2L["Effect_6"] = Instance.new("Frame", LMG2L["Main_5"])
+    LMG2L["Effect_6"]["BorderSizePixel"] = 0
+    LMG2L["Effect_6"]["BackgroundColor3"] = currentThemeColor
+    LMG2L["Effect_6"]["Size"] = UDim2.new(0, 252, 0, 1)
+    LMG2L["Effect_6"]["Position"] = UDim2.new(0, 54, 0, 10)
 
-    LMG2L["Main_7"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])      
-    LMG2L["Main_7"]["BorderSizePixel"] = 0      
-    LMG2L["Main_7"]["Size"] = UDim2.new(0, 264, 0, 186)      
-    LMG2L["Main_7"]["Position"] = UDim2.new(0, 52, 0, 12)      
-    LMG2L["Main_7"]["ScrollBarThickness"] = 0      
-    LMG2L["Main_7"]["BackgroundTransparency"] = 1      
-    LMG2L["Main_7"]["ScrollingDirection"] = Enum.ScrollingDirection.Y      
+    LMG2L["Main_7"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])
+    LMG2L["Main_7"]["BorderSizePixel"] = 0
+    LMG2L["Main_7"]["Size"] = UDim2.new(0, 264, 0, 186)
+    LMG2L["Main_7"]["Position"] = UDim2.new(0, 52, 0, 12)
+    LMG2L["Main_7"]["ScrollBarThickness"] = 0
+    LMG2L["Main_7"]["BackgroundTransparency"] = 1
+    LMG2L["Main_7"]["ScrollingDirection"] = Enum.ScrollingDirection.Y
     LMG2L["Main_7"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
 
-    LMG2L["Tabs_2a"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])      
-    LMG2L["Tabs_2a"]["BorderSizePixel"] = 0      
-    LMG2L["Tabs_2a"]["Size"] = UDim2.new(0, 52, 0, 194)      
-    LMG2L["Tabs_2a"]["Position"] = UDim2.new(0, 0, 0, 4)      
-    LMG2L["Tabs_2a"]["BackgroundTransparency"] = 1      
-    LMG2L["Tabs_2a"]["ScrollBarThickness"] = 0      
-    LMG2L["Tabs_2a"]["ScrollingDirection"] = Enum.ScrollingDirection.Y      
+    LMG2L["Tabs_2a"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])
+    LMG2L["Tabs_2a"]["BorderSizePixel"] = 0
+    LMG2L["Tabs_2a"]["Size"] = UDim2.new(0, 52, 0, 194)
+    LMG2L["Tabs_2a"]["Position"] = UDim2.new(0, 0, 0, 4)
+    LMG2L["Tabs_2a"]["BackgroundTransparency"] = 1
+    LMG2L["Tabs_2a"]["ScrollBarThickness"] = 0
+    LMG2L["Tabs_2a"]["ScrollingDirection"] = Enum.ScrollingDirection.Y
     LMG2L["Tabs_2a"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
 
-    LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])      
-    LMG2L["OpenName_2d"]["BorderSizePixel"] = 0      
-    LMG2L["OpenName_2d"]["BackgroundTransparency"] = 1      
-    LMG2L["OpenName_2d"]["Image"] = "rbxassetid://8539638324"      
-    LMG2L["OpenName_2d"]["Size"] = UDim2.new(0, 14, 0, 14)      
-    LMG2L["OpenName_2d"]["Rotation"] = 180      
-    LMG2L["OpenName_2d"]["Position"] = UDim2.new(0, 4, 0, 4)      
+    LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])
+    LMG2L["OpenName_2d"]["BorderSizePixel"] = 0
+    LMG2L["OpenName_2d"]["BackgroundTransparency"] = 1
+    LMG2L["OpenName_2d"]["Image"] = "rbxassetid://8539638324"
+    LMG2L["OpenName_2d"]["Size"] = UDim2.new(0, 14, 0, 14)
+    LMG2L["OpenName_2d"]["Rotation"] = 180
+    LMG2L["OpenName_2d"]["Position"] = UDim2.new(0, 4, 0, 4)
 
-    -- PALETA DE CORES FLUTUANTE       
-    local activeColorTarget = nil      
-    local activeColorCallback = nil      
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- PALETA DE CORES FLUTUANTE
+    -- ═══════════════════════════════════════════════════════════════════════════
 
-    local Paleta_d = Instance.new("Frame", LMG2L["Floating_1"])      
-    Paleta_d.BorderSizePixel = 0      
-    Paleta_d.BackgroundColor3 = Color3.fromRGB(0, 0, 0)      
-    Paleta_d.Size = UDim2.new(0, 180, 0, 185)      
-    Paleta_d.Position = UDim2.new(0, 600, 0, 100)      
-    Paleta_d.Visible = false      
-    Paleta_d.ZIndex = 100      
+    local activeColorTarget = nil
+    local activeColorCallback = nil
 
-    local PaletaTop = Instance.new("Frame", Paleta_d)      
-    PaletaTop.BorderSizePixel = 0      
-    PaletaTop.BackgroundColor3 = currentThemeColor      
-    PaletaTop.Size = UDim2.new(1, 0, 0, 16)      
-    PaletaTop.ZIndex = 101          
+    local Paleta_d = Instance.new("Frame", LMG2L["Floating_1"])
+    Paleta_d.BorderSizePixel = 0
+    Paleta_d.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    Paleta_d.Size = UDim2.new(0, 180, 0, 185)
+    Paleta_d.Position = UDim2.new(0, 600, 0, 100)
+    Paleta_d.Visible = false
+    Paleta_d.ZIndex = 100
 
-    local PaletaTitle = Instance.new("TextLabel", PaletaTop)      
-    PaletaTitle.BackgroundTransparency = 1      
-    PaletaTitle.Size = UDim2.new(1, -20, 1, 0)      
-    PaletaTitle.Position = UDim2.new(0, 4, 0, 0)      
-    PaletaTitle.Text = "Seletor de Cor"      
-    PaletaTitle.TextColor3 = Color3.fromRGB(255, 255, 255)      
-    PaletaTitle.TextSize = 10      
-    PaletaTitle.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)      
-    PaletaTitle.TextXAlignment = Enum.TextXAlignment.Left      
-    PaletaTitle.ZIndex = 102      
+    local PaletaTop = Instance.new("Frame", Paleta_d)
+    PaletaTop.BorderSizePixel = 0
+    PaletaTop.BackgroundColor3 = currentThemeColor
+    PaletaTop.Size = UDim2.new(1, 0, 0, 16)
+    PaletaTop.ZIndex = 101
 
-    local PaletaClose = Instance.new("TextButton", PaletaTop)      
-    PaletaClose.BackgroundTransparency = 1      
-    PaletaClose.Size = UDim2.new(0, 16, 0, 16)      
-    PaletaClose.Position = UDim2.new(1, -16, 0, 0)      
-    PaletaClose.Text = "X"      
-    PaletaClose.TextColor3 = Color3.fromRGB(255, 255, 255)      
-    PaletaClose.TextSize = 10      
-    PaletaClose.ZIndex = 102      
+    local PaletaTitle = Instance.new("TextLabel", PaletaTop)
+    PaletaTitle.BackgroundTransparency = 1
+    PaletaTitle.Size = UDim2.new(1, -20, 1, 0)
+    PaletaTitle.Position = UDim2.new(0, 4, 0, 0)
+    PaletaTitle.Text = "Seletor de Cor"
+    PaletaTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    PaletaTitle.TextSize = 10
+    PaletaTitle.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+    PaletaTitle.TextXAlignment = Enum.TextXAlignment.Left
+    PaletaTitle.ZIndex = 102
 
-    PaletaClose.MouseButton1Click:Connect(function()      
-        Paleta_d.Visible = false      
-    end)      
+    local PaletaClose = Instance.new("TextButton", PaletaTop)
+    PaletaClose.BackgroundTransparency = 1
+    PaletaClose.Size = UDim2.new(0, 16, 0, 16)
+    PaletaClose.Position = UDim2.new(1, -16, 0, 0)
+    PaletaClose.Text = "X"
+    PaletaClose.TextColor3 = Color3.fromRGB(255, 255, 255)
+    PaletaClose.TextSize = 10
+    PaletaClose.ZIndex = 102
 
-    local SVMap = Instance.new("TextButton", Paleta_d)      
-    SVMap.BackgroundColor3 = Color3.fromRGB(255, 255, 255)      
-    SVMap.BorderSizePixel = 0      
-    SVMap.Position = UDim2.new(0, 6, 0, 22)      
-    SVMap.Size = UDim2.new(0, 140, 0, 100)      
-    SVMap.Text = ""      
-    SVMap.AutoButtonColor = false      
-    SVMap.ZIndex = 101      
+    PaletaClose.MouseButton1Click:Connect(function()
+        Paleta_d.Visible = false
+    end)
 
-    local SVLayer1 = Instance.new("Frame", SVMap)      
-    SVLayer1.Size = UDim2.new(1, 0, 1, 0)      
-    SVLayer1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)      
-    SVLayer1.BackgroundTransparency = 0      
-    SVLayer1.BorderSizePixel = 0      
-    SVLayer1.ZIndex = 102      
-    local UIGradient1 = Instance.new("UIGradient", SVLayer1)      
-    UIGradient1.Color = ColorSequence.new({      
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),      
-        ColorSequenceKeypoint.new(0.167, Color3.fromRGB(255, 255, 0)),      
-        ColorSequenceKeypoint.new(0.333, Color3.fromRGB(0, 255, 0)),      
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),      
-        ColorSequenceKeypoint.new(0.667, Color3.fromRGB(0, 0, 255)),      
-        ColorSequenceKeypoint.new(0.833, Color3.fromRGB(255, 0, 255)),      
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))      
-    })      
-    UIGradient1.Rotation = 0      
+    local SVMap = Instance.new("TextButton", Paleta_d)
+    SVMap.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    SVMap.BorderSizePixel = 0
+    SVMap.Position = UDim2.new(0, 6, 0, 22)
+    SVMap.Size = UDim2.new(0, 140, 0, 100)
+    SVMap.Text = ""
+    SVMap.AutoButtonColor = false
+    SVMap.ZIndex = 101
 
-    local SVLayer2 = Instance.new("Frame", SVMap)      
-    SVLayer2.Size = UDim2.new(1, 0, 1, 0)      
-    SVLayer2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)      
-    SVLayer2.BackgroundTransparency = 0      
-    SVLayer2.BorderSizePixel = 0      
-    SVLayer2.ZIndex = 103      
-    local UIGradient2 = Instance.new("UIGradient", SVLayer2)      
-    UIGradient2.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 255, 255))      
-    UIGradient2.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1)})      
-    UIGradient2.Rotation = 90      
+    local SVLayer1 = Instance.new("Frame", SVMap)
+    SVLayer1.Size = UDim2.new(1, 0, 1, 0)
+    SVLayer1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    SVLayer1.BackgroundTransparency = 0
+    SVLayer1.BorderSizePixel = 0
+    SVLayer1.ZIndex = 102
+    local UIGradient1 = Instance.new("UIGradient", SVLayer1)
+    UIGradient1.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+        ColorSequenceKeypoint.new(0.167, Color3.fromRGB(255, 255, 0)),
+        ColorSequenceKeypoint.new(0.333, Color3.fromRGB(0, 255, 0)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
+        ColorSequenceKeypoint.new(0.667, Color3.fromRGB(0, 0, 255)),
+        ColorSequenceKeypoint.new(0.833, Color3.fromRGB(255, 0, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
+    })
 
-    local SVCursor = Instance.new("Frame", SVMap)      
-    SVCursor.Size = UDim2.new(0, 4, 0, 4)      
-    SVCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)      
-    SVCursor.ZIndex = 104      
-    Instance.new("UICorner", SVCursor).CornerRadius = UDim.new(1, 0)      
-    Instance.new("UIStroke", SVCursor).Thickness = 0.5  
+    local SVLayer2 = Instance.new("Frame", SVMap)
+    SVLayer2.Size = UDim2.new(1, 0, 1, 0)
+    SVLayer2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    SVLayer2.BackgroundTransparency = 0
+    SVLayer2.BorderSizePixel = 0
+    SVLayer2.ZIndex = 103
+    local UIGradient2 = Instance.new("UIGradient", SVLayer2)
+    UIGradient2.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 255, 255))
+    UIGradient2.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1)})
+    UIGradient2.Rotation = 90
 
-    local HueMap = Instance.new("TextButton", Paleta_d)      
-    HueMap.BackgroundColor3 = Color3.fromRGB(255, 255, 255)      
-    HueMap.BorderSizePixel = 0      
-    HueMap.Position = UDim2.new(0, 152, 0, 22)      
-    HueMap.Size = UDim2.new(0, 20, 0, 100)      
-    HueMap.Text = ""      
-    HueMap.AutoButtonColor = false      
-    HueMap.ZIndex = 101      
+    local SVCursor = Instance.new("Frame", SVMap)
+    SVCursor.Size = UDim2.new(0, 4, 0, 4)
+    SVCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    SVCursor.ZIndex = 104
+    Instance.new("UICorner", SVCursor).CornerRadius = UDim.new(1, 0)
+    Instance.new("UIStroke", SVCursor).Thickness = 0.5
 
-    local HueGradient = Instance.new("UIGradient", HueMap)      
-    HueGradient.Rotation = 90      
-    HueGradient.Color = ColorSequence.new(Color3.fromRGB(255, 0, 0), Color3.fromRGB(0, 0, 0))      
+    local HueMap = Instance.new("TextButton", Paleta_d)
+    HueMap.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    HueMap.BorderSizePixel = 0
+    HueMap.Position = UDim2.new(0, 152, 0, 22)
+    HueMap.Size = UDim2.new(0, 20, 0, 100)
+    HueMap.Text = ""
+    HueMap.AutoButtonColor = false
+    HueMap.ZIndex = 101
 
-    local HueCursor = Instance.new("Frame", HueMap)      
-    HueCursor.Size = UDim2.new(1, 0, 0, 2)      
-    HueCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)       
-    HueCursor.ZIndex = 102      
+    local HueGradient = Instance.new("UIGradient", HueMap)
+    HueGradient.Rotation = 90
+    HueGradient.Color = ColorSequence.new(Color3.fromRGB(255, 0, 0), Color3.fromRGB(0, 0, 0))
 
-    local HexLabel = Instance.new("TextLabel", Paleta_d)    
-    HexLabel.Position = UDim2.new(0, 6, 0, 128)    
-    HexLabel.Size = UDim2.new(0, 30, 0, 20)    
-    HexLabel.BackgroundTransparency = 1    
-    HexLabel.Text = "HEX:"    
-    HexLabel.TextColor3 = Color3.fromRGB(255, 255, 255)    
-    HexLabel.TextSize = 10    
-    HexLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)    
-    HexLabel.ZIndex = 101    
+    local HueCursor = Instance.new("Frame", HueMap)
+    HueCursor.Size = UDim2.new(1, 0, 0, 2)
+    HueCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    HueCursor.ZIndex = 102
 
-    local HexInput = Instance.new("TextBox", Paleta_d)    
-    HexInput.Position = UDim2.new(0, 38, 0, 128)    
-    HexInput.Size = UDim2.new(0, 134, 0, 20)    
-    HexInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)    
-    HexInput.BorderSizePixel = 0    
-    HexInput.Text = "#FFFFFF"    
-    HexInput.TextColor3 = Color3.fromRGB(255, 255, 255)    
-    HexInput.TextSize = 10    
-    HexInput.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold)    
-    HexInput.ClearTextOnFocus = false    
-    HexInput.ZIndex = 101    
-    Instance.new("UICorner", HexInput).CornerRadius = UDim.new(0, 4)    
+    local HexLabel = Instance.new("TextLabel", Paleta_d)
+    HexLabel.Position = UDim2.new(0, 6, 0, 128)
+    HexLabel.Size = UDim2.new(0, 30, 0, 20)
+    HexLabel.BackgroundTransparency = 1
+    HexLabel.Text = "HEX:"
+    HexLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    HexLabel.TextSize = 10
+    HexLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+    HexLabel.ZIndex = 101
 
-    local ColorPreview = Instance.new("Frame", Paleta_d)      
-    ColorPreview.Position = UDim2.new(0, 6, 0, 153)      
-    ColorPreview.Size = UDim2.new(0, 24, 0, 24)      
-    ColorPreview.BackgroundColor3 = Color3.fromRGB(255,255,255)      
-    ColorPreview.ZIndex = 101      
-    Instance.new("UICorner", ColorPreview).CornerRadius = UDim.new(0, 4)      
+    local HexInput = Instance.new("TextBox", Paleta_d)
+    HexInput.Position = UDim2.new(0, 38, 0, 128)
+    HexInput.Size = UDim2.new(0, 134, 0, 20)
+    HexInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    HexInput.BorderSizePixel = 0
+    HexInput.Text = "#FFFFFF"
+    HexInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    HexInput.TextSize = 10
+    HexInput.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold)
+    HexInput.ClearTextOnFocus = false
+    HexInput.ZIndex = 101
+    Instance.new("UICorner", HexInput).CornerRadius = UDim.new(0, 4)
 
-    local ConfirmBtn = Instance.new("TextButton", Paleta_d)      
-    ConfirmBtn.Position = UDim2.new(0, 36, 0, 153)      
-    ConfirmBtn.Size = UDim2.new(0, 136, 0, 24)      
-    ConfirmBtn.BackgroundColor3 = currentThemeColor      
-    ConfirmBtn.Text = "Confirmar Cor"      
-    ConfirmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)      
-    ConfirmBtn.TextSize = 11      
-    ConfirmBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)      
-    ConfirmBtn.ZIndex = 101      
-    Instance.new("UICorner", ConfirmBtn).CornerRadius = UDim.new(0, 4)         
+    local ColorPreview = Instance.new("Frame", Paleta_d)
+    ColorPreview.Position = UDim2.new(0, 6, 0, 153)
+    ColorPreview.Size = UDim2.new(0, 24, 0, 24)
+    ColorPreview.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    ColorPreview.ZIndex = 101
+    Instance.new("UICorner", ColorPreview).CornerRadius = UDim.new(0, 4)
 
-    local h, s, v = 0, 1, 1      
-    local colorDragging = false      
-    local hueDragging = false      
-    local currentDragInput = nil  
+    local ConfirmBtn = Instance.new("TextButton", Paleta_d)
+    ConfirmBtn.Position = UDim2.new(0, 36, 0, 153)
+    ConfirmBtn.Size = UDim2.new(0, 136, 0, 24)
+    ConfirmBtn.BackgroundColor3 = currentThemeColor
+    ConfirmBtn.Text = "Confirmar Cor"
+    ConfirmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ConfirmBtn.TextSize = 11
+    ConfirmBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+    ConfirmBtn.ZIndex = 101
+    Instance.new("UICorner", ConfirmBtn).CornerRadius = UDim.new(0, 4)
 
-    local function updateColorInternal()      
-        local realColor = Color3.fromHSV(h, s, v)      
-        local pureColor = Color3.fromHSV(h, s, 1)      
-        HueGradient.Color = ColorSequence.new(pureColor, Color3.fromRGB(0, 0, 0))      
-        ColorPreview.BackgroundColor3 = realColor      
-        HexInput.Text = "#" .. realColor:ToHex()    
-    end      
+    local h, s, v = 0, 1, 1
+    local colorDragging = false
+    local hueDragging = false
+    local currentDragInput = nil
 
-    HexInput.FocusLost:Connect(function()    
-        local success, newColor = pcall(function()    
-            return Color3.fromHex(HexInput.Text)    
-        end)    
-        if success and newColor then    
-            h, s, v = newColor:ToHSV()    
-            SVCursor.Position = UDim2.new(h, -2, s, -2)      
-            HueCursor.Position = UDim2.new(0, 0, 1-v, -1)    
-            updateColorInternal()    
-        else    
-            HexInput.Text = "#" .. Color3.fromHSV(h, s, v):ToHex()    
-        end    
-    end)    
+    local function updateColorInternal()
+        local realColor = Color3.fromHSV(h, s, v)
+        local pureColor = Color3.fromHSV(h, s, 1)
+        HueGradient.Color = ColorSequence.new(pureColor, Color3.fromRGB(0, 0, 0))
+        ColorPreview.BackgroundColor3 = realColor
+        HexInput.Text = "#" .. realColor:ToHex()
+    end
 
-    local function updateSV(input)      
-        local relX = math.clamp((input.Position.X - SVMap.AbsolutePosition.X) / SVMap.AbsoluteSize.X, 0, 1)      
-        local relY = math.clamp((input.Position.Y - SVMap.AbsolutePosition.Y) / SVMap.AbsoluteSize.Y, 0, 1)      
-        h = relX; s = relY      
-        SVCursor.Position = UDim2.new(relX, -2, relY, -2)      
-        updateColorInternal()      
-    end      
+    HexInput.FocusLost:Connect(function()
+        local success, newColor = pcall(function()
+            return Color3.fromHex(HexInput.Text)
+        end)
+        if success and newColor then
+            h, s, v = newColor:ToHSV()
+            SVCursor.Position = UDim2.new(h, -2, s, -2)
+            HueCursor.Position = UDim2.new(0, 0, 1 - v, -1)
+            updateColorInternal()
+        else
+            HexInput.Text = "#" .. Color3.fromHSV(h, s, v):ToHex()
+        end
+    end)
 
-    local function updateHue(input)      
-        local relY = math.clamp((input.Position.Y - HueMap.AbsolutePosition.Y) / HueMap.AbsoluteSize.Y, 0, 1)      
-        v = 1 - relY       
-        HueCursor.Position = UDim2.new(0, 0, relY, -1)      
-        updateColorInternal()      
-    end      
+    local function updateSV(input)
+        local relX = math.clamp((input.Position.X - SVMap.AbsolutePosition.X) / SVMap.AbsoluteSize.X, 0, 1)
+        local relY = math.clamp((input.Position.Y - SVMap.AbsolutePosition.Y) / SVMap.AbsoluteSize.Y, 0, 1)
+        h = relX; s = relY
+        SVCursor.Position = UDim2.new(relX, -2, relY, -2)
+        updateColorInternal()
+    end
 
-    SVMap.InputBegan:Connect(function(input)      
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then      
-            if not hueDragging then  
-                colorDragging = true  
-                currentDragInput = input  
-                updateSV(input)  
-            end  
-        end      
-    end)      
+    local function updateHue(input)
+        local relY = math.clamp((input.Position.Y - HueMap.AbsolutePosition.Y) / HueMap.AbsoluteSize.Y, 0, 1)
+        v = 1 - relY
+        HueCursor.Position = UDim2.new(0, 0, relY, -1)
+        updateColorInternal()
+    end
 
-    HueMap.InputBegan:Connect(function(input)      
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then      
-            if not colorDragging then   
-                hueDragging = true  
-                currentDragInput = input  
-                updateHue(input)  
-            end  
-        end      
-    end)      
+    SVMap.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            if not hueDragging then
+                colorDragging = true
+                currentDragInput = input
+                updateSV(input)
+            end
+        end
+    end)
 
-    UserInputService.InputEnded:Connect(function(input)      
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input == currentDragInput then      
-            colorDragging = false  
-            hueDragging = false  
-            currentDragInput = nil  
-        end      
-    end)      
+    HueMap.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            if not colorDragging then
+                hueDragging = true
+                currentDragInput = input
+                updateHue(input)
+            end
+        end
+    end)
 
-    UserInputService.InputChanged:Connect(function(input)      
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input == currentDragInput then      
-            if colorDragging then updateSV(input) end      
-            if hueDragging then updateHue(input) end      
-        end      
-    end)      
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input == currentDragInput then
+            colorDragging = false
+            hueDragging = false
+            currentDragInput = nil
+        end
+    end)
 
-    ConfirmBtn.MouseButton1Click:Connect(function()     
-        local finalColor = Color3.fromHSV(h, s, v)    
-        if activeColorTarget then activeColorTarget.BackgroundColor3 = finalColor end      
-        if activeColorCallback then activeColorCallback(finalColor) end    
-        Paleta_d.Visible = false     
-    end)      
-      
-    local function OpenColorPicker(targetFrame, defaultColor, callback)      
-        activeColorTarget = targetFrame; activeColorCallback = callback      
-        local dh, ds, dv = defaultColor:ToHSV()      
-        h, s, v = dh, ds, dv      
-        local pureColor = Color3.fromHSV(h, s, 1)      
-        HueGradient.Color = ColorSequence.new(pureColor, Color3.fromRGB(0, 0, 0))      
-        ColorPreview.BackgroundColor3 = defaultColor      
-        HexInput.Text = "#" .. defaultColor:ToHex()    
-        SVCursor.Position = UDim2.new(h, -2, s, -2)      
-        HueCursor.Position = UDim2.new(0, 0, 1-v, -1)       
-        Paleta_d.Visible = true      
-    end      
+    UserInputService.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input == currentDragInput then
+            if colorDragging then updateSV(input) end
+            if hueDragging then updateHue(input) end
+        end
+    end)
 
-    local function applyTheme()  
-        local th, ts, tv = currentThemeColor:ToHSV()  
-        local darkerTheme = Color3.fromHSV(th, ts, math.clamp(tv - 0.2, 0, 1))  
+    ConfirmBtn.MouseButton1Click:Connect(function()
+        local finalColor = Color3.fromHSV(h, s, v)
+        if activeColorTarget then activeColorTarget.BackgroundColor3 = finalColor end
+        if activeColorCallback then activeColorCallback(finalColor) end
+        Paleta_d.Visible = false
+    end)
 
-        LMG2L["Topo_2"].BackgroundColor3 = currentThemeColor  
-        LMG2L["Effect_6"].BackgroundColor3 = currentThemeColor  
-        PaletaTop.BackgroundColor3 = currentThemeColor  
-        ConfirmBtn.BackgroundColor3 = currentThemeColor  
+    local function OpenColorPicker(targetFrame, defaultColor, callback)
+        activeColorTarget = targetFrame; activeColorCallback = callback
+        local dh, ds, dv = defaultColor:ToHSV()
+        h, s, v = dh, ds, dv
+        local pureColor = Color3.fromHSV(h, s, 1)
+        HueGradient.Color = ColorSequence.new(pureColor, Color3.fromRGB(0, 0, 0))
+        ColorPreview.BackgroundColor3 = defaultColor
+        HexInput.Text = "#" .. defaultColor:ToHex()
+        SVCursor.Position = UDim2.new(h, -2, s, -2)
+        HueCursor.Position = UDim2.new(0, 0, 1 - v, -1)
+        Paleta_d.Visible = true
+    end
 
-        for _, tab in ipairs(tabs) do  
-            if tab == currentTab then  
-                tab.button.BackgroundColor3 = darkerTheme  
-            else  
-                tab.button.BackgroundColor3 = currentThemeColor  
-            end  
-        end  
+    local function applyTheme()
+        local th, ts, tv = currentThemeColor:ToHSV()
+        local darkerTheme = Color3.fromHSV(th, ts, math.clamp(tv - 0.2, 0, 1))
 
-        for _, element in ipairs(themeElements) do  
-            if element.type == "Toggle" then  
-                element.instance.BackgroundColor3 = element.getState() and currentThemeColor or Color3.fromRGB(37, 37, 37)  
-            elseif element.type == "FloatingTopo" then  
-                element.instance.BackgroundColor3 = currentThemeColor  
-            elseif element.type == "ShowButton" then  
-                element.instance.BackgroundColor3 = element.getState() and currentThemeColor or Color3.fromRGB(45, 45, 45)  
-            elseif element.type == "Slider" then  
-                element.instance.BackgroundColor3 = currentThemeColor  
-            elseif element.type == "Button" then  
-                element.instance.BackgroundColor3 = currentThemeColor  
-            elseif element.type == "DropdownIcon" then  
-                element.instance.BackgroundColor3 = currentThemeColor  
-            elseif element.type == "RadioButton" then  
-                if element.getState() then  
-                    element.instance.BackgroundColor3 = currentThemeColor  
-                else  
-                    element.instance.BackgroundColor3 = Color3.fromRGB(53, 53, 53)  
-                end  
-            elseif element.type == "Separator" then  
-                element.instance.BackgroundColor3 = currentThemeColor  
+        LMG2L["Topo_2"].BackgroundColor3 = currentThemeColor
+        LMG2L["Effect_6"].BackgroundColor3 = currentThemeColor
+        PaletaTop.BackgroundColor3 = currentThemeColor
+        ConfirmBtn.BackgroundColor3 = currentThemeColor
+
+        for _, tab in ipairs(tabs) do
+            if tab == currentTab then
+                tab.button.BackgroundColor3 = darkerTheme
+            else
+                tab.button.BackgroundColor3 = currentThemeColor
+            end
+        end
+
+        for _, element in ipairs(themeElements) do
+            if element.type == "Toggle" then
+                element.instance.BackgroundColor3 = element.getState() and currentThemeColor or Color3.fromRGB(37, 37, 37)
+            elseif element.type == "FloatingTopo" then
+                element.instance.BackgroundColor3 = currentThemeColor
+            elseif element.type == "ShowButton" then
+                element.instance.BackgroundColor3 = element.getState() and currentThemeColor or Color3.fromRGB(45, 45, 45)
+            elseif element.type == "Slider" then
+                element.instance.BackgroundColor3 = currentThemeColor
+            elseif element.type == "Button" then
+                element.instance.BackgroundColor3 = currentThemeColor
+            elseif element.type == "DropdownIcon" then
+                element.instance.BackgroundColor3 = currentThemeColor
+            elseif element.type == "RadioButton" then
+                element.instance.BackgroundColor3 = element.getState() and currentThemeColor or Color3.fromRGB(53, 53, 53)
+            elseif element.type == "Separator" then
+                element.instance.BackgroundColor3 = currentThemeColor
             elseif element.type == "SectionLine" then
                 element.instance.BackgroundColor3 = currentThemeColor
-            end  
-        end  
-    end  
+            end
+        end
+    end
 
-    local function MakeDraggable(frameToDrag, dragArea)      
-        local dragging = false      
-        local dragStart, startPos      
-        dragArea.InputBegan:Connect(function(input)      
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then      
-                dragging = true; dragStart = input.Position; startPos = frameToDrag.Position      
-            end      
-        end)      
-        UserInputService.InputChanged:Connect(function(input)      
-            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then      
-                local delta = input.Position - dragStart      
-                frameToDrag.Position = UDim2.new(0, startPos.X.Offset + delta.X, 0, startPos.Y.Offset + delta.Y)      
-            end      
-        end)      
-        UserInputService.InputEnded:Connect(function(input)      
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then      
-                dragging = false      
-            end      
-        end)      
-    end      
+    local function MakeDraggable(frameToDrag, dragArea)
+        local dragging = false
+        local dragStart, startPos
+        dragArea.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true; dragStart = input.Position; startPos = frameToDrag.Position
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch) then
+                local delta = input.Position - dragStart
+                frameToDrag.Position = UDim2.new(0, startPos.X.Offset + delta.X, 0, startPos.Y.Offset + delta.Y)
+            end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = false
+            end
+        end)
+    end
 
-    MakeDraggable(LMG2L["Topo_2"], LMG2L["Topo_2"])      
-    MakeDraggable(Paleta_d, PaletaTop)      
+    MakeDraggable(LMG2L["Topo_2"], LMG2L["Topo_2"])
+    MakeDraggable(Paleta_d, PaletaTop)
 
-    LMG2L["CloseMenu_4"].MouseButton1Click:Connect(function()      
+    LMG2L["CloseMenu_4"].MouseButton1Click:Connect(function()
         LMG2L["Topo_2"].Visible = false
-        Paleta_d.Visible = false      
-        
+        Paleta_d.Visible = false
         for _, floatingToggle in pairs(activeFloatingUIs) do
-            if floatingToggle.hide then
-                floatingToggle.hide()
-            end
+            if floatingToggle.hide then floatingToggle.hide() end
         end
-        
         for _, toggleData in pairs(activeToggles) do
-            if toggleData.getState() == true then
-                toggleData.setState(false)
-            end
+            if toggleData.getState() == true then toggleData.setState(false) end
         end
-    end)      
+    end)
 
-    LMG2L["OpenName_2d"].MouseButton1Click:Connect(function()      
-        LMG2L["Main_5"].Visible = not LMG2L["Main_5"].Visible      
-        LMG2L["OpenName_2d"].Rotation = LMG2L["Main_5"].Visible and 0 or 180      
-    end)      
+    LMG2L["OpenName_2d"].MouseButton1Click:Connect(function()
+        LMG2L["Main_5"].Visible = not LMG2L["Main_5"].Visible
+        LMG2L["OpenName_2d"].Rotation = LMG2L["Main_5"].Visible and 0 or 180
+    end)
 
-    local function updateScrollability(container, totalHeight)      
-        local containerHeight = 186      
-        if totalHeight > containerHeight then        
-            container.CanvasSize = UDim2.new(0, 0, 0, totalHeight)        
-        else        
-            container.CanvasSize = UDim2.new(0, 0, 0, 0)        
-        end      
-    end      
+    local function updateScrollability(container, totalHeight)
+        local containerHeight = 186
+        if totalHeight > containerHeight then
+            container.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
+        else
+            container.CanvasSize = UDim2.new(0, 0, 0, 0)
+        end
+    end
 
-    function publicMethods:AddTab(tabName, iconId)      
-        local tabIndex = #tabs + 1      
-        local tabData = { name = tabName, elements = {}, container = nil, button = nil, totalHeight = 0 }      
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- ADD TAB
+    -- ═══════════════════════════════════════════════════════════════════════════
 
-        local TabButton = Instance.new("ImageButton", LMG2L["Tabs_2a"])          
-        TabButton["BorderSizePixel"] = 0          
-        TabButton["BackgroundColor3"] = currentThemeColor        
-        TabButton["Size"] = UDim2.new(0, 40, 0, 40)          
-        TabButton["Position"] = UDim2.new(0, 6, 0, 4 + ((tabIndex - 1) * 48))      
-        TabButton["Image"] = iconId or "rbxassetid://10709852168"          
-        Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 5)          
-                  
-        local ElementsContainer = Instance.new("Frame", LMG2L["Main_7"])          
-        ElementsContainer["BackgroundTransparency"] = 1          
-        ElementsContainer["Size"] = UDim2.new(1, 0, 1, 0)          
-        ElementsContainer["Visible"] = false          
-                  
-        tabData.container = ElementsContainer          
-        tabData.button = TabButton          
+    function publicMethods:AddTab(tabName, iconId)
+        local tabIndex = #tabs + 1
+        local tabData = { name = tabName, elements = {}, container = nil, button = nil, totalHeight = 0 }
 
-        local function updateLayout()        
-            local y = 8        
-            for _, element in ipairs(tabData.elements) do        
-                if element.visible then        
-                    local positionX = element.isSub and 15 or 6     
-                    element.frame.Position = UDim2.new(0, positionX, 0, y)        
-                    y = y + element.height        
-                end        
-            end        
-            tabData.totalHeight = y + 10    
-            updateScrollability(LMG2L["Main_7"], tabData.totalHeight)        
-        end        
-                  
-        local function switchToTab()          
-            currentTab = tabData   
-            for _, tab in ipairs(tabs) do          
-                tab.container.Visible = false          
-            end          
-            ElementsContainer.Visible = true          
-            applyTheme()  
-            updateScrollability(LMG2L["Main_7"], tabData.totalHeight)        
-        end          
-                  
-        TabButton.MouseButton1Click:Connect(switchToTab)          
-        table.insert(tabs, tabData)          
-                  
-        if tabIndex == 1 then switchToTab() end        
-              
-        local tabsHeight = tabIndex * 48 + 8      
-        if tabsHeight > 194 then LMG2L["Tabs_2a"].CanvasSize = UDim2.new(0, 0, 0, tabsHeight) end        
-                  
-        local tabMethods = {}          
+        local TabButton = Instance.new("ImageButton", LMG2L["Tabs_2a"])
+        TabButton["BorderSizePixel"] = 0
+        TabButton["BackgroundColor3"] = currentThemeColor
+        TabButton["Size"] = UDim2.new(0, 40, 0, 40)
+        TabButton["Position"] = UDim2.new(0, 6, 0, 4 + ((tabIndex - 1) * 48))
+        TabButton["Image"] = iconId or "rbxassetid://10709852168"
+        Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 5)
+
+        local ElementsContainer = Instance.new("Frame", LMG2L["Main_7"])
+        ElementsContainer["BackgroundTransparency"] = 1
+        ElementsContainer["Size"] = UDim2.new(1, 0, 1, 0)
+        ElementsContainer["Visible"] = false
+
+        tabData.container = ElementsContainer
+        tabData.button = TabButton
+
+        local function updateLayout()
+            local y = 8
+            for _, element in ipairs(tabData.elements) do
+                if element.visible then
+                    local positionX = element.isSub and 15 or 6
+                    element.frame.Position = UDim2.new(0, positionX, 0, y)
+                    y = y + element.height
+                end
+            end
+            tabData.totalHeight = y + 10
+            updateScrollability(LMG2L["Main_7"], tabData.totalHeight)
+        end
+
+        local function switchToTab()
+            currentTab = tabData
+            for _, tab in ipairs(tabs) do
+                tab.container.Visible = false
+            end
+            ElementsContainer.Visible = true
+            applyTheme()
+            updateScrollability(LMG2L["Main_7"], tabData.totalHeight)
+        end
+
+        TabButton.MouseButton1Click:Connect(switchToTab)
+        table.insert(tabs, tabData)
+        if tabIndex == 1 then switchToTab() end
+
+        local tabsHeight = tabIndex * 48 + 8
+        if tabsHeight > 194 then LMG2L["Tabs_2a"].CanvasSize = UDim2.new(0, 0, 0, tabsHeight) end
+
+        local tabMethods = {}
 
         local function registerConfigElement(elementType, elementText, elementInstance, getterFunc, setterFunc)
-            if not configElements[tabName] then
-                configElements[tabName] = {}
-            end
+            if not configElements[tabName] then configElements[tabName] = {} end
             table.insert(configElements[tabName], {
                 type = elementType,
                 text = elementText,
@@ -600,424 +608,417 @@ function UILibrary:CreateWindow(title)
             })
         end
 
-        function tabMethods:AddTextBox(text, default, callback)  
-            local TextBoxFrame = Instance.new("Frame", ElementsContainer)  
-            TextBoxFrame.BorderSizePixel = 0  
-            TextBoxFrame.Size = UDim2.new(0, 246, 0, 26)  
-            TextBoxFrame.BackgroundTransparency = 1  
+        -- ── TextBox ──────────────────────────────────────────────────────────────
 
-            local InfoLabel = Instance.new("TextLabel", TextBoxFrame)  
-            InfoLabel.TextSize = 10  
-            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left  
-            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)  
-            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)  
-            InfoLabel.BackgroundTransparency = 1  
-            InfoLabel.Size = UDim2.new(0, 70, 0, 26)  
-            InfoLabel.Text = text or "TextBox"  
-            InfoLabel.Position = UDim2.new(0, 176, 0, 0)  
+        function tabMethods:AddTextBox(text, default, callback)
+            local TextBoxFrame = Instance.new("Frame", ElementsContainer)
+            TextBoxFrame.BorderSizePixel = 0
+            TextBoxFrame.Size = UDim2.new(0, 246, 0, 26)
+            TextBoxFrame.BackgroundTransparency = 1
 
-            local Main = Instance.new("Frame", TextBoxFrame)  
-            Main.BorderSizePixel = 0  
-            Main.BackgroundColor3 = Color3.fromRGB(37, 37, 37)  
-            Main.Size = UDim2.new(0, 168, 0, 26)  
-            Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)  
+            local InfoLabel = Instance.new("TextLabel", TextBoxFrame)
+            InfoLabel.TextSize = 10
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            InfoLabel.BackgroundTransparency = 1
+            InfoLabel.Size = UDim2.new(0, 70, 0, 26)
+            InfoLabel.Text = text or "TextBox"
+            InfoLabel.Position = UDim2.new(0, 176, 0, 0)
 
-            local Input = Instance.new("TextBox", Main)  
-            Input.BackgroundTransparency = 1  
-            Input.Size = UDim2.new(1, -10, 1, 0)  
-            Input.Position = UDim2.new(0, 5, 0, 0)  
-            Input.Text = default or ""  
-            Input.TextColor3 = Color3.fromRGB(255, 255, 255)  
-            Input.TextSize = 11  
-            Input.TextXAlignment = Enum.TextXAlignment.Left  
-            Input.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold)  
+            local Main = Instance.new("Frame", TextBoxFrame)
+            Main.BorderSizePixel = 0
+            Main.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+            Main.Size = UDim2.new(0, 168, 0, 26)
+            Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)
 
-            Input.FocusLost:Connect(function()  
-                if callback then callback(Input.Text) end  
-            end)  
+            local Input = Instance.new("TextBox", Main)
+            Input.BackgroundTransparency = 1
+            Input.Size = UDim2.new(1, -10, 1, 0)
+            Input.Position = UDim2.new(0, 5, 0, 0)
+            Input.Text = default or ""
+            Input.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Input.TextSize = 11
+            Input.TextXAlignment = Enum.TextXAlignment.Left
+            Input.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold)
 
-            local elementData = { frame = TextBoxFrame, height = 34, visible = true, isSub = false }  
-            table.insert(tabData.elements, elementData)  
-            updateLayout()  
+            Input.FocusLost:Connect(function()
+                if callback then callback(Input.Text) end
+            end)
 
-            local TextBoxObject = {  
-                SetText = function(self, txt) Input.Text = txt; if callback then callback(txt) end end,  
-                GetText = function(self) return Input.Text end  
+            local elementData = { frame = TextBoxFrame, height = 34, visible = true, isSub = false }
+            table.insert(tabData.elements, elementData)
+            updateLayout()
+
+            local TextBoxObject = {
+                SetText = function(self, txt)
+                    Input.Text = txt
+                    if callback then callback(txt) end
+                end,
+                GetText = function(self) return Input.Text end
             }
 
-            registerConfigElement("TextBox", text, TextBoxObject, 
+            registerConfigElement("TextBox", text, TextBoxObject,
                 function() return TextBoxObject:GetText() end,
                 function(val) TextBoxObject:SetText(val) end
             )
+            return TextBoxObject
+        end
 
-            return TextBoxObject  
-        end  
-          
-        function tabMethods:AddThemePicker(text, defaultColor)  
-            if defaultColor then currentThemeColor = defaultColor end  
-            local pickerObj = self:AddColorPicker(text or "Cor do Tema", currentThemeColor, function(color)  
-                currentThemeColor = color  
-                applyTheme()   
-            end)  
-            return pickerObj  
-        end  
-                  
-        function tabMethods:AddToggle(text, callback, hasFloating)          
+        -- ── ThemePicker ──────────────────────────────────────────────────────────
+
+        function tabMethods:AddThemePicker(text, defaultColor)
+            if defaultColor then currentThemeColor = defaultColor end
+            local pickerObj = self:AddColorPicker(text or "Cor do Tema", currentThemeColor, function(color)
+                currentThemeColor = color
+                applyTheme()
+            end)
+            return pickerObj
+        end
+
+        -- ── Toggle ───────────────────────────────────────────────────────────────
+
+        function tabMethods:AddToggle(text, callback, hasFloating)
             local showFloatingButton = hasFloating == true
 
-            local ToggleFrame = Instance.new("Frame", ElementsContainer)          
-            ToggleFrame.BorderSizePixel = 0          
-            ToggleFrame.Size = UDim2.new(0, 246, 0, 22)  
-            ToggleFrame.BackgroundTransparency = 1          
-                      
-            local InfoLabel = Instance.new("TextLabel", ToggleFrame)          
-            InfoLabel.BorderSizePixel = 0          
-            InfoLabel.TextSize = 10          
-            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left          
-            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)          
-            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)          
-            InfoLabel.BackgroundTransparency = 1          
-            InfoLabel.Size = UDim2.new(0, 130, 0, 22)          
-            InfoLabel.Text = text or "Toggle"          
-            InfoLabel.Position = UDim2.new(0, 28, 0, 0)          
-                      
-            local ToggleButton = Instance.new("TextButton", ToggleFrame)          
-            ToggleButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)        
-            ToggleButton.Size = UDim2.new(0, 22, 0, 22)          
-            ToggleButton.BorderSizePixel = 0          
-            ToggleButton.Text = ""          
-            ToggleButton.AutoButtonColor = false          
-            Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 3)        
+            local ToggleFrame = Instance.new("Frame", ElementsContainer)
+            ToggleFrame.BorderSizePixel = 0
+            ToggleFrame.Size = UDim2.new(0, 246, 0, 22)
+            ToggleFrame.BackgroundTransparency = 1
 
-            local ShowBtn = nil
-            local FloatingUI = nil
-            local FTopo = nil
-            local FClose = nil
-            local FLabel = nil
-            local FButton = nil
-            
+            local InfoLabel = Instance.new("TextLabel", ToggleFrame)
+            InfoLabel.BorderSizePixel = 0
+            InfoLabel.TextSize = 10
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            InfoLabel.BackgroundTransparency = 1
+            InfoLabel.Size = UDim2.new(0, 130, 0, 22)
+            InfoLabel.Text = text or "Toggle"
+            InfoLabel.Position = UDim2.new(0, 28, 0, 0)
+
+            local ToggleButton = Instance.new("TextButton", ToggleFrame)
+            ToggleButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+            ToggleButton.Size = UDim2.new(0, 22, 0, 22)
+            ToggleButton.BorderSizePixel = 0
+            ToggleButton.Text = ""
+            ToggleButton.AutoButtonColor = false
+            Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 3)
+
+            local ShowBtn, FloatingUI, FTopo, FClose, FLabel, FButton = nil, nil, nil, nil, nil, nil
+
             if showFloatingButton then
-                ShowBtn = Instance.new("TextButton", ToggleFrame)  
-                ShowBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)  
-                ShowBtn.Size = UDim2.new(0, 50, 0, 22)  
-                ShowBtn.Position = UDim2.new(1, -50, 0, 2)  
-                ShowBtn.BorderSizePixel = 0  
-                ShowBtn.Text = "Show"  
-                ShowBtn.TextColor3 = Color3.fromRGB(200, 200, 200)  
-                ShowBtn.TextSize = 11  
-                ShowBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)  
-                ShowBtn.AutoButtonColor = false  
-                local ShowBtnCorner = Instance.new("UICorner", ShowBtn)  
-                ShowBtnCorner.CornerRadius = UDim.new(0, 4)  
+                ShowBtn = Instance.new("TextButton", ToggleFrame)
+                ShowBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+                ShowBtn.Size = UDim2.new(0, 50, 0, 22)
+                ShowBtn.Position = UDim2.new(1, -50, 0, 2)
+                ShowBtn.BorderSizePixel = 0
+                ShowBtn.Text = "Show"
+                ShowBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+                ShowBtn.TextSize = 11
+                ShowBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+                ShowBtn.AutoButtonColor = false
+                Instance.new("UICorner", ShowBtn).CornerRadius = UDim.new(0, 4)
 
-                FloatingUI = Instance.new("Frame", LMG2L["Floating_1"])  
-                FloatingUI.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  
-                FloatingUI.BorderSizePixel = 0  
-                FloatingUI.Visible = false  
-                FloatingUI.Active = true  
+                FloatingUI = Instance.new("Frame", LMG2L["Floating_1"])
+                FloatingUI.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+                FloatingUI.BorderSizePixel = 0
+                FloatingUI.Visible = false
+                FloatingUI.Active = true
 
-                local calculatedTextSize = TextService:GetTextSize(text or "Toggle", 16, Enum.Font.GothamBold, Vector2.new(500, 20))  
-                local finalWidth = math.max(calculatedTextSize.X + 64, 120)  
+                local calculatedTextSize = TextService:GetTextSize(text or "Toggle", 16, Enum.Font.GothamBold, Vector2.new(500, 20))
+                local finalWidth = math.max(calculatedTextSize.X + 64, 120)
+                FloatingUI.Size = UDim2.new(0, finalWidth, 0, 50)
+                FloatingUI.Position = UDim2.new(0, math.random(50, 250), 0, math.random(50, 250))
 
-                FloatingUI.Size = UDim2.new(0, finalWidth, 0, 50)  
-                FloatingUI.Position = UDim2.new(0, math.random(50, 250), 0, math.random(50, 250))   
+                FTopo = Instance.new("Frame", FloatingUI)
+                FTopo.Name = "FTopo"
+                FTopo.BorderSizePixel = 0
+                FTopo.BackgroundColor3 = currentThemeColor
+                FTopo.Size = UDim2.new(1, 0, 0, 15)
 
-                FTopo = Instance.new("Frame", FloatingUI)  
-                FTopo.Name = "FTopo"  
-                FTopo.BorderSizePixel = 0  
-                FTopo.BackgroundColor3 = currentThemeColor  
-                FTopo.Size = UDim2.new(1, 0, 0, 15)  
+                FClose = Instance.new("TextButton", FTopo)
+                FClose.BackgroundTransparency = 1
+                FClose.Size = UDim2.new(0, 22, 0, 22)
+                FClose.Position = UDim2.new(1, -25, 0, -4)
+                FClose.Text = "X"
+                FClose.TextColor3 = Color3.fromRGB(255, 255, 255)
+                FClose.TextSize = 10
 
-                FClose = Instance.new("TextButton", FTopo)  
-                FClose.BackgroundTransparency = 1  
-                FClose.Size = UDim2.new(0, 22, 0, 22)  
-                FClose.Position = UDim2.new(1, -25, 0, -4)  
-                FClose.Text = "X"  
-                FClose.TextColor3 = Color3.fromRGB(255, 255, 255)  
-                FClose.TextSize = 10  
+                FLabel = Instance.new("TextLabel", FloatingUI)
+                FLabel.BackgroundTransparency = 1
+                FLabel.Size = UDim2.new(0, calculatedTextSize.X, 0, 20)
+                FLabel.Position = UDim2.new(0, 40, 0, 22)
+                FLabel.Text = text or "Toggle"
+                FLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                FLabel.TextSize = 16
+                FLabel.TextXAlignment = Enum.TextXAlignment.Left
+                FLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
 
-                FLabel = Instance.new("TextLabel", FloatingUI)  
-                FLabel.BackgroundTransparency = 1  
-                FLabel.Size = UDim2.new(0, calculatedTextSize.X, 0, 20)  
-                FLabel.Position = UDim2.new(0, 40, 0, 22)  
-                FLabel.Text = text or "Toggle"  
-                FLabel.TextColor3 = Color3.fromRGB(255, 255, 255)  
-                FLabel.TextSize = 16  
-                FLabel.TextXAlignment = Enum.TextXAlignment.Left  
-                FLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)  
+                FButton = Instance.new("TextButton", FloatingUI)
+                FButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+                FButton.Size = UDim2.new(0, 24, 0, 24)
+                FButton.Position = UDim2.new(0, 8, 0, 20)
+                FButton.BorderSizePixel = 0
+                FButton.Text = ""
+                FButton.AutoButtonColor = false
+                Instance.new("UICorner", FButton).CornerRadius = UDim.new(0, 4)
 
-                FButton = Instance.new("TextButton", FloatingUI)  
-                FButton.BackgroundColor3 = Color3.fromRGB(37, 37, 37)  
-                FButton.Size = UDim2.new(0, 24, 0, 24)  
-                FButton.Position = UDim2.new(0, 8, 0, 20)  
-                FButton.BorderSizePixel = 0  
-                FButton.Text = ""  
-                FButton.AutoButtonColor = false  
-                local CheckboxCorner = Instance.new("UICorner", FButton)  
-                CheckboxCorner.CornerRadius = UDim.new(0, 4)  
-
-                MakeDraggable(FloatingUI, FTopo)  
+                MakeDraggable(FloatingUI, FTopo)
             end
 
-            local toggleState = false          
-            local isFloating = false  
+            local toggleState = false
+            local isFloating = false
 
-            local function updateToggle()          
-                local activeColor = toggleState and currentThemeColor or Color3.fromRGB(37, 37, 37)  
-                ToggleButton.BackgroundColor3 = activeColor  
+            local function updateToggle()
+                local activeColor = toggleState and currentThemeColor or Color3.fromRGB(37, 37, 37)
+                ToggleButton.BackgroundColor3 = activeColor
                 if FButton then FButton.BackgroundColor3 = activeColor end
-                if callback then callback(toggleState) end       
-            end          
-            
+                if callback then callback(toggleState) end
+            end
+
             table.insert(activeToggles, {
-                setState = function(v) toggleState = v; updateToggle() end,
+                setState = function(val) toggleState = val; updateToggle() end,
                 getState = function() return toggleState end
             })
-                          
-            ToggleButton.MouseButton1Click:Connect(function()          
-                toggleState = not toggleState          
-                updateToggle()          
-            end)          
+
+            ToggleButton.MouseButton1Click:Connect(function()
+                toggleState = not toggleState
+                updateToggle()
+            end)
 
             if FButton then
-                FButton.MouseButton1Click:Connect(function()          
-                    toggleState = not toggleState          
-                    updateToggle()          
-                end)     
+                FButton.MouseButton1Click:Connect(function()
+                    toggleState = not toggleState
+                    updateToggle()
+                end)
             end
 
-            local function toggleFloatingVisibility(state)  
+            local function toggleFloatingVisibility(state)
                 if not showFloatingButton then return end
-                isFloating = state  
+                isFloating = state
                 if FloatingUI then FloatingUI.Visible = isFloating end
                 if ShowBtn then
-                    ShowBtn.Text = isFloating and "Hide" or "Show"  
-                    ShowBtn.BackgroundColor3 = isFloating and currentThemeColor or Color3.fromRGB(45, 45, 45)  
-                    ShowBtn.TextColor3 = isFloating and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)  
+                    ShowBtn.Text = isFloating and "Hide" or "Show"
+                    ShowBtn.BackgroundColor3 = isFloating and currentThemeColor or Color3.fromRGB(45, 45, 45)
+                    ShowBtn.TextColor3 = isFloating and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
                 end
-            end  
+            end
 
-            table.insert(activeFloatingUIs, {
-                hide = function() toggleFloatingVisibility(false) end
-            })
+            table.insert(activeFloatingUIs, { hide = function() toggleFloatingVisibility(false) end })
 
             if ShowBtn then
-                ShowBtn.MouseButton1Click:Connect(function()  
-                    toggleFloatingVisibility(not isFloating)  
-                end)  
+                ShowBtn.MouseButton1Click:Connect(function()
+                    toggleFloatingVisibility(not isFloating)
+                end)
             end
 
             if FClose then
-                FClose.MouseButton1Click:Connect(function()  
-                    toggleFloatingVisibility(false)  
-                end)  
+                FClose.MouseButton1Click:Connect(function()
+                    toggleFloatingVisibility(false)
+                end)
             end
 
-            table.insert(themeElements, { type = "Toggle", instance = ToggleButton, getState = function() return toggleState end })  
+            table.insert(themeElements, { type = "Toggle", instance = ToggleButton, getState = function() return toggleState end })
             if FButton then table.insert(themeElements, { type = "Toggle", instance = FButton, getState = function() return toggleState end }) end
             if FTopo then table.insert(themeElements, { type = "FloatingTopo", instance = FTopo }) end
             if ShowBtn then table.insert(themeElements, { type = "ShowButton", instance = ShowBtn, getState = function() return isFloating end }) end
 
-            table.insert(tabData.elements, {frame = ToggleFrame, height = 30, visible = true, isSub = false})        
-            updateLayout()        
-                      
-            local ToggleObject = {}        
-            function ToggleObject:SetState(state) toggleState = state; updateToggle() end        
-            function ToggleObject:GetState() return toggleState end        
-                  
-            function ToggleObject:BindToDropdown(dropdownObject)        
-                if not dropdownObject then return end       
-                if dropdownObject.SetAsSubElement then dropdownObject:SetAsSubElement(true) end     
-                dropdownObject:SetVisible(toggleState)        
-                local oldCallback = callback        
-                callback = function(v) if oldCallback then oldCallback(v) end; dropdownObject:SetVisible(v) end        
-            end        
-                  
-            function ToggleObject:BindToColorPicker(colorPickerObject)      
-                if not colorPickerObject then return end      
-                if colorPickerObject.SetAsSubElement then colorPickerObject:SetAsSubElement(true) end     
-                colorPickerObject:SetVisible(toggleState)      
-                local oldCallback = callback      
-                callback = function(v)       
-                    if oldCallback then oldCallback(v) end      
-                    colorPickerObject:SetVisible(v)      
-                end      
-            end      
+            table.insert(tabData.elements, { frame = ToggleFrame, height = 30, visible = true, isSub = false })
+            updateLayout()
 
-            function ToggleObject:AddDropdown(dropdownText, options, dropCallback)      
-                local dropdownObj = tabMethods:AddDropdown(dropdownText, options, dropCallback)      
-                self:BindToDropdown(dropdownObj)      
-                return dropdownObj      
-            end      
+            local ToggleObject = {}
+            function ToggleObject:SetState(state) toggleState = state; updateToggle() end
+            function ToggleObject:GetState() return toggleState end
 
-            function ToggleObject:AddColorPicker(pickerText, defaultColor, pickerCallback)      
-                local pickerObj = tabMethods:AddColorPicker(pickerText, defaultColor, pickerCallback)      
-                self:BindToColorPicker(pickerObj)      
-                return pickerObj      
-            end      
+            function ToggleObject:BindToDropdown(dropdownObject)
+                if not dropdownObject then return end
+                if dropdownObject.SetAsSubElement then dropdownObject:SetAsSubElement(true) end
+                dropdownObject:SetVisible(toggleState)
+                local oldCallback = callback
+                callback = function(val) if oldCallback then oldCallback(val) end; dropdownObject:SetVisible(val) end
+            end
+
+            function ToggleObject:BindToColorPicker(colorPickerObject)
+                if not colorPickerObject then return end
+                if colorPickerObject.SetAsSubElement then colorPickerObject:SetAsSubElement(true) end
+                colorPickerObject:SetVisible(toggleState)
+                local oldCallback = callback
+                callback = function(val)
+                    if oldCallback then oldCallback(val) end
+                    colorPickerObject:SetVisible(val)
+                end
+            end
+
+            function ToggleObject:AddDropdown(dropdownText, options, dropCallback)
+                local dropdownObj = tabMethods:AddDropdown(dropdownText, options, dropCallback)
+                self:BindToDropdown(dropdownObj)
+                return dropdownObj
+            end
+
+            function ToggleObject:AddColorPicker(pickerText, defaultColor, pickerCallback)
+                local pickerObj = tabMethods:AddColorPicker(pickerText, defaultColor, pickerCallback)
+                self:BindToColorPicker(pickerObj)
+                return pickerObj
+            end
 
             registerConfigElement("Toggle", text, ToggleObject,
                 function() return ToggleObject:GetState() end,
                 function(val) ToggleObject:SetState(val) end
             )
+            return ToggleObject
+        end
 
-            return ToggleObject        
-        end          
-              
-        function tabMethods:AddColorPicker(text, defaultColor, callback)      
-            local ColorFrame = Instance.new("Frame", ElementsContainer)          
-            ColorFrame.BorderSizePixel = 0          
-            ColorFrame.Size = UDim2.new(0, 140, 0, 22)          
-            ColorFrame.BackgroundTransparency = 1          
-                      
-            local InfoLabel = Instance.new("TextLabel", ColorFrame)          
-            InfoLabel.BorderSizePixel = 0          
-            InfoLabel.TextSize = 10          
-            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left          
-            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)          
-            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)          
-            InfoLabel.BackgroundTransparency = 1          
-            InfoLabel.Size = UDim2.new(0, 88, 0, 22)          
-            InfoLabel.Text = text or "Color Picker"          
-            InfoLabel.Position = UDim2.new(0, 28, 0, 0)          
-                      
-            local ColorBtn = Instance.new("TextButton", ColorFrame)          
-            ColorBtn.BackgroundColor3 = defaultColor or Color3.fromRGB(255, 255, 255)      
-            ColorBtn.Size = UDim2.new(0, 22, 0, 22)          
-            ColorBtn.BorderSizePixel = 0          
-            ColorBtn.Text = ""          
-            ColorBtn.AutoButtonColor = false          
-            Instance.new("UICorner", ColorBtn).CornerRadius = UDim.new(0, 3)        
+        -- ── ColorPicker ──────────────────────────────────────────────────────────
 
-            local BrushIcon = Instance.new("ImageLabel", ColorBtn)      
-            BrushIcon.Name = "BrushIcon"      
-            BrushIcon.AnchorPoint = Vector2.new(0.5, 0.5)      
-            BrushIcon.Position = UDim2.new(0.5, 0, 0.5, 0)      
-            BrushIcon.Size = UDim2.new(0, 14, 0, 14)       
-            BrushIcon.BackgroundTransparency = 1      
-            BrushIcon.Image = "rbxassetid://105955025341798"      
-            BrushIcon.ImageColor3 = Color3.fromRGB(0, 0, 0)    
-            BrushIcon.ZIndex = 5       
+        function tabMethods:AddColorPicker(text, defaultColor, callback)
+            local ColorFrame = Instance.new("Frame", ElementsContainer)
+            ColorFrame.BorderSizePixel = 0
+            ColorFrame.Size = UDim2.new(0, 140, 0, 22)
+            ColorFrame.BackgroundTransparency = 1
 
-            ColorBtn.MouseButton1Click:Connect(function()      
-                OpenColorPicker(ColorBtn, ColorBtn.BackgroundColor3, function(color)  
-                    if callback then callback(color) end  
-                end)      
-            end)      
+            local InfoLabel = Instance.new("TextLabel", ColorFrame)
+            InfoLabel.BorderSizePixel = 0
+            InfoLabel.TextSize = 10
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            InfoLabel.BackgroundTransparency = 1
+            InfoLabel.Size = UDim2.new(0, 88, 0, 22)
+            InfoLabel.Text = text or "Color Picker"
+            InfoLabel.Position = UDim2.new(0, 28, 0, 0)
 
-            local elementData = { frame = ColorFrame, height = 30, visible = true, isSub = false }      
-            table.insert(tabData.elements, elementData)        
-            updateLayout()      
-                  
-            local ColorPickerObject = {      
-                SetColor = function(self, color)      
-                    ColorBtn.BackgroundColor3 = color      
-                    if callback then callback(color) end    
-                end,      
-                SetVisible = function(self, state)      
-                    elementData.visible = state      
-                    ColorFrame.Visible = state      
-                    updateLayout()      
-                end,      
-                GetVisible = function(self) return elementData.visible end,    
-                SetAsSubElement = function(self, state)    
-                    elementData.isSub = state; updateLayout()    
+            local ColorBtn = Instance.new("TextButton", ColorFrame)
+            ColorBtn.BackgroundColor3 = defaultColor or Color3.fromRGB(255, 255, 255)
+            ColorBtn.Size = UDim2.new(0, 22, 0, 22)
+            ColorBtn.BorderSizePixel = 0
+            ColorBtn.Text = ""
+            ColorBtn.AutoButtonColor = false
+            Instance.new("UICorner", ColorBtn).CornerRadius = UDim.new(0, 3)
+
+            local BrushIcon = Instance.new("ImageLabel", ColorBtn)
+            BrushIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+            BrushIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+            BrushIcon.Size = UDim2.new(0, 14, 0, 14)
+            BrushIcon.BackgroundTransparency = 1
+            BrushIcon.Image = "rbxassetid://105955025341798"
+            BrushIcon.ImageColor3 = Color3.fromRGB(0, 0, 0)
+            BrushIcon.ZIndex = 5
+
+            ColorBtn.MouseButton1Click:Connect(function()
+                OpenColorPicker(ColorBtn, ColorBtn.BackgroundColor3, function(color)
+                    if callback then callback(color) end
+                end)
+            end)
+
+            local elementData = { frame = ColorFrame, height = 30, visible = true, isSub = false }
+            table.insert(tabData.elements, elementData)
+            updateLayout()
+
+            local ColorPickerObject = {
+                SetColor = function(self, color)
+                    ColorBtn.BackgroundColor3 = color
+                    if callback then callback(color) end
                 end,
+                SetVisible = function(self, state)
+                    elementData.visible = state
+                    ColorFrame.Visible = state
+                    updateLayout()
+                end,
+                GetVisible = function(self) return elementData.visible end,
+                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end,
                 GetColor = function(self) return ColorBtn.BackgroundColor3 end
-            }      
+            }
 
             registerConfigElement("ColorPicker", text, ColorPickerObject,
                 function() return ColorPickerObject:GetColor() end,
                 function(val) ColorPickerObject:SetColor(val) end
             )
+            return ColorPickerObject
+        end
 
-            return ColorPickerObject      
-        end      
-                  
-        function tabMethods:AddDropdown(text, options, callback)        
-            local DropdownFrame = Instance.new("Frame", ElementsContainer)        
-            DropdownFrame.BorderSizePixel = 0        
-            DropdownFrame.BackgroundTransparency = 1        
-            DropdownFrame.Size = UDim2.new(0, 228, 0, 22)        
-            DropdownFrame.ZIndex = 10        
+        -- ── Dropdown ─────────────────────────────────────────────────────────────
 
-            local InfoLabel = Instance.new("TextLabel", DropdownFrame)          
-            InfoLabel.BorderSizePixel = 0          
-            InfoLabel.TextSize = 10          
-            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left          
-            InfoLabel.BackgroundTransparency = 1          
-            InfoLabel.Size = UDim2.new(0, 88, 0, 20)          
-            InfoLabel.Position = UDim2.new(0, 140, 0, 2)          
-            InfoLabel.Text = text or "Dropdown"          
-            InfoLabel.TextColor3 = Color3.fromRGB(255,255,255)          
-            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)          
-            InfoLabel.ZIndex = 11          
+        function tabMethods:AddDropdown(text, options, callback)
+            local DropdownFrame = Instance.new("Frame", ElementsContainer)
+            DropdownFrame.BorderSizePixel = 0
+            DropdownFrame.BackgroundTransparency = 1
+            DropdownFrame.Size = UDim2.new(0, 228, 0, 22)
+            DropdownFrame.ZIndex = 10
 
-            local Main = Instance.new("Frame", DropdownFrame)          
-            Main.BorderSizePixel = 0          
-            Main.BackgroundColor3 = Color3.fromRGB(37,37,37)          
-            Main.Size = UDim2.new(0,136,0,22)          
-            Main.ZIndex = 11          
-            Instance.new("UICorner", Main).CornerRadius = UDim.new(0,3)          
+            local InfoLabel = Instance.new("TextLabel", DropdownFrame)
+            InfoLabel.BorderSizePixel = 0
+            InfoLabel.TextSize = 10
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+            InfoLabel.BackgroundTransparency = 1
+            InfoLabel.Size = UDim2.new(0, 88, 0, 20)
+            InfoLabel.Position = UDim2.new(0, 140, 0, 2)
+            InfoLabel.Text = text or "Dropdown"
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            InfoLabel.ZIndex = 11
 
-            local Selected = Instance.new("TextLabel", Main)          
-            Selected.BackgroundTransparency = 1          
-            Selected.Size = UDim2.new(1,-28,1,0)          
-            Selected.Position = UDim2.new(0,6,0,0)          
-            Selected.TextXAlignment = Enum.TextXAlignment.Left          
-            Selected.TextSize = 13          
-            Selected.TextColor3 = Color3.fromRGB(255,255,255)          
-            Selected.Text = options[1] or "Selecionar"          
-            Selected.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)          
-            Selected.ZIndex = 12          
+            local Main = Instance.new("Frame", DropdownFrame)
+            Main.BorderSizePixel = 0
+            Main.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+            Main.Size = UDim2.new(0, 136, 0, 22)
+            Main.ZIndex = 11
+            Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)
+
+            local Selected = Instance.new("TextLabel", Main)
+            Selected.BackgroundTransparency = 1
+            Selected.Size = UDim2.new(1, -28, 1, 0)
+            Selected.Position = UDim2.new(0, 6, 0, 0)
+            Selected.TextXAlignment = Enum.TextXAlignment.Left
+            Selected.TextSize = 13
+            Selected.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Selected.Text = options[1] or "Selecionar"
+            Selected.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            Selected.ZIndex = 12
             Selected.TextWrapped = false
             Selected.TextTruncate = Enum.TextTruncate.AtEnd
             Selected.ClipsDescendants = true
 
-            local Open = Instance.new("ImageButton", Main)          
-            Open.BackgroundColor3 = currentThemeColor          
-            Open.Size = UDim2.new(0,22,0,22)          
-            Open.Position = UDim2.new(1,-22,0,0)          
-            Open.Image = "rbxassetid://8539638324"          
-            Open.Rotation = 180        
-            Open.BorderSizePixel = 0          
-            Open.ZIndex = 12          
-            Instance.new("UICorner", Open).CornerRadius = UDim.new(0,3)          
-              
-            table.insert(themeElements, { type = "DropdownIcon", instance = Open })  
+            local Open = Instance.new("ImageButton", Main)
+            Open.BackgroundColor3 = currentThemeColor
+            Open.Size = UDim2.new(0, 22, 0, 22)
+            Open.Position = UDim2.new(1, -22, 0, 0)
+            Open.Image = "rbxassetid://8539638324"
+            Open.Rotation = 180
+            Open.BorderSizePixel = 0
+            Open.ZIndex = 12
+            Instance.new("UICorner", Open).CornerRadius = UDim.new(0, 3)
+            table.insert(themeElements, { type = "DropdownIcon", instance = Open })
 
-            local Scroll = Instance.new("ScrollingFrame", LMG2L["Main_5"])          
-            Scroll.Visible = false          
-            Scroll.BorderSizePixel = 0          
-            Scroll.BackgroundColor3 = Color3.fromRGB(37,37,37)          
-            Scroll.Size = UDim2.new(0,136,0,28)          
-            Scroll.ScrollBarThickness = 0       
-            Scroll.ZIndex = 999 
-            Scroll.ScrollingDirection = Enum.ScrollingDirection.Y       
-            Scroll.ElasticBehavior = Enum.ElasticBehavior.Never 
-            Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0,3)          
+            local Scroll = Instance.new("ScrollingFrame", LMG2L["Main_5"])
+            Scroll.Visible = false
+            Scroll.BorderSizePixel = 0
+            Scroll.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+            Scroll.Size = UDim2.new(0, 136, 0, 28)
+            Scroll.ScrollBarThickness = 0
+            Scroll.ZIndex = 999
+            Scroll.ScrollingDirection = Enum.ScrollingDirection.Y
+            Scroll.ElasticBehavior = Enum.ElasticBehavior.Never
             Scroll.ClipsDescendants = true
+            Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0, 3)
 
             local btnHeight = 22
-            local padding = 2          
-            
-            local function getHeight() 
-                return math.min(#options, 4) * (btnHeight + padding) + 4 
-            end          
+            local padding = 2
+
+            local function getHeight()
+                return math.min(#options, 4) * (btnHeight + padding) + 4
+            end
 
             local function updateScrollPos()
                 if Scroll.Visible then
                     local mainAbsPos = LMG2L["Main_5"].AbsolutePosition
                     local mainAbsSize = LMG2L["Main_5"].AbsoluteSize
                     local btnAbsPos = Main.AbsolutePosition
-
                     local newY = (btnAbsPos.Y - mainAbsPos.Y) + 24
                     local newX = (btnAbsPos.X - mainAbsPos.X) + 2
-
                     if newY + getHeight() > mainAbsSize.Y then
                         newY = newY - getHeight() - 26
                     end
-
                     Scroll.Position = UDim2.new(0, newX, 0, newY)
                 end
             end
@@ -1035,281 +1036,275 @@ function UILibrary:CreateWindow(title)
             end
 
             tabData.container:GetPropertyChangedSignal("Visible"):Connect(function()
-                if not tabData.container.Visible then
+                if not tabData.container.Visible then CloseDropdown() end
+            end)
+
+            Open.MouseButton1Click:Connect(function()
+                if Scroll.Visible then
                     CloseDropdown()
+                else
+                    if openDropdownInfo then openDropdownInfo.Close() end
+                    Scroll.Visible = true; Open.Rotation = 0
+                    DropdownFrame.ZIndex = 100; Main.ZIndex = 101
+                    Scroll.Size = UDim2.new(0, 136, 0, getHeight())
+                    updateScrollPos()
+                    openDropdownInfo = { Main = Main, Scroll = Scroll, Close = CloseDropdown }
                 end
             end)
 
-            Open.MouseButton1Click:Connect(function()          
-                if Scroll.Visible then        
-                    CloseDropdown()
-                else        
-                    if openDropdownInfo then
-                        openDropdownInfo.Close()
+            local elementData = { frame = DropdownFrame, height = 30, visible = true, isSub = false }
+            DropdownFrame.Visible = true
+            table.insert(tabData.elements, elementData)
+            updateLayout()
+
+            local DropdownObject = {
+                SetVisible = function(self, state)
+                    elementData.visible = state; DropdownFrame.Visible = state; updateLayout()
+                end,
+                SetAsSubElement = function(self, state)
+                    elementData.isSub = state; updateLayout()
+                end,
+
+                Refresh = function(self, NewOptions)
+                    options = NewOptions
+                    for _, child in ipairs(Scroll:GetChildren()) do
+                        if child:IsA("TextButton") then child:Destroy() end
                     end
-
-                    Scroll.Visible = true; Open.Rotation = 0        
-                    DropdownFrame.ZIndex = 100; Main.ZIndex = 101       
-                    Scroll.Size = UDim2.new(0,136,0,getHeight()) 
-                    updateScrollPos() 
-
-                    openDropdownInfo = {
-                        Main = Main,
-                        Scroll = Scroll,
-                        Close = CloseDropdown
-                    }
-                end        
-            end)          
-
-            local elementData = { frame = DropdownFrame, height = 30, visible = true, isSub = false }        
-            DropdownFrame.Visible = true        
-            table.insert(tabData.elements, elementData)        
-            updateLayout()        
-
-            local DropdownObject = {        
-                SetVisible = function(self, state) elementData.visible = state; DropdownFrame.Visible = state; updateLayout() end,    
-                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end,  
-                  
-                Refresh = function(self, NewOptions)  
-                    options = NewOptions  
-                      
-                    for _, child in ipairs(Scroll:GetChildren()) do  
-                        if child:IsA("TextButton") then  
-                            child:Destroy()  
-                        end  
-                    end  
-
-                    for i, opt in ipairs(options) do  
-                        local Btn = Instance.new("TextButton", Scroll)  
-                        Btn.Size = UDim2.new(1,-4,0,btnHeight)  
-                        Btn.Position = UDim2.new(0,2,0,(i-1)*(btnHeight+padding))  
-                        Btn.Text = opt  
+                    for i, opt in ipairs(options) do
+                        local Btn = Instance.new("TextButton", Scroll)
+                        Btn.Size = UDim2.new(1, -4, 0, btnHeight)
+                        Btn.Position = UDim2.new(0, 2, 0, (i - 1) * (btnHeight + padding))
+                        Btn.Text = opt
                         Btn.TextSize = 11
-                        Btn.BorderSizePixel = 0  
-                        Btn.BackgroundColor3 = Color3.fromRGB(37,37,37)  
-                        Btn.TextColor3 = Color3.fromRGB(255,255,255)  
-                        Btn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)  
-                        Btn.ZIndex = 1000 
-                        Btn.TextWrapped = false  
+                        Btn.BorderSizePixel = 0
+                        Btn.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+                        Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        Btn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+                        Btn.ZIndex = 1000
+                        Btn.TextWrapped = false
                         Btn.TextTruncate = Enum.TextTruncate.AtEnd
                         Btn.ClipsDescendants = true
-
-                        Btn.MouseEnter:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(50,50,50) end)  
-                        Btn.MouseLeave:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(37,37,37) end)  
-
-                        Btn.MouseButton1Click:Connect(function()  
-                            Selected.Text = opt  
+                        Btn.MouseEnter:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50) end)
+                        Btn.MouseLeave:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(37, 37, 37) end)
+                        Btn.MouseButton1Click:Connect(function()
+                            Selected.Text = opt
                             CloseDropdown()
-                            if callback then callback(opt) end  
-                        end)  
-                    end  
-                    
+                            if callback then callback(opt) end
+                        end)
+                    end
                     local totalContentHeight = #options * (btnHeight + padding)
                     Scroll.CanvasSize = UDim2.new(0, 0, 0, totalContentHeight)
-                      
-                    if Scroll.Visible then  
-                        Scroll.Size = UDim2.new(0,136,0,getHeight())  
-                    end  
+                    if Scroll.Visible then
+                        Scroll.Size = UDim2.new(0, 136, 0, getHeight())
+                    end
                 end,
-                
-                GetValue = function(self) return Selected.Text end,
-                SetValue = function(self, val) 
-                    Selected.Text = val 
-                    if callback then callback(val) end
-                end
-            }  
 
-            DropdownObject:Refresh(options)  
+                GetValue = function(self) return Selected.Text end,
+
+                SetValue = function(self, val)
+                    -- Só atualiza o label, NÃO dispara o callback de seleção
+                    Selected.Text = val
+                end
+            }
+
+            DropdownObject:Refresh(options)
 
             registerConfigElement("Dropdown", text, DropdownObject,
                 function() return DropdownObject:GetValue() end,
                 function(val) DropdownObject:SetValue(val) end
             )
+            return DropdownObject
+        end
 
-            return DropdownObject  
-        end      
+        -- ── Slider ───────────────────────────────────────────────────────────────
 
-        function tabMethods:AddSlider(text, defaultValue, max, callback)    
-            local SliderFrame = Instance.new("Frame", ElementsContainer)    
-            SliderFrame.BorderSizePixel = 0    
-            SliderFrame.Size = UDim2.new(0, 246, 0, 22)    
-            SliderFrame.BackgroundTransparency = 1    
+        function tabMethods:AddSlider(text, defaultValue, max, callback)
+            local SliderFrame = Instance.new("Frame", ElementsContainer)
+            SliderFrame.BorderSizePixel = 0
+            SliderFrame.Size = UDim2.new(0, 246, 0, 22)
+            SliderFrame.BackgroundTransparency = 1
 
-            local Main = Instance.new("Frame", SliderFrame)        
-            Main.BorderSizePixel = 0        
-            Main.BackgroundColor3 = Color3.fromRGB(40, 40, 40)      
-            Main.Size = UDim2.new(0, 168, 0, 22)      
-            Main.BackgroundTransparency = 1        
-            Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)      
-                    
-            local SliderTrack = Instance.new("Frame", Main)        
-            SliderTrack.BorderSizePixel = 0        
-            SliderTrack.BackgroundColor3 = Color3.fromRGB(37, 37, 37)      
-            SliderTrack.Size = UDim2.new(0, 168, 0, 22)      
-            Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(0, 3)      
-                    
-            local SliderFill = Instance.new("Frame", SliderTrack)        
-            SliderFill.BorderSizePixel = 0        
-            SliderFill.BackgroundColor3 = currentThemeColor        
-            SliderFill.Size = UDim2.new(0, 0, 1, 0)        
-            Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(0, 3)      
-              
-            table.insert(themeElements, { type = "Slider", instance = SliderFill })  
-                    
-            local InfoNumber = Instance.new("TextLabel", Main)        
-            InfoNumber.BorderSizePixel = 0        
-            InfoNumber.TextColor3 = Color3.fromRGB(255, 255, 255)        
-            InfoNumber.BackgroundTransparency = 1        
-            InfoNumber.Size = UDim2.new(0, 168, 0, 22)      
-            InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)        
-            InfoNumber.TextSize = 20      
-            InfoNumber.TextTransparency = 0.3      
-                    
-            local InfoLabel = Instance.new("TextLabel", SliderFrame)        
-            InfoLabel.BorderSizePixel = 0        
-            InfoLabel.TextSize = 10        
-            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left        
-            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)        
-            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)        
-            InfoLabel.BackgroundTransparency = 1        
-            InfoLabel.Size = UDim2.new(0, 70, 0, 20)        
-            InfoLabel.Text = text or "Slider"        
-            InfoLabel.Position = UDim2.new(0, 176, 0, 2)      
+            local Main = Instance.new("Frame", SliderFrame)
+            Main.BorderSizePixel = 0
+            Main.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            Main.Size = UDim2.new(0, 168, 0, 22)
+            Main.BackgroundTransparency = 1
+            Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)
 
-            local min = 0      
-            local sliderValue = defaultValue or 0      
-            local max = max or 100      
-            local dragging = false      
+            local SliderTrack = Instance.new("Frame", Main)
+            SliderTrack.BorderSizePixel = 0
+            SliderTrack.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+            SliderTrack.Size = UDim2.new(0, 168, 0, 22)
+            Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(0, 3)
 
-            local function updateValue(newValue)      
-                sliderValue = math.clamp(newValue, min, max)      
-                local percentage = (sliderValue - min) / (max - min)      
-                SliderFill.Size = UDim2.new(percentage, 0, 1, 0)      
-                InfoNumber.Text = tostring(math.floor(sliderValue))      
-                if callback then callback(sliderValue) end      
-            end      
+            local SliderFill = Instance.new("Frame", SliderTrack)
+            SliderFill.BorderSizePixel = 0
+            SliderFill.BackgroundColor3 = currentThemeColor
+            SliderFill.Size = UDim2.new(0, 0, 1, 0)
+            Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(0, 3)
+            table.insert(themeElements, { type = "Slider", instance = SliderFill })
 
-            local function blockCamera(_, inputState)      
-                if inputState == Enum.UserInputState.Begin or inputState == Enum.UserInputState.Change then      
-                    return Enum.ContextActionResult.Sink      
-                end      
-            end      
+            local InfoNumber = Instance.new("TextLabel", Main)
+            InfoNumber.BorderSizePixel = 0
+            InfoNumber.TextColor3 = Color3.fromRGB(255, 255, 255)
+            InfoNumber.BackgroundTransparency = 1
+            InfoNumber.Size = UDim2.new(0, 168, 0, 22)
+            InfoNumber.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            InfoNumber.TextSize = 20
+            InfoNumber.TextTransparency = 0.3
 
-            local function updateSliderFromPosition(input)      
-                if not SliderTrack:IsDescendantOf(game) then return end      
-                local absPos = SliderTrack.AbsolutePosition      
-                local absSize = SliderTrack.AbsoluteSize      
-                local relativeX = (input.Position.X - absPos.X) / absSize.X      
-                relativeX = math.clamp(relativeX, 0, 1)      
-                local newValue = min + (relativeX * (max - min))      
-                updateValue(newValue)      
-            end      
+            local InfoLabel = Instance.new("TextLabel", SliderFrame)
+            InfoLabel.BorderSizePixel = 0
+            InfoLabel.TextSize = 10
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            InfoLabel.BackgroundTransparency = 1
+            InfoLabel.Size = UDim2.new(0, 70, 0, 20)
+            InfoLabel.Text = text or "Slider"
+            InfoLabel.Position = UDim2.new(0, 176, 0, 2)
 
-            SliderTrack.InputBegan:Connect(function(input)      
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then      
-                    dragging = true      
-                    ContextActionService:BindAction("BlockCameraSlider", blockCamera, false, Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)      
-                    UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition      
-                    updateSliderFromPosition(input)      
-                end      
-            end)      
+            local minVal = 0
+            local sliderValue = defaultValue or 0
+            local maxVal = max or 100
+            local dragging = false
 
-            SliderTrack.InputEnded:Connect(function(input)      
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then      
-                    dragging = false      
-                    ContextActionService:UnbindAction("BlockCameraSlider")      
-                    UserInputService.MouseBehavior = Enum.MouseBehavior.Default      
-                end      
-            end)      
+            local function updateValue(newValue)
+                sliderValue = math.clamp(newValue, minVal, maxVal)
+                local percentage = (sliderValue - minVal) / (maxVal - minVal)
+                SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
+                InfoNumber.Text = tostring(math.floor(sliderValue))
+                if callback then callback(sliderValue) end
+            end
 
-            UserInputService.InputChanged:Connect(function(input)      
-                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then updateSliderFromPosition(input) end      
-            end)      
+            local function blockCamera(_, inputState)
+                if inputState == Enum.UserInputState.Begin
+                or inputState == Enum.UserInputState.Change then
+                    return Enum.ContextActionResult.Sink
+                end
+            end
 
-            UserInputService.TouchMoved:Connect(function(input)      
-                if dragging then updateSliderFromPosition({Position = input.Position, UserInputType = Enum.UserInputType.Touch}) end      
-            end)      
+            local function updateSliderFromPosition(input)
+                if not SliderTrack:IsDescendantOf(game) then return end
+                local absPos = SliderTrack.AbsolutePosition
+                local absSize = SliderTrack.AbsoluteSize
+                local relativeX = math.clamp((input.Position.X - absPos.X) / absSize.X, 0, 1)
+                updateValue(minVal + (relativeX * (maxVal - minVal)))
+            end
 
-            updateValue(defaultValue or 0)      
+            SliderTrack.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1
+                or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = true
+                    ContextActionService:BindAction("BlockCameraSlider", blockCamera, false,
+                        Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)
+                    UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
+                    updateSliderFromPosition(input)
+                end
+            end)
 
-            local elementData = { frame = SliderFrame, height = 30, visible = true, isSub = false }        
-            table.insert(tabData.elements, elementData)        
-            updateLayout()      
+            SliderTrack.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1
+                or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = false
+                    ContextActionService:UnbindAction("BlockCameraSlider")
+                    UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+                end
+            end)
 
-            local SliderObject = {      
-                SetValue = function(self, value) updateValue(value) end,      
-                GetValue = function(self) return sliderValue end,    
-                SetVisible = function(self, state) elementData.visible = state; SliderFrame.Visible = state; updateLayout() end,    
-                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end    
-            }    
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    updateSliderFromPosition(input)
+                end
+            end)
+
+            UserInputService.TouchMoved:Connect(function(input)
+                if dragging then
+                    updateSliderFromPosition({ Position = input.Position, UserInputType = Enum.UserInputType.Touch })
+                end
+            end)
+
+            updateValue(defaultValue or 0)
+
+            local elementData = { frame = SliderFrame, height = 30, visible = true, isSub = false }
+            table.insert(tabData.elements, elementData)
+            updateLayout()
+
+            local SliderObject = {
+                SetValue = function(self, value) updateValue(value) end,
+                GetValue = function(self) return sliderValue end,
+                SetVisible = function(self, state) elementData.visible = state; SliderFrame.Visible = state; updateLayout() end,
+                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end
+            }
 
             registerConfigElement("Slider", text, SliderObject,
                 function() return SliderObject:GetValue() end,
                 function(val) SliderObject:SetValue(val) end
             )
-
             return SliderObject
-        end    
+        end
 
-        function tabMethods:AddButton(text, callback)        
-            local ButtonFrame = Instance.new("Frame", ElementsContainer)        
-            ButtonFrame.BorderSizePixel = 0        
-            ButtonFrame.Size = UDim2.new(0, 236, 0, 22)      
-            ButtonFrame.BackgroundTransparency = 1      
-                    
-            local Button = Instance.new("TextButton", ButtonFrame)        
-            Button.TextWrapped = true        
-            Button.BorderSizePixel = 0        
-            Button.TextSize = 13        
-            Button.TextColor3 = Color3.fromRGB(255, 255, 255)        
-            Button.BackgroundColor3 = currentThemeColor        
-            Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)        
-            Button.Size = UDim2.new(0, 238, 0, 22)      
-            Button.Text = text or "Button"        
-            Button.AutoButtonColor = false        
-            Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 3)      
-              
-            table.insert(themeElements, { type = "Button", instance = Button })  
-                    
-            Button.MouseEnter:Connect(function()   
-                local h, s, v = currentThemeColor:ToHSV()  
-                Button.BackgroundColor3 = Color3.fromHSV(h, s, math.clamp(v + 0.1, 0, 1))   
-            end)        
-            Button.MouseLeave:Connect(function() Button.BackgroundColor3 = currentThemeColor end)        
-            Button.MouseButton1Click:Connect(function() if callback then callback() end end)        
-                    
-            local elementData = { frame = ButtonFrame, height = 30, visible = true, isSub = false }        
-            table.insert(tabData.elements, elementData)        
-            updateLayout()      
+        -- ── Button ───────────────────────────────────────────────────────────────
 
-            return {    
-                SetVisible = function(self, state) elementData.visible = state; ButtonFrame.Visible = state; updateLayout() end,    
-                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end    
-            }        
-        end     
+        function tabMethods:AddButton(text, callback)
+            local ButtonFrame = Instance.new("Frame", ElementsContainer)
+            ButtonFrame.BorderSizePixel = 0
+            ButtonFrame.Size = UDim2.new(0, 236, 0, 22)
+            ButtonFrame.BackgroundTransparency = 1
 
-        function tabMethods:AddRadioButtons(text, options, callback)        
-            local RadioFrame = Instance.new("Frame", ElementsContainer)        
-            RadioFrame.BorderSizePixel = 0        
-            RadioFrame.Size = UDim2.new(0, 246, 0, 38)     
-            RadioFrame.BackgroundTransparency = 1        
-                    
-            local InfoLabel = Instance.new("TextLabel", RadioFrame)        
-            InfoLabel.TextWrapped = true        
-            InfoLabel.BorderSizePixel = 0        
-            InfoLabel.TextSize = 10        
-            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left        
-            InfoLabel.TextScaled = true        
-            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)        
-            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)        
-            InfoLabel.BackgroundTransparency = 1        
-            InfoLabel.Size = UDim2.new(0, 132, 0, 12)      
-            InfoLabel.Text = text or "Radio Buttons"        
-            InfoLabel.Position = UDim2.new(0, 0, 0, -2)      
-                    
-            local radioButtons = {}        
-            local selectedOption = options[1]        
-            
+            local Button = Instance.new("TextButton", ButtonFrame)
+            Button.TextWrapped = true
+            Button.BorderSizePixel = 0
+            Button.TextSize = 13
+            Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Button.BackgroundColor3 = currentThemeColor
+            Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            Button.Size = UDim2.new(0, 238, 0, 22)
+            Button.Text = text or "Button"
+            Button.AutoButtonColor = false
+            Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 3)
+            table.insert(themeElements, { type = "Button", instance = Button })
+
+            Button.MouseEnter:Connect(function()
+                local bh, bs, bv = currentThemeColor:ToHSV()
+                Button.BackgroundColor3 = Color3.fromHSV(bh, bs, math.clamp(bv + 0.1, 0, 1))
+            end)
+            Button.MouseLeave:Connect(function() Button.BackgroundColor3 = currentThemeColor end)
+            Button.MouseButton1Click:Connect(function() if callback then callback() end end)
+
+            local elementData = { frame = ButtonFrame, height = 30, visible = true, isSub = false }
+            table.insert(tabData.elements, elementData)
+            updateLayout()
+
+            return {
+                SetVisible = function(self, state) elementData.visible = state; ButtonFrame.Visible = state; updateLayout() end,
+                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end
+            }
+        end
+
+        -- ── RadioButtons ─────────────────────────────────────────────────────────
+
+        function tabMethods:AddRadioButtons(text, options, callback)
+            local RadioFrame = Instance.new("Frame", ElementsContainer)
+            RadioFrame.BorderSizePixel = 0
+            RadioFrame.Size = UDim2.new(0, 246, 0, 38)
+            RadioFrame.BackgroundTransparency = 1
+
+            local InfoLabel = Instance.new("TextLabel", RadioFrame)
+            InfoLabel.TextWrapped = true
+            InfoLabel.BorderSizePixel = 0
+            InfoLabel.TextSize = 10
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+            InfoLabel.TextScaled = true
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            InfoLabel.BackgroundTransparency = 1
+            InfoLabel.Size = UDim2.new(0, 132, 0, 12)
+            InfoLabel.Text = text or "Radio Buttons"
+            InfoLabel.Position = UDim2.new(0, 0, 0, -2)
+
+            local radioButtons = {}
+            local selectedOption = options[1]
             local currentX = 0
             local currentY = 16
             local maxContainerWidth = 246
@@ -1318,113 +1313,109 @@ function UILibrary:CreateWindow(title)
                 local textStr = tostring(option)
                 local textSize = TextService:GetTextSize(textStr, 9, Enum.Font.GothamBold, Vector2.new(500, 16))
                 local optionWidth = 16 + 4 + textSize.X + 10
-
                 if currentX + optionWidth > maxContainerWidth then
-                    currentX = 0
-                    currentY = currentY + 22 
+                    currentX = 0; currentY = currentY + 22
                 end
-                
-                local RadioOption = Instance.new("Frame", RadioFrame)        
-                RadioOption.BorderSizePixel = 0        
-                RadioOption.Size = UDim2.new(0, optionWidth, 0, 16)      
-                RadioOption.Position = UDim2.new(0, currentX, 0, currentY)        
-                RadioOption.BackgroundTransparency = 1        
-                        
-                local RadioButton = Instance.new("TextButton", RadioOption)        
-                RadioButton.BorderSizePixel = 0        
-                RadioButton.BackgroundColor3 = i == 1 and currentThemeColor or Color3.fromRGB(53, 53, 53)        
-                RadioButton.Size = UDim2.new(0, 16, 0, 16)        
-                RadioButton.Text = ""        
-                RadioButton.AutoButtonColor = false        
-                Instance.new("UICorner", RadioButton).CornerRadius = UDim.new(1, 9)      
-                  
-                local OptionLabel = Instance.new("TextLabel", RadioOption)        
-                OptionLabel.BorderSizePixel = 0        
-                OptionLabel.TextSize = 9        
-                OptionLabel.TextXAlignment = Enum.TextXAlignment.Left        
-                OptionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)        
-                OptionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)        
-                OptionLabel.BackgroundTransparency = 1        
-                OptionLabel.Size = UDim2.new(0, textSize.X, 0, 16)        
-                OptionLabel.Text = textStr        
-                OptionLabel.Position = UDim2.new(0, 20, 0, 0) 
+                local RadioOption = Instance.new("Frame", RadioFrame)
+                RadioOption.BorderSizePixel = 0
+                RadioOption.Size = UDim2.new(0, optionWidth, 0, 16)
+                RadioOption.Position = UDim2.new(0, currentX, 0, currentY)
+                RadioOption.BackgroundTransparency = 1
 
-                table.insert(themeElements, { type = "RadioButton", instance = RadioButton, getState = function() return selectedOption == option end })  
-                table.insert(radioButtons, {button = RadioButton, option = option, index = i})        
-                        
-                RadioButton.MouseButton1Click:Connect(function()        
-                    for _, rb in ipairs(radioButtons) do        
-                        rb.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)        
-                    end        
-                    RadioButton.BackgroundColor3 = currentThemeColor        
-                    selectedOption = option        
-                    if callback then callback(option) end        
-                end)        
-                
+                local RadioButton = Instance.new("TextButton", RadioOption)
+                RadioButton.BorderSizePixel = 0
+                RadioButton.BackgroundColor3 = i == 1 and currentThemeColor or Color3.fromRGB(53, 53, 53)
+                RadioButton.Size = UDim2.new(0, 16, 0, 16)
+                RadioButton.Text = ""
+                RadioButton.AutoButtonColor = false
+                Instance.new("UICorner", RadioButton).CornerRadius = UDim.new(1, 9)
+
+                local OptionLabel = Instance.new("TextLabel", RadioOption)
+                OptionLabel.BorderSizePixel = 0
+                OptionLabel.TextSize = 9
+                OptionLabel.TextXAlignment = Enum.TextXAlignment.Left
+                OptionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+                OptionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                OptionLabel.BackgroundTransparency = 1
+                OptionLabel.Size = UDim2.new(0, textSize.X, 0, 16)
+                OptionLabel.Text = textStr
+                OptionLabel.Position = UDim2.new(0, 20, 0, 0)
+
+                table.insert(themeElements, { type = "RadioButton", instance = RadioButton, getState = function() return selectedOption == option end })
+                table.insert(radioButtons, { button = RadioButton, option = option, index = i })
+
+                RadioButton.MouseButton1Click:Connect(function()
+                    for _, rb in ipairs(radioButtons) do
+                        rb.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
+                    end
+                    RadioButton.BackgroundColor3 = currentThemeColor
+                    selectedOption = option
+                    if callback then callback(option) end
+                end)
+
                 currentX = currentX + optionWidth
-            end        
-            
+            end
+
             local finalHeight = currentY + 20
-            RadioFrame.Size = UDim2.new(0, 246, 0, finalHeight)    
-            
-            local elementData = { frame = RadioFrame, height = finalHeight + 4, visible = true, isSub = false }        
-            table.insert(tabData.elements, elementData)        
-            updateLayout()      
-                    
-            local RadioObject = {        
-                SetValue = function(self, value)        
-                    for _, rb in ipairs(radioButtons) do        
-                        if rb.option == value then        
-                            rb.button.BackgroundColor3 = currentThemeColor        
-                            selectedOption = value        
-                        else        
-                            rb.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)        
-                        end        
-                    end        
-                    if callback then callback(value) end       
-                end,        
-                GetValue = function(self) return selectedOption end,    
-                SetVisible = function(self, state) elementData.visible = state; RadioFrame.Visible = state; updateLayout() end,    
-                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end    
-            }  
+            RadioFrame.Size = UDim2.new(0, 246, 0, finalHeight)
+
+            local elementData = { frame = RadioFrame, height = finalHeight + 4, visible = true, isSub = false }
+            table.insert(tabData.elements, elementData)
+            updateLayout()
+
+            local RadioObject = {
+                SetValue = function(self, value)
+                    for _, rb in ipairs(radioButtons) do
+                        if rb.option == value then
+                            rb.button.BackgroundColor3 = currentThemeColor
+                            selectedOption = value
+                        else
+                            rb.button.BackgroundColor3 = Color3.fromRGB(53, 53, 53)
+                        end
+                    end
+                    if callback then callback(value) end
+                end,
+                GetValue = function(self) return selectedOption end,
+                SetVisible = function(self, state) elementData.visible = state; RadioFrame.Visible = state; updateLayout() end,
+                SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end
+            }
 
             registerConfigElement("RadioButton", text, RadioObject,
                 function() return RadioObject:GetValue() end,
                 function(val) RadioObject:SetValue(val) end
             )
+            return RadioObject
+        end
 
-            return RadioObject      
-        end     
+        -- ── Separator ────────────────────────────────────────────────────────────
 
         function tabMethods:AddSeparator()
             local SeparatorFrame = Instance.new("Frame", ElementsContainer)
             SeparatorFrame.BorderSizePixel = 0
             SeparatorFrame.Size = UDim2.new(0, 244, 0, 1)
             SeparatorFrame.BackgroundColor3 = currentThemeColor
-            SeparatorFrame.Position = UDim2.new(0, 7, 0, 0)
-            
             table.insert(themeElements, { type = "Separator", instance = SeparatorFrame })
-            
             local elementData = { frame = SeparatorFrame, height = 5, visible = true, isSub = false }
             table.insert(tabData.elements, elementData)
             updateLayout()
-            
             return {}
         end
+
+        -- ── Section ──────────────────────────────────────────────────────────────
 
         function tabMethods:AddSection(text)
             local SectionFrame = Instance.new("Frame", ElementsContainer)
             SectionFrame.BorderSizePixel = 0
-            SectionFrame.Size = UDim2.new(0, 240, 0, 18)  
+            SectionFrame.Size = UDim2.new(0, 240, 0, 18)
             SectionFrame.BackgroundTransparency = 1
 
             local SectionLabel = Instance.new("TextLabel", SectionFrame)
             SectionLabel.BackgroundTransparency = 1
-            SectionLabel.Size = UDim2.new(1, -10, 0, 14)  
+            SectionLabel.Size = UDim2.new(1, -10, 0, 14)
             SectionLabel.Position = UDim2.new(0, 4, 0, 2)
             SectionLabel.Text = text or "Section"
             SectionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-            SectionLabel.TextSize = 12  
+            SectionLabel.TextSize = 12
             SectionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
             SectionLabel.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -1433,54 +1424,52 @@ function UILibrary:CreateWindow(title)
             SectionLine.Size = UDim2.new(1, 0, 0, 1)
             SectionLine.Position = UDim2.new(0, 0, 0, 17)
             SectionLine.BackgroundColor3 = currentThemeColor
-            SectionLine.BackgroundTransparency = 0.5  
-
+            SectionLine.BackgroundTransparency = 0.5
             table.insert(themeElements, { type = "SectionLine", instance = SectionLine })
 
-            local elementData = { frame = SectionFrame, height = 20, visible = true, isSub = false }  
+            local elementData = { frame = SectionFrame, height = 20, visible = true, isSub = false }
             table.insert(tabData.elements, elementData)
             updateLayout()
-
             return {}
         end
 
-        return tabMethods      
-    end      
+        return tabMethods
+    end
 
-    -- SISTEMA DE CONFIGURAÇÃO PERSISTENTE (IGNORA COMPONENTES DA PROPRIA ABA DE DESIGNER)
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- SISTEMA DE CONFIGURAÇÃO PERSISTENTE
+    -- ═══════════════════════════════════════════════════════════════════════════
+
     local function collectCurrentConfig()
         local config = {}
         for tabName, elements in pairs(configElements) do
-            if tabName ~= "Config" then -- CORREÇÃO: Não salva elementos da aba Config do UI library
-                config[tabName] = {}
-                for _, elem in ipairs(elements) do
-                    local value = elem.getValue()
-                    if elem.type == "ColorPicker" and typeof(value) == "Color3" then
-                        value = value:ToHex()
-                    end
-                    table.insert(config[tabName], {
-                        type = elem.type,
-                        text = elem.text,
-                        value = value
-                    })
+            config[tabName] = {}
+            for _, elem in ipairs(elements) do
+                local value = elem.getValue()
+                if elem.type == "ColorPicker" and typeof(value) == "Color3" then
+                    value = value:ToHex()
                 end
+                table.insert(config[tabName], {
+                    type = elem.type,
+                    text = elem.text,
+                    value = value
+                })
             end
         end
         return config
     end
-    
+
     local function loadConfiguration(config)
         if not config then return end
-        
         for tabName, elements in pairs(configElements) do
-            if tabName ~= "Config" and config[tabName] then -- CORREÇÃO: Não altera os Inputs da aba Config ao dar load
+            if config[tabName] then
                 for _, elem in ipairs(elements) do
                     for _, savedElem in ipairs(config[tabName]) do
                         if savedElem.text == elem.text and savedElem.type == elem.type then
                             local value = savedElem.value
                             if elem.type == "ColorPicker" and type(value) == "string" then
-                                local success, color = pcall(Color3.fromHex, value)
-                                if success then value = color end
+                                local ok, color = pcall(Color3.fromHex, value)
+                                if ok then value = color end
                             end
                             elem.setValue(value)
                             break
@@ -1490,43 +1479,32 @@ function UILibrary:CreateWindow(title)
             end
         end
     end
-    
+
     local autoConfigCreated = false
     local function createAutoConfigTab()
         if autoConfigCreated then return end
         autoConfigCreated = true
-        
+
+        ensureFolder()
+
+        -- Carrega metadados (última config + autoLoad)
+        local meta = loadMeta()
+        local autoLoadEnabled = meta.autoLoad or false
+
         local configTab = publicMethods:AddTab("Config", "rbxassetid://10709852168")
-        local currentConfigName = ""
+
+        local currentConfigName = meta.lastConfig or ""
         local configDropdown = nil
         local nameInput = nil
-        
-        -- Carrega metadados do sistema (Auto Load e último carregado)
-        local sysSettings = loadSystemSettings()
+        local autoLoadToggle = nil
 
-        configTab:AddSection("Gerenciador de Configuracoes")
-        
-        -- Adicionado Toggle Auto Load
-        local autoLoadToggle = configTab:AddToggle("Auto Load", function(state)
-            sysSettings.autoLoad = state
-            saveSystemSettings(sysSettings)
-        end)
-        autoLoadToggle:SetState(sysSettings.autoLoad)
+        -- ── Helpers ──────────────────────────────────────────────────────────────
 
-        nameInput = configTab:AddTextBox("Nome da Config", "MinhaConfig", function(text)
-            currentConfigName = text
-        end)
-        
         local function getConfigList()
             local list = {}
+            loadAllConfigsFromDisk()
             local diskConfigs = getConfigFiles()
             for _, name in ipairs(diskConfigs) do
-                if not savedConfigs[name] then
-                    local data = loadFromFile(name)
-                    if data then
-                        savedConfigs[name] = data
-                    end
-                end
                 table.insert(list, name)
             end
             if #list == 0 then
@@ -1534,132 +1512,156 @@ function UILibrary:CreateWindow(title)
             end
             return list
         end
-        
-        configDropdown = configTab:AddDropdown("Configs Salvas", getConfigList(), function(selected)
-            if selected ~= "Nenhuma config salva" then
-                currentConfigName = selected
-                nameInput:SetText(selected)
-                
-                -- Armazena qual foi a última clicada no dropdown
-                sysSettings.lastConfig = selected
-                saveSystemSettings(sysSettings)
-            end
-        end)
-        
-        local function updateDropdown()
+
+        local function updateDropdown(selectName)
             local configList = getConfigList()
             if configDropdown and configDropdown.Refresh then
                 configDropdown:Refresh(configList)
             end
+            -- Restaura seleção no visual do dropdown
+            local nameToSelect = selectName or currentConfigName
+            if nameToSelect and nameToSelect ~= "" and configDropdown and configDropdown.SetValue then
+                for _, v in ipairs(getConfigList()) do
+                    if v == nameToSelect then
+                        configDropdown:SetValue(nameToSelect)
+                        break
+                    end
+                end
+            end
         end
-        
+
+        -- ── UI ───────────────────────────────────────────────────────────────────
+
+        configTab:AddSection("Gerenciador de Configs")
+
+        -- TextBox nome da config
+        nameInput = configTab:AddTextBox("Nome", currentConfigName, function(text)
+            currentConfigName = text
+        end)
+
+        -- Dropdown — ao selecionar, escreve no textbox (BUG CORRIGIDO)
+        configDropdown = configTab:AddDropdown("Configs Salvas", getConfigList(), function(selected)
+            if selected and selected ~= "Nenhuma config salva" then
+                currentConfigName = selected
+                -- CORREÇÃO: forçar escrita no Input sem acionar callback de novo
+                if nameInput then
+                    nameInput:SetText(selected)
+                end
+            end
+        end)
+
         configTab:AddSeparator()
-        
-        configTab:AddButton("Salvar Configuracao", function()
+
+        -- Salvar
+        configTab:AddButton("Salvar", function()
             local name = nameInput:GetText()
-            if name and name ~= "" and name ~= "Nenhuma config salva" then
-                local configData = collectCurrentConfig()
-                savedConfigs[name] = configData
-                saveToFile(configData, name)
-                
-                -- Define como o último salvo com sucesso
-                sysSettings.lastConfig = name
-                saveSystemSettings(sysSettings)
-                
-                updateDropdown()
-                configDropdown:SetValue(name)
+            if not name or name == "" or name == "Nenhuma config salva" then return end
+            local configData = collectCurrentConfig()
+            savedConfigs[name] = configData
+            saveToFile(configData, name)
+            currentConfigName = name
+            meta.lastConfig = name
+            meta.autoLoad = autoLoadEnabled
+            saveMeta(meta)
+            updateDropdown(name)
+        end)
+
+        -- Carregar
+        configTab:AddButton("Carregar", function()
+            local name = nameInput:GetText()
+            if not name or name == "" then return end
+            local configToLoad = savedConfigs[name] or loadFromFile(name)
+            if configToLoad then
+                savedConfigs[name] = configToLoad
+                loadConfiguration(configToLoad)
+                currentConfigName = name
+                meta.lastConfig = name
+                meta.autoLoad = autoLoadEnabled
+                saveMeta(meta)
+                updateDropdown(name)
             end
         end)
-        
-        configTab:AddButton("Carregar Configuracao", function()
+
+        -- Deletar
+        configTab:AddButton("Deletar", function()
             local name = nameInput:GetText()
-            if name then
-                local configToLoad = savedConfigs[name]
-                if not configToLoad then
-                    configToLoad = loadFromFile(name)
-                    if configToLoad then
-                        savedConfigs[name] = configToLoad
-                    end
-                end
-                if configToLoad then
-                    loadConfiguration(configToLoad)
-                    
-                    sysSettings.lastConfig = name
-                    saveSystemSettings(sysSettings)
-                    
-                    updateDropdown()
-                    configDropdown:SetValue(name)
-                end
-            end
-        end)
-        
-        configTab:AddButton("Deletar Configuracao", function()
-            local name = nameInput:GetText()
-            if name and savedConfigs[name] then
+            if not name or name == "" then return end
+            if savedConfigs[name] then
                 savedConfigs[name] = nil
-                pcall(function()
-                    delfile("VLG_Configs/" .. name .. ".json")
-                end)
-                if sysSettings.lastConfig == name then
-                    sysSettings.lastConfig = ""
-                    saveSystemSettings(sysSettings)
+                pcall(function() delfile("VLG_Configs/" .. name .. ".json") end)
+                if meta.lastConfig == name then
+                    meta.lastConfig = nil
+                    saveMeta(meta)
                 end
+                currentConfigName = ""
+                if nameInput then nameInput:SetText("") end
                 updateDropdown()
-                nameInput:SetText("")
             end
         end)
-        
+
         configTab:AddSeparator()
-        
+
+        -- ── Auto Load ─────────────────────────────────────────────────────────────
+        configTab:AddSection("Auto Load")
+
+        -- Descrição compacta
+        autoLoadToggle = configTab:AddToggle("Auto Load ao Entrar", function(state)
+            autoLoadEnabled = state
+            meta.autoLoad = state
+            -- Preserva lastConfig no meta ao mudar autoLoad
+            saveMeta(meta)
+        end)
+
+        -- Restaura estado do toggle de autoLoad
+        if autoLoadEnabled then
+            autoLoadToggle:SetState(true)
+        end
+
+        configTab:AddSeparator()
+
+        -- Atualizar lista
+        configTab:AddButton("Atualizar Lista", function()
+            updateDropdown(currentConfigName)
+        end)
+
+        -- Resetar tudo
         configTab:AddButton("Resetar Tudo", function()
-            for tabName, elements in pairs(configElements) do
-                if tabName ~= "Config" then
-                    for _, elem in ipairs(elements) do
-                        if elem.type == "Toggle" then
-                            elem.setValue(false)
-                        elseif elem.type == "Slider" then
-                            elem.setValue(0)
-                        elseif elem.type == "TextBox" then
-                            elem.setValue("")
-                        elseif elem.type == "Dropdown" then
-                            elem.setValue("")
-                        elseif elem.type == "ColorPicker" then
-                            elem.setValue(Color3.fromRGB(255, 255, 255))
-                        elseif elem.type == "RadioButton" then
-                            elem.setValue("")
-                        end
+            for _, elements in pairs(configElements) do
+                for _, elem in ipairs(elements) do
+                    if     elem.type == "Toggle"      then elem.setValue(false)
+                    elseif elem.type == "Slider"      then elem.setValue(0)
+                    elseif elem.type == "TextBox"     then elem.setValue("")
+                    elseif elem.type == "Dropdown"    then elem.setValue("")
+                    elseif elem.type == "ColorPicker" then elem.setValue(Color3.fromRGB(255, 255, 255))
+                    elseif elem.type == "RadioButton" then elem.setValue("")
                     end
                 end
             end
         end)
-        
-        configTab:AddSeparator()
-        
-        configTab:AddButton("Atualizar Lista", function()
-            updateDropdown()
-        end)
-        
-        -- SISTEMA INICIALIZADOR AUTOMÁTICO (Roda ao carregar a interface)
-        updateDropdown()
-        
-        local validConfigs = getConfigList()
-        if sysSettings.lastConfig and sysSettings.lastConfig ~= "" and table.find(validConfigs, sysSettings.lastConfig) then
-            -- Restaura visualmente o estado da última config selecionada
-            configDropdown:SetValue(sysSettings.lastConfig)
-            nameInput:SetText(sysSettings.lastConfig)
-            
-            -- Executa o Auto Load se o toggle estiver ativo
-            if sysSettings.autoLoad then
-                local preLoad = savedConfigs[sysSettings.lastConfig] or loadFromFile(sysSettings.lastConfig)
-                if preLoad then
-                    loadConfiguration(preLoad)
+
+        -- ── Restauração inicial ───────────────────────────────────────────────────
+
+        -- Sempre restaura o dropdown para a última config usada
+        if currentConfigName ~= "" then
+            updateDropdown(currentConfigName)
+            if nameInput then nameInput:SetText(currentConfigName) end
+        end
+
+        -- Auto Load: se ativo E tem lastConfig, carrega automaticamente
+        if autoLoadEnabled and meta.lastConfig and meta.lastConfig ~= "" then
+            spawn(function()
+                wait(0.5)  -- aguarda elementos registrarem
+                local configToLoad = savedConfigs[meta.lastConfig] or loadFromFile(meta.lastConfig)
+                if configToLoad then
+                    savedConfigs[meta.lastConfig] = configToLoad
+                    loadConfiguration(configToLoad)
                 end
-            end
+            end)
         end
     end
-    
-    task.spawn(function()
-        task.wait(0.2)
+
+    spawn(function()
+        wait(0.2)
         createAutoConfigTab()
     end)
 
