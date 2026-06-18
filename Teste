@@ -1,7 +1,4 @@
--- UI Library COMPLETA com Sistema de Config Automático
--- By VLG - Todos os direitos reservados
--- MELHORIAS: Text Wrapping no Dropdown + Escolha de Floating Toggle
-
+-- Código completo melhorado
 local HttpService = game:GetService("HttpService")
 local UILibrary = {}
 
@@ -10,25 +7,65 @@ local ContextActionService = game:GetService("ContextActionService")
 local CoreGui = game:GetService("CoreGui")
 local TextService = game:GetService("TextService")
 
+-- Sistema de save usando writefile/readfile
+local function saveToFile(data, filename)
+    local success, err = pcall(function()
+        writefile("VLG_Configs/" .. filename .. ".json", HttpService:JSONEncode(data))
+    end)
+    return success
+end
+
+local function loadFromFile(filename)
+    local success, data = pcall(function()
+        return HttpService:JSONDecode(readfile("VLG_Configs/" .. filename .. ".json"))
+    end)
+    if success then return data end
+    return nil
+end
+
+local function getConfigFiles()
+    local success, files = pcall(function()
+        return listfiles("VLG_Configs")
+    end)
+    if success then
+        local configs = {}
+        for _, file in ipairs(files) do
+            if file:match("%.json$") then
+                local name = file:match("VLG_Configs[/\\](.+)%.json$")
+                if name then
+                    table.insert(configs, name)
+                end
+            end
+        end
+        return configs
+    end
+    return {}
+end
+
 function UILibrary:CreateWindow(title)
     local publicMethods = {}
     local tabs = {}
     local currentTab = nil
 
-    -- SISTEMA DE TEMA GLOBAL  
     local currentThemeColor = Color3.fromRGB(144, 0, 181)  
     local themeElements = {}   
-    
-    -- SISTEMA GLOBAL DE DROPDOWN
     local openDropdownInfo = nil
-
-    -- SISTEMA DE KILL SWITCH E CONFIGS
     local activeToggles = {}
     local activeFloatingUIs = {}
-    
-    -- SISTEMA DE CONFIG AUTOMÁTICO
-    local configElements = {} -- Registro de todos elementos para salvar/carregar
-    local savedConfigs = {} -- Configurações salvas em memória
+    local configElements = {}
+    local savedConfigs = {}
+
+    -- Carrega configs do arquivo ao iniciar
+    local function loadAllConfigsFromDisk()
+        local files = getConfigFiles()
+        for _, name in ipairs(files) do
+            local data = loadFromFile(name)
+            if data then
+                savedConfigs[name] = data
+            end
+        end
+    end
+    loadAllConfigsFromDisk()
 
     local function isInsideFrame(frame, posX, posY)
         if not frame or not frame.Parent then return false end
@@ -64,9 +101,6 @@ function UILibrary:CreateWindow(title)
     LMG2L["Floating_1"].IgnoreGuiInset = true     
     LMG2L["Floating_1"].Parent = CoreGui      
 
-    -- ==========================================      
-    -- MENU PRINCIPAL      
-    -- ==========================================      
     LMG2L["Topo_2"] = Instance.new("Frame", LMG2L["Floating_1"])      
     LMG2L["Topo_2"]["BorderSizePixel"] = 0      
     LMG2L["Topo_2"]["BackgroundColor3"] = currentThemeColor      
@@ -135,9 +169,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["OpenName_2d"]["Rotation"] = 180      
     LMG2L["OpenName_2d"]["Position"] = UDim2.new(0, 4, 0, 4)      
 
-    -- ==========================================      
     -- PALETA DE CORES FLUTUANTE       
-    -- ==========================================      
     local activeColorTarget = nil      
     local activeColorCallback = nil      
 
@@ -380,7 +412,6 @@ function UILibrary:CreateWindow(title)
         Paleta_d.Visible = true      
     end      
 
-    -- FUNÇÃO DE ATUALIZAÇÃO DO TEMA  
     local function applyTheme()  
         local th, ts, tv = currentThemeColor:ToHSV()  
         local darkerTheme = Color3.fromHSV(th, ts, math.clamp(tv - 0.2, 0, 1))  
@@ -419,13 +450,12 @@ function UILibrary:CreateWindow(title)
                 end  
             elseif element.type == "Separator" then  
                 element.instance.BackgroundColor3 = currentThemeColor  
+            elseif element.type == "SectionLine" then
+                element.instance.BackgroundColor3 = currentThemeColor
             end  
         end  
     end  
 
-    -- ==========================================      
-    -- DRAG MENU E KILL SWITCH     
-    -- ==========================================      
     local function MakeDraggable(frameToDrag, dragArea)      
         local dragging = false      
         local dragStart, startPos      
@@ -450,21 +480,16 @@ function UILibrary:CreateWindow(title)
     MakeDraggable(LMG2L["Topo_2"], LMG2L["Topo_2"])      
     MakeDraggable(Paleta_d, PaletaTop)      
 
-    -- ==========================================      
-    -- BOTÃO DE FECHAR (KILL SWITCH E HIDE FLOATINGS)
-    -- ========================================== 
     LMG2L["CloseMenu_4"].MouseButton1Click:Connect(function()      
         LMG2L["Topo_2"].Visible = false
         Paleta_d.Visible = false      
         
-        -- Fecha e sincroniza todos os Floating Toggles ativos
         for _, floatingToggle in pairs(activeFloatingUIs) do
             if floatingToggle.hide then
                 floatingToggle.hide()
             end
         end
         
-        -- Desliga todos os Toggles que estiverem True (Panic Button)
         for _, toggleData in pairs(activeToggles) do
             if toggleData.getState() == true then
                 toggleData.setState(false)
@@ -486,9 +511,6 @@ function UILibrary:CreateWindow(title)
         end      
     end      
 
-    -- ==========================================      
-    -- MÉTODOS PÚBLICOS DAS TABS      
-    -- ==========================================      
     function publicMethods:AddTab(tabName, iconId)      
         local tabIndex = #tabs + 1      
         local tabData = { name = tabName, elements = {}, container = nil, button = nil, totalHeight = 0 }      
@@ -542,9 +564,6 @@ function UILibrary:CreateWindow(title)
                   
         local tabMethods = {}          
 
-        -- ==========================================
-        -- FUNÇÃO PARA REGISTRAR ELEMENTOS NO SISTEMA DE CONFIG
-        -- ==========================================
         local function registerConfigElement(elementType, elementText, elementInstance, getterFunc, setterFunc)
             if not configElements[tabName] then
                 configElements[tabName] = {}
@@ -603,7 +622,6 @@ function UILibrary:CreateWindow(title)
                 GetText = function(self) return Input.Text end  
             }
 
-            -- Registra no sistema de config
             registerConfigElement("TextBox", text, TextBoxObject, 
                 function() return TextBoxObject:GetText() end,
                 function(val) TextBoxObject:SetText(val) end
@@ -621,12 +639,8 @@ function UILibrary:CreateWindow(title)
             return pickerObj  
         end  
                   
-        -- ==========================================
-        -- TOGGLE MELHORADO: Agora com parâmetro hasFloating
-        -- ==========================================
         function tabMethods:AddToggle(text, callback, hasFloating)          
-            -- hasFloating é opcional (padrão false). Se true, o botão Show aparece.
-            local showFloatingButton = hasFloating == true  -- Padrão: false (sem floating)
+            local showFloatingButton = hasFloating == true
 
             local ToggleFrame = Instance.new("Frame", ElementsContainer)          
             ToggleFrame.BorderSizePixel = 0          
@@ -652,7 +666,6 @@ function UILibrary:CreateWindow(title)
             ToggleButton.AutoButtonColor = false          
             Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 3)        
 
-            -- BOTÃO SHOW/HIDE (SÓ APARECE SE hasFloating = true)
             local ShowBtn = nil
             local FloatingUI = nil
             local FTopo = nil
@@ -674,7 +687,6 @@ function UILibrary:CreateWindow(title)
                 local ShowBtnCorner = Instance.new("UICorner", ShowBtn)  
                 ShowBtnCorner.CornerRadius = UDim.new(0, 4)  
 
-                -- INTERFACE DO FLOATING TOGGLE (SÓ CRIADA SE hasFloating = true)
                 FloatingUI = Instance.new("Frame", LMG2L["Floating_1"])  
                 FloatingUI.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  
                 FloatingUI.BorderSizePixel = 0  
@@ -734,7 +746,6 @@ function UILibrary:CreateWindow(title)
                 if callback then callback(toggleState) end       
             end          
             
-            -- Registra no sistema de controle para o Kill Switch
             table.insert(activeToggles, {
                 setState = function(v) toggleState = v; updateToggle() end,
                 getState = function() return toggleState end
@@ -763,7 +774,6 @@ function UILibrary:CreateWindow(title)
                 end
             end  
 
-            -- Registra o FloatingUI para ser escondido no Kill Switch
             table.insert(activeFloatingUIs, {
                 hide = function() toggleFloatingVisibility(false) end
             })
@@ -823,7 +833,6 @@ function UILibrary:CreateWindow(title)
                 return pickerObj      
             end      
 
-            -- Registra no sistema de config
             registerConfigElement("Toggle", text, ToggleObject,
                 function() return ToggleObject:GetState() end,
                 function(val) ToggleObject:SetState(val) end
@@ -894,7 +903,6 @@ function UILibrary:CreateWindow(title)
                 GetColor = function(self) return ColorBtn.BackgroundColor3 end
             }      
 
-            -- Registra no sistema de config
             registerConfigElement("ColorPicker", text, ColorPickerObject,
                 function() return ColorPickerObject:GetColor() end,
                 function(val) ColorPickerObject:SetColor(val) end
@@ -903,9 +911,6 @@ function UILibrary:CreateWindow(title)
             return ColorPickerObject      
         end      
                   
-        -- ==========================================
-        -- DROPDOWN MELHORADO: Texto grande agora é cortado ou wrapped
-        -- ==========================================
         function tabMethods:AddDropdown(text, options, callback)        
             local DropdownFrame = Instance.new("Frame", ElementsContainer)        
             DropdownFrame.BorderSizePixel = 0        
@@ -932,7 +937,6 @@ function UILibrary:CreateWindow(title)
             Main.ZIndex = 11          
             Instance.new("UICorner", Main).CornerRadius = UDim.new(0,3)          
 
-            -- CORREÇÃO: Selected com TextWrapped e TextTruncate
             local Selected = Instance.new("TextLabel", Main)          
             Selected.BackgroundTransparency = 1          
             Selected.Size = UDim2.new(1,-28,1,0)          
@@ -943,9 +947,9 @@ function UILibrary:CreateWindow(title)
             Selected.Text = options[1] or "Selecionar"          
             Selected.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)          
             Selected.ZIndex = 12          
-            Selected.TextWrapped = false  -- Não quebra a linha dentro do botão principal
-            Selected.TextTruncate = Enum.TextTruncate.AtEnd  -- Corta com "..." se for muito grande
-            Selected.ClipsDescendants = true  -- Garante que não vaze
+            Selected.TextWrapped = false
+            Selected.TextTruncate = Enum.TextTruncate.AtEnd
+            Selected.ClipsDescendants = true
 
             local Open = Instance.new("ImageButton", Main)          
             Open.BackgroundColor3 = currentThemeColor          
@@ -963,14 +967,14 @@ function UILibrary:CreateWindow(title)
             Scroll.Visible = false          
             Scroll.BorderSizePixel = 0          
             Scroll.BackgroundColor3 = Color3.fromRGB(37,37,37)          
-            Scroll.Size = UDim2.new(0,112,0,28)          
+            Scroll.Size = UDim2.new(0,136,0,28)          
             Scroll.ScrollBarThickness = 0       
             Scroll.ZIndex = 105 
             Scroll.ScrollingDirection = Enum.ScrollingDirection.Y       
             Scroll.ElasticBehavior = Enum.ElasticBehavior.Never 
             Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0,3)          
 
-            local btnHeight = 22  -- Aumentado para acomodar texto maior
+            local btnHeight = 22
             local padding = 2          
             
             local function getHeight() 
@@ -1014,7 +1018,7 @@ function UILibrary:CreateWindow(title)
 
                     Scroll.Visible = true; Open.Rotation = 0        
                     DropdownFrame.ZIndex = 100; Main.ZIndex = 101       
-                    Scroll.Size = UDim2.new(0,112,0,getHeight()) 
+                    Scroll.Size = UDim2.new(0,136,0,getHeight()) 
                     updateScrollPos() 
 
                     openDropdownInfo = {
@@ -1043,20 +1047,19 @@ function UILibrary:CreateWindow(title)
                         end  
                     end  
 
-                    -- CORREÇÃO: Calcular altura dinâmica baseada no texto
                     for i, opt in ipairs(options) do  
                         local Btn = Instance.new("TextButton", Scroll)  
                         Btn.Size = UDim2.new(1,-4,0,btnHeight)  
                         Btn.Position = UDim2.new(0,2,0,(i-1)*(btnHeight+padding))  
                         Btn.Text = opt  
-                        Btn.TextSize = 11  -- Aumentado para melhor leitura
+                        Btn.TextSize = 11
                         Btn.BorderSizePixel = 0  
                         Btn.BackgroundColor3 = Color3.fromRGB(37,37,37)  
                         Btn.TextColor3 = Color3.fromRGB(255,255,255)  
                         Btn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)  
                         Btn.ZIndex = 106 
                         Btn.TextWrapped = false  
-                        Btn.TextTruncate = Enum.TextTruncate.AtEnd  -- Corta texto longo
+                        Btn.TextTruncate = Enum.TextTruncate.AtEnd
                         Btn.ClipsDescendants = true
 
                         Btn.MouseEnter:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(50,50,50) end)  
@@ -1073,7 +1076,7 @@ function UILibrary:CreateWindow(title)
                     Scroll.CanvasSize = UDim2.new(0, 0, 0, totalContentHeight)
                       
                     if Scroll.Visible then  
-                        Scroll.Size = UDim2.new(0,112,0,getHeight())  
+                        Scroll.Size = UDim2.new(0,136,0,getHeight())  
                     end  
                 end,
                 
@@ -1086,7 +1089,6 @@ function UILibrary:CreateWindow(title)
 
             DropdownObject:Refresh(options)  
 
-            -- Registra no sistema de config
             registerConfigElement("Dropdown", text, DropdownObject,
                 function() return DropdownObject:GetValue() end,
                 function(val) DropdownObject:SetValue(val) end
@@ -1209,7 +1211,6 @@ function UILibrary:CreateWindow(title)
                 SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end    
             }    
 
-            -- Registra no sistema de config
             registerConfigElement("Slider", text, SliderObject,
                 function() return SliderObject:GetValue() end,
                 function(val) SliderObject:SetValue(val) end
@@ -1355,7 +1356,6 @@ function UILibrary:CreateWindow(title)
                 SetAsSubElement = function(self, state) elementData.isSub = state; updateLayout() end    
             }  
 
-            -- Registra no sistema de config
             registerConfigElement("RadioButton", text, RadioObject,
                 function() return RadioObject:GetValue() end,
                 function(val) RadioObject:SetValue(val) end
@@ -1364,14 +1364,10 @@ function UILibrary:CreateWindow(title)
             return RadioObject      
         end     
 
-        -- ============================
-        -- NOVOS MÉTODOS: Separator & Section
-        -- ============================
-        
         function tabMethods:AddSeparator()
             local SeparatorFrame = Instance.new("Frame", ElementsContainer)
             SeparatorFrame.BorderSizePixel = 0
-            SeparatorFrame.Size = UDim2.new(0, 244.050, 0, 1)
+            SeparatorFrame.Size = UDim2.new(0, 244, 0, 1)
             SeparatorFrame.BackgroundColor3 = currentThemeColor
             SeparatorFrame.Position = UDim2.new(0, 7, 0, 0)
             
@@ -1384,23 +1380,34 @@ function UILibrary:CreateWindow(title)
             return {}
         end
 
+        -- SECTION MELHORADO - Mais compacto e proporcional
         function tabMethods:AddSection(text)
             local SectionFrame = Instance.new("Frame", ElementsContainer)
             SectionFrame.BorderSizePixel = 0
-            SectionFrame.Size = UDim2.new(0, 230, 0, 20)
+            SectionFrame.Size = UDim2.new(0, 240, 0, 18)  -- Reduzido de 230x20 para 240x18
             SectionFrame.BackgroundTransparency = 1
 
             local SectionLabel = Instance.new("TextLabel", SectionFrame)
             SectionLabel.BackgroundTransparency = 1
-            SectionLabel.Size = UDim2.new(0, 234, 0, 18)
-            SectionLabel.Position = UDim2.new(0, 6, 0, 0)
+            SectionLabel.Size = UDim2.new(1, -10, 0, 14)  -- Reduzido de 18 para 14
+            SectionLabel.Position = UDim2.new(0, 4, 0, 2)
             SectionLabel.Text = text or "Section"
             SectionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-            SectionLabel.TextSize = 14
+            SectionLabel.TextSize = 12  -- Reduzido de 14 para 12
             SectionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
             SectionLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-            local elementData = { frame = SectionFrame, height = 22, visible = true, isSub = false }
+            -- Linha sutil abaixo da section
+            local SectionLine = Instance.new("Frame", SectionFrame)
+            SectionLine.BorderSizePixel = 0
+            SectionLine.Size = UDim2.new(1, 0, 0, 1)
+            SectionLine.Position = UDim2.new(0, 0, 0, 17)
+            SectionLine.BackgroundColor3 = currentThemeColor
+            SectionLine.BackgroundTransparency = 0.5  -- Mais sutil
+
+            table.insert(themeElements, { type = "SectionLine", instance = SectionLine })
+
+            local elementData = { frame = SectionFrame, height = 20, visible = true, isSub = false }  -- Reduzido de 22 para 20
             table.insert(tabData.elements, elementData)
             updateLayout()
 
@@ -1410,18 +1417,13 @@ function UILibrary:CreateWindow(title)
         return tabMethods      
     end      
 
-    -- ==========================================
-    -- SISTEMA DE CONFIGURAÇÃO AUTOMÁTICO
-    -- ==========================================
-    
-    -- Função para coletar estado atual de todos os elementos
+    -- SISTEMA DE CONFIGURAÇÃO PERSISTENTE
     local function collectCurrentConfig()
         local config = {}
         for tabName, elements in pairs(configElements) do
             config[tabName] = {}
             for _, elem in ipairs(elements) do
                 local value = elem.getValue()
-                -- Converte Color3 para HEX se for ColorPicker
                 if elem.type == "ColorPicker" and typeof(value) == "Color3" then
                     value = value:ToHex()
                 end
@@ -1435,7 +1437,6 @@ function UILibrary:CreateWindow(title)
         return config
     end
     
-    -- Função para carregar configuração
     local function loadConfiguration(config)
         if not config then return end
         
@@ -1445,7 +1446,6 @@ function UILibrary:CreateWindow(title)
                     for _, savedElem in ipairs(config[tabName]) do
                         if savedElem.text == elem.text and savedElem.type == elem.type then
                             local value = savedElem.value
-                            -- Converte HEX de volta para Color3
                             if elem.type == "ColorPicker" and type(value) == "string" then
                                 local success, color = pcall(Color3.fromHex, value)
                                 if success then value = color end
@@ -1459,30 +1459,33 @@ function UILibrary:CreateWindow(title)
         end
     end
     
-    -- Cria a aba de configuração automática (sempre a última)
     local autoConfigCreated = false
     local function createAutoConfigTab()
         if autoConfigCreated then return end
         autoConfigCreated = true
         
-        local configTab = publicMethods:AddTab("Config ⚙️", "rbxassetid://10709852168")
+        local configTab = publicMethods:AddTab("Config", "rbxassetid://10709852168")
         local currentConfigName = ""
         local configDropdown = nil
-        
-        -- Variáveis para os elementos da UI de config
         local nameInput = nil
         
-        configTab:AddSection("Gerenciador de Configurações")
+        configTab:AddSection("Gerenciador de Configuracoes")
         
-        -- TextBox para nome da config
         nameInput = configTab:AddTextBox("Nome da Config", "MinhaConfig", function(text)
             currentConfigName = text
         end)
         
-        -- Função auxiliar para pegar lista de configs
         local function getConfigList()
             local list = {}
-            for name, _ in pairs(savedConfigs) do
+            -- Carrega tanto da memória quanto do disco
+            local diskConfigs = getConfigFiles()
+            for _, name in ipairs(diskConfigs) do
+                if not savedConfigs[name] then
+                    local data = loadFromFile(name)
+                    if data then
+                        savedConfigs[name] = data
+                    end
+                end
                 table.insert(list, name)
             end
             if #list == 0 then
@@ -1491,7 +1494,6 @@ function UILibrary:CreateWindow(title)
             return list
         end
         
-        -- Dropdown de configs salvas
         configDropdown = configTab:AddDropdown("Configs Salvas", getConfigList(), function(selected)
             if selected ~= "Nenhuma config salva" then
                 currentConfigName = selected
@@ -1499,7 +1501,6 @@ function UILibrary:CreateWindow(title)
             end
         end)
         
-        -- Função para atualizar o dropdown
         local function updateDropdown()
             local configList = getConfigList()
             if configDropdown and configDropdown.Refresh then
@@ -1509,28 +1510,43 @@ function UILibrary:CreateWindow(title)
         
         configTab:AddSeparator()
         
-        -- Botão Salvar
-        configTab:AddButton("💾 Salvar Configuração", function()
+        configTab:AddButton("Salvar Configuracao", function()
             local name = nameInput:GetText()
             if name and name ~= "" and name ~= "Nenhuma config salva" then
-                savedConfigs[name] = collectCurrentConfig()
+                local configData = collectCurrentConfig()
+                savedConfigs[name] = configData
+                -- Salva no disco para persistência
+                saveToFile(configData, name)
                 updateDropdown()
             end
         end)
         
-        -- Botão Carregar
-        configTab:AddButton("📂 Carregar Configuração", function()
+        configTab:AddButton("Carregar Configuracao", function()
             local name = nameInput:GetText()
-            if name and savedConfigs[name] then
-                loadConfiguration(savedConfigs[name])
+            if name then
+                -- Tenta carregar da memória primeiro, depois do disco
+                local configToLoad = savedConfigs[name]
+                if not configToLoad then
+                    configToLoad = loadFromFile(name)
+                    if configToLoad then
+                        savedConfigs[name] = configToLoad
+                    end
+                end
+                if configToLoad then
+                    loadConfiguration(configToLoad)
+                    updateDropdown()
+                end
             end
         end)
         
-        -- Botão Deletar
-        configTab:AddButton("🗑️ Deletar Configuração", function()
+        configTab:AddButton("Deletar Configuracao", function()
             local name = nameInput:GetText()
             if name and savedConfigs[name] then
                 savedConfigs[name] = nil
+                -- Remove do disco
+                pcall(function()
+                    delfile("VLG_Configs/" .. name .. ".json")
+                end)
                 updateDropdown()
                 nameInput:SetText("")
             end
@@ -1538,8 +1554,7 @@ function UILibrary:CreateWindow(title)
         
         configTab:AddSeparator()
         
-        -- Botão Reset
-        configTab:AddButton("🔄 Resetar Tudo", function()
+        configTab:AddButton("Resetar Tudo", function()
             for _, elements in pairs(configElements) do
                 for _, elem in ipairs(elements) do
                     if elem.type == "Toggle" then
@@ -1561,13 +1576,14 @@ function UILibrary:CreateWindow(title)
         
         configTab:AddSeparator()
         
-        -- Botão Refresh List
-        configTab:AddButton("🔄 Atualizar Lista", function()
+        configTab:AddButton("Atualizar Lista", function()
             updateDropdown()
         end)
+        
+        -- Atualiza dropdown inicial
+        updateDropdown()
     end
     
-    -- Cria a tab de config automaticamente após um pequeno delay
     spawn(function()
         wait(0.2)
         createAutoConfigTab()
