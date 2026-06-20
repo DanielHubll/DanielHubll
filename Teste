@@ -138,6 +138,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Topo_2"]["Size"] = UDim2.new(0, 316, 0, 22)
     LMG2L["Topo_2"]["Position"] = UDim2.new(0, 260, 0, 46)
     LMG2L["Topo_2"]["Name"] = "Topo"
+    LMG2L["Topo_2"]["Active"] = true -- ADAPTAÇÃO PC: Previne clique vazando
 
     LMG2L["TitleMenu_3"] = Instance.new("TextLabel", LMG2L["Topo_2"])
     LMG2L["TitleMenu_3"]["TextWrapped"] = true
@@ -167,6 +168,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Main_5"]["Size"] = UDim2.new(0, 316, 0, 202)
     LMG2L["Main_5"]["Position"] = UDim2.new(0, 0, 0, 22)
     LMG2L["Main_5"]["Visible"] = false
+    LMG2L["Main_5"]["Active"] = true
 
     LMG2L["Effect_6"] = Instance.new("Frame", LMG2L["Main_5"])
     LMG2L["Effect_6"]["BorderSizePixel"] = 0
@@ -182,6 +184,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Main_7"]["BackgroundTransparency"] = 1
     LMG2L["Main_7"]["ScrollingDirection"] = Enum.ScrollingDirection.Y
     LMG2L["Main_7"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
+    LMG2L["Main_7"]["Active"] = true -- ADAPTAÇÃO PC: Permite MouseWheel
 
     LMG2L["Tabs_2a"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])
     LMG2L["Tabs_2a"]["BorderSizePixel"] = 0
@@ -191,6 +194,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Tabs_2a"]["ScrollBarThickness"] = 0
     LMG2L["Tabs_2a"]["ScrollingDirection"] = Enum.ScrollingDirection.Y
     LMG2L["Tabs_2a"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
+    LMG2L["Tabs_2a"]["Active"] = true -- ADAPTAÇÃO PC: Permite MouseWheel
 
     LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])
     LMG2L["OpenName_2d"]["BorderSizePixel"] = 0
@@ -199,6 +203,17 @@ function UILibrary:CreateWindow(title)
     LMG2L["OpenName_2d"]["Size"] = UDim2.new(0, 14, 0, 14)
     LMG2L["OpenName_2d"]["Rotation"] = 180
     LMG2L["OpenName_2d"]["Position"] = UDim2.new(0, 4, 0, 4)
+
+    -- HOTKEY PARA ABRIR/FECHAR A UI NO PC (RightControl)
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then
+            LMG2L["Topo_2"].Visible = not LMG2L["Topo_2"].Visible
+            if not LMG2L["Topo_2"].Visible then
+                Paleta_d.Visible = false
+                if openDropdownInfo then openDropdownInfo.Close() end
+            end
+        end
+    end)
 
     -- ═══════════════════════════════════════════════════════════════════════════
     -- PALETA DE CORES FLUTUANTE
@@ -214,12 +229,14 @@ function UILibrary:CreateWindow(title)
     Paleta_d.Position = UDim2.new(0, 600, 0, 100)
     Paleta_d.Visible = false
     Paleta_d.ZIndex = 100
+    Paleta_d.Active = true
 
     local PaletaTop = Instance.new("Frame", Paleta_d)
     PaletaTop.BorderSizePixel = 0
     PaletaTop.BackgroundColor3 = currentThemeColor
     PaletaTop.Size = UDim2.new(1, 0, 0, 16)
     PaletaTop.ZIndex = 101
+    PaletaTop.Active = true
 
     local PaletaTitle = Instance.new("TextLabel", PaletaTop)
     PaletaTitle.BackgroundTransparency = 1
@@ -358,7 +375,7 @@ function UILibrary:CreateWindow(title)
         local pureColor = Color3.fromHSV(h, s, 1)
         HueGradient.Color = ColorSequence.new(pureColor, Color3.fromRGB(0, 0, 0))
         ColorPreview.BackgroundColor3 = realColor
-        HexInput.Text = "#" .. realColor:ToHex()
+        HexInput.Text = "#" .. realColor:ToHex():upper()
     end
 
     HexInput.FocusLost:Connect(function()
@@ -371,7 +388,7 @@ function UILibrary:CreateWindow(title)
             HueCursor.Position = UDim2.new(0, 0, 1 - v, -1)
             updateColorInternal()
         else
-            HexInput.Text = "#" .. Color3.fromHSV(h, s, v):ToHex()
+            HexInput.Text = "#" .. Color3.fromHSV(h, s, v):ToHex():upper()
         end
     end)
 
@@ -443,7 +460,7 @@ function UILibrary:CreateWindow(title)
         local pureColor = Color3.fromHSV(h, s, 1)
         HueGradient.Color = ColorSequence.new(pureColor, Color3.fromRGB(0, 0, 0))
         ColorPreview.BackgroundColor3 = defaultColor
-        HexInput.Text = "#" .. defaultColor:ToHex()
+        HexInput.Text = "#" .. defaultColor:ToHex():upper()
         SVCursor.Position = UDim2.new(h, -2, s, -2)
         HueCursor.Position = UDim2.new(0, 0, 1 - v, -1)
         Paleta_d.Visible = true
@@ -1000,6 +1017,7 @@ function UILibrary:CreateWindow(title)
             Scroll.ScrollingDirection = Enum.ScrollingDirection.Y
             Scroll.ElasticBehavior = Enum.ElasticBehavior.Never
             Scroll.ClipsDescendants = true
+            Scroll.Active = true -- ADAPTAÇÃO PC: Habilita MouseWheel no Dropdown
             Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0, 3)
 
             local btnHeight = 22
@@ -1084,8 +1102,11 @@ function UILibrary:CreateWindow(title)
                         Btn.TextWrapped = false
                         Btn.TextTruncate = Enum.TextTruncate.AtEnd
                         Btn.ClipsDescendants = true
+                        
+                        -- ADAPTAÇÃO PC: Hover Efeito Fluido
                         Btn.MouseEnter:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50) end)
                         Btn.MouseLeave:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(37, 37, 37) end)
+                        
                         Btn.MouseButton1Click:Connect(function()
                             Selected.Text = opt
                             CloseDropdown()
@@ -1102,7 +1123,6 @@ function UILibrary:CreateWindow(title)
                 GetValue = function(self) return Selected.Text end,
 
                 SetValue = function(self, val)
-                    -- Só atualiza o label, NÃO dispara o callback de seleção
                     Selected.Text = val
                 end
             }
@@ -1135,6 +1155,7 @@ function UILibrary:CreateWindow(title)
             SliderTrack.BorderSizePixel = 0
             SliderTrack.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
             SliderTrack.Size = UDim2.new(0, 168, 0, 22)
+            SliderTrack.Active = true -- ADAPTAÇÃO PC: Captura os cliques corretamente
             Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(0, 3)
 
             local SliderFill = Instance.new("Frame", SliderTrack)
@@ -1192,13 +1213,13 @@ function UILibrary:CreateWindow(title)
                 updateValue(minVal + (relativeX * (maxVal - minVal)))
             end
 
+            -- ADAPTAÇÃO PC: Removido o LockCurrentPosition que fazia o mouse sumir
             SliderTrack.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1
                 or input.UserInputType == Enum.UserInputType.Touch then
                     dragging = true
                     ContextActionService:BindAction("BlockCameraSlider", blockCamera, false,
                         Enum.UserInputType.MouseMovement, Enum.UserInputType.Touch)
-                    UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
                     updateSliderFromPosition(input)
                 end
             end)
@@ -1208,7 +1229,6 @@ function UILibrary:CreateWindow(title)
                 or input.UserInputType == Enum.UserInputType.Touch then
                     dragging = false
                     ContextActionService:UnbindAction("BlockCameraSlider")
-                    UserInputService.MouseBehavior = Enum.MouseBehavior.Default
                 end
             end)
 
@@ -1518,7 +1538,6 @@ function UILibrary:CreateWindow(title)
             if configDropdown and configDropdown.Refresh then
                 configDropdown:Refresh(configList)
             end
-            -- Restaura seleção no visual do dropdown
             local nameToSelect = selectName or currentConfigName
             if nameToSelect and nameToSelect ~= "" and configDropdown and configDropdown.SetValue then
                 for _, v in ipairs(getConfigList()) do
@@ -1534,16 +1553,13 @@ function UILibrary:CreateWindow(title)
 
         configTab:AddSection("Gerenciador de Configs")
 
-        -- TextBox nome da config
         nameInput = configTab:AddTextBox("Nome", currentConfigName, function(text)
             currentConfigName = text
         end)
 
-        -- Dropdown — ao selecionar, escreve no textbox (BUG CORRIGIDO)
         configDropdown = configTab:AddDropdown("Configs Salvas", getConfigList(), function(selected)
             if selected and selected ~= "Nenhuma config salva" then
                 currentConfigName = selected
-                -- CORREÇÃO: forçar escrita no Input sem acionar callback de novo
                 if nameInput then
                     nameInput:SetText(selected)
                 end
@@ -1552,7 +1568,6 @@ function UILibrary:CreateWindow(title)
 
         configTab:AddSeparator()
 
-        -- Salvar
         configTab:AddButton("Salvar", function()
             local name = nameInput:GetText()
             if not name or name == "" or name == "Nenhuma config salva" then return end
@@ -1566,7 +1581,6 @@ function UILibrary:CreateWindow(title)
             updateDropdown(name)
         end)
 
-        -- Carregar
         configTab:AddButton("Carregar", function()
             local name = nameInput:GetText()
             if not name or name == "" then return end
@@ -1582,7 +1596,6 @@ function UILibrary:CreateWindow(title)
             end
         end)
 
-        -- Deletar
         configTab:AddButton("Deletar", function()
             local name = nameInput:GetText()
             if not name or name == "" then return end
@@ -1601,30 +1614,24 @@ function UILibrary:CreateWindow(title)
 
         configTab:AddSeparator()
 
-        -- ── Auto Load ─────────────────────────────────────────────────────────────
         configTab:AddSection("Auto Load")
 
-        -- Descrição compacta
         autoLoadToggle = configTab:AddToggle("Auto Load ao Entrar", function(state)
             autoLoadEnabled = state
             meta.autoLoad = state
-            -- Preserva lastConfig no meta ao mudar autoLoad
             saveMeta(meta)
         end)
 
-        -- Restaura estado do toggle de autoLoad
         if autoLoadEnabled then
             autoLoadToggle:SetState(true)
         end
 
         configTab:AddSeparator()
 
-        -- Atualizar lista
         configTab:AddButton("Atualizar Lista", function()
             updateDropdown(currentConfigName)
         end)
 
-        -- Resetar tudo
         configTab:AddButton("Resetar Tudo", function()
             for _, elements in pairs(configElements) do
                 for _, elem in ipairs(elements) do
@@ -1639,18 +1646,14 @@ function UILibrary:CreateWindow(title)
             end
         end)
 
-        -- ── Restauração inicial ───────────────────────────────────────────────────
-
-        -- Sempre restaura o dropdown para a última config usada
         if currentConfigName ~= "" then
             updateDropdown(currentConfigName)
             if nameInput then nameInput:SetText(currentConfigName) end
         end
 
-        -- Auto Load: se ativo E tem lastConfig, carrega automaticamente
         if autoLoadEnabled and meta.lastConfig and meta.lastConfig ~= "" then
             spawn(function()
-                wait(0.5)  -- aguarda elementos registrarem
+                wait(0.5)
                 local configToLoad = savedConfigs[meta.lastConfig] or loadFromFile(meta.lastConfig)
                 if configToLoad then
                     savedConfigs[meta.lastConfig] = configToLoad
