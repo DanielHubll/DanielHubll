@@ -1,6 +1,6 @@
 --[[
     ╔══════════════════════════════════════════════════════════════════╗
-    ║                    iOS UI Library v2.1 (REFINADO)               ║
+    ║                   iOS UI Library v3.0 (FULL FIX)                ║
     ║         Premium Interface Inspired by Apple's Design            ║
     ╚══════════════════════════════════════════════════════════════════╝
 --]]
@@ -88,7 +88,7 @@ local function ClampToScreen(pos, sz)
 end
 
 -- ═══════════════════════════════════════════════════════════════════
--- CONNECTION TRACKER (evita memory leak)
+-- CONNECTION TRACKER
 -- ═══════════════════════════════════════════════════════════════════
 local AllConnections = {}
 
@@ -151,7 +151,6 @@ local function Notify(opts)
     Make("UICorner", { CornerRadius = UDim.new(0, 12), Parent = notif })
     Make("UIStroke", { Color = accent, Thickness = 1, Transparency = 0.6, Parent = notif })
 
-    -- Barra lateral colorida
     local bar = Make("Frame", {
         Size = UDim2.new(0, 4, 1, -16),
         Position = UDim2.new(0, 6, 0, 8),
@@ -160,7 +159,6 @@ local function Notify(opts)
     })
     Make("UICorner", { CornerRadius = UDim.new(0, 2), Parent = bar })
 
-    -- Título
     Make("TextLabel", {
         Size = UDim2.new(1, -30, 0, 18),
         Position = UDim2.new(0, 18, 0, 8),
@@ -173,7 +171,6 @@ local function Notify(opts)
         Parent = notif
     })
 
-    -- Mensagem
     Make("TextLabel", {
         Size = UDim2.new(1, -30, 0, 16),
         Position = UDim2.new(0, 18, 0, 28),
@@ -187,7 +184,6 @@ local function Notify(opts)
         Parent = notif
     })
 
-    -- Barra de progresso
     local prog = Make("Frame", {
         Size = UDim2.new(1, -16, 0, 3),
         Position = UDim2.new(0, 8, 1, -8),
@@ -197,11 +193,9 @@ local function Notify(opts)
     })
     Make("UICorner", { CornerRadius = UDim.new(0, 2), Parent = prog })
 
-    -- Anima entrada
     notif.Position = UDim2.new(1, 60, 0, 0)
     Tween(notif, 0.35, { Position = UDim2.new(0, 0, 0, 0) })
 
-    -- Timer de dismiss
     Tween(prog, dur, { Size = UDim2.new(0, 0, 0, 3) })
     task.delay(dur, function()
         if notif and notif.Parent then
@@ -239,11 +233,9 @@ local function ShowPopup(opts, parentGui)
     })
     Make("UICorner", { CornerRadius = UDim.new(0, 16), Parent = popup })
 
-    -- Animação de entrada
     popup.Size = UDim2.fromOffset(250, 160)
     Tween(popup, 0.3, { Size = UDim2.fromOffset(280, 180) })
 
-    -- Título
     Make("TextLabel", {
         Size = UDim2.new(1, -40, 0, 24),
         Position = UDim2.new(0, 20, 0, 20),
@@ -257,7 +249,6 @@ local function ShowPopup(opts, parentGui)
         Parent = popup
     })
 
-    -- Mensagem
     Make("TextLabel", {
         Size = UDim2.new(1, -40, 0, 40),
         Position = UDim2.new(0, 20, 0, 50),
@@ -272,7 +263,6 @@ local function ShowPopup(opts, parentGui)
         Parent = popup
     })
 
-    -- Separador
     Make("Frame", {
         Size = UDim2.new(1, 0, 0, 1),
         Position = UDim2.new(0, 0, 1, -46),
@@ -282,7 +272,6 @@ local function ShowPopup(opts, parentGui)
         Parent = popup
     })
 
-    -- Botões
     local buttons = opts.Buttons or { { Text = "OK", Primary = true } }
     local btnCount = #buttons
     local btnW = (260 / btnCount) - 4
@@ -339,6 +328,7 @@ function Library.CreateWindow(config)
     self._minimized = false
     self._connections = {}
     self._savedConfig = {}
+    self._savedWinSize = nil -- salva o último tamanho para restore após minimize
 
     -- ─── ScreenGui ───
     local screenGui = Make("ScreenGui", {
@@ -349,14 +339,38 @@ function Library.CreateWindow(config)
     })
     self._screenGui = screenGui
 
-    -- Inicializa sistema de notificações
     InitNotifications(screenGui)
+
+    -- ═══════════════════════════════════════════════════════════════
+    -- ✅ DROPDOWN OVERLAY (fecha dropdown ao clicar fora)
+    -- ═══════════════════════════════════════════════════════════════
+    local dropdownOverlay = Make("TextButton", {
+        Name = "DropdownOverlay",
+        Size = UDim2.fromScale(1, 1),
+        BackgroundTransparency = 1,
+        Text = "",
+        AutoButtonColor = false,
+        ZIndex = 90,
+        Visible = false,
+        Parent = screenGui,
+    })
+    self._dropdownOverlay = dropdownOverlay
+    self._activeDropdownClose = nil -- função para fechar dropdown ativo
+
+    dropdownOverlay.MouseButton1Click:Connect(function()
+        if self._activeDropdownClose then
+            self._activeDropdownClose()
+            self._activeDropdownClose = nil
+        end
+        dropdownOverlay.Visible = false
+    end)
 
     -- ─── Calcula tamanho da janela ───
     local mobile = IsMobile()
+    local defaultWinW, defaultWinH = 520, 480
     local winSize = mobile
         and UDim2.new(0.95, 0, 0.85, 0)
-        or UDim2.fromOffset(520, 480)
+        or UDim2.fromOffset(defaultWinW, defaultWinH)
 
     -- ─── Janela Principal ───
     local window = Make("Frame", {
@@ -368,6 +382,7 @@ function Library.CreateWindow(config)
         AnchorPoint = mobile and Vector2.new(0.5, 0.5) or Vector2.new(0, 0),
         BackgroundColor3 = Theme.Bg,
         ClipsDescendants = true,
+        ZIndex = 1,
         Parent = screenGui,
     })
     self._window = window
@@ -375,9 +390,9 @@ function Library.CreateWindow(config)
     Make("UIStroke", { Color = Theme.Sep, Thickness = 0.5, Transparency = 0.5, Parent = window })
 
     -- ═══════════════════════════════════════════════════════════════
-    -- RESIZE HANDLE (AJUSTADO – mantém canto superior esquerdo fixo)
+    -- ✅ RESIZE HANDLE (REDIMENSIONAMENTO SIMÉTRICO - DOS DOIS LADOS)
     -- ═══════════════════════════════════════════════════════════════
-    local MIN_SIZE = Vector2.new(300, 250)
+    local MIN_SIZE = Vector2.new(280, 220)
 
     local resizeHandle = Make("Frame", {
         Name = "ResizeHandle",
@@ -388,31 +403,51 @@ function Library.CreateWindow(config)
         Parent = window,
     })
 
-    -- Ícones visuais da alça
-    for i = 1, 2 do
-        Make("Frame", {
-            Size = UDim2.fromOffset(12, 2),
-            Position = UDim2.new(1, -14 - (i-1)*3, 1, -10 + (i-1)*4),
-            Rotation = -45,
-            BackgroundColor3 = Theme.CapText,
-            BackgroundTransparency = 0.4,
-            ZIndex = 11,
-            Parent = resizeHandle,
-        })
-    end
+    -- Ícone visual (duas linhas diagonais)
+    Make("Frame", {
+        Size = UDim2.fromOffset(10, 2),
+        Position = UDim2.new(1, -14, 1, -10),
+        Rotation = -45,
+        BackgroundColor3 = Theme.CapText,
+        BackgroundTransparency = 0.4,
+        ZIndex = 11,
+        Parent = resizeHandle,
+    })
+    Make("Frame", {
+        Size = UDim2.fromOffset(10, 2),
+        Position = UDim2.new(1, -16, 1, -6),
+        Rotation = -45,
+        BackgroundColor3 = Theme.CapText,
+        BackgroundTransparency = 0.4,
+        ZIndex = 11,
+        Parent = resizeHandle,
+    })
 
+    -- ✅ LÓGICA DE REDIMENSIONAMENTO SIMÉTRICO
     local resizing = false
-    local resizeStartPos = nil
-    local resizeStartTopLeft = nil   -- Posição absoluta inicial do canto superior esquerdo
+    local resizeStartMouse = nil
     local resizeStartSize = nil
+    local resizeStartCenter = nil -- ✅ centro da janela no início do resize
 
     resizeHandle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or
            input.UserInputType == Enum.UserInputType.Touch then
             resizing = true
-            resizeStartPos = input.Position
-            resizeStartTopLeft = Vector2.new(window.AbsolutePosition.X, window.AbsolutePosition.Y)
+            resizeStartMouse = input.Position
             resizeStartSize = Vector2.new(window.AbsoluteSize.X, window.AbsoluteSize.Y)
+
+            -- ✅ Captura o CENTRO atual da janela
+            resizeStartCenter = Vector2.new(
+                window.AbsolutePosition.X + window.AbsoluteSize.X / 2,
+                window.AbsolutePosition.Y + window.AbsoluteSize.Y / 2
+            )
+
+            -- ✅ Normaliza AnchorPoint para (0,0) para controle preciso
+            window.AnchorPoint = Vector2.new(0, 0)
+            window.Position = UDim2.fromOffset(
+                window.AbsolutePosition.X,
+                window.AbsolutePosition.Y
+            )
         end
     end)
 
@@ -421,19 +456,25 @@ function Library.CreateWindow(config)
             if not resizing then return end
             if input.UserInputType == Enum.UserInputType.MouseMovement or
                input.UserInputType == Enum.UserInputType.Touch then
-                local delta = input.Position - resizeStartPos
+
+                local delta = input.Position - resizeStartMouse
+
+                -- ✅ Calcula novo tamanho
                 local newW = math.max(MIN_SIZE.X, resizeStartSize.X + delta.X)
                 local newH = math.max(MIN_SIZE.Y, resizeStartSize.Y + delta.Y)
 
-                -- Atualiza o tamanho mantendo o mesmo canto superior esquerdo
-                window.Size = UDim2.fromOffset(newW, newH)
+                -- ✅ Calcula nova posição para manter o CENTRO fixo
+                local newX = resizeStartCenter.X - newW / 2
+                local newY = resizeStartCenter.Y - newH / 2
 
-                -- Reposiciona para manter o topo‑esquerdo no lugar correto
-                local currentAnchor = window.AnchorPoint
-                local vp = Camera.ViewportSize
-                local offsetX = resizeStartTopLeft.X - currentAnchor.X * vp.X + currentAnchor.X * newW
-                local offsetY = resizeStartTopLeft.Y - currentAnchor.Y * vp.Y + currentAnchor.Y * newH
-                window.Position = UDim2.fromOffset(offsetX, offsetY)
+                -- ✅ Clamp para não sair da tela
+                local clampedPos = ClampToScreen(
+                    Vector2.new(newX, newY),
+                    Vector2.new(newW, newH)
+                )
+
+                window.Size = UDim2.fromOffset(newW, newH)
+                window.Position = UDim2.fromOffset(clampedPos.X, clampedPos.Y)
             end
         end)
     )
@@ -442,11 +483,16 @@ function Library.CreateWindow(config)
         UserInputService.InputEnded:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or
                input.UserInputType == Enum.UserInputType.Touch then
-                resizing = false
+                if resizing then
+                    resizing = false
+                    -- ✅ Salva o tamanho atual como referência
+                    self._savedWinSize = Vector2.new(window.AbsoluteSize.X, window.AbsoluteSize.Y)
+                end
             end
         end)
     )
 
+    -- Cursor ao passar na alça
     resizeHandle.MouseEnter:Connect(function()
         UserInputService.MouseIcon = "rbxasset://SystemCursors/SizeNWSE"
     end)
@@ -471,7 +517,6 @@ function Library.CreateWindow(config)
         Parent = header,
     })
 
-    -- Título
     Make("TextLabel", {
         Size = UDim2.new(1, -130, 0, 18),
         Position = UDim2.new(0, 14, 0, 8),
@@ -484,7 +529,6 @@ function Library.CreateWindow(config)
         Parent = header,
     })
 
-    -- Subtítulo
     Make("TextLabel", {
         Size = UDim2.new(1, -130, 0, 14),
         Position = UDim2.new(0, 14, 0, 28),
@@ -505,7 +549,6 @@ function Library.CreateWindow(config)
         Parent = header,
     })
 
-    -- Minimizar
     local minBtn = Make("TextButton", {
         Size = UDim2.fromOffset(24, 24),
         Position = UDim2.new(0, 0, 0, 0),
@@ -522,7 +565,6 @@ function Library.CreateWindow(config)
         Parent = minBtn,
     })
 
-    -- Fechar
     local closeBtn = Make("TextButton", {
         Size = UDim2.fromOffset(24, 24),
         Position = UDim2.new(0, 32, 0, 0),
@@ -655,7 +697,7 @@ function Library.CreateWindow(config)
     })
     self._scrollContent = scrollContent
 
-    Make("UIPadding", {
+    Make("UIPad", {
         PaddingTop = UDim.new(0, 4),
         PaddingBottom = UDim.new(0, 12),
         PaddingLeft = UDim.new(0, 4),
@@ -670,9 +712,12 @@ function Library.CreateWindow(config)
     })
     self._contentLayout = contentLayout
 
-    -- ─── DRAG SYSTEM (REFINADO – movimento relativo sem saltos) ───
+    -- ═══════════════════════════════════════════════════════════════
+    -- ✅ DRAG SYSTEM (FIXED - sem teleport)
+    -- ═══════════════════════════════════════════════════════════════
     local dragging = false
-    local lastDragPos = nil
+    local dragStart = nil
+    local startPos = nil
 
     local function onInputBegan(input, processed)
         if processed then return end
@@ -681,11 +726,22 @@ function Library.CreateWindow(config)
             local pos = input.Position
             local hAbs = header.AbsolutePosition
             local hSize = header.AbsoluteSize
-            -- Não inicia drag se estiver sobre os botões de controle ou resize
+
             if pos.X >= hAbs.X and pos.X <= hAbs.X + hSize.X - 70 and
                pos.Y >= hAbs.Y and pos.Y <= hAbs.Y + hSize.Y then
+
                 dragging = true
-                lastDragPos = pos
+                dragStart = pos
+
+                -- ✅ FIX: Normaliza AnchorPoint e usa AbsolutePosition
+                -- Isso evita o "teleport" que acontecia quando o AnchorPoint
+                -- era diferente de (0,0) ou a Position usava Scale
+                window.AnchorPoint = Vector2.new(0, 0)
+                startPos = Vector2.new(
+                    window.AbsolutePosition.X,
+                    window.AbsolutePosition.Y
+                )
+                window.Position = UDim2.fromOffset(startPos.X, startPos.Y)
             end
         end
     end
@@ -694,16 +750,12 @@ function Library.CreateWindow(config)
         if not dragging then return end
         if input.UserInputType == Enum.UserInputType.MouseMovement or
            input.UserInputType == Enum.UserInputType.Touch then
-            local delta = input.Position - lastDragPos
-            lastDragPos = input.Position
-
-            local newOffX = window.Position.X.Offset + delta.X
-            local newOffY = window.Position.Y.Offset + delta.Y
-            local clamped = ClampToScreen(
-                Vector2.new(newOffX, newOffY),
+            local delta = input.Position - dragStart
+            local newPos = ClampToScreen(
+                Vector2.new(startPos.X + delta.X, startPos.Y + delta.Y),
                 Vector2.new(window.AbsoluteSize.X, window.AbsoluteSize.Y)
             )
-            window.Position = UDim2.fromOffset(clamped.X, clamped.Y)
+            window.Position = UDim2.fromOffset(newPos.X, newPos.Y)
         end
     end
 
@@ -714,17 +766,21 @@ function Library.CreateWindow(config)
         end
     end
 
-    table.insert(self._connections, UserInputService.InputBegan:Connect(onInputBegan))
-    table.insert(self._connections, UserInputService.InputChanged:Connect(onInputChanged))
-    table.insert(self._connections, UserInputService.InputEnded:Connect(onInputEnded))
+    table.insert(self._connections,
+        UserInputService.InputBegan:Connect(onInputBegan))
+    table.insert(self._connections,
+        UserInputService.InputChanged:Connect(onInputChanged))
+    table.insert(self._connections,
+        UserInputService.InputEnded:Connect(onInputEnded))
 
     -- Re-clamp ao redimensionar tela
     table.insert(self._connections,
         Camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
             if window and window.Parent then
-                local p = Vector2.new(window.Position.X.Offset, window.Position.Y.Offset)
+                local p = Vector2.new(window.AbsolutePosition.X, window.AbsolutePosition.Y)
                 local s = Vector2.new(window.AbsoluteSize.X, window.AbsoluteSize.Y)
                 local clamped = ClampToScreen(p, s)
+                window.AnchorPoint = Vector2.new(0, 0)
                 window.Position = UDim2.fromOffset(clamped.X, clamped.Y)
             end
         end)
@@ -734,14 +790,15 @@ function Library.CreateWindow(config)
     minBtn.MouseButton1Click:Connect(function()
         self._minimized = not self._minimized
         if self._minimized then
+            -- Salva o tamanho atual antes de minimizar
+            self._savedWinSize = Vector2.new(window.AbsoluteSize.X, window.AbsoluteSize.Y)
             Tween(contentArea, 0.3, { Size = UDim2.new(1, 0, 0, 0) })
             Tween(tabBar, 0.25, { Size = UDim2.new(1, 0, 0, 0) })
             Tween(window, 0.35, { Size = UDim2.fromOffset(window.AbsoluteSize.X, 48) })
         else
-            local ws = mobile
-                and UDim2.new(0.95, 0, 0.85, 0)
-                or UDim2.fromOffset(window.AbsoluteSize.X, 480)
-            Tween(window, 0.35, { Size = ws })
+            local restoreW = self._savedWinSize and self._savedWinSize.X or window.AbsoluteSize.X
+            local restoreH = self._savedWinSize and self._savedWinSize.Y or defaultWinH
+            Tween(window, 0.35, { Size = UDim2.fromOffset(restoreW, restoreH) })
             task.delay(0.1, function()
                 Tween(tabBar, 0.25, { Size = UDim2.new(1, 0, 0, 42) })
                 Tween(contentArea, 0.3, { Size = UDim2.new(1, 0, 1, -90) })
@@ -751,6 +808,13 @@ function Library.CreateWindow(config)
 
     -- ─── CLOSE ───
     closeBtn.MouseButton1Click:Connect(function()
+        -- Fecha qualquer dropdown aberto
+        if self._activeDropdownClose then
+            self._activeDropdownClose()
+            self._activeDropdownClose = nil
+        end
+        dropdownOverlay.Visible = false
+
         Tween(window, 0.35, { Size = UDim2.fromOffset(0, 0), BackgroundTransparency = 1 })
         task.delay(0.4, function()
             self:Destroy()
@@ -779,6 +843,12 @@ function Library.CreateWindow(config)
 
     -- ─── ANIMAÇÃO DE ABERTURA ───
     Tween(window, 0.45, { Size = winSize, BackgroundTransparency = 0 })
+    -- Salva tamanho inicial após animação
+    task.delay(0.5, function()
+        if window and window.Parent then
+            self._savedWinSize = Vector2.new(window.AbsoluteSize.X, window.AbsoluteSize.Y)
+        end
+    end)
 
     table.insert(Library._windows, self)
     return self
@@ -951,6 +1021,9 @@ function Library:AddTab(name, icon)
             return o
         end
 
+        -- ═══════════════════════════════════════════════════════════
+        -- SECTION API
+        -- ═══════════════════════════════════════════════════════════
         local secAPI = {}
 
         -- ───────────────────────────────────────────────────────────
@@ -1239,9 +1312,9 @@ function Library:AddTab(name, icon)
             }
         end
 
-        -- ───────────────────────────────────────────────────────────
-        -- DROPDOWN (CORRIGIDO – abre logo abaixo da linha)
-        -- ───────────────────────────────────────────────────────────
+        -- ═══════════════════════════════════════════════════════════
+        -- ✅ DROPDOWN (FIX - abre na posição correta, sem clipping)
+        -- ═══════════════════════════════════════════════════════════
         function secAPI:AddDropdown(options)
             local opts = options or {}
             local name = opts.Name or "Dropdown"
@@ -1251,13 +1324,12 @@ function Library:AddTab(name, icon)
 
             local selected = default
             local isOpen = false
+            local renderConn = nil -- conexão do RenderStepped
 
-            -- Row com tamanho fixo, sem expansão
+            -- Row (tamanho FIXO, nunca expande)
             local row = Make("Frame", {
                 Size = UDim2.new(1, 0, 0, 48),
                 BackgroundTransparency = 1,
-                ClipsDescendants = false,
-                ZIndex = 10,
                 LayoutOrder = getOrder(),
                 Parent = sectionFrame,
             })
@@ -1271,7 +1343,6 @@ function Library:AddTab(name, icon)
                 TextColor3 = Theme.Text,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 BackgroundTransparency = 1,
-                ZIndex = 11,
                 Parent = row,
             })
 
@@ -1285,7 +1356,6 @@ function Library:AddTab(name, icon)
                 TextXAlignment = Enum.TextXAlignment.Right,
                 TextTruncate = Enum.TextTruncate.AtEnd,
                 BackgroundTransparency = 1,
-                ZIndex = 11,
                 Parent = row,
             })
 
@@ -1297,28 +1367,48 @@ function Library:AddTab(name, icon)
                 TextSize = 14,
                 TextColor3 = Theme.SubText,
                 BackgroundTransparency = 1,
-                ZIndex = 11,
                 Parent = row,
             })
 
-            -- Dropdown posicionado exatamente abaixo do limite da row (y = 48)
+            -- Separador
+            Make("Frame", {
+                Size = UDim2.new(1, -28, 0, 1),
+                Position = UDim2.new(0, 14, 0, 47),
+                BackgroundColor3 = Theme.Sep,
+                Transparency = 0.5,
+                Parent = row,
+            })
+
+            -- ✅ dropFrame criado no ScreenGui (fora do scroll/window = sem clipping)
             local dropFrame = Make("Frame", {
-                Size = UDim2.new(1, -28, 0, 0),
-                Position = UDim2.new(0, 14, 0, 48),   -- ✨ diretamente sob a row
+                Name = "Dropdown_" .. name,
+                Size = UDim2.fromOffset(0, 0),
+                Position = UDim2.fromOffset(0, 0),
                 BackgroundColor3 = Theme.Card,
                 ClipsDescendants = true,
                 Visible = false,
                 ZIndex = 100,
-                Parent = row,
+                Parent = lib._screenGui, -- ✅ FILHO DO SCREENGUI
             })
             Make("UICorner", { CornerRadius = UDim.new(0, 10), Parent = dropFrame })
             Make("UIStroke", { Color = Theme.Sep, Thickness = 0.5, Parent = dropFrame })
+
+            -- Sombra sutil
+            Make("Frame", {
+                Size = UDim2.new(1, 4, 1, 4),
+                Position = UDim2.new(0, -2, 0, -2),
+                BackgroundColor3 = Color3.new(0, 0, 0),
+                BackgroundTransparency = 0.92,
+                ZIndex = 99,
+                Parent = dropFrame,
+            })
 
             local dropLayout = Make("UIListLayout", {
                 SortOrder = Enum.SortOrder.LayoutOrder,
                 Parent = dropFrame,
             })
 
+            -- Cria as opções
             for i, opt in ipairs(optList) do
                 local optName = type(opt) == "table" and opt.Name or tostring(opt)
                 local optVal = type(opt) == "table" and opt.Value or opt
@@ -1341,12 +1431,7 @@ function Library:AddTab(name, icon)
                     selected = optVal
                     valLabel.Text = optName
                     pcall(callback, optVal, optName)
-                    isOpen = false
-                    Tween(chevron, 0.2, { Rotation = 0 })
-                    Tween(dropFrame, 0.2, { Size = UDim2.new(1, -28, 0, 0) })
-                    task.delay(0.2, function()
-                        dropFrame.Visible = false
-                    end)
+                    closeDropdown()
                 end)
 
                 optBtn.MouseEnter:Connect(function()
@@ -1368,37 +1453,96 @@ function Library:AddTab(name, icon)
                 end
             end
 
+            -- ✅ Funções de abrir/fechar
+            local function updatePosition()
+                if not row.Parent or not row.Visible then
+                    closeDropdown()
+                    return
+                end
+                local rowAbs = row.AbsolutePosition
+                local w = row.AbsoluteSize.X - 28
+                dropFrame.Position = UDim2.fromOffset(rowAbs.X + 14, rowAbs.Y + 50)
+                dropFrame.Size = UDim2.fromOffset(w, dropFrame.AbsoluteSize.Y)
+            end
+
+            function closeDropdown()
+                if not isOpen then return end
+                isOpen = false
+                Tween(chevron, 0.2, { Rotation = 0 })
+                local currentW = dropFrame.AbsoluteSize.X
+                Tween(dropFrame, 0.2, { Size = UDim2.fromOffset(currentW, 0) })
+                task.delay(0.22, function()
+                    dropFrame.Visible = false
+                end)
+                if renderConn then
+                    renderConn:Disconnect()
+                    renderConn = nil
+                end
+                -- Limpa referência no overlay
+                if lib._activeDropdownClose == closeDropdown then
+                    lib._activeDropdownClose = nil
+                    lib._dropdownOverlay.Visible = false
+                end
+            end
+
+            local function openDropdown()
+                -- Fecha qualquer dropdown aberto antes
+                if lib._activeDropdownClose then
+                    lib._activeDropdownClose()
+                end
+
+                isOpen = true
+                local h = math.min(#optList * 34, 170)
+                local w = row.AbsoluteSize.X - 28
+                local rowAbs = row.AbsolutePosition
+
+                dropFrame.Position = UDim2.fromOffset(rowAbs.X + 14, rowAbs.Y + 50)
+                dropFrame.Size = UDim2.fromOffset(w, 0)
+                dropFrame.Visible = true
+
+                Tween(chevron, 0.2, { Rotation = 180 })
+                Tween(dropFrame, 0.25, { Size = UDim2.fromOffset(w, h) })
+
+                -- ✅ Mostra overlay para clicar fora e fechar
+                lib._dropdownOverlay.Visible = true
+                lib._activeDropdownClose = closeDropdown
+
+                -- ✅ Atualiza posição em tempo real (acompanha scroll/drag)
+                renderConn = RunService.RenderStepped:Connect(function()
+                    if not isOpen or not row.Parent then
+                        if renderConn then
+                            renderConn:Disconnect()
+                            renderConn = nil
+                        end
+                        return
+                    end
+                    updatePosition()
+                end)
+            end
+
+            -- Click no row para abrir/fechar
             local clickBtn = Make("TextButton", {
-                Size = UDim2.new(1, 0, 0, 48),
+                Size = UDim2.new(1, 0, 1, 0),
                 Text = "",
                 BackgroundTransparency = 1,
-                ZIndex = 12,
                 Parent = row,
             })
 
             clickBtn.MouseButton1Click:Connect(function()
-                isOpen = not isOpen
                 if isOpen then
-                    dropFrame.Visible = true
-                    local h = math.min(#optList * 34, 170)
-                    Tween(chevron, 0.2, { Rotation = 180 })
-                    Tween(dropFrame, 0.25, { Size = UDim2.new(1, -28, 0, h) })
+                    closeDropdown()
                 else
-                    Tween(chevron, 0.2, { Rotation = 0 })
-                    Tween(dropFrame, 0.2, { Size = UDim2.new(1, -28, 0, 0) })
-                    task.delay(0.2, function()
-                        dropFrame.Visible = false
-                    end)
+                    openDropdown()
                 end
             end)
 
-            Make("Frame", {
-                Size = UDim2.new(1, -28, 0, 1),
-                Position = UDim2.new(0, 14, 0, 47),
-                BackgroundColor3 = Theme.Sep,
-                Transparency = 0.5,
-                Parent = row,
-            })
+            -- Hover na row
+            row.MouseEnter:Connect(function()
+                Tween(row, 0.12, { BackgroundColor3 = Theme.Input, BackgroundTransparency = 0.5 })
+            end)
+            row.MouseLeave:Connect(function()
+                Tween(row, 0.12, { BackgroundTransparency = 1 })
+            end)
 
             table.insert(tab.Components, { SearchName = name, Container = row })
             table.insert(section.Components, row)
@@ -1409,6 +1553,7 @@ function Library:AddTab(name, icon)
                     valLabel.Text = tostring(v)
                 end,
                 GetValue = function() return selected end,
+                Close = closeDropdown,
             }
         end
 
@@ -1574,7 +1719,7 @@ function Library:AddTab(name, icon)
         end
 
         -- ───────────────────────────────────────────────────────────
-        -- COLOR PICKER (simplificado)
+        -- COLOR PICKER
         -- ───────────────────────────────────────────────────────────
         function secAPI:AddColorPicker(options)
             local opts = options or {}
@@ -2039,7 +2184,7 @@ function Library:AddTab(name, icon)
             })
             Make("UICorner", { CornerRadius = UDim.new(0, 8), Parent = ctrl })
 
-            local minBtn = Make("TextButton", {
+            local minusBtn = Make("TextButton", {
                 Size = UDim2.fromOffset(32, 32),
                 Text = "−",
                 Font = Enum.Font.GothamBold,
@@ -2078,7 +2223,7 @@ function Library:AddTab(name, icon)
                 pcall(callback, value)
             end
 
-            minBtn.MouseButton1Click:Connect(function() updateNum(value - step) end)
+            minusBtn.MouseButton1Click:Connect(function() updateNum(value - step) end)
             plusBtn.MouseButton1Click:Connect(function() updateNum(value + step) end)
             valDisplay.FocusLost:Connect(function() updateNum(tonumber(valDisplay.Text) or value) end)
 
@@ -2099,9 +2244,9 @@ function Library:AddTab(name, icon)
             }
         end
 
-        -- ───────────────────────────────────────────────────────────
-        -- MULTI DROPDOWN (CORRIGIDO – abre logo abaixo da linha)
-        -- ───────────────────────────────────────────────────────────
+        -- ═══════════════════════════════════════════════════════════
+        -- ✅ MULTI DROPDOWN (FIX - mesma correção do Dropdown)
+        -- ═══════════════════════════════════════════════════════════
         function secAPI:AddMultiDropdown(options)
             local opts = options or {}
             local name = opts.Name or "Multi Select"
@@ -2112,12 +2257,12 @@ function Library:AddTab(name, icon)
             local selected = {}
             for _, v in ipairs(defaults) do selected[v] = true end
             local isOpen = false
+            local renderConn = nil
 
+            -- Row (tamanho FIXO)
             local row = Make("Frame", {
                 Size = UDim2.new(1, 0, 0, 48),
                 BackgroundTransparency = 1,
-                ClipsDescendants = false,
-                ZIndex = 10,
                 LayoutOrder = getOrder(),
                 Parent = sectionFrame,
             })
@@ -2131,7 +2276,6 @@ function Library:AddTab(name, icon)
                 TextColor3 = Theme.Text,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 BackgroundTransparency = 1,
-                ZIndex = 11,
                 Parent = row,
             })
 
@@ -2144,7 +2288,6 @@ function Library:AddTab(name, icon)
                 TextColor3 = Theme.SubText,
                 TextXAlignment = Enum.TextXAlignment.Right,
                 BackgroundTransparency = 1,
-                ZIndex = 11,
                 Parent = row,
             })
 
@@ -2156,21 +2299,40 @@ function Library:AddTab(name, icon)
                 TextSize = 14,
                 TextColor3 = Theme.SubText,
                 BackgroundTransparency = 1,
-                ZIndex = 11,
                 Parent = row,
             })
 
+            Make("Frame", {
+                Size = UDim2.new(1, -28, 0, 1),
+                Position = UDim2.new(0, 14, 0, 47),
+                BackgroundColor3 = Theme.Sep,
+                Transparency = 0.5,
+                Parent = row,
+            })
+
+            -- ✅ dropFrame no ScreenGui
             local dropFrame = Make("Frame", {
-                Size = UDim2.new(1, -28, 0, 0),
-                Position = UDim2.new(0, 14, 0, 48),   -- ✨ diretamente sob a row
+                Name = "MultiDD_" .. name,
+                Size = UDim2.fromOffset(0, 0),
+                Position = UDim2.fromOffset(0, 0),
                 BackgroundColor3 = Theme.Card,
                 ClipsDescendants = true,
                 Visible = false,
                 ZIndex = 100,
-                Parent = row,
+                Parent = lib._screenGui,
             })
             Make("UICorner", { CornerRadius = UDim.new(0, 10), Parent = dropFrame })
             Make("UIStroke", { Color = Theme.Sep, Thickness = 0.5, Parent = dropFrame })
+
+            Make("Frame", {
+                Size = UDim2.new(1, 4, 1, 4),
+                Position = UDim2.new(0, -2, 0, -2),
+                BackgroundColor3 = Color3.new(0, 0, 0),
+                BackgroundTransparency = 0.92,
+                ZIndex = 99,
+                Parent = dropFrame,
+            })
+
             Make("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Parent = dropFrame })
 
             local checkLabels = {}
@@ -2214,45 +2376,110 @@ function Library:AddTab(name, icon)
                 optBtn.MouseLeave:Connect(function()
                     Tween(optBtn, 0.1, { BackgroundTransparency = 1 })
                 end)
+
+                if i < #optList then
+                    Make("Frame", {
+                        Size = UDim2.new(1, -16, 0, 1),
+                        Position = UDim2.new(0, 8, 1, -1),
+                        BackgroundColor3 = Theme.Sep,
+                        Transparency = 0.5,
+                        ZIndex = 102,
+                        Parent = optBtn,
+                    })
+                end
+            end
+
+            -- ✅ Funções de abrir/fechar
+            local function updatePosition()
+                if not row.Parent or not row.Visible then
+                    closeMultiDropdown()
+                    return
+                end
+                local rowAbs = row.AbsolutePosition
+                local w = row.AbsoluteSize.X - 28
+                dropFrame.Position = UDim2.fromOffset(rowAbs.X + 14, rowAbs.Y + 50)
+                dropFrame.Size = UDim2.fromOffset(w, dropFrame.AbsoluteSize.Y)
+            end
+
+            function closeMultiDropdown()
+                if not isOpen then return end
+                isOpen = false
+                Tween(chevron, 0.2, { Rotation = 0 })
+                local currentW = dropFrame.AbsoluteSize.X
+                Tween(dropFrame, 0.2, { Size = UDim2.fromOffset(currentW, 0) })
+                task.delay(0.22, function()
+                    dropFrame.Visible = false
+                end)
+                if renderConn then
+                    renderConn:Disconnect()
+                    renderConn = nil
+                end
+                if lib._activeDropdownClose == closeMultiDropdown then
+                    lib._activeDropdownClose = nil
+                    lib._dropdownOverlay.Visible = false
+                end
+            end
+
+            local function openMultiDropdown()
+                if lib._activeDropdownClose then
+                    lib._activeDropdownClose()
+                end
+
+                isOpen = true
+                local h = math.min(#optList * 34, 170)
+                local w = row.AbsoluteSize.X - 28
+                local rowAbs = row.AbsolutePosition
+
+                dropFrame.Position = UDim2.fromOffset(rowAbs.X + 14, rowAbs.Y + 50)
+                dropFrame.Size = UDim2.fromOffset(w, 0)
+                dropFrame.Visible = true
+
+                Tween(chevron, 0.2, { Rotation = 180 })
+                Tween(dropFrame, 0.25, { Size = UDim2.fromOffset(w, h) })
+
+                lib._dropdownOverlay.Visible = true
+                lib._activeDropdownClose = closeMultiDropdown
+
+                renderConn = RunService.RenderStepped:Connect(function()
+                    if not isOpen or not row.Parent then
+                        if renderConn then
+                            renderConn:Disconnect()
+                            renderConn = nil
+                        end
+                        return
+                    end
+                    updatePosition()
+                end)
             end
 
             local clickBtn = Make("TextButton", {
-                Size = UDim2.new(1, 0, 0, 48),
+                Size = UDim2.new(1, 0, 1, 0),
                 Text = "",
                 BackgroundTransparency = 1,
-                ZIndex = 12,
                 Parent = row,
             })
 
             clickBtn.MouseButton1Click:Connect(function()
-                isOpen = not isOpen
                 if isOpen then
-                    dropFrame.Visible = true
-                    local h = math.min(#optList * 34, 170)
-                    Tween(chevron, 0.2, { Rotation = 180 })
-                    Tween(dropFrame, 0.25, { Size = UDim2.new(1, -28, 0, h) })
+                    closeMultiDropdown()
                 else
-                    Tween(chevron, 0.2, { Rotation = 0 })
-                    Tween(dropFrame, 0.2, { Size = UDim2.new(1, -28, 0, 0) })
-                    task.delay(0.2, function()
-                        dropFrame.Visible = false
-                    end)
+                    openMultiDropdown()
                 end
             end)
 
-            Make("Frame", {
-                Size = UDim2.new(1, -28, 0, 1),
-                Position = UDim2.new(0, 14, 0, 47),
-                BackgroundColor3 = Theme.Sep,
-                Transparency = 0.5,
-                Parent = row,
-            })
+            row.MouseEnter:Connect(function()
+                Tween(row, 0.12, { BackgroundColor3 = Theme.Input, BackgroundTransparency = 0.5 })
+            end)
+            row.MouseLeave:Connect(function()
+                Tween(row, 0.12, { BackgroundTransparency = 1 })
+            end)
 
             table.insert(tab.Components, { SearchName = name, Container = row })
             table.insert(section.Components, row)
 
             return {
                 GetSelected = function() return selected end,
+                Close = closeMultiDropdown,
             }
         end
 
@@ -2404,6 +2631,15 @@ end
 -- SELECT TAB
 -- ═══════════════════════════════════════════════════════════════════
 function Library:SelectTab(tabId)
+    -- Fecha qualquer dropdown aberto ao trocar de tab
+    if self._activeDropdownClose then
+        self._activeDropdownClose()
+        self._activeDropdownClose = nil
+        if self._dropdownOverlay then
+            self._dropdownOverlay.Visible = false
+        end
+    end
+
     self._activeTabId = tabId
 
     for _, tab in ipairs(self._tabs) do
@@ -2430,6 +2666,12 @@ end
 -- ═══════════════════════════════════════════════════════════════════
 function Library:Destroy()
     UserInputService.MouseIcon = ""
+
+    -- Fecha qualquer dropdown
+    if self._activeDropdownClose then
+        self._activeDropdownClose()
+        self._activeDropdownClose = nil
+    end
 
     for _, conn in ipairs(self._connections) do
         if conn and conn.Connected then
