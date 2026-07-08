@@ -1,6 +1,6 @@
 --[[
     ╔══════════════════════════════════════════════════════════════════╗
-    ║                    iOS UI Library v2.0 (FIXED)                  ║
+    ║                    iOS UI Library v2.1 (FIXED)                  ║
     ║         Premium Interface Inspired by Apple's Design            ║
     ╚══════════════════════════════════════════════════════════════════╝
 --]]
@@ -184,6 +184,7 @@ local function Notify(opts)
         Parent = notif
     })
 
+    -- Barra de progresso da notificação
     local prog = Make("Frame", {
         Size = UDim2.new(1, -16, 0, 3),
         Position = UDim2.new(0, 8, 1, -8),
@@ -224,7 +225,7 @@ local function ShowPopup(opts, parentGui)
     Tween(overlay, 0.2, { BackgroundTransparency = 0.6 })
 
     local popup = Make("Frame", {
-        Size = UDim2.fromOffset(280, 180),
+        Size = UDim2.fromOffset(0, 0), -- Começa pequeno para animar
         Position = UDim2.new(0.5, -140, 0.5, -90),
         BackgroundColor3 = Theme.Card,
         ZIndex = 101,
@@ -232,8 +233,8 @@ local function ShowPopup(opts, parentGui)
     })
     Make("UICorner", { CornerRadius = UDim.new(0, 16), Parent = popup })
 
-    popup.Size = UDim2.fromOffset(250, 160)
-    Tween(popup, 0.3, { Size = UDim2.fromOffset(280, 180) })
+    -- Animação de escala ao aparecer
+    Tween(popup, 0.35, { Size = UDim2.fromOffset(280, 180) }, Enum.EasingStyle.Back)
 
     Make("TextLabel", {
         Size = UDim2.new(1, -40, 0, 24),
@@ -293,7 +294,8 @@ local function ShowPopup(opts, parentGui)
 
         btn.MouseButton1Click:Connect(function()
             Tween(overlay, 0.2, { BackgroundTransparency = 1 })
-            Tween(popup, 0.2, { Size = UDim2.fromOffset(250, 160) })
+            -- Animação de escala ao sair
+            Tween(popup, 0.25, { Size = UDim2.fromOffset(240, 150) }, Enum.EasingStyle.Back)
             task.delay(0.25, function()
                 overlay:Destroy()
             end)
@@ -339,20 +341,16 @@ function Library.CreateWindow(config)
     local vp = Camera.ViewportSize
     local mobile = IsMobile()
     
-    -- Calcula os pixels absolutos iniciais baseado na tela
     local startW = mobile and (vp.X * 0.95) or 520
     local startH = mobile and (vp.Y * 0.85) or 480
     
-    -- Variável para guardar a altura da janela antes de minimizar
     local storedHeight = startH
 
-    -- ─── Janela Principal (FIXED DRAG & RESIZE) ───
+    -- ─── Janela Principal ───
     local window = Make("Frame", {
         Name = "Window",
         Size = UDim2.fromOffset(0, 0),
-        -- Centralizado usando cálculo exato de Offset
         Position = UDim2.fromOffset((vp.X - startW) / 2, (vp.Y - startH) / 2),
-        -- Removido o AnchorPoint 0.5 para consertar pulo do arrastar e redimensionamento 
         AnchorPoint = Vector2.new(0, 0),
         BackgroundColor3 = Theme.Bg,
         ClipsDescendants = true,
@@ -362,10 +360,8 @@ function Library.CreateWindow(config)
     Make("UICorner", { CornerRadius = UDim.new(0, 16), Parent = window })
     Make("UIStroke", { Color = Theme.Sep, Thickness = 0.5, Transparency = 0.5, Parent = window })
 
-    -- ═══════════════════════════════════════════════════════════════
-    -- RESIZE HANDLE (SISTEMA DE REDIMENSIONAMENTO CORRIGIDO)
-    -- ═══════════════════════════════════════════════════════════════
-    local MIN_SIZE = Vector2.new(200, 150) -- Fino e adaptado para touch
+    -- ─── RESIZE HANDLE ───
+    local MIN_SIZE = Vector2.new(200, 150)
 
     local resizeHandle = Make("Frame", {
         Name = "ResizeHandle",
@@ -484,6 +480,7 @@ function Library.CreateWindow(config)
         Parent = header,
     })
 
+    -- Armazena os botões para customização futura
     local minBtn = Make("TextButton", {
         Size = UDim2.fromOffset(24, 24),
         Position = UDim2.new(0, 0, 0, 0),
@@ -493,7 +490,8 @@ function Library.CreateWindow(config)
         Parent = ctrlFrame,
     })
     Make("UICorner", { CornerRadius = UDim.new(1, 0), Parent = minBtn })
-    Make("Frame", {
+    -- Ícone padrão de minimizar (traço)
+    local minIcon = Make("Frame", {
         Size = UDim2.fromOffset(8, 2),
         Position = UDim2.new(0.5, -4, 0.5, -1),
         BackgroundColor3 = Color3.fromRGB(130, 95, 0),
@@ -509,12 +507,39 @@ function Library.CreateWindow(config)
         Parent = ctrlFrame,
     })
     Make("UICorner", { CornerRadius = UDim.new(1, 0), Parent = closeBtn })
-    Make("Frame", { Size = UDim2.fromOffset(8, 2), Position = UDim2.new(0.5, -4, 0.5, -1), Rotation = 45, BackgroundColor3 = Color3.fromRGB(130, 20, 15), Parent = closeBtn })
-    Make("Frame", { Size = UDim2.fromOffset(8, 2), Position = UDim2.new(0.5, -4, 0.5, -1), Rotation = -45, BackgroundColor3 = Color3.fromRGB(130, 20, 15), Parent = closeBtn })
+    -- Ícone padrão de fechar (X)
+    local closeIcon1 = Make("Frame", { Size = UDim2.fromOffset(8, 2), Position = UDim2.new(0.5, -4, 0.5, -1), Rotation = 45, BackgroundColor3 = Color3.fromRGB(130, 20, 15), Parent = closeBtn })
+    local closeIcon2 = Make("Frame", { Size = UDim2.fromOffset(8, 2), Position = UDim2.new(0.5, -4, 0.5, -1), Rotation = -45, BackgroundColor3 = Color3.fromRGB(130, 20, 15), Parent = closeBtn })
 
     for _, btn in ipairs({minBtn, closeBtn}) do
         btn.MouseEnter:Connect(function() Tween(btn, 0.15, { Size = UDim2.fromOffset(26, 26) }) end)
         btn.MouseLeave:Connect(function() Tween(btn, 0.15, { Size = UDim2.fromOffset(24, 24) }) end)
+    end
+
+    -- Função para customizar ícones da janela (SUGESTÃO SUA)
+    function self:SetTabIcons(options)
+        local opts = options or {}
+        if opts.Minimize then
+            minIcon:Destroy()
+            local newIcon = Instance.new("ImageLabel")
+            newIcon.Image = opts.Minimize
+            newIcon.Size = UDim2.fromOffset(12, 12)
+            newIcon.Position = UDim2.new(0.5, -6, 0.5, -6)
+            newIcon.BackgroundTransparency = 1
+            newIcon.Name = "MinIcon"
+            newIcon.Parent = minBtn
+        end
+        if opts.Close then
+            closeIcon1:Destroy()
+            closeIcon2:Destroy()
+            local newIcon = Instance.new("ImageLabel")
+            newIcon.Image = opts.Close
+            newIcon.Size = UDim2.fromOffset(12, 12)
+            newIcon.Position = UDim2.new(0.5, -6, 0.5, -6)
+            newIcon.BackgroundTransparency = 1
+            newIcon.Name = "CloseIcon"
+            newIcon.Parent = closeBtn
+        end
     end
 
     -- ─── TAB BAR ───
@@ -603,7 +628,7 @@ function Library.CreateWindow(config)
     local contentLayout = Make("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = scrollContent })
     self._contentLayout = contentLayout
 
-    -- ─── DRAG SYSTEM (FIXED TELEPORT) ───
+    -- ─── DRAG SYSTEM ───
     local dragging = false
     local dragStart = nil
     local startPos = nil
@@ -618,7 +643,7 @@ function Library.CreateWindow(config)
             if pos.X >= hAbs.X and pos.X <= hAbs.X + hSize.X - 70 and pos.Y >= hAbs.Y and pos.Y <= hAbs.Y + hSize.Y then
                 dragging = true
                 dragStart = pos
-                startPos = window.Position -- Pega perfeitamente o UDim2 atual em offset
+                startPos = window.Position
             end
         end
     end
@@ -662,7 +687,7 @@ function Library.CreateWindow(config)
     minBtn.MouseButton1Click:Connect(function()
         self._minimized = not self._minimized
         if self._minimized then
-            storedHeight = window.AbsoluteSize.Y -- Salva a altura customizada do resize
+            storedHeight = window.AbsoluteSize.Y
             Tween(contentArea, 0.3, { Size = UDim2.new(1, 0, 0, 0) })
             Tween(tabBar, 0.25, { Size = UDim2.new(1, 0, 0, 0) })
             Tween(window, 0.35, { Size = UDim2.fromOffset(window.AbsoluteSize.X, 48) })
@@ -681,18 +706,20 @@ function Library.CreateWindow(config)
         task.delay(0.4, function() self:Destroy() end)
     end)
 
-    -- ─── SEARCH ───
+    -- ─── SEARCH SYSTEM (CORRIGIDO PARA MOSTRAR TUDO AO APAGAR) ───
     local lastSearch = 0
     searchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local now = tick()
-        if now - lastSearch < 0.15 then return end
+        if now - lastSearch < 0.1 then return end -- Debounce mais suave
         lastSearch = now
         local query = searchBox.Text:lower()
         for _, tab in ipairs(self._tabs) do
             if tab.Id == self._activeTabId then
                 for _, comp in ipairs(tab.Components) do
                     if comp.Container then
-                        local matches = query == "" or (comp.SearchName and comp.SearchName:lower():find(query, 1, true))
+                        -- LÓGICA CORRIGIDA: Se a pesquisa estiver vazia, mostra TUDO
+                        -- Caso contrário, filtra normalmente
+                        local matches = (query == "") or (comp.SearchName and comp.SearchName:lower():find(query, 1, true))
                         comp.Container.Visible = matches
                     end
                 end
@@ -885,9 +912,7 @@ function Library:AddTab(name, icon)
             return { SetValue = function(v) updateSlider(v) end, GetValue = function() return value end }
         end
 
-        -- ───────────────────────────────────────────────────────────
-        -- DROPDOWN (100% FIXED - TELEPORT)
-        -- ───────────────────────────────────────────────────────────
+        -- DROPDOWN
         function secAPI:AddDropdown(options)
             local opts = options or {}
             local name = opts.Name or "Dropdown"
@@ -902,10 +927,9 @@ function Library:AddTab(name, icon)
             local valLabel = Make("TextLabel", { Size = UDim2.new(0.35, 0, 0, 48), Position = UDim2.new(0.45, 0, 0, 0), Text = tostring(selected), Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = Theme.SubText, TextXAlignment = Enum.TextXAlignment.Right, TextTruncate = Enum.TextTruncate.AtEnd, BackgroundTransparency = 1, ZIndex = 11, Parent = row })
             local chevron = Make("TextLabel", { Size = UDim2.fromOffset(16, 16), Position = UDim2.new(1, -24, 0.5, -8), Text = "▾", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Theme.SubText, BackgroundTransparency = 1, ZIndex = 11, Parent = row })
 
-            -- FIXED: Position.Y.Offset é exatamente 48 (o tamanho fechado da row).
             local dropFrame = Make("Frame", {
                 Size = UDim2.new(1, -28, 0, 0),
-                Position = UDim2.new(0, 14, 0, 48), -- ANTES: Scale=1. Agora: Fixo em 48px abaixo do topo da row!
+                Position = UDim2.new(0, 14, 0, 48),
                 BackgroundColor3 = Theme.Card,
                 ClipsDescendants = true,
                 Visible = false,
@@ -1056,10 +1080,10 @@ function Library:AddTab(name, icon)
             return row
         end
 
-        -- DIVIDER
+        -- DIVIDER (MAIS FINO E ELEGANTE COMO PEDIDO)
         function secAPI:AddDivider()
-            local row = Make("Frame", { Size = UDim2.new(1, 0, 0, 8), BackgroundTransparency = 1, LayoutOrder = getOrder(), Parent = sectionFrame })
-            Make("Frame", { Size = UDim2.new(1, -28, 0, 1), Position = UDim2.new(0, 14, 0.5, 0), BackgroundColor3 = Theme.Sep, Transparency = 0.3, Parent = row })
+            local row = Make("Frame", { Size = UDim2.new(1, 0, 0, 6), BackgroundTransparency = 1, LayoutOrder = getOrder(), Parent = sectionFrame })
+            Make("Frame", { Size = UDim2.new(1, -28, 0, 1), Position = UDim2.new(0, 14, 0.5, 0), BackgroundColor3 = Theme.Sep, Transparency = 0.4, Parent = row })
             table.insert(section.Components, row)
             return row
         end
@@ -1106,7 +1130,7 @@ function Library:AddTab(name, icon)
             return row
         end
 
-        -- IMAGE
+        -- IMAGE (COM UICorner PARA FICAR ARREDONDADA - SUA SUGESTÃO)
         function secAPI:AddImage(options)
             local opts = options or {}
             local image = opts.Image or ""
@@ -1119,7 +1143,7 @@ function Library:AddTab(name, icon)
             return { SetImage = function(i) img.Image = i end }
         end
 
-        -- NUMBER INPUT
+        -- NUMBER INPUT (COM ÍCONES + E - CORRETOS)
         function secAPI:AddNumberInput(options)
             local opts = options or {}
             local name = opts.Name or "Number"
@@ -1146,9 +1170,7 @@ function Library:AddTab(name, icon)
             return { SetValue = function(v) updateNum(v) end, GetValue = function() return value end }
         end
 
-        -- ───────────────────────────────────────────────────────────
-        -- MULTI DROPDOWN (100% FIXED - TELEPORT)
-        -- ───────────────────────────────────────────────────────────
+        -- MULTI DROPDOWN
         function secAPI:AddMultiDropdown(options)
             local opts = options or {}
             local name = opts.Name or "Multi Select"
@@ -1164,10 +1186,9 @@ function Library:AddTab(name, icon)
             local countLabel = Make("TextLabel", { Size = UDim2.new(0.35, 0, 0, 48), Position = UDim2.new(0.45, 0, 0, 0), Text = tostring(#defaults) .. " selecionados", Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = Theme.SubText, TextXAlignment = Enum.TextXAlignment.Right, BackgroundTransparency = 1, ZIndex = 11, Parent = row })
             local chevron = Make("TextLabel", { Size = UDim2.fromOffset(16, 16), Position = UDim2.new(1, -24, 0.5, -8), Text = "▾", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Theme.SubText, BackgroundTransparency = 1, ZIndex = 11, Parent = row })
 
-            -- FIXED: Position.Y.Offset é 48 (o tamanho fechado da row).
             local dropFrame = Make("Frame", {
                 Size = UDim2.new(1, -28, 0, 0),
-                Position = UDim2.new(0, 14, 0, 48), -- FIXO EM 48px DO TOPO!
+                Position = UDim2.new(0, 14, 0, 48),
                 BackgroundColor3 = Theme.Card,
                 ClipsDescendants = true,
                 Visible = false,
@@ -1217,7 +1238,7 @@ function Library:AddTab(name, icon)
             return { GetSelected = function() return selected end }
         end
 
-        -- BADGE
+        -- BADGE (MAIS ARREDONDADO - SUA SUGESTÃO)
         function secAPI:AddBadge(options)
             local opts = options or {}
             local text = opts.Text or "New"
@@ -1226,13 +1247,13 @@ function Library:AddTab(name, icon)
             local w = ts.X + 12
             local row = Make("Frame", { Size = UDim2.new(0, w + 28, 0, 32), BackgroundTransparency = 1, LayoutOrder = getOrder(), Parent = sectionFrame })
             local badge = Make("Frame", { Size = UDim2.fromOffset(w, 20), Position = UDim2.new(0, 14, 0.5, -10), BackgroundColor3 = color, BackgroundTransparency = 0.85, Parent = row })
-            Make("UICorner", { CornerRadius = UDim.new(0, 4), Parent = badge })
+            Make("UICorner", { CornerRadius = UDim.new(0, 10), Parent = badge }) -- Mais arredondado
             Make("TextLabel", { Size = UDim2.new(1, -8, 1, 0), Position = UDim2.new(0, 4, 0, 0), Text = text, Font = Enum.Font.GothamBold, TextSize = 10, TextColor3 = color, BackgroundTransparency = 1, Parent = badge })
             table.insert(section.Components, row)
             return row
         end
 
-        -- CHIPS
+        -- CHIPS (BORDAS 100% ARREDONDADAS - SUA SUGESTÃO)
         function secAPI:AddChips(options)
             local opts = options or {}
             local optList = opts.Options or {}
@@ -1250,7 +1271,7 @@ function Library:AddTab(name, icon)
                 local ts = GetTextSize(option, 12, Enum.Font.Gotham)
                 local chipW = ts.X + 20
                 local chip = Make("Frame", { Size = UDim2.fromOffset(chipW, 28), BackgroundColor3 = isSel and Theme.Accent or Theme.Input, LayoutOrder = #row:GetChildren(), Parent = row })
-                Make("UICorner", { CornerRadius = UDim.new(1, 0), Parent = chip })
+                Make("UICorner", { CornerRadius = UDim.new(1, 0), Parent = chip }) -- 100% arredondado
                 local chipLabel = Make("TextLabel", { Size = UDim2.new(1, -16, 1, 0), Position = UDim2.new(0, 8, 0, 0), Text = option, Font = isSel and Enum.Font.GothamBold or Enum.Font.Gotham, TextSize = 12, TextColor3 = isSel and Theme.White or Theme.Text, BackgroundTransparency = 1, Parent = chip })
                 local chipBtn = Make("TextButton", { Size = UDim2.new(1, 0, 1, 0), Text = "", BackgroundTransparency = 1, Parent = chip })
                 chipBtn.MouseButton1Click:Connect(function()
