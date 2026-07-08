@@ -1,9 +1,119 @@
 --[[
     ╔══════════════════════════════════════════════════════════════════╗
-    ║                    iOS UI Library v2.1 (FIXED)                  ║
-    ║         Premium Interface Inspired by Apple's Design            ║
+    ║              iOS UI Library v2.2 - ICON CUSTOM SYSTEM           ║
+    ║       Premium Interface with Complete Icon Customization        ║
     ╚══════════════════════════════════════════════════════════════════╝
 --]]
+
+-- ═══════════════════════════════════════════════════════════════════
+-- ╔══════════════════════════════════════════════════════════════════╗
+-- ║         🎨 CONFIGURAÇÃO DE ÍCONES (IMAGENS ID) 🎨              ║
+-- ║     Altere os IDs abaixo para customizar TODOS os ícones        ║
+-- ║     Use "rbxassetid://NUMERO" ou deixe vazio para emoji         ║
+-- ╚══════════════════════════════════════════════════════════════════╝
+-- ═══════════════════════════════════════════════════════════════════
+local ICONS = {
+    -- ═══ JANELA ═══
+    WINDOW_MINIMIZE = "",     -- Ícone do botão Minimizar
+    WINDOW_CLOSE = "",        -- Ícone do botão Fechar
+    WINDOW_RESIZE = "",       -- Ícone de redimensionar
+    
+    -- ═══ ABAS ═══
+    TAB_DEFAULT = "",         -- Ícone padrão para abas
+    
+    -- ═══ SEARCH ═══
+    SEARCH_ICON = "",         -- Lupa da barra de pesquisa
+    
+    -- ═══ SEÇÕES ═══
+    SECTION_ICON = "",        -- Ícone padrão para seções
+    
+    -- ═══ COMPONENTES ═══
+    BUTTON_ICON = "",         -- Ícone de botão
+    TOGGLE_ON = "",           -- Ícone toggle ligado
+    TOGGLE_OFF = "",          -- Ícone toggle desligado
+    SLIDER_ICON = "",         -- Ícone do slider
+    DROPDOWN_ARROW = "",      -- Seta do dropdown
+    DROPDOWN_ICON = "",       -- Ícone do dropdown
+    TEXTBOX_KEYBOARD = "",    -- Ícone de teclado
+    TEXTBOX_SEARCH = "",      -- Ícone de pesquisa
+    TEXTBOX_USER = "",        -- Ícone de usuário
+    TEXTBOX_LOCK = "",        -- Ícone de cadeado
+    TEXTBOX_MAIL = "",        -- Ícone de email
+    TEXTBOX_NUMBER = "",      -- Ícone de número
+    KEYBIND_ICON = "",        -- Ícone de keybind
+    KEYBIND_BINDING = "",     -- Ícone vinculando
+    COLORPICKER_ICON = "",    -- Ícone de cor
+    PROGRESS_ICON = "",       -- Ícone progresso
+    CARD_ARROW = "",          -- Seta do card
+    CARD_ICON = "",           -- Ícone do card
+    IMAGE_PLACEHOLDER = "",   -- Imagem placeholder
+    NUMBER_PLUS = "",         -- Botão +
+    NUMBER_MINUS = "",        -- Botão -
+    NUMBER_ICON = "",         -- Ícone number input
+    MULTIDROPDOWN_CHECK = "", -- Check ✓
+    MULTIDROPDOWN_UNCHECK = "",-- Desmarcado
+    MULTIDROPDOWN_ARROW = "", -- Seta
+    
+    -- ═══ NOTIFICAÇÕES ═══
+    NOTIF_INFO = "",          -- Info
+    NOTIF_SUCCESS = "",       -- Sucesso
+    NOTIF_WARNING = "",       -- Aviso
+    NOTIF_ERROR = "",         -- Erro
+    
+    -- ═══ GERAL ═══
+    ARROW_RIGHT = "",         -- Seta direita
+    ARROW_DOWN = "",          -- Seta baixo
+    ARROW_UP = "",            -- Seta cima
+    ARROW_LEFT = "",          -- Seta esquerda
+    STAR = "",                -- Estrela
+    HEART = "",               -- Coração
+    LOCK = "",                -- Cadeado
+    UNLOCK = "",              -- Destrancado
+    PLAY = "",                -- Play
+    PAUSE = "",               -- Pause
+    STOP = "",                -- Stop
+    REFRESH = "",             -- Atualizar
+    TRASH = "",               -- Lixeira
+    EDIT = "",                -- Editar
+    SAVE = "",                -- Salvar
+    FOLDER = "",              -- Pasta
+    FILE = "",                -- Arquivo
+}
+
+-- ═══════════════════════════════════════════════════════════════════
+-- FUNÇÃO MÁGICA: Cria ImageLabel ou TextLabel baseado na config
+-- ═══════════════════════════════════════════════════════════════════
+local function Icon(id, size, parent, fallbackEmoji)
+    local s = size or 16
+    if type(s) == "number" then s = Vector2.new(s, s) end
+    
+    -- Se tem ID configurado, usa ImageLabel
+    if id and id ~= "" and (id:find("rbxassetid://") or id:find("rbxasset://")) then
+        local img = Instance.new("ImageLabel")
+        img.Image = id
+        img.Size = UDim2.fromOffset(s.X, s.Y)
+        img.BackgroundTransparency = 1
+        img.ScaleType = Enum.ScaleType.Fit
+        img.Name = "Icon"
+        if parent then img.Parent = parent end
+        return img
+    end
+    
+    -- Fallback: usa emoji
+    if fallbackEmoji then
+        local txt = Instance.new("TextLabel")
+        txt.Text = fallbackEmoji
+        txt.Size = UDim2.fromOffset(s.X, s.Y)
+        txt.Font = Enum.Font.Gotham
+        txt.TextSize = s.X * 0.8
+        txt.BackgroundTransparency = 1
+        txt.Name = "Icon"
+        if parent then txt.Parent = parent end
+        return txt
+    end
+    
+    return nil
+end
 
 -- ═══════════════════════════════════════════════════════════════════
 -- SERVICES
@@ -88,7 +198,7 @@ local function ClampToScreen(pos, sz)
 end
 
 -- ═══════════════════════════════════════════════════════════════════
--- CONNECTION TRACKER (evita memory leak)
+-- CONNECTION TRACKER
 -- ═══════════════════════════════════════════════════════════════════
 local AllConnections = {}
 
@@ -142,6 +252,19 @@ local function Notify(opts)
         Error = Theme.Red,
     }
     local accent = colors[ntype] or Theme.Accent
+    
+    local iconMap = {
+        Info = ICONS.NOTIF_INFO,
+        Success = ICONS.NOTIF_SUCCESS,
+        Warning = ICONS.NOTIF_WARNING,
+        Error = ICONS.NOTIF_ERROR,
+    }
+    local emojiMap = {
+        Info = "ℹ️",
+        Success = "✅",
+        Warning = "⚠️",
+        Error = "❌",
+    }
 
     local notif = Make("Frame", {
         Size = UDim2.new(1, 0, 0, 60),
@@ -151,17 +274,15 @@ local function Notify(opts)
     Make("UICorner", { CornerRadius = UDim.new(0, 12), Parent = notif })
     Make("UIStroke", { Color = accent, Thickness = 1, Transparency = 0.6, Parent = notif })
 
-    local bar = Make("Frame", {
-        Size = UDim2.new(0, 4, 1, -16),
-        Position = UDim2.new(0, 6, 0, 8),
-        BackgroundColor3 = accent,
-        Parent = notif
-    })
-    Make("UICorner", { CornerRadius = UDim.new(0, 2), Parent = bar })
+    -- Ícone da notificação
+    Icon(iconMap[ntype], 18, notif, emojiMap[ntype])
+    if notif:FindFirstChild("Icon") then
+        notif.Icon.Position = UDim2.new(0, 10, 0, 10)
+    end
 
     Make("TextLabel", {
-        Size = UDim2.new(1, -30, 0, 18),
-        Position = UDim2.new(0, 18, 0, 8),
+        Size = UDim2.new(1, -50, 0, 18),
+        Position = UDim2.new(0, 38, 0, 8),
         Text = title,
         Font = Enum.Font.GothamBold,
         TextSize = 13,
@@ -172,8 +293,8 @@ local function Notify(opts)
     })
 
     Make("TextLabel", {
-        Size = UDim2.new(1, -30, 0, 16),
-        Position = UDim2.new(0, 18, 0, 28),
+        Size = UDim2.new(1, -50, 0, 16),
+        Position = UDim2.new(0, 38, 0, 28),
         Text = msg,
         Font = Enum.Font.Gotham,
         TextSize = 11,
@@ -184,7 +305,6 @@ local function Notify(opts)
         Parent = notif
     })
 
-    -- Barra de progresso da notificação
     local prog = Make("Frame", {
         Size = UDim2.new(1, -16, 0, 3),
         Position = UDim2.new(0, 8, 1, -8),
@@ -225,7 +345,7 @@ local function ShowPopup(opts, parentGui)
     Tween(overlay, 0.2, { BackgroundTransparency = 0.6 })
 
     local popup = Make("Frame", {
-        Size = UDim2.fromOffset(0, 0), -- Começa pequeno para animar
+        Size = UDim2.fromOffset(0, 0),
         Position = UDim2.new(0.5, -140, 0.5, -90),
         BackgroundColor3 = Theme.Card,
         ZIndex = 101,
@@ -233,7 +353,6 @@ local function ShowPopup(opts, parentGui)
     })
     Make("UICorner", { CornerRadius = UDim.new(0, 16), Parent = popup })
 
-    -- Animação de escala ao aparecer
     Tween(popup, 0.35, { Size = UDim2.fromOffset(280, 180) }, Enum.EasingStyle.Back)
 
     Make("TextLabel", {
@@ -294,7 +413,6 @@ local function ShowPopup(opts, parentGui)
 
         btn.MouseButton1Click:Connect(function()
             Tween(overlay, 0.2, { BackgroundTransparency = 1 })
-            -- Animação de escala ao sair
             Tween(popup, 0.25, { Size = UDim2.fromOffset(240, 150) }, Enum.EasingStyle.Back)
             task.delay(0.25, function()
                 overlay:Destroy()
@@ -372,25 +490,32 @@ function Library.CreateWindow(config)
         Parent = window,
     })
 
-    Make("Frame", {
-        Size = UDim2.fromOffset(10, 2),
-        Position = UDim2.new(1, -14, 1, -10),
-        Rotation = -45,
-        BackgroundColor3 = Theme.CapText,
-        BackgroundTransparency = 0.4,
-        ZIndex = 11,
-        Parent = resizeHandle,
-    })
-
-    Make("Frame", {
-        Size = UDim2.fromOffset(10, 2),
-        Position = UDim2.new(1, -16, 1, -6),
-        Rotation = -45,
-        BackgroundColor3 = Theme.CapText,
-        BackgroundTransparency = 0.4,
-        ZIndex = 11,
-        Parent = resizeHandle,
-    })
+    -- Ícone de resize
+    if ICONS.WINDOW_RESIZE ~= "" then
+        Icon(ICONS.WINDOW_RESIZE, 16, resizeHandle)
+        if resizeHandle:FindFirstChild("Icon") then
+            resizeHandle.Icon.Position = UDim2.new(0.5, -8, 0.5, -8)
+        end
+    else
+        Make("Frame", {
+            Size = UDim2.fromOffset(10, 2),
+            Position = UDim2.new(1, -14, 1, -10),
+            Rotation = -45,
+            BackgroundColor3 = Theme.CapText,
+            BackgroundTransparency = 0.4,
+            ZIndex = 11,
+            Parent = resizeHandle,
+        })
+        Make("Frame", {
+            Size = UDim2.fromOffset(10, 2),
+            Position = UDim2.new(1, -16, 1, -6),
+            Rotation = -45,
+            BackgroundColor3 = Theme.CapText,
+            BackgroundTransparency = 0.4,
+            ZIndex = 11,
+            Parent = resizeHandle,
+        })
+    end
 
     local resizing = false
     local resizeStartPos = nil
@@ -480,7 +605,7 @@ function Library.CreateWindow(config)
         Parent = header,
     })
 
-    -- Armazena os botões para customização futura
+    -- Botão Minimizar
     local minBtn = Make("TextButton", {
         Size = UDim2.fromOffset(24, 24),
         Position = UDim2.new(0, 0, 0, 0),
@@ -490,14 +615,23 @@ function Library.CreateWindow(config)
         Parent = ctrlFrame,
     })
     Make("UICorner", { CornerRadius = UDim.new(1, 0), Parent = minBtn })
-    -- Ícone padrão de minimizar (traço)
-    local minIcon = Make("Frame", {
-        Size = UDim2.fromOffset(8, 2),
-        Position = UDim2.new(0.5, -4, 0.5, -1),
-        BackgroundColor3 = Color3.fromRGB(130, 95, 0),
-        Parent = minBtn,
-    })
+    
+    -- Ícone minimizar
+    if ICONS.WINDOW_MINIMIZE ~= "" then
+        Icon(ICONS.WINDOW_MINIMIZE, 12, minBtn)
+        if minBtn:FindFirstChild("Icon") then
+            minBtn.Icon.Position = UDim2.new(0.5, -6, 0.5, -6)
+        end
+    else
+        Make("Frame", {
+            Size = UDim2.fromOffset(8, 2),
+            Position = UDim2.new(0.5, -4, 0.5, -1),
+            BackgroundColor3 = Color3.fromRGB(130, 95, 0),
+            Parent = minBtn,
+        })
+    end
 
+    -- Botão Fechar
     local closeBtn = Make("TextButton", {
         Size = UDim2.fromOffset(24, 24),
         Position = UDim2.new(0, 32, 0, 0),
@@ -507,39 +641,21 @@ function Library.CreateWindow(config)
         Parent = ctrlFrame,
     })
     Make("UICorner", { CornerRadius = UDim.new(1, 0), Parent = closeBtn })
-    -- Ícone padrão de fechar (X)
-    local closeIcon1 = Make("Frame", { Size = UDim2.fromOffset(8, 2), Position = UDim2.new(0.5, -4, 0.5, -1), Rotation = 45, BackgroundColor3 = Color3.fromRGB(130, 20, 15), Parent = closeBtn })
-    local closeIcon2 = Make("Frame", { Size = UDim2.fromOffset(8, 2), Position = UDim2.new(0.5, -4, 0.5, -1), Rotation = -45, BackgroundColor3 = Color3.fromRGB(130, 20, 15), Parent = closeBtn })
+    
+    -- Ícone fechar
+    if ICONS.WINDOW_CLOSE ~= "" then
+        Icon(ICONS.WINDOW_CLOSE, 12, closeBtn)
+        if closeBtn:FindFirstChild("Icon") then
+            closeBtn.Icon.Position = UDim2.new(0.5, -6, 0.5, -6)
+        end
+    else
+        Make("Frame", { Size = UDim2.fromOffset(8, 2), Position = UDim2.new(0.5, -4, 0.5, -1), Rotation = 45, BackgroundColor3 = Color3.fromRGB(130, 20, 15), Parent = closeBtn })
+        Make("Frame", { Size = UDim2.fromOffset(8, 2), Position = UDim2.new(0.5, -4, 0.5, -1), Rotation = -45, BackgroundColor3 = Color3.fromRGB(130, 20, 15), Parent = closeBtn })
+    end
 
     for _, btn in ipairs({minBtn, closeBtn}) do
         btn.MouseEnter:Connect(function() Tween(btn, 0.15, { Size = UDim2.fromOffset(26, 26) }) end)
         btn.MouseLeave:Connect(function() Tween(btn, 0.15, { Size = UDim2.fromOffset(24, 24) }) end)
-    end
-
-    -- Função para customizar ícones da janela (SUGESTÃO SUA)
-    function self:SetTabIcons(options)
-        local opts = options or {}
-        if opts.Minimize then
-            minIcon:Destroy()
-            local newIcon = Instance.new("ImageLabel")
-            newIcon.Image = opts.Minimize
-            newIcon.Size = UDim2.fromOffset(12, 12)
-            newIcon.Position = UDim2.new(0.5, -6, 0.5, -6)
-            newIcon.BackgroundTransparency = 1
-            newIcon.Name = "MinIcon"
-            newIcon.Parent = minBtn
-        end
-        if opts.Close then
-            closeIcon1:Destroy()
-            closeIcon2:Destroy()
-            local newIcon = Instance.new("ImageLabel")
-            newIcon.Image = opts.Close
-            newIcon.Size = UDim2.fromOffset(12, 12)
-            newIcon.Position = UDim2.new(0.5, -6, 0.5, -6)
-            newIcon.BackgroundTransparency = 1
-            newIcon.Name = "CloseIcon"
-            newIcon.Parent = closeBtn
-        end
     end
 
     -- ─── TAB BAR ───
@@ -584,6 +700,7 @@ function Library.CreateWindow(config)
     })
     self._contentArea = contentArea
 
+    -- Barra de pesquisa
     local searchBar = Make("Frame", {
         Size = UDim2.new(1, -24, 0, 36),
         Position = UDim2.new(0, 12, 0, 8),
@@ -591,7 +708,12 @@ function Library.CreateWindow(config)
         Parent = contentArea,
     })
     Make("UICorner", { CornerRadius = UDim.new(0, 10), Parent = searchBar })
-    Make("TextLabel", { Size = UDim2.fromOffset(16, 16), Position = UDim2.new(0, 10, 0.5, -8), Text = "🔍", Font = Enum.Font.Gotham, TextSize = 12, BackgroundTransparency = 1, Parent = searchBar })
+    
+    -- Ícone da search
+    Icon(ICONS.SEARCH_ICON, 16, searchBar, "🔍")
+    if searchBar:FindFirstChild("Icon") then
+        searchBar.Icon.Position = UDim2.new(0, 10, 0.5, -8)
+    end
 
     local searchBox = Make("TextBox", {
         Size = UDim2.new(1, -40, 1, 0),
@@ -706,19 +828,17 @@ function Library.CreateWindow(config)
         task.delay(0.4, function() self:Destroy() end)
     end)
 
-    -- ─── SEARCH SYSTEM (CORRIGIDO PARA MOSTRAR TUDO AO APAGAR) ───
+    -- ─── SEARCH SYSTEM ───
     local lastSearch = 0
     searchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local now = tick()
-        if now - lastSearch < 0.1 then return end -- Debounce mais suave
+        if now - lastSearch < 0.1 then return end
         lastSearch = now
         local query = searchBox.Text:lower()
         for _, tab in ipairs(self._tabs) do
             if tab.Id == self._activeTabId then
                 for _, comp in ipairs(tab.Components) do
                     if comp.Container then
-                        -- LÓGICA CORRIGIDA: Se a pesquisa estiver vazia, mostra TUDO
-                        -- Caso contrário, filtra normalmente
                         local matches = (query == "") or (comp.SearchName and comp.SearchName:lower():find(query, 1, true))
                         comp.Container.Visible = matches
                     end
@@ -761,16 +881,20 @@ function Library:AddTab(name, icon)
     })
     Make("UICorner", { CornerRadius = UDim.new(0, 8), Parent = tabBtn })
 
-    local tabIconLabel = Make("TextLabel", {
+    -- Ícone da tab
+    local tabIconContainer = Make("Frame", {
         Size = UDim2.fromOffset(18, 18),
         Position = UDim2.new(0, 6, 0.5, -9),
-        Text = icon or "📄",
-        Font = Enum.Font.Gotham,
-        TextSize = 14,
         BackgroundTransparency = 1,
         Parent = tabBtn,
     })
-    tab.TabIcon = tabIconLabel
+    
+    if icon and icon ~= "" and (icon:find("rbxassetid://") or icon:find("rbxasset://")) then
+        Icon(icon, 18, tabIconContainer)
+    else
+        Icon(ICONS.TAB_DEFAULT, 18, tabIconContainer, icon or "📄")
+    end
+    tab.TabIcon = tabIconContainer
 
     local tabLabel = Make("TextLabel", {
         Size = UDim2.new(0, textSize.X + 4, 1, 0),
@@ -815,8 +939,32 @@ function Library:AddTab(name, icon)
 
         if title and title ~= "" then
             local hdr = Make("Frame", { Size = UDim2.new(1, 0, 0, 36), BackgroundTransparency = 1, LayoutOrder = 0, Parent = sectionFrame })
-            if iconEmoji then Make("TextLabel", { Size = UDim2.fromOffset(18, 18), Position = UDim2.new(0, 12, 0.5, -9), Text = iconEmoji, Font = Enum.Font.Gotham, TextSize = 14, BackgroundTransparency = 1, Parent = hdr }) end
-            Make("TextLabel", { Size = UDim2.new(1, iconEmoji and -40 or -28, 1, 0), Position = UDim2.new(0, iconEmoji and 34 or 14, 0, 0), Text = title, Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = Theme.SubText, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = hdr })
+            
+            -- Ícone da seção
+            local iconOffset = 0
+            if iconEmoji and iconEmoji ~= "" then
+                if iconEmoji:find("rbxassetid://") or iconEmoji:find("rbxasset://") then
+                    Icon(iconEmoji, 18, hdr)
+                else
+                    Icon(ICONS.SECTION_ICON, 18, hdr, iconEmoji)
+                end
+                if hdr:FindFirstChild("Icon") then
+                    hdr.Icon.Position = UDim2.new(0, 12, 0.5, -9)
+                end
+                iconOffset = 24
+            end
+            
+            Make("TextLabel", { 
+                Size = UDim2.new(1, iconOffset > 0 and -40 or -28, 1, 0), 
+                Position = UDim2.new(0, iconOffset > 0 and 34 or 14, 0, 0), 
+                Text = title, 
+                Font = Enum.Font.GothamBold, 
+                TextSize = 13, 
+                TextColor3 = Theme.SubText, 
+                TextXAlignment = Enum.TextXAlignment.Left, 
+                BackgroundTransparency = 1, 
+                Parent = hdr 
+            })
             Make("Frame", { Size = UDim2.new(1, -28, 0, 1), Position = UDim2.new(0, 14, 1, 0), BackgroundColor3 = Theme.Sep, Transparency = 0.5, Parent = hdr })
         end
 
@@ -842,11 +990,25 @@ function Library:AddTab(name, icon)
             local style = opts.Style or "Default"
             local row = Make("Frame", { Size = UDim2.new(1, 0, 0, 48), BackgroundTransparency = 1, LayoutOrder = getOrder(), Parent = sectionFrame })
             local bgColor = style == "Filled" and Theme.Accent or style == "Danger" and Theme.Red or Theme.Input
-            local btn = Make("TextButton", { Size = UDim2.new(1, -28, 0, 38), Position = UDim2.new(0, 14, 0, 5), Text = name, Font = Enum.Font.GothamSemibold, TextSize = 13, TextColor3 = style == "Default" and Theme.Text or Theme.White, BackgroundColor3 = bgColor, AutoButtonColor = false, Parent = row })
-            Make("UICorner", { CornerRadius = UDim.new(0, 10), Parent = btn })
-            btn.MouseButton1Click:Connect(function() Tween(btn, 0.08, { Size = UDim2.new(1, -34, 0, 36) }); task.delay(0.1, function() Tween(btn, 0.15, { Size = UDim2.new(1, -28, 0, 38) }) end); pcall(callback) end)
-            btn.MouseEnter:Connect(function() Tween(btn, 0.12, { BackgroundTransparency = 0.2 }) end)
-            btn.MouseLeave:Connect(function() Tween(btn, 0.12, { BackgroundTransparency = 0 }) end)
+            
+            -- Ícone do botão
+            if opts.Icon then
+                local iconBtn = Icon(opts.Icon, 16, row)
+                if iconBtn then
+                    iconBtn.Position = UDim2.new(0, 14, 0.5, -8)
+                end
+                local btn = Make("TextButton", { Size = UDim2.new(1, -48, 0, 38), Position = UDim2.new(0, 38, 0, 5), Text = name, Font = Enum.Font.GothamSemibold, TextSize = 13, TextColor3 = style == "Default" and Theme.Text or Theme.White, BackgroundColor3 = bgColor, AutoButtonColor = false, Parent = row })
+                Make("UICorner", { CornerRadius = UDim.new(0, 10), Parent = btn })
+                btn.MouseButton1Click:Connect(function() Tween(btn, 0.08, { Size = UDim2.new(1, -54, 0, 36) }); task.delay(0.1, function() Tween(btn, 0.15, { Size = UDim2.new(1, -48, 0, 38) }) end); pcall(callback) end)
+                btn.MouseEnter:Connect(function() Tween(btn, 0.12, { BackgroundTransparency = 0.2 }) end)
+                btn.MouseLeave:Connect(function() Tween(btn, 0.12, { BackgroundTransparency = 0 }) end)
+            else
+                local btn = Make("TextButton", { Size = UDim2.new(1, -28, 0, 38), Position = UDim2.new(0, 14, 0, 5), Text = name, Font = Enum.Font.GothamSemibold, TextSize = 13, TextColor3 = style == "Default" and Theme.Text or Theme.White, BackgroundColor3 = bgColor, AutoButtonColor = false, Parent = row })
+                Make("UICorner", { CornerRadius = UDim.new(0, 10), Parent = btn })
+                btn.MouseButton1Click:Connect(function() Tween(btn, 0.08, { Size = UDim2.new(1, -34, 0, 36) }); task.delay(0.1, function() Tween(btn, 0.15, { Size = UDim2.new(1, -28, 0, 38) }) end); pcall(callback) end)
+                btn.MouseEnter:Connect(function() Tween(btn, 0.12, { BackgroundTransparency = 0.2 }) end)
+                btn.MouseLeave:Connect(function() Tween(btn, 0.12, { BackgroundTransparency = 0 }) end)
+            end
             table.insert(tab.Components, { SearchName = name, Container = row })
             table.insert(section.Components, row)
             return row
@@ -860,14 +1022,34 @@ function Library:AddTab(name, icon)
             local callback = opts.Callback or function() end
             local isOn = default
             local row = Make("Frame", { Size = UDim2.new(1, 0, 0, 48), BackgroundTransparency = 1, LayoutOrder = getOrder(), Parent = sectionFrame })
-            Make("TextLabel", { Size = UDim2.new(1, -80, 1, 0), Position = UDim2.new(0, 14, 0, 0), Text = name, Font = Enum.Font.Gotham, TextSize = 14, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
+            
+            -- Ícone do toggle
+            local iconOffset = 0
+            if opts.Icon then
+                Icon(opts.Icon, 18, row, nil)
+                if row:FindFirstChild("Icon") then
+                    row.Icon.Position = UDim2.new(0, 14, 0.5, -9)
+                end
+                iconOffset = 30
+            end
+            
+            Make("TextLabel", { Size = UDim2.new(1, -80 - iconOffset, 1, 0), Position = UDim2.new(0, 14 + iconOffset, 0, 0), Text = name, Font = Enum.Font.Gotham, TextSize = 14, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
             local toggleBg = Make("Frame", { Size = UDim2.fromOffset(50, 30), Position = UDim2.new(1, -64, 0.5, -15), BackgroundColor3 = isOn and Theme.ToggleOn or Theme.ToggleOff, Parent = row })
             Make("UICorner", { CornerRadius = UDim.new(1, 0), Parent = toggleBg })
+            
+            -- Ícone on/off no toggle
             local toggleKnob = Make("Frame", { Size = UDim2.fromOffset(26, 26), Position = isOn and UDim2.new(1, -28, 0.5, -13) or UDim2.new(0, 2, 0.5, -13), BackgroundColor3 = Theme.White, Parent = toggleBg })
             Make("UICorner", { CornerRadius = UDim.new(1, 0), Parent = toggleKnob })
             Make("UIStroke", { Color = Color3.new(0,0,0), Thickness = 0.5, Transparency = 0.85, Parent = toggleKnob })
+            
             local clickArea = Make("TextButton", { Size = UDim2.fromOffset(54, 34), Position = UDim2.new(1, -66, 0.5, -17), Text = "", BackgroundTransparency = 1, Parent = row })
-            local function setToggle(val, animate) isOn = val; local dur = (animate ~= false) and 0.2 or 0; Tween(toggleBg, dur, { BackgroundColor3 = isOn and Theme.ToggleOn or Theme.ToggleOff }); Tween(toggleKnob, dur, { Position = isOn and UDim2.new(1, -28, 0.5, -13) or UDim2.new(0, 2, 0.5, -13) }); pcall(callback, isOn) end
+            local function setToggle(val, animate) 
+                isOn = val; 
+                local dur = (animate ~= false) and 0.2 or 0; 
+                Tween(toggleBg, dur, { BackgroundColor3 = isOn and Theme.ToggleOn or Theme.ToggleOff }); 
+                Tween(toggleKnob, dur, { Position = isOn and UDim2.new(1, -28, 0.5, -13) or UDim2.new(0, 2, 0.5, -13) }); 
+                pcall(callback, isOn) 
+            end
             clickArea.MouseButton1Click:Connect(function() setToggle(not isOn, true) end)
             row.MouseEnter:Connect(function() Tween(row, 0.12, { BackgroundColor3 = Theme.Input, BackgroundTransparency = 0.5 }) end)
             row.MouseLeave:Connect(function() Tween(row, 0.12, { BackgroundTransparency = 1 }) end)
@@ -889,7 +1071,18 @@ function Library:AddTab(name, icon)
             local callback = opts.Callback or function() end
             local value = default
             local row = Make("Frame", { Size = UDim2.new(1, 0, 0, 68), BackgroundTransparency = 1, LayoutOrder = getOrder(), Parent = sectionFrame })
-            Make("TextLabel", { Size = UDim2.new(0.5, 0, 0, 20), Position = UDim2.new(0, 14, 0, 8), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
+            
+            -- Ícone do slider
+            if opts.Icon then
+                Icon(opts.Icon, 18, row)
+                if row:FindFirstChild("Icon") then
+                    row.Icon.Position = UDim2.new(0, 14, 0, 10)
+                end
+                Make("TextLabel", { Size = UDim2.new(0.5, -30, 0, 20), Position = UDim2.new(0, 40, 0, 8), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
+            else
+                Make("TextLabel", { Size = UDim2.new(0.5, 0, 0, 20), Position = UDim2.new(0, 14, 0, 8), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
+            end
+            
             local valLabel = Make("TextLabel", { Size = UDim2.new(0.4, -14, 0, 20), Position = UDim2.new(0.5, 0, 0, 8), Text = value .. suffix, Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = Theme.Accent, TextXAlignment = Enum.TextXAlignment.Right, BackgroundTransparency = 1, Parent = row })
             local track = Make("Frame", { Size = UDim2.new(1, -28, 0, 6), Position = UDim2.new(0, 14, 0, 42), BackgroundColor3 = Theme.Input, Parent = row })
             Make("UICorner", { CornerRadius = UDim.new(1, 0), Parent = track })
@@ -923,9 +1116,32 @@ function Library:AddTab(name, icon)
             local isOpen = false
 
             local row = Make("Frame", { Size = UDim2.new(1, 0, 0, 48), BackgroundTransparency = 1, ClipsDescendants = false, ZIndex = 10, LayoutOrder = getOrder(), Parent = sectionFrame })
-            Make("TextLabel", { Size = UDim2.new(0.4, 0, 0, 48), Position = UDim2.new(0, 14, 0, 0), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, ZIndex = 11, Parent = row })
+            
+            -- Ícone do dropdown
+            local iconOffset = 0
+            if opts.Icon then
+                Icon(opts.Icon, 18, row)
+                if row:FindFirstChild("Icon") then
+                    row.Icon.Position = UDim2.new(0, 14, 0.5, -9)
+                    row.Icon.ZIndex = 11
+                end
+                iconOffset = 30
+            end
+            
+            Make("TextLabel", { Size = UDim2.new(0.4, -iconOffset, 0, 48), Position = UDim2.new(0, 14 + iconOffset, 0, 0), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, ZIndex = 11, Parent = row })
             local valLabel = Make("TextLabel", { Size = UDim2.new(0.35, 0, 0, 48), Position = UDim2.new(0.45, 0, 0, 0), Text = tostring(selected), Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = Theme.SubText, TextXAlignment = Enum.TextXAlignment.Right, TextTruncate = Enum.TextTruncate.AtEnd, BackgroundTransparency = 1, ZIndex = 11, Parent = row })
-            local chevron = Make("TextLabel", { Size = UDim2.fromOffset(16, 16), Position = UDim2.new(1, -24, 0.5, -8), Text = "▾", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Theme.SubText, BackgroundTransparency = 1, ZIndex = 11, Parent = row })
+            
+            -- Seta do dropdown
+            local chevron = Icon(ICONS.DROPDOWN_ARROW, 16, row, "▾")
+            if chevron then
+                chevron.Position = UDim2.new(1, -24, 0.5, -8)
+                chevron.ZIndex = 11
+                if chevron:IsA("TextLabel") then
+                    chevron.Font = Enum.Font.GothamBold
+                    chevron.TextSize = 14
+                    chevron.TextColor3 = Theme.SubText
+                end
+            end
 
             local dropFrame = Make("Frame", {
                 Size = UDim2.new(1, -28, 0, 0),
@@ -938,7 +1154,6 @@ function Library:AddTab(name, icon)
             })
             Make("UICorner", { CornerRadius = UDim.new(0, 10), Parent = dropFrame })
             Make("UIStroke", { Color = Theme.Sep, Thickness = 0.5, Parent = dropFrame })
-
             Make("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Parent = dropFrame })
 
             for i, opt in ipairs(optList) do
@@ -973,19 +1188,69 @@ function Library:AddTab(name, icon)
             return { SetValue = function(v) selected = v; valLabel.Text = tostring(v) end, GetValue = function() return selected end }
         end
 
-        -- TEXTBOX
+        -- TEXTBOX (COM ÍCONE DE TECLADO/INPUT)
         function secAPI:AddTextbox(options)
             local opts = options or {}
             local name = opts.Name or "Input"
             local placeholder = opts.Placeholder or "Digite aqui..."
             local default = opts.Default or ""
             local callback = opts.Callback or function() end
+            local iconType = opts.IconType or "Keyboard" -- Keyboard, Search, User, Lock, Mail, Number
+            
+            local iconMap = {
+                Keyboard = ICONS.TEXTBOX_KEYBOARD,
+                Search = ICONS.TEXTBOX_SEARCH,
+                User = ICONS.TEXTBOX_USER,
+                Lock = ICONS.TEXTBOX_LOCK,
+                Mail = ICONS.TEXTBOX_MAIL,
+                Number = ICONS.TEXTBOX_NUMBER,
+            }
+            local emojiMap = {
+                Keyboard = "⌨️",
+                Search = "🔍",
+                User = "👤",
+                Lock = "🔒",
+                Mail = "📧",
+                Number = "🔢",
+            }
+            
             local row = Make("Frame", { Size = UDim2.new(1, 0, 0, 48), BackgroundTransparency = 1, LayoutOrder = getOrder(), Parent = sectionFrame })
-            Make("TextLabel", { Size = UDim2.new(0.35, 0, 1, 0), Position = UDim2.new(0, 14, 0, 0), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
+            
+            -- Ícone da textbox
+            if opts.Icon then
+                Icon(opts.Icon, 18, row)
+                if row:FindFirstChild("Icon") then
+                    row.Icon.Position = UDim2.new(0, 14, 0.5, -9)
+                end
+                Make("TextLabel", { Size = UDim2.new(0.35, -30, 1, 0), Position = UDim2.new(0, 40, 0, 0), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
+            else
+                Make("TextLabel", { Size = UDim2.new(0.35, 0, 1, 0), Position = UDim2.new(0, 14, 0, 0), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
+            end
+            
             local inputBg = Make("Frame", { Size = UDim2.new(0.55, -14, 0, 32), Position = UDim2.new(0.38, 0, 0.5, -16), BackgroundColor3 = Theme.Input, Parent = row })
             Make("UICorner", { CornerRadius = UDim.new(0, 8), Parent = inputBg })
             local stroke = Make("UIStroke", { Color = Theme.Accent, Thickness = 0, Parent = inputBg })
-            local textbox = Make("TextBox", { Size = UDim2.new(1, -16, 1, 0), Position = UDim2.new(0, 8, 0, 0), Text = default, PlaceholderText = placeholder, Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = Theme.Text, PlaceholderColor3 = Theme.SubText, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, ClearTextOnFocus = false, Parent = inputBg })
+            
+            -- Ícone dentro do input
+            local inputIcon = Icon(iconMap[iconType], 14, inputBg, emojiMap[iconType])
+            if inputIcon then
+                inputIcon.Position = UDim2.new(0, 8, 0.5, -7)
+            end
+            
+            local textbox = Make("TextBox", { 
+                Size = inputIcon and UDim2.new(1, -38, 1, 0) or UDim2.new(1, -16, 1, 0), 
+                Position = inputIcon and UDim2.new(0, 28, 0, 0) or UDim2.new(0, 8, 0, 0), 
+                Text = default, 
+                PlaceholderText = placeholder, 
+                Font = Enum.Font.Gotham, 
+                TextSize = 12, 
+                TextColor3 = Theme.Text, 
+                PlaceholderColor3 = Theme.SubText, 
+                TextXAlignment = Enum.TextXAlignment.Left, 
+                BackgroundTransparency = 1, 
+                ClearTextOnFocus = false, 
+                Parent = inputBg 
+            })
             textbox.Focused:Connect(function() Tween(stroke, 0.2, { Thickness = 1.5 }) end)
             textbox.FocusLost:Connect(function(enter) Tween(stroke, 0.2, { Thickness = 0 }); pcall(callback, textbox.Text, enter) end)
             Make("Frame", { Size = UDim2.new(1, -28, 0, 1), Position = UDim2.new(0, 14, 1, -1), BackgroundColor3 = Theme.Sep, Transparency = 0.5, Parent = row })
@@ -994,7 +1259,7 @@ function Library:AddTab(name, icon)
             return { GetValue = function() return textbox.Text end, SetValue = function(v) textbox.Text = v end }
         end
 
-        -- KEYBIND
+        -- KEYBIND (COM ÍCONE DE TECLA)
         function secAPI:AddKeybind(options)
             local opts = options or {}
             local name = opts.Name or "Keybind"
@@ -1003,14 +1268,37 @@ function Library:AddTab(name, icon)
             local currentKey = default
             local isBinding = false
             local row = Make("Frame", { Size = UDim2.new(1, 0, 0, 48), BackgroundTransparency = 1, LayoutOrder = getOrder(), Parent = sectionFrame })
-            Make("TextLabel", { Size = UDim2.new(0.5, 0, 1, 0), Position = UDim2.new(0, 14, 0, 0), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
+            
+            -- Ícone de tecla
+            Icon(opts.Icon or ICONS.KEYBIND_ICON, 18, row, "⌨️")
+            if row:FindFirstChild("Icon") then
+                row.Icon.Position = UDim2.new(0, 14, 0.5, -9)
+            end
+            
+            Make("TextLabel", { Size = UDim2.new(0.5, -30, 1, 0), Position = UDim2.new(0, 40, 0, 0), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
             local keyBtn = Make("TextButton", { Size = UDim2.fromOffset(80, 28), Position = UDim2.new(1, -94, 0.5, -14), Text = currentKey.Name, Font = Enum.Font.GothamMedium, TextSize = 11, TextColor3 = Theme.Accent, BackgroundColor3 = Theme.Input, AutoButtonColor = false, Parent = row })
             Make("UICorner", { CornerRadius = UDim.new(0, 6), Parent = keyBtn })
-            keyBtn.MouseButton1Click:Connect(function() isBinding = true; keyBtn.Text = "..."; keyBtn.TextColor3 = Theme.Red end)
+            keyBtn.MouseButton1Click:Connect(function() 
+                isBinding = true; 
+                keyBtn.Text = "..."; 
+                keyBtn.TextColor3 = Theme.Red
+                -- Ícone de binding
+                if ICONS.KEYBIND_BINDING ~= "" then
+                    local bindIcon = Icon(ICONS.KEYBIND_BINDING, 14, keyBtn)
+                    if bindIcon then
+                        bindIcon.Position = UDim2.new(0.5, -7, 0.5, -7)
+                    end
+                end
+            end)
             Track(UserInputService.InputBegan:Connect(function(input, processed)
                 if isBinding and not processed then
                     if input.KeyCode ~= Enum.KeyCode.Unknown then
-                        isBinding = false; currentKey = input.KeyCode; keyBtn.Text = currentKey.Name; keyBtn.TextColor3 = Theme.Accent; pcall(callback, currentKey)
+                        isBinding = false; currentKey = input.KeyCode; keyBtn.Text = currentKey.Name; keyBtn.TextColor3 = Theme.Accent
+                        -- Remove ícone de binding
+                        for _, child in ipairs(keyBtn:GetChildren()) do
+                            if child.Name == "Icon" then child:Destroy() end
+                        end
+                        pcall(callback, currentKey)
                     end
                 end
             end))
@@ -1020,7 +1308,7 @@ function Library:AddTab(name, icon)
             return { GetValue = function() return currentKey end }
         end
 
-        -- COLOR PICKER
+        -- COLOR PICKER (COM ÍCONE DE PALETA)
         function secAPI:AddColorPicker(options)
             local opts = options or {}
             local name = opts.Name or "Color"
@@ -1028,7 +1316,14 @@ function Library:AddTab(name, icon)
             local callback = opts.Callback or function() end
             local currentColor = default
             local row = Make("Frame", { Size = UDim2.new(1, 0, 0, 48), BackgroundTransparency = 1, LayoutOrder = getOrder(), Parent = sectionFrame })
-            Make("TextLabel", { Size = UDim2.new(0.5, 0, 1, 0), Position = UDim2.new(0, 14, 0, 0), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
+            
+            -- Ícone de paleta
+            Icon(opts.Icon or ICONS.COLORPICKER_ICON, 18, row, "🎨")
+            if row:FindFirstChild("Icon") then
+                row.Icon.Position = UDim2.new(0, 14, 0.5, -9)
+            end
+            
+            Make("TextLabel", { Size = UDim2.new(0.5, -30, 1, 0), Position = UDim2.new(0, 40, 0, 0), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
             local preview = Make("Frame", { Size = UDim2.fromOffset(36, 28), Position = UDim2.new(1, -50, 0.5, -14), BackgroundColor3 = currentColor, Parent = row })
             Make("UICorner", { CornerRadius = UDim.new(0, 6), Parent = preview })
             Make("UIStroke", { Color = Theme.Sep, Thickness = 1, Parent = preview })
@@ -1057,7 +1352,17 @@ function Library:AddTab(name, icon)
             local fonts = { Default = Enum.Font.Gotham, Title = Enum.Font.GothamBold, Subtitle = Enum.Font.GothamMedium, Caption = Enum.Font.Gotham }
             local heights = { Default = 30, Title = 38, Subtitle = 34, Caption = 26 }
             local row = Make("Frame", { Size = UDim2.new(1, 0, 0, heights[style] or 30), BackgroundTransparency = 1, LayoutOrder = getOrder(), Parent = sectionFrame })
-            local lbl = Make("TextLabel", { Size = UDim2.new(1, -28, 1, 0), Position = UDim2.new(0, 14, 0, 0), Text = text, Font = fonts[style] or Enum.Font.Gotham, TextSize = sizes[style] or 13, TextColor3 = style == "Caption" and Theme.SubText or Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, BackgroundTransparency = 1, Parent = row })
+            
+            local iconOffset = 0
+            if opts.Icon then
+                Icon(opts.Icon, 16, row)
+                if row:FindFirstChild("Icon") then
+                    row.Icon.Position = UDim2.new(0, 14, 0.5, -8)
+                end
+                iconOffset = 28
+            end
+            
+            local lbl = Make("TextLabel", { Size = UDim2.new(1, -28 - iconOffset, 1, 0), Position = UDim2.new(0, 14 + iconOffset, 0, 0), Text = text, Font = fonts[style] or Enum.Font.Gotham, TextSize = sizes[style] or 13, TextColor3 = style == "Caption" and Theme.SubText or Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, BackgroundTransparency = 1, Parent = row })
             table.insert(tab.Components, { SearchName = text, Container = row })
             table.insert(section.Components, row)
             return { SetText = function(t) lbl.Text = t end }
@@ -1080,7 +1385,7 @@ function Library:AddTab(name, icon)
             return row
         end
 
-        -- DIVIDER (MAIS FINO E ELEGANTE COMO PEDIDO)
+        -- DIVIDER
         function secAPI:AddDivider()
             local row = Make("Frame", { Size = UDim2.new(1, 0, 0, 6), BackgroundTransparency = 1, LayoutOrder = getOrder(), Parent = sectionFrame })
             Make("Frame", { Size = UDim2.new(1, -28, 0, 1), Position = UDim2.new(0, 14, 0.5, 0), BackgroundColor3 = Theme.Sep, Transparency = 0.4, Parent = row })
@@ -1088,14 +1393,24 @@ function Library:AddTab(name, icon)
             return row
         end
 
-        -- PROGRESS BAR
+        -- PROGRESS BAR (COM ÍCONE)
         function secAPI:AddProgressBar(options)
             local opts = options or {}
             local name = opts.Name or "Progress"
             local default = opts.Default or 0
             local value = math.clamp(default, 0, 1)
             local row = Make("Frame", { Size = UDim2.new(1, 0, 0, 56), BackgroundTransparency = 1, LayoutOrder = getOrder(), Parent = sectionFrame })
-            Make("TextLabel", { Size = UDim2.new(0.55, 0, 0, 20), Position = UDim2.new(0, 14, 0, 8), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
+            
+            if opts.Icon then
+                Icon(opts.Icon, 18, row)
+                if row:FindFirstChild("Icon") then
+                    row.Icon.Position = UDim2.new(0, 14, 0, 10)
+                end
+                Make("TextLabel", { Size = UDim2.new(0.55, -30, 0, 20), Position = UDim2.new(0, 40, 0, 8), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
+            else
+                Make("TextLabel", { Size = UDim2.new(0.55, 0, 0, 20), Position = UDim2.new(0, 14, 0, 8), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
+            end
+            
             local pctLabel = Make("TextLabel", { Size = UDim2.new(0.3, 0, 0, 20), Position = UDim2.new(0.65, 0, 0, 8), Text = math.floor(value * 100) .. "%", Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = Theme.Accent, TextXAlignment = Enum.TextXAlignment.Right, BackgroundTransparency = 1, Parent = row })
             local track = Make("Frame", { Size = UDim2.new(1, -28, 0, 6), Position = UDim2.new(0, 14, 0, 38), BackgroundColor3 = Theme.Input, Parent = row })
             Make("UICorner", { CornerRadius = UDim.new(1, 0), Parent = track })
@@ -1107,7 +1422,7 @@ function Library:AddTab(name, icon)
             return { SetValue = function(v) value = math.clamp(v, 0, 1); Tween(fill, 0.35, { Size = UDim2.new(value, 0, 1, 0) }); pctLabel.Text = math.floor(value * 100) .. "%" end, GetValue = function() return value end }
         end
 
-        -- CARD
+        -- CARD (COM ÍCONE)
         function secAPI:AddCard(options)
             local opts = options or {}
             local title = opts.Title or "Card"
@@ -1116,9 +1431,29 @@ function Library:AddTab(name, icon)
             local row = Make("Frame", { Size = UDim2.new(1, 0, 0, 70), BackgroundColor3 = Theme.Card, LayoutOrder = getOrder(), Parent = sectionFrame })
             Make("UICorner", { CornerRadius = UDim.new(0, 10), Parent = row })
             Make("UIStroke", { Color = Theme.Sep, Thickness = 0.5, Transparency = 0.7, Parent = row })
-            Make("TextLabel", { Size = UDim2.new(1, -40, 0, 20), Position = UDim2.new(0, 14, 0, 14), Text = title, Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
-            Make("TextLabel", { Size = UDim2.new(1, -40, 0, 16), Position = UDim2.new(0, 14, 0, 36), Text = desc, Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = Theme.SubText, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, BackgroundTransparency = 1, Parent = row })
-            Make("TextLabel", { Size = UDim2.fromOffset(14, 14), Position = UDim2.new(1, -22, 0.5, -7), Text = "›", Font = Enum.Font.GothamBold, TextSize = 18, TextColor3 = Theme.CapText, BackgroundTransparency = 1, Parent = row })
+            
+            -- Ícone do card
+            if opts.Icon then
+                Icon(opts.Icon, 24, row)
+                if row:FindFirstChild("Icon") then
+                    row.Icon.Position = UDim2.new(0, 14, 0, 14)
+                end
+            end
+            
+            Make("TextLabel", { Size = UDim2.new(1, opts.Icon and -70 or -40, 0, 20), Position = UDim2.new(0, opts.Icon and 48 or 14, 0, 14), Text = title, Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
+            Make("TextLabel", { Size = UDim2.new(1, opts.Icon and -70 or -40, 0, 16), Position = UDim2.new(0, opts.Icon and 48 or 14, 0, 36), Text = desc, Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = Theme.SubText, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, BackgroundTransparency = 1, Parent = row })
+            
+            -- Seta do card
+            local arrow = Icon(ICONS.CARD_ARROW, 14, row, "›")
+            if arrow then
+                arrow.Position = UDim2.new(1, -22, 0.5, -7)
+                if arrow:IsA("TextLabel") then
+                    arrow.Font = Enum.Font.GothamBold
+                    arrow.TextSize = 18
+                    arrow.TextColor3 = Theme.CapText
+                end
+            end
+            
             if callback then
                 local btn = Make("TextButton", { Size = UDim2.new(1, 0, 1, 0), Text = "", BackgroundTransparency = 1, Parent = row })
                 btn.MouseButton1Click:Connect(function() Tween(row, 0.08, { BackgroundTransparency = 0.5 }); task.delay(0.1, function() Tween(row, 0.15, { BackgroundTransparency = 0 }) end); pcall(callback) end)
@@ -1130,10 +1465,10 @@ function Library:AddTab(name, icon)
             return row
         end
 
-        -- IMAGE (COM UICorner PARA FICAR ARREDONDADA - SUA SUGESTÃO)
+        -- IMAGE (COM PLACEHOLDER)
         function secAPI:AddImage(options)
             local opts = options or {}
-            local image = opts.Image or ""
+            local image = opts.Image or ICONS.IMAGE_PLACEHOLDER or ""
             local h = opts.Height or 120
             local row = Make("Frame", { Size = UDim2.new(1, 0, 0, h + 16), BackgroundTransparency = 1, LayoutOrder = getOrder(), Parent = sectionFrame })
             Make("UIPadding", { PaddingLeft = UDim.new(0, 14), PaddingRight = UDim.new(0, 14), PaddingTop = UDim.new(0, 8), PaddingBottom = UDim.new(0, 8), Parent = row })
@@ -1143,7 +1478,7 @@ function Library:AddTab(name, icon)
             return { SetImage = function(i) img.Image = i end }
         end
 
-        -- NUMBER INPUT (COM ÍCONES + E - CORRETOS)
+        -- NUMBER INPUT (COM ÍCONES + E -)
         function secAPI:AddNumberInput(options)
             local opts = options or {}
             local name = opts.Name or "Number"
@@ -1154,12 +1489,47 @@ function Library:AddTab(name, icon)
             local callback = opts.Callback or function() end
             local value = default
             local row = Make("Frame", { Size = UDim2.new(1, 0, 0, 48), BackgroundTransparency = 1, LayoutOrder = getOrder(), Parent = sectionFrame })
-            Make("TextLabel", { Size = UDim2.new(0.45, 0, 1, 0), Position = UDim2.new(0, 14, 0, 0), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
+            
+            -- Ícone
+            Icon(opts.Icon or ICONS.NUMBER_ICON, 18, row, "🔢")
+            if row:FindFirstChild("Icon") then
+                row.Icon.Position = UDim2.new(0, 14, 0.5, -9)
+            end
+            
+            Make("TextLabel", { Size = UDim2.new(0.45, -30, 1, 0), Position = UDim2.new(0, 40, 0, 0), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = row })
             local ctrl = Make("Frame", { Size = UDim2.fromOffset(120, 32), Position = UDim2.new(1, -134, 0.5, -16), BackgroundColor3 = Theme.Input, Parent = row })
             Make("UICorner", { CornerRadius = UDim.new(0, 8), Parent = ctrl })
-            local minBtn = Make("TextButton", { Size = UDim2.fromOffset(32, 32), Text = "−", Font = Enum.Font.GothamBold, TextSize = 16, TextColor3 = Theme.Accent, BackgroundTransparency = 1, Parent = ctrl })
+            
+            -- Botão -
+            local minBtn = Make("TextButton", { Size = UDim2.fromOffset(32, 32), Text = "", BackgroundTransparency = 1, Parent = ctrl })
+            if ICONS.NUMBER_MINUS ~= "" then
+                Icon(ICONS.NUMBER_MINUS, 14, minBtn)
+                if minBtn:FindFirstChild("Icon") then
+                    minBtn.Icon.Position = UDim2.new(0.5, -7, 0.5, -7)
+                end
+            else
+                minBtn.Text = "−"
+                minBtn.Font = Enum.Font.GothamBold
+                minBtn.TextSize = 16
+                minBtn.TextColor3 = Theme.Accent
+            end
+            
             local valDisplay = Make("TextBox", { Size = UDim2.new(1, -64, 1, 0), Position = UDim2.new(0, 32, 0, 0), Text = tostring(value), Font = Enum.Font.GothamMedium, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 1, Parent = ctrl })
-            local plusBtn = Make("TextButton", { Size = UDim2.fromOffset(32, 32), Position = UDim2.new(1, -32, 0, 0), Text = "+", Font = Enum.Font.GothamBold, TextSize = 16, TextColor3 = Theme.Accent, BackgroundTransparency = 1, Parent = ctrl })
+            
+            -- Botão +
+            local plusBtn = Make("TextButton", { Size = UDim2.fromOffset(32, 32), Position = UDim2.new(1, -32, 0, 0), Text = "", BackgroundTransparency = 1, Parent = ctrl })
+            if ICONS.NUMBER_PLUS ~= "" then
+                Icon(ICONS.NUMBER_PLUS, 14, plusBtn)
+                if plusBtn:FindFirstChild("Icon") then
+                    plusBtn.Icon.Position = UDim2.new(0.5, -7, 0.5, -7)
+                end
+            else
+                plusBtn.Text = "+"
+                plusBtn.Font = Enum.Font.GothamBold
+                plusBtn.TextSize = 16
+                plusBtn.TextColor3 = Theme.Accent
+            end
+            
             local function updateNum(v) value = math.clamp(tonumber(v) or default, min, max); valDisplay.Text = tostring(value); pcall(callback, value) end
             minBtn.MouseButton1Click:Connect(function() updateNum(value - step) end)
             plusBtn.MouseButton1Click:Connect(function() updateNum(value + step) end)
@@ -1182,9 +1552,26 @@ function Library:AddTab(name, icon)
             local isOpen = false
 
             local row = Make("Frame", { Size = UDim2.new(1, 0, 0, 48), BackgroundTransparency = 1, ClipsDescendants = false, ZIndex = 10, LayoutOrder = getOrder(), Parent = sectionFrame })
-            Make("TextLabel", { Size = UDim2.new(0.4, 0, 0, 48), Position = UDim2.new(0, 14, 0, 0), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, ZIndex = 11, Parent = row })
+            
+            Icon(opts.Icon, 18, row, "📋")
+            if row:FindFirstChild("Icon") then
+                row.Icon.Position = UDim2.new(0, 14, 0.5, -9)
+                row.Icon.ZIndex = 11
+            end
+            
+            Make("TextLabel", { Size = UDim2.new(0.4, -30, 0, 48), Position = UDim2.new(0, 40, 0, 0), Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, ZIndex = 11, Parent = row })
             local countLabel = Make("TextLabel", { Size = UDim2.new(0.35, 0, 0, 48), Position = UDim2.new(0.45, 0, 0, 0), Text = tostring(#defaults) .. " selecionados", Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = Theme.SubText, TextXAlignment = Enum.TextXAlignment.Right, BackgroundTransparency = 1, ZIndex = 11, Parent = row })
-            local chevron = Make("TextLabel", { Size = UDim2.fromOffset(16, 16), Position = UDim2.new(1, -24, 0.5, -8), Text = "▾", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Theme.SubText, BackgroundTransparency = 1, ZIndex = 11, Parent = row })
+            
+            local chevron = Icon(ICONS.MULTIDROPDOWN_ARROW, 16, row, "▾")
+            if chevron then
+                chevron.Position = UDim2.new(1, -24, 0.5, -8)
+                chevron.ZIndex = 11
+                if chevron:IsA("TextLabel") then
+                    chevron.Font = Enum.Font.GothamBold
+                    chevron.TextSize = 14
+                    chevron.TextColor3 = Theme.SubText
+                end
+            end
 
             local dropFrame = Make("Frame", {
                 Size = UDim2.new(1, -28, 0, 0),
@@ -1203,14 +1590,28 @@ function Library:AddTab(name, icon)
                 local optName = type(opt) == "table" and opt.Name or tostring(opt)
                 local optVal = type(opt) == "table" and opt.Value or opt
                 local isSel = selected[optVal] or false
-                local optBtn = Make("TextButton", { Size = UDim2.new(1, 0, 0, 34), Text = (isSel and "✓ " or "   ") .. optName, Font = isSel and Enum.Font.GothamBold or Enum.Font.Gotham, TextSize = 12, TextColor3 = isSel and Theme.Accent or Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, AutoButtonColor = false, ZIndex = 101, LayoutOrder = i, Parent = dropFrame })
-
+                
+                local optBtn = Make("TextButton", { Size = UDim2.new(1, 0, 0, 34), Text = "", Font = isSel and Enum.Font.GothamBold or Enum.Font.Gotham, TextSize = 12, TextColor3 = isSel and Theme.Accent or Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, AutoButtonColor = false, ZIndex = 101, LayoutOrder = i, Parent = dropFrame })
+                
+                -- Check icon
+                local checkIcon = Icon(isSel and ICONS.MULTIDROPDOWN_CHECK or ICONS.MULTIDROPDOWN_UNCHECK, 14, optBtn, isSel and "✓" or "  ")
+                if checkIcon then
+                    checkIcon.Position = UDim2.new(0, 8, 0.5, -7)
+                end
+                
+                local optLabel = Make("TextLabel", { Size = UDim2.new(1, -30, 1, 0), Position = UDim2.new(0, 26, 0, 0), Text = optName, Font = isSel and Enum.Font.GothamBold or Enum.Font.Gotham, TextSize = 12, TextColor3 = isSel and Theme.Accent or Theme.Text, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, ZIndex = 102, Parent = optBtn })
+                
                 optBtn.MouseButton1Click:Connect(function()
                     selected[optVal] = not selected[optVal]
                     local nowSel = selected[optVal]
-                    optBtn.Text = (nowSel and "✓ " or "   ") .. optName
-                    optBtn.Font = nowSel and Enum.Font.GothamBold or Enum.Font.Gotham
-                    optBtn.TextColor3 = nowSel and Theme.Accent or Theme.Text
+                    optLabel.Font = nowSel and Enum.Font.GothamBold or Enum.Font.Gotham
+                    optLabel.TextColor3 = nowSel and Theme.Accent or Theme.Text
+                    if checkIcon then
+                        checkIcon.Image = nowSel and ICONS.MULTIDROPDOWN_CHECK or ICONS.MULTIDROPDOWN_UNCHECK
+                        if checkIcon:IsA("TextLabel") then
+                            checkIcon.Text = nowSel and "✓" or "  "
+                        end
+                    end
                     local count = 0
                     for _, v in pairs(selected) do if v then count = count + 1 end end
                     countLabel.Text = count .. " selecionados"
@@ -1238,7 +1639,7 @@ function Library:AddTab(name, icon)
             return { GetSelected = function() return selected end }
         end
 
-        -- BADGE (MAIS ARREDONDADO - SUA SUGESTÃO)
+        -- BADGE
         function secAPI:AddBadge(options)
             local opts = options or {}
             local text = opts.Text or "New"
@@ -1246,14 +1647,25 @@ function Library:AddTab(name, icon)
             local ts = GetTextSize(text, 10, Enum.Font.GothamBold)
             local w = ts.X + 12
             local row = Make("Frame", { Size = UDim2.new(0, w + 28, 0, 32), BackgroundTransparency = 1, LayoutOrder = getOrder(), Parent = sectionFrame })
+            
             local badge = Make("Frame", { Size = UDim2.fromOffset(w, 20), Position = UDim2.new(0, 14, 0.5, -10), BackgroundColor3 = color, BackgroundTransparency = 0.85, Parent = row })
-            Make("UICorner", { CornerRadius = UDim.new(0, 10), Parent = badge }) -- Mais arredondado
-            Make("TextLabel", { Size = UDim2.new(1, -8, 1, 0), Position = UDim2.new(0, 4, 0, 0), Text = text, Font = Enum.Font.GothamBold, TextSize = 10, TextColor3 = color, BackgroundTransparency = 1, Parent = badge })
+            Make("UICorner", { CornerRadius = UDim.new(0, 10), Parent = badge })
+            
+            if opts.Icon then
+                Icon(opts.Icon, 12, badge)
+                if badge:FindFirstChild("Icon") then
+                    badge.Icon.Position = UDim2.new(0, 4, 0.5, -6)
+                end
+                Make("TextLabel", { Size = UDim2.new(1, -20, 1, 0), Position = UDim2.new(0, 16, 0, 0), Text = text, Font = Enum.Font.GothamBold, TextSize = 10, TextColor3 = color, BackgroundTransparency = 1, Parent = badge })
+            else
+                Make("TextLabel", { Size = UDim2.new(1, -8, 1, 0), Position = UDim2.new(0, 4, 0, 0), Text = text, Font = Enum.Font.GothamBold, TextSize = 10, TextColor3 = color, BackgroundTransparency = 1, Parent = badge })
+            end
+            
             table.insert(section.Components, row)
             return row
         end
 
-        -- CHIPS (BORDAS 100% ARREDONDADAS - SUA SUGESTÃO)
+        -- CHIPS
         function secAPI:AddChips(options)
             local opts = options or {}
             local optList = opts.Options or {}
@@ -1271,7 +1683,7 @@ function Library:AddTab(name, icon)
                 local ts = GetTextSize(option, 12, Enum.Font.Gotham)
                 local chipW = ts.X + 20
                 local chip = Make("Frame", { Size = UDim2.fromOffset(chipW, 28), BackgroundColor3 = isSel and Theme.Accent or Theme.Input, LayoutOrder = #row:GetChildren(), Parent = row })
-                Make("UICorner", { CornerRadius = UDim.new(1, 0), Parent = chip }) -- 100% arredondado
+                Make("UICorner", { CornerRadius = UDim.new(1, 0), Parent = chip })
                 local chipLabel = Make("TextLabel", { Size = UDim2.new(1, -16, 1, 0), Position = UDim2.new(0, 8, 0, 0), Text = option, Font = isSel and Enum.Font.GothamBold or Enum.Font.Gotham, TextSize = 12, TextColor3 = isSel and Theme.White or Theme.Text, BackgroundTransparency = 1, Parent = chip })
                 local chipBtn = Make("TextButton", { Size = UDim2.new(1, 0, 1, 0), Text = "", BackgroundTransparency = 1, Parent = chip })
                 chipBtn.MouseButton1Click:Connect(function()
