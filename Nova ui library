@@ -375,20 +375,41 @@ function Library.CreateWindow(config)
     Make("UIStroke", { Color = Theme.Sep, Thickness = 0.5, Transparency = 0.5, Parent = window })
 
     -- ═══════════════════════════════════════════════════════════════
-    -- RESIZE HANDLE (SISTEMA DE REDIMENSIONAMENTO)
+    -- RESIZE HANDLE (SISTEMA DE REDIMENSIONAMENTO - DUAS ALÇAS)
     -- ═══════════════════════════════════════════════════════════════
     local MIN_SIZE = Vector2.new(300, 250) -- Tamanho mínimo da janela
 
-    local resizeHandle = Make("Frame", {
-        Name = "ResizeHandle",
-        Size = UDim2.fromOffset(24, 24),
-        Position = UDim2.new(1, -24, 1, -24),
+    -- Alça DIREITA (redimensiona largura)
+    local resizeHandleRight = Make("Frame", {
+        Name = "ResizeHandleRight",
+        Size = UDim2.fromOffset(8, 1, -32),
+        Position = UDim2.new(1, -4, 0, 16),
         BackgroundTransparency = 1,
         ZIndex = 10,
         Parent = window,
     })
 
-    -- Ícone visual da alça (duas linhas diagonais)
+    -- Alça INFERIOR (redimensiona altura)
+    local resizeHandleBottom = Make("Frame", {
+        Name = "ResizeHandleBottom",
+        Size = UDim2.new(1, -32, 0, 8),
+        Position = UDim2.new(0, 16, 1, -4),
+        BackgroundTransparency = 1,
+        ZIndex = 10,
+        Parent = window,
+    })
+
+    -- Alça CANTO (redimensiona largura + altura)
+    local resizeHandleCorner = Make("Frame", {
+        Name = "ResizeHandleCorner",
+        Size = UDim2.fromOffset(20, 20),
+        Position = UDim2.new(1, -20, 1, -20),
+        BackgroundTransparency = 1,
+        ZIndex = 10,
+        Parent = window,
+    })
+
+    -- Ícone visual da alça do canto (duas linhas diagonais)
     Make("Frame", {
         Size = UDim2.fromOffset(10, 2),
         Position = UDim2.new(1, -14, 1, -10),
@@ -396,7 +417,7 @@ function Library.CreateWindow(config)
         BackgroundColor3 = Theme.CapText,
         BackgroundTransparency = 0.4,
         ZIndex = 11,
-        Parent = resizeHandle,
+        Parent = resizeHandleCorner,
     })
 
     Make("Frame", {
@@ -406,20 +427,42 @@ function Library.CreateWindow(config)
         BackgroundColor3 = Theme.CapText,
         BackgroundTransparency = 0.4,
         ZIndex = 11,
-        Parent = resizeHandle,
+        Parent = resizeHandleCorner,
     })
 
-    -- LÓGICA DE REDIMENSIONAMENTO
+    -- LÓGICA DE REDIMENSIONAMENTO (suave, sem teleporte)
     local resizing = false
+    local resizeDir = nil -- "Right", "Bottom", "Corner"
     local resizeStartPos = nil
     local resizeStartSize = nil
+    local resizeStartWindowPos = nil
 
-    resizeHandle.InputBegan:Connect(function(input)
+    local function startResize(input, dir)
+        resizing = true
+        resizeDir = dir
+        resizeStartPos = input.Position
+        resizeStartSize = Vector2.new(window.AbsoluteSize.X, window.AbsoluteSize.Y)
+        resizeStartWindowPos = Vector2.new(window.Position.X.Offset, window.Position.Y.Offset)
+    end
+
+    resizeHandleRight.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or
            input.UserInputType == Enum.UserInputType.Touch then
-            resizing = true
-            resizeStartPos = input.Position
-            resizeStartSize = Vector2.new(window.AbsoluteSize.X, window.AbsoluteSize.Y)
+            startResize(input, "Right")
+        end
+    end)
+
+    resizeHandleBottom.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or
+           input.UserInputType == Enum.UserInputType.Touch then
+            startResize(input, "Bottom")
+        end
+    end)
+
+    resizeHandleCorner.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or
+           input.UserInputType == Enum.UserInputType.Touch then
+            startResize(input, "Corner")
         end
     end)
 
@@ -429,8 +472,16 @@ function Library.CreateWindow(config)
             if input.UserInputType == Enum.UserInputType.MouseMovement or
                input.UserInputType == Enum.UserInputType.Touch then
                 local delta = input.Position - resizeStartPos
-                local newW = math.max(MIN_SIZE.X, resizeStartSize.X + delta.X)
-                local newH = math.max(MIN_SIZE.Y, resizeStartSize.Y + delta.Y)
+                local newW = resizeStartSize.X
+                local newH = resizeStartSize.Y
+
+                if resizeDir == "Right" or resizeDir == "Corner" then
+                    newW = math.max(MIN_SIZE.X, resizeStartSize.X + delta.X)
+                end
+                if resizeDir == "Bottom" or resizeDir == "Corner" then
+                    newH = math.max(MIN_SIZE.Y, resizeStartSize.Y + delta.Y)
+                end
+
                 window.Size = UDim2.fromOffset(newW, newH)
             end
         end)
@@ -440,16 +491,49 @@ function Library.CreateWindow(config)
         UserInputService.InputEnded:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or
                input.UserInputType == Enum.UserInputType.Touch then
+                if resizing then
+                    -- Re-clamp após redimensionar
+                    local p = Vector2.new(window.Position.X.Offset, window.Position.Y.Offset)
+                    local s = Vector2.new(window.AbsoluteSize.X, window.AbsoluteSize.Y)
+                    local clamped = ClampToScreen(p, s)
+                    window.Position = UDim2.fromOffset(clamped.X, clamped.Y)
+                end
                 resizing = false
+                resizeDir = nil
+                UserInputService.MouseIcon = ""
             end
         end)
     )
 
-    -- Muda cursor ao passar na alça
-    resizeHandle.MouseEnter:Connect(function()
-        UserInputService.MouseIcon = "rbxasset://SystemCursors/SizeNWSE"
+    -- Muda cursor ao passar nas alças
+    resizeHandleRight.MouseEnter:Connect(function()
+        if not resizing then
+            UserInputService.MouseIcon = "rbxasset://SystemCursors/SizeWE"
+        end
     end)
-    resizeHandle.MouseLeave:Connect(function()
+    resizeHandleRight.MouseLeave:Connect(function()
+        if not resizing then
+            UserInputService.MouseIcon = ""
+        end
+    end)
+
+    resizeHandleBottom.MouseEnter:Connect(function()
+        if not resizing then
+            UserInputService.MouseIcon = "rbxasset://SystemCursors/SizeNS"
+        end
+    end)
+    resizeHandleBottom.MouseLeave:Connect(function()
+        if not resizing then
+            UserInputService.MouseIcon = ""
+        end
+    end)
+
+    resizeHandleCorner.MouseEnter:Connect(function()
+        if not resizing then
+            UserInputService.MouseIcon = "rbxasset://SystemCursors/SizeNWSE"
+        end
+    end)
+    resizeHandleCorner.MouseLeave:Connect(function()
         if not resizing then
             UserInputService.MouseIcon = ""
         end
@@ -672,24 +756,30 @@ function Library.CreateWindow(config)
     })
     self._contentLayout = contentLayout
 
-    -- ─── DRAG SYSTEM ───
+    -- ═══════════════════════════════════════════════════════════════
+    -- DRAG SYSTEM (CORRIGIDO - sem teleporte)
+    -- ═══════════════════════════════════════════════════════════════
     local dragging = false
-    local dragStart = nil
-    local startPos = nil
+    local dragStartMouse = nil      -- Posição do mouse quando iniciou drag
+    local dragStartWindowPos = nil  -- Posição da janela quando iniciou drag
+    local dragStartWindowSize = nil -- Tamanho da janela quando iniciou drag
 
     local function onInputBegan(input, processed)
         if processed then return end
+        if resizing then return end -- Não inicia drag se estiver redimensionando
         if input.UserInputType == Enum.UserInputType.MouseButton1 or
            input.UserInputType == Enum.UserInputType.Touch then
             local pos = input.Position
             local hAbs = header.AbsolutePosition
             local hSize = header.AbsoluteSize
-            -- Não inicia drag se estiver nos botões de controle ou resize
+            -- Exclui área dos botões de controle (70px da direita)
             if pos.X >= hAbs.X and pos.X <= hAbs.X + hSize.X - 70 and
                pos.Y >= hAbs.Y and pos.Y <= hAbs.Y + hSize.Y then
                 dragging = true
-                dragStart = pos
-                startPos = Vector2.new(window.Position.X.Offset, window.Position.Y.Offset)
+                dragStartMouse = pos
+                -- ✅ Usa posição absoluta real para evitar teleporte
+                dragStartWindowPos = Vector2.new(window.AbsolutePosition.X, window.AbsolutePosition.Y)
+                dragStartWindowSize = Vector2.new(window.AbsoluteSize.X, window.AbsoluteSize.Y)
             end
         end
     end
@@ -698,10 +788,11 @@ function Library.CreateWindow(config)
         if not dragging then return end
         if input.UserInputType == Enum.UserInputType.MouseMovement or
            input.UserInputType == Enum.UserInputType.Touch then
-            local delta = input.Position - dragStart
+            -- ✅ Calcula delta baseado na posição absoluta real
+            local delta = input.Position - dragStartMouse
             local newPos = ClampToScreen(
-                Vector2.new(startPos.X + delta.X, startPos.Y + delta.Y),
-                Vector2.new(window.AbsoluteSize.X, window.AbsoluteSize.Y)
+                Vector2.new(dragStartWindowPos.X + delta.X, dragStartWindowPos.Y + delta.Y),
+                dragStartWindowSize
             )
             window.Position = UDim2.fromOffset(newPos.X, newPos.Y)
         end
@@ -725,7 +816,7 @@ function Library.CreateWindow(config)
     table.insert(self._connections,
         Camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
             if window and window.Parent then
-                local p = Vector2.new(window.Position.X.Offset, window.Position.Y.Offset)
+                local p = Vector2.new(window.AbsolutePosition.X, window.AbsolutePosition.Y)
                 local s = Vector2.new(window.AbsoluteSize.X, window.AbsoluteSize.Y)
                 local clamped = ClampToScreen(p, s)
                 window.Position = UDim2.fromOffset(clamped.X, clamped.Y)
@@ -1269,7 +1360,7 @@ function Library:AddTab(name, icon)
         end
 
         -- ───────────────────────────────────────────────────────────
-        -- DROPDOWN (FIXED - opções aparecem agora)
+        -- DROPDOWN (FIXED - aparece na direção certa)
         -- ───────────────────────────────────────────────────────────
         function secAPI:AddDropdown(options)
             local opts = options or {}
@@ -1333,16 +1424,15 @@ function Library:AddTab(name, icon)
                 Parent = row,
             })
 
-            -- Container do dropdown (aparece abaixo)
-            -- ✅ ZINDEX ALTO PARA SOBREPOR TUDO
+            -- ✅ Container do dropdown - POSICIONADO RELATIVO AO ROW
             local dropFrame = Make("Frame", {
                 Size = UDim2.new(1, -28, 0, 0),
-                Position = UDim2.new(0, 14, 1, 2),
+                Position = UDim2.new(0, 14, 0, 50), -- ✅ Fixo abaixo do row (48px row + 2px gap)
                 BackgroundColor3 = Theme.Card,
                 ClipsDescendants = true,
                 Visible = false,
                 ZIndex = 100, -- ✅ ZINDEX ALTO
-                Parent = row,
+                Parent = sectionFrame, -- ✅ Parent é a section, não o row (evita corte)
             })
             Make("UICorner", { CornerRadius = UDim.new(0, 10), Parent = dropFrame })
             Make("UIStroke", { Color = Theme.Sep, Thickness = 0.5, Parent = dropFrame })
@@ -1381,7 +1471,8 @@ function Library:AddTab(name, icon)
                     Tween(dropFrame, 0.2, { Size = UDim2.new(1, -28, 0, 0) })
                     task.delay(0.2, function()
                         dropFrame.Visible = false
-                        row.Size = UDim2.new(1, 0, 0, 48)
+                        -- Restaura ordem dos elementos
+                        dropFrame.LayoutOrder = 999
                     end)
                 end)
 
@@ -1404,6 +1495,15 @@ function Library:AddTab(name, icon)
                 end
             end
 
+            -- ✅ Posiciona o dropdown logo abaixo do row atual
+            local function updateDropdownPosition()
+                local rowAbsY = row.AbsolutePosition.Y
+                local rowAbsH = row.AbsoluteSize.Y
+                local sectionAbsY = sectionFrame.AbsolutePosition.Y
+                local relativeY = rowAbsY + rowAbsH - sectionAbsY + 2
+                dropFrame.Position = UDim2.new(0, 14, 0, relativeY)
+            end
+
             -- Click para abrir/fechar
             local clickBtn = Make("TextButton", {
                 Size = UDim2.new(1, 0, 0, 48),
@@ -1416,9 +1516,10 @@ function Library:AddTab(name, icon)
             clickBtn.MouseButton1Click:Connect(function()
                 isOpen = not isOpen
                 if isOpen then
+                    updateDropdownPosition()
+                    dropFrame.LayoutOrder = getOrder() -- Insere logo após o row
                     dropFrame.Visible = true
                     local h = math.min(#optList * 34, 170)
-                    row.Size = UDim2.new(1, 0, 0, 48 + h + 6)
                     Tween(chevron, 0.2, { Rotation = 180 })
                     Tween(dropFrame, 0.25, { Size = UDim2.new(1, -28, 0, h) })
                 else
@@ -1426,7 +1527,7 @@ function Library:AddTab(name, icon)
                     Tween(dropFrame, 0.2, { Size = UDim2.new(1, -28, 0, 0) })
                     task.delay(0.2, function()
                         dropFrame.Visible = false
-                        row.Size = UDim2.new(1, 0, 0, 48)
+                        dropFrame.LayoutOrder = 999
                     end)
                 end
             end)
@@ -2142,7 +2243,7 @@ function Library:AddTab(name, icon)
         end
 
         -- ───────────────────────────────────────────────────────────
-        -- MULTI DROPDOWN (FIXED - opções aparecem agora)
+        -- MULTI DROPDOWN (FIXED - aparece na direção certa)
         -- ───────────────────────────────────────────────────────────
         function secAPI:AddMultiDropdown(options)
             local opts = options or {}
@@ -2159,7 +2260,7 @@ function Library:AddTab(name, icon)
             local row = Make("Frame", {
                 Size = UDim2.new(1, 0, 0, 48),
                 BackgroundTransparency = 1,
-                ClipsDescendants = false, -- ✅ PERMITE DROPDOWN APARECER FORA
+                ClipsDescendants = false,
                 ZIndex = 10,
                 LayoutOrder = getOrder(),
                 Parent = sectionFrame,
@@ -2203,15 +2304,15 @@ function Library:AddTab(name, icon)
                 Parent = row,
             })
 
-            -- ✅ ZINDEX ALTO
+            -- ✅ Container do dropdown - POSICIONADO RELATIVO AO ROW
             local dropFrame = Make("Frame", {
                 Size = UDim2.new(1, -28, 0, 0),
-                Position = UDim2.new(0, 14, 1, 2),
+                Position = UDim2.new(0, 14, 0, 50), -- ✅ Fixo abaixo do row
                 BackgroundColor3 = Theme.Card,
                 ClipsDescendants = true,
                 Visible = false,
-                ZIndex = 100, -- ✅ ZINDEX ALTO
-                Parent = row,
+                ZIndex = 100,
+                Parent = sectionFrame, -- ✅ Parent é a section
             })
             Make("UICorner", { CornerRadius = UDim.new(0, 10), Parent = dropFrame })
             Make("UIStroke", { Color = Theme.Sep, Thickness = 0.5, Parent = dropFrame })
@@ -2233,7 +2334,7 @@ function Library:AddTab(name, icon)
                     TextXAlignment = Enum.TextXAlignment.Left,
                     BackgroundTransparency = 1,
                     AutoButtonColor = false,
-                    ZIndex = 101, -- ✅ ACIMA DO dropFrame
+                    ZIndex = 101,
                     LayoutOrder = i,
                     Parent = dropFrame,
                 })
@@ -2260,6 +2361,15 @@ function Library:AddTab(name, icon)
                 end)
             end
 
+            -- ✅ Posiciona o dropdown logo abaixo do row atual
+            local function updateDropdownPosition()
+                local rowAbsY = row.AbsolutePosition.Y
+                local rowAbsH = row.AbsoluteSize.Y
+                local sectionAbsY = sectionFrame.AbsolutePosition.Y
+                local relativeY = rowAbsY + rowAbsH - sectionAbsY + 2
+                dropFrame.Position = UDim2.new(0, 14, 0, relativeY)
+            end
+
             local clickBtn = Make("TextButton", {
                 Size = UDim2.new(1, 0, 0, 48),
                 Text = "",
@@ -2271,9 +2381,10 @@ function Library:AddTab(name, icon)
             clickBtn.MouseButton1Click:Connect(function()
                 isOpen = not isOpen
                 if isOpen then
+                    updateDropdownPosition()
+                    dropFrame.LayoutOrder = getOrder()
                     dropFrame.Visible = true
                     local h = math.min(#optList * 34, 170)
-                    row.Size = UDim2.new(1, 0, 0, 48 + h + 6)
                     Tween(chevron, 0.2, { Rotation = 180 })
                     Tween(dropFrame, 0.25, { Size = UDim2.new(1, -28, 0, h) })
                 else
@@ -2281,7 +2392,7 @@ function Library:AddTab(name, icon)
                     Tween(dropFrame, 0.2, { Size = UDim2.new(1, -28, 0, 0) })
                     task.delay(0.2, function()
                         dropFrame.Visible = false
-                        row.Size = UDim2.new(1, 0, 0, 48)
+                        dropFrame.LayoutOrder = 999
                     end)
                 end
             end)
@@ -2478,7 +2589,7 @@ end
 function Library:Destroy()
     -- Reseta cursor se estiver na alça
     UserInputService.MouseIcon = ""
-    
+
     for _, conn in ipairs(self._connections) do
         if conn and conn.Connected then
             conn:Disconnect()
