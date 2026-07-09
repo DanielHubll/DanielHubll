@@ -5,6 +5,8 @@ local UserInputService = game:GetService("UserInputService")
 local ContextActionService = game:GetService("ContextActionService")
 local CoreGui = game:GetService("CoreGui")
 local TextService = game:GetService("TextService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- SISTEMA DE ARQUIVO
@@ -67,7 +69,150 @@ local function loadMeta()
 end
 
 -- ═══════════════════════════════════════════════════════════════════════════════
--- BIBLIOTECA
+-- SISTEMA DE NOTIFICAÇÕES
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+local NotificationSystem = {}
+local ActiveNotifications = {}
+
+function NotificationSystem:CreateNotification(title, message, duration, notifType)
+    duration = duration or 3
+    notifType = notifType or "Info"
+    
+    local notificationGui = Instance.new("ScreenGui")
+    notificationGui.Name = "VLG_Notification"
+    notificationGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    notificationGui.ResetOnSpawn = false
+    notificationGui.IgnoreGuiInset = true
+    notificationGui.Parent = CoreGui
+    
+    local yOffset = 10
+    for _, notif in ipairs(ActiveNotifications) do
+        yOffset = yOffset + notif.frame.AbsoluteSize.Y + 6
+    end
+    
+    local frame = Instance.new("Frame", notificationGui)
+    frame.BorderSizePixel = 0
+    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    frame.Size = UDim2.new(0, 260, 0, 60)
+    frame.Position = UDim2.new(1, -270, 0, yOffset)
+    frame.AnchorPoint = Vector2.new(0, 0)
+    frame.ZIndex = 9999
+    frame.ClipsDescendants = true
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+    
+    local colors = {
+        Success = Color3.fromRGB(46, 204, 113),
+        Error = Color3.fromRGB(231, 76, 60),
+        Warning = Color3.fromRGB(241, 196, 15),
+        Info = Color3.fromRGB(52, 152, 219)
+    }
+    
+    local accentBar = Instance.new("Frame", frame)
+    accentBar.BorderSizePixel = 0
+    accentBar.BackgroundColor3 = colors[notifType] or colors.Info
+    accentBar.Size = UDim2.new(0, 4, 1, 0)
+    accentBar.ZIndex = 10000
+    Instance.new("UICorner", accentBar).CornerRadius = UDim.new(0, 2)
+    
+    local titleLabel = Instance.new("TextLabel", frame)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Size = UDim2.new(1, -50, 0, 20)
+    titleLabel.Position = UDim2.new(0, 12, 0, 6)
+    titleLabel.Text = title or "Notificação"
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.TextSize = 13
+    titleLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.ZIndex = 10000
+    
+    local messageLabel = Instance.new("TextLabel", frame)
+    messageLabel.BackgroundTransparency = 1
+    messageLabel.Size = UDim2.new(1, -50, 0, 24)
+    messageLabel.Position = UDim2.new(0, 12, 0, 28)
+    messageLabel.Text = message or ""
+    messageLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+    messageLabel.TextSize = 11
+    messageLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium)
+    messageLabel.TextXAlignment = Enum.TextXAlignment.Left
+    messageLabel.TextWrapped = true
+    messageLabel.ZIndex = 10000
+    
+    local closeBtn = Instance.new("TextButton", frame)
+    closeBtn.BackgroundTransparency = 1
+    closeBtn.Size = UDim2.new(0, 20, 0, 20)
+    closeBtn.Position = UDim2.new(1, -26, 0, 4)
+    closeBtn.Text = "×"
+    closeBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+    closeBtn.TextSize = 18
+    closeBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+    closeBtn.ZIndex = 10000
+    
+    local timerBar = Instance.new("Frame", frame)
+    timerBar.BorderSizePixel = 0
+    timerBar.BackgroundColor3 = colors[notifType] or colors.Info
+    timerBar.Size = UDim2.new(1, -8, 0, 2)
+    timerBar.Position = UDim2.new(0, 4, 1, -4)
+    timerBar.ZIndex = 10000
+    timerBar.BackgroundTransparency = 0.5
+    Instance.new("UICorner", timerBar).CornerRadius = UDim.new(0, 1)
+    
+    local notifData = { gui = notificationGui, frame = frame, timerBar = timerBar }
+    table.insert(ActiveNotifications, notifData)
+    
+    local function removeNotification()
+        local index = nil
+        for i, notif in ipairs(ActiveNotifications) do
+            if notif == notifData then index = i; break end
+        end
+        if index then table.remove(ActiveNotifications, index) end
+        
+        local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local tween = TweenService:Create(frame, tweenInfo, { BackgroundTransparency = 1 })
+        tween:Play()
+        
+        for _, child in ipairs(frame:GetChildren()) do
+            if child:IsA("TextLabel") or child:IsA("TextButton") then
+                local t2 = TweenService:Create(child, tweenInfo, { TextTransparency = 1 })
+                t2:Play()
+            end
+        end
+        
+        delay(0.3, function()
+            notificationGui:Destroy()
+            local currentY = 10
+            for _, notif in ipairs(ActiveNotifications) do
+                local tweenY = TweenService:Create(notif.frame, TweenInfo.new(0.2), { Position = UDim2.new(1, -270, 0, currentY) })
+                tweenY:Play()
+                currentY = currentY + notif.frame.AbsoluteSize.Y + 6
+            end
+        end)
+    end
+    
+    closeBtn.MouseButton1Click:Connect(removeNotification)
+    
+    local startTime = tick()
+    local connection
+    connection = RunService.RenderStepped:Connect(function()
+        local elapsed = tick() - startTime
+        local progress = math.clamp(1 - (elapsed / duration), 0, 1)
+        timerBar.Size = UDim2.new(progress, -8, 0, 2)
+        if elapsed >= duration then
+            connection:Disconnect()
+            removeNotification()
+        end
+    end)
+    
+    -- Animação de entrada
+    frame.Position = UDim2.new(1, 0, 0, yOffset)
+    local tweenIn = TweenService:Create(frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Position = UDim2.new(1, -270, 0, yOffset) })
+    tweenIn:Play()
+    
+    return { Close = removeNotification }
+end
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- BIBLIOTECA PRINCIPAL
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 function UILibrary:CreateWindow(title)
@@ -82,6 +227,7 @@ function UILibrary:CreateWindow(title)
     local activeFloatingUIs = {}
     local configElements = {}
     local savedConfigs = {}
+    local notificationCount = 0
 
     local function loadAllConfigsFromDisk()
         local files = getConfigFiles()
@@ -150,7 +296,6 @@ function UILibrary:CreateWindow(title)
     LMG2L["TitleMenu_3"]["Text"] = title or "VLG PAINEL"
     LMG2L["TitleMenu_3"]["Position"] = UDim2.new(0, 28, 0, 4)
 
-    -- Botão Fechar (X)
     LMG2L["CloseMenu_4"] = Instance.new("ImageButton", LMG2L["Topo_2"])
     LMG2L["CloseMenu_4"]["BorderSizePixel"] = 0
     LMG2L["CloseMenu_4"]["BackgroundTransparency"] = 1
@@ -193,10 +338,6 @@ function UILibrary:CreateWindow(title)
     LMG2L["Tabs_2a"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
     LMG2L["Tabs_2a"]["Active"] = true
 
-    -- ═══════════════════════════════════════════════════════════════════════════
-    -- BOTÃO MINIMIZAR COM ÍCONES
-    -- ═══════════════════════════════════════════════════════════════════════════
-    
     local ICON_ABERTO = "rbxassetid://112366764985181"
     local ICON_FECHADO = "rbxassetid://119314216582090"
 
@@ -223,7 +364,6 @@ function UILibrary:CreateWindow(title)
         end
     end)
 
-    -- HOTKEY PARA ABRIR/FECHAR
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then
             LMG2L["Topo_2"].Visible = not LMG2L["Topo_2"].Visible
@@ -521,6 +661,12 @@ function UILibrary:CreateWindow(title)
                 element.instance.BackgroundColor3 = currentThemeColor
             elseif element.type == "SectionLine" then
                 element.instance.BackgroundColor3 = currentThemeColor
+            elseif element.type == "Keybind" then
+                element.instance.BackgroundColor3 = element.getState() and currentThemeColor or Color3.fromRGB(37, 37, 37)
+            elseif element.type == "Checkbox" then
+                element.instance.BackgroundColor3 = element.getState() and currentThemeColor or Color3.fromRGB(37, 37, 37)
+            elseif element.type == "ProgressBar" then
+                element.instance.BackgroundColor3 = currentThemeColor
             end
         end
     end
@@ -639,8 +785,11 @@ function UILibrary:CreateWindow(title)
             })
         end
 
-        -- ── TextBox ──────────────────────────────────────────────────────────────
+        -- ═══════════════════════════════════════════════════════════════════════════
+        -- NOVOS COMPONENTES
+        -- ═══════════════════════════════════════════════════════════════════════════
 
+        -- ── TextBox ──────────────────────────────────────────────────────────────
         function tabMethods:AddTextBox(text, default, callback)
             local TextBoxFrame = Instance.new("Frame", ElementsContainer)
             TextBoxFrame.BorderSizePixel = 0
@@ -696,8 +845,195 @@ function UILibrary:CreateWindow(title)
             return TextBoxObject
         end
 
-        -- ── ThemePicker ──────────────────────────────────────────────────────────
+        -- ── NumberBox ────────────────────────────────────────────────────────────
+        function tabMethods:AddNumberBox(text, default, min, max, callback)
+            local NumberFrame = Instance.new("Frame", ElementsContainer)
+            NumberFrame.BorderSizePixel = 0
+            NumberFrame.Size = UDim2.new(0, 246, 0, 26)
+            NumberFrame.BackgroundTransparency = 1
 
+            local InfoLabel = Instance.new("TextLabel", NumberFrame)
+            InfoLabel.TextSize = 10
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            InfoLabel.BackgroundTransparency = 1
+            InfoLabel.Size = UDim2.new(0, 70, 0, 26)
+            InfoLabel.Text = text or "Number"
+            InfoLabel.Position = UDim2.new(0, 176, 0, 0)
+
+            local Main = Instance.new("Frame", NumberFrame)
+            Main.BorderSizePixel = 0
+            Main.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+            Main.Size = UDim2.new(0, 168, 0, 26)
+            Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)
+
+            local MinusBtn = Instance.new("TextButton", Main)
+            MinusBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+            MinusBtn.Size = UDim2.new(0, 22, 1, 0)
+            MinusBtn.Text = "-"
+            MinusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            MinusBtn.TextSize = 16
+            MinusBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            MinusBtn.BorderSizePixel = 0
+            Instance.new("UICorner", MinusBtn).CornerRadius = UDim.new(0, 3)
+
+            local Input = Instance.new("TextBox", Main)
+            Input.BackgroundTransparency = 1
+            Input.Size = UDim2.new(1, -44, 1, 0)
+            Input.Position = UDim2.new(0, 22, 0, 0)
+            Input.Text = tostring(default or 0)
+            Input.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Input.TextSize = 11
+            Input.TextXAlignment = Enum.TextXAlignment.Center
+            Input.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold)
+
+            local PlusBtn = Instance.new("TextButton", Main)
+            PlusBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+            PlusBtn.Size = UDim2.new(0, 22, 1, 0)
+            PlusBtn.Position = UDim2.new(1, -22, 0, 0)
+            PlusBtn.Text = "+"
+            PlusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            PlusBtn.TextSize = 16
+            PlusBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            PlusBtn.BorderSizePixel = 0
+            Instance.new("UICorner", PlusBtn).CornerRadius = UDim.new(0, 3)
+
+            local minVal = min or 0
+            local maxVal = max or 9999
+            local currentValue = default or 0
+
+            local function clampAndUpdate(val)
+                val = tonumber(val) or currentValue
+                val = math.clamp(math.floor(val), minVal, maxVal)
+                currentValue = val
+                Input.Text = tostring(val)
+                if callback then callback(val) end
+            end
+
+            MinusBtn.MouseButton1Click:Connect(function()
+                clampAndUpdate(currentValue - 1)
+            end)
+
+            PlusBtn.MouseButton1Click:Connect(function()
+                clampAndUpdate(currentValue + 1)
+            end)
+
+            Input.FocusLost:Connect(function()
+                clampAndUpdate(tonumber(Input.Text))
+            end)
+
+            local elementData = { frame = NumberFrame, height = 34, visible = true, isSub = false }
+            table.insert(tabData.elements, elementData)
+            updateLayout()
+
+            local NumberBoxObject = {
+                SetValue = function(self, val) clampAndUpdate(val) end,
+                GetValue = function(self) return currentValue end
+            }
+
+            registerConfigElement("NumberBox", text, NumberBoxObject,
+                function() return NumberBoxObject:GetValue() end,
+                function(val) NumberBoxObject:SetValue(val) end
+            )
+            return NumberBoxObject
+        end
+
+        -- ── Keybind ──────────────────────────────────────────────────────────────
+        function tabMethods:AddKeybind(text, defaultKey, callback)
+            local KeybindFrame = Instance.new("Frame", ElementsContainer)
+            KeybindFrame.BorderSizePixel = 0
+            KeybindFrame.Size = UDim2.new(0, 246, 0, 22)
+            KeybindFrame.BackgroundTransparency = 1
+
+            local InfoLabel = Instance.new("TextLabel", KeybindFrame)
+            InfoLabel.BorderSizePixel = 0
+            InfoLabel.TextSize = 10
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            InfoLabel.BackgroundTransparency = 1
+            InfoLabel.Size = UDim2.new(0, 100, 0, 22)
+            InfoLabel.Text = text or "Keybind"
+            InfoLabel.Position = UDim2.new(0, 0, 0, 0)
+
+            local KeyBtn = Instance.new("TextButton", KeybindFrame)
+            KeyBtn.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+            KeyBtn.Size = UDim2.new(0, 126, 0, 22)
+            KeyBtn.Position = UDim2.new(0, 110, 0, 0)
+            KeyBtn.BorderSizePixel = 0
+            KeyBtn.Text = defaultKey and defaultKey.Name or "None"
+            KeyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            KeyBtn.TextSize = 11
+            KeyBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            KeyBtn.AutoButtonColor = false
+            Instance.new("UICorner", KeyBtn).CornerRadius = UDim.new(0, 3)
+            table.insert(themeElements, { type = "Keybind", instance = KeyBtn, getState = function() return false end })
+
+            local currentKey = defaultKey
+            local isBinding = false
+            local connection
+
+            KeyBtn.MouseButton1Click:Connect(function()
+                if isBinding then return end
+                isBinding = true
+                KeyBtn.Text = "..."
+                KeyBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+
+                connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+                    if not isBinding then
+                        connection:Disconnect()
+                        return
+                    end
+                    if input.UserInputType == Enum.UserInputType.Keyboard then
+                        currentKey = input.KeyCode
+                        KeyBtn.Text = currentKey.Name
+                        KeyBtn.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+                        isBinding = false
+                        connection:Disconnect()
+                        if callback then callback(currentKey) end
+                    elseif input.UserInputType == Enum.UserInputType.MouseButton1
+                    or input.UserInputType == Enum.UserInputType.MouseButton2 then
+                        currentKey = input.UserInputType
+                        KeyBtn.Text = input.UserInputType == Enum.UserInputType.MouseButton1 and "MB1" or "MB2"
+                        KeyBtn.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+                        isBinding = false
+                        connection:Disconnect()
+                        if callback then callback(currentKey) end
+                    end
+                end)
+
+                delay(10, function()
+                    if isBinding then
+                        isBinding = false
+                        KeyBtn.Text = currentKey and currentKey.Name or "None"
+                        KeyBtn.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+                        if connection then connection:Disconnect() end
+                    end
+                end)
+            end)
+
+            local elementData = { frame = KeybindFrame, height = 30, visible = true, isSub = false }
+            table.insert(tabData.elements, elementData)
+            updateLayout()
+
+            local KeybindObject = {
+                SetKey = function(self, key)
+                    currentKey = key
+                    KeyBtn.Text = key and key.Name or "None"
+                    if callback then callback(key) end
+                end,
+                GetKey = function(self) return currentKey end
+            }
+
+            registerConfigElement("Keybind", text, KeybindObject,
+                function() return KeybindObject:GetKey() end,
+                function(val) KeybindObject:SetKey(val) end
+            )
+            return KeybindObject
+        end
+
+        -- ── ThemePicker ──────────────────────────────────────────────────────────
         function tabMethods:AddThemePicker(text, defaultColor)
             if defaultColor then currentThemeColor = defaultColor end
             local pickerObj = self:AddColorPicker(text or "Cor do Tema", currentThemeColor, function(color)
@@ -708,7 +1044,6 @@ function UILibrary:CreateWindow(title)
         end
 
         -- ── Toggle ───────────────────────────────────────────────────────────────
-
         function tabMethods:AddToggle(text, callback, hasFloating)
             local showFloatingButton = hasFloating == true
 
@@ -901,7 +1236,6 @@ function UILibrary:CreateWindow(title)
         end
 
         -- ── ColorPicker ──────────────────────────────────────────────────────────
-
         function tabMethods:AddColorPicker(text, defaultColor, callback)
             local ColorFrame = Instance.new("Frame", ElementsContainer)
             ColorFrame.BorderSizePixel = 0
@@ -969,7 +1303,6 @@ function UILibrary:CreateWindow(title)
         end
 
         -- ── Dropdown ─────────────────────────────────────────────────────────────
-
         function tabMethods:AddDropdown(text, options, callback)
             local DropdownFrame = Instance.new("Frame", ElementsContainer)
             DropdownFrame.BorderSizePixel = 0
@@ -1149,8 +1482,222 @@ function UILibrary:CreateWindow(title)
             return DropdownObject
         end
 
-        -- ── Slider ───────────────────────────────────────────────────────────────
+        -- ── MultiDropdown ────────────────────────────────────────────────────────
+        function tabMethods:AddMultiDropdown(text, options, callback)
+            local MultiDropdownFrame = Instance.new("Frame", ElementsContainer)
+            MultiDropdownFrame.BorderSizePixel = 0
+            MultiDropdownFrame.BackgroundTransparency = 1
+            MultiDropdownFrame.Size = UDim2.new(0, 228, 0, 22)
+            MultiDropdownFrame.ZIndex = 10
 
+            local InfoLabel = Instance.new("TextLabel", MultiDropdownFrame)
+            InfoLabel.BorderSizePixel = 0
+            InfoLabel.TextSize = 10
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+            InfoLabel.BackgroundTransparency = 1
+            InfoLabel.Size = UDim2.new(0, 88, 0, 20)
+            InfoLabel.Position = UDim2.new(0, 140, 0, 2)
+            InfoLabel.Text = text or "Multi Select"
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            InfoLabel.ZIndex = 11
+
+            local Main = Instance.new("Frame", MultiDropdownFrame)
+            Main.BorderSizePixel = 0
+            Main.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+            Main.Size = UDim2.new(0, 136, 0, 22)
+            Main.ZIndex = 11
+            Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)
+
+            local SelectedLabel = Instance.new("TextLabel", Main)
+            SelectedLabel.BackgroundTransparency = 1
+            SelectedLabel.Size = UDim2.new(1, -28, 1, 0)
+            SelectedLabel.Position = UDim2.new(0, 6, 0, 0)
+            SelectedLabel.TextXAlignment = Enum.TextXAlignment.Left
+            SelectedLabel.TextSize = 10
+            SelectedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            SelectedLabel.Text = "Selecionar..."
+            SelectedLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            SelectedLabel.ZIndex = 12
+
+            local Open = Instance.new("ImageButton", Main)
+            Open.BackgroundColor3 = currentThemeColor
+            Open.Size = UDim2.new(0, 22, 0, 22)
+            Open.Position = UDim2.new(1, -22, 0, 0)
+            Open.Image = "rbxassetid://97131605825921"
+            Open.Rotation = -90
+            Open.BorderSizePixel = 0
+            Open.ZIndex = 1
+            Instance.new("UICorner", Open).CornerRadius = UDim.new(0, 3)
+            table.insert(themeElements, { type = "DropdownIcon", instance = Open })
+
+            local Scroll = Instance.new("ScrollingFrame", LMG2L["Main_5"])
+            Scroll.Visible = false
+            Scroll.BorderSizePixel = 0
+            Scroll.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+            Scroll.Size = UDim2.new(0, 136, 0, 28)
+            Scroll.ScrollBarThickness = 0
+            Scroll.ZIndex = 999
+            Scroll.Active = true
+            Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0, 3)
+
+            local selectedOptions = {}
+            local checkboxes = {}
+
+            local function updateSelectedLabel()
+                local count = 0
+                local selected = {}
+                for _, data in ipairs(checkboxes) do
+                    if data.checkbox.BackgroundColor3 == currentThemeColor then
+                        count = count + 1
+                        table.insert(selected, data.option)
+                    end
+                end
+                if count == 0 then
+                    SelectedLabel.Text = "Selecionar..."
+                else
+                    SelectedLabel.Text = count .. " selecionado(s)"
+                end
+                if callback then callback(selected) end
+            end
+
+            local btnHeight = 22
+            local padding = 2
+
+            local function getMultiHeight()
+                return math.min(#options, 4) * (btnHeight + padding) + 4
+            end
+
+            local function updateScrollPos()
+                if Scroll.Visible then
+                    local mainAbsPos = LMG2L["Main_5"].AbsolutePosition
+                    local mainAbsSize = LMG2L["Main_5"].AbsoluteSize
+                    local btnAbsPos = Main.AbsolutePosition
+                    local newY = (btnAbsPos.Y - mainAbsPos.Y) + 24
+                    local newX = (btnAbsPos.X - mainAbsPos.X) + 2
+                    if newY + getMultiHeight() > mainAbsSize.Y then
+                        newY = newY - getMultiHeight() - 26
+                    end
+                    Scroll.Position = UDim2.new(0, newX, 0, newY)
+                end
+            end
+
+            local function CloseMultiDropdown()
+                Scroll.Visible = false
+                Open.Rotation = 90
+                MultiDropdownFrame.ZIndex = 10
+                Main.ZIndex = 11
+                if openDropdownInfo and openDropdownInfo.Main == Main then
+                    openDropdownInfo = nil
+                end
+            end
+
+            Open.MouseButton1Click:Connect(function()
+                if Scroll.Visible then
+                    CloseMultiDropdown()
+                else
+                    if openDropdownInfo then openDropdownInfo.Close() end
+                    Scroll.Visible = true; Open.Rotation = 0
+                    MultiDropdownFrame.ZIndex = 100; Main.ZIndex = 101
+                    Scroll.Size = UDim2.new(0, 136, 0, getMultiHeight())
+                    updateScrollPos()
+                    openDropdownInfo = { Main = Main, Scroll = Scroll, Close = CloseMultiDropdown }
+                end
+            end)
+
+            for i, opt in ipairs(options) do
+                local OptionFrame = Instance.new("Frame", Scroll)
+                OptionFrame.Size = UDim2.new(1, -4, 0, btnHeight)
+                OptionFrame.Position = UDim2.new(0, 2, 0, (i - 1) * (btnHeight + padding))
+                OptionFrame.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+                OptionFrame.ZIndex = 1000
+
+                local Checkbox = Instance.new("TextButton", OptionFrame)
+                Checkbox.Size = UDim2.new(0, 16, 0, 16)
+                Checkbox.Position = UDim2.new(0, 4, 0, 3)
+                Checkbox.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+                Checkbox.BorderSizePixel = 0
+                Checkbox.Text = ""
+                Checkbox.AutoButtonColor = false
+                Checkbox.ZIndex = 1001
+                Instance.new("UICorner", Checkbox).CornerRadius = UDim.new(0, 3)
+
+                local CheckIcon = Instance.new("ImageLabel", Checkbox)
+                CheckIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+                CheckIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+                CheckIcon.Size = UDim2.new(0, 10, 0, 10)
+                CheckIcon.BackgroundTransparency = 1
+                CheckIcon.Image = "rbxassetid://7734068321"
+                CheckIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+                CheckIcon.Visible = false
+                CheckIcon.ZIndex = 1002
+
+                local OptionLabel = Instance.new("TextLabel", OptionFrame)
+                OptionLabel.BackgroundTransparency = 1
+                OptionLabel.Size = UDim2.new(1, -26, 1, 0)
+                OptionLabel.Position = UDim2.new(0, 24, 0, 0)
+                OptionLabel.Text = opt
+                OptionLabel.TextXAlignment = Enum.TextXAlignment.Left
+                OptionLabel.TextSize = 11
+                OptionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                OptionLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+                OptionLabel.ZIndex = 1001
+
+                table.insert(checkboxes, { checkbox = Checkbox, checkIcon = CheckIcon, option = opt })
+
+                Checkbox.MouseButton1Click:Connect(function()
+                    local isChecked = CheckIcon.Visible
+                    CheckIcon.Visible = not isChecked
+                    Checkbox.BackgroundColor3 = CheckIcon.Visible and currentThemeColor or Color3.fromRGB(37, 37, 37)
+                    updateSelectedLabel()
+                end)
+            end
+
+            Scroll.CanvasSize = UDim2.new(0, 0, 0, #options * (btnHeight + padding))
+
+            local elementData = { frame = MultiDropdownFrame, height = 30, visible = true, isSub = false }
+            table.insert(tabData.elements, elementData)
+            updateLayout()
+
+            local MultiDropdownObject = {
+                GetSelected = function(self)
+                    local selected = {}
+                    for _, data in ipairs(checkboxes) do
+                        if data.checkIcon.Visible then
+                            table.insert(selected, data.option)
+                        end
+                    end
+                    return selected
+                end,
+                SetSelected = function(self, selectedList)
+                    for _, data in ipairs(checkboxes) do
+                        local shouldSelect = false
+                        if type(selectedList) == "table" then
+                            for _, sel in ipairs(selectedList) do
+                                if sel == data.option then shouldSelect = true; break end
+                            end
+                        end
+                        data.checkIcon.Visible = shouldSelect
+                        data.checkbox.BackgroundColor3 = shouldSelect and currentThemeColor or Color3.fromRGB(37, 37, 37)
+                    end
+                    updateSelectedLabel()
+                end,
+                SetVisible = function(self, state)
+                    elementData.visible = state; MultiDropdownFrame.Visible = state; updateLayout()
+                end,
+                SetAsSubElement = function(self, state)
+                    elementData.isSub = state; updateLayout()
+                end
+            }
+
+            registerConfigElement("MultiDropdown", text, MultiDropdownObject,
+                function() return MultiDropdownObject:GetSelected() end,
+                function(val) MultiDropdownObject:SetSelected(val) end
+            )
+            return MultiDropdownObject
+        end
+
+        -- ── Slider ───────────────────────────────────────────────────────────────
         function tabMethods:AddSlider(text, defaultValue, max, callback)
             local SliderFrame = Instance.new("Frame", ElementsContainer)
             SliderFrame.BorderSizePixel = 0
@@ -1277,8 +1824,6 @@ function UILibrary:CreateWindow(title)
         end
 
         -- ── Button ───────────────────────────────────────────────────────────────
-        -- AGORA COM ÍCONE PADRÃO AUTOMÁTICO PARA TODOS OS BOTÕES
-
         function tabMethods:AddButton(text, callback, iconId)
             local ButtonFrame = Instance.new("Frame", ElementsContainer)
             ButtonFrame.BorderSizePixel = 0
@@ -1298,9 +1843,7 @@ function UILibrary:CreateWindow(title)
             Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 3)
             table.insert(themeElements, { type = "Button", instance = Button })
 
-            -- ÍCONE PADRÃO PARA TODOS OS BOTÕES
-            -- Se não passar iconId, usa o ícone padrão. Se passar, usa o personalizado.
-            local iconeUsar = iconId or "rbxassetid://108767860205161"  -- ← TROQUE AQUI PELO SEU ÍCONE PADRÃO
+            local iconeUsar = iconId or "rbxassetid://108767860205161"
             
             local ButtonIcon = Instance.new("ImageLabel", Button)
             ButtonIcon.AnchorPoint = Vector2.new(0, 0.5)
@@ -1329,7 +1872,6 @@ function UILibrary:CreateWindow(title)
         end
 
         -- ── RadioButtons ─────────────────────────────────────────────────────────
-
         function tabMethods:AddRadioButtons(text, options, callback)
             local RadioFrame = Instance.new("Frame", ElementsContainer)
             RadioFrame.BorderSizePixel = 0
@@ -1434,7 +1976,6 @@ function UILibrary:CreateWindow(title)
         end
 
         -- ── Separator ────────────────────────────────────────────────────────────
-
         function tabMethods:AddSeparator()
             local SeparatorFrame = Instance.new("Frame", ElementsContainer)
             SeparatorFrame.BorderSizePixel = 0
@@ -1448,7 +1989,6 @@ function UILibrary:CreateWindow(title)
         end
 
         -- ── Section ──────────────────────────────────────────────────────────────
-
         function tabMethods:AddSection(text)
             local SectionFrame = Instance.new("Frame", ElementsContainer)
             SectionFrame.BorderSizePixel = 0
@@ -1479,6 +2019,187 @@ function UILibrary:CreateWindow(title)
             return {}
         end
 
+        -- ── ProgressBar ──────────────────────────────────────────────────────────
+        function tabMethods:AddProgressBar(text, maxValue, initialValue)
+            local ProgressFrame = Instance.new("Frame", ElementsContainer)
+            ProgressFrame.BorderSizePixel = 0
+            ProgressFrame.Size = UDim2.new(0, 246, 0, 36)
+            ProgressFrame.BackgroundTransparency = 1
+
+            local InfoLabel = Instance.new("TextLabel", ProgressFrame)
+            InfoLabel.BorderSizePixel = 0
+            InfoLabel.TextSize = 10
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+            InfoLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            InfoLabel.BackgroundTransparency = 1
+            InfoLabel.Size = UDim2.new(0, 246, 0, 14)
+            InfoLabel.Text = text or "Progresso"
+            InfoLabel.Position = UDim2.new(0, 0, 0, 0)
+
+            local ProgressTrack = Instance.new("Frame", ProgressFrame)
+            ProgressTrack.BorderSizePixel = 0
+            ProgressTrack.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+            ProgressTrack.Size = UDim2.new(0, 246, 0, 14)
+            ProgressTrack.Position = UDim2.new(0, 0, 0, 18)
+            Instance.new("UICorner", ProgressTrack).CornerRadius = UDim.new(0, 4)
+
+            local ProgressFill = Instance.new("Frame", ProgressTrack)
+            ProgressFill.BorderSizePixel = 0
+            ProgressFill.BackgroundColor3 = currentThemeColor
+            ProgressFill.Size = UDim2.new(0, 0, 1, 0)
+            Instance.new("UICorner", ProgressFill).CornerRadius = UDim.new(0, 4)
+            table.insert(themeElements, { type = "ProgressBar", instance = ProgressFill })
+
+            local PercentLabel = Instance.new("TextLabel", ProgressTrack)
+            PercentLabel.BackgroundTransparency = 1
+            PercentLabel.Size = UDim2.new(1, 0, 1, 0)
+            PercentLabel.Text = "0%"
+            PercentLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            PercentLabel.TextSize = 10
+            PercentLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            PercentLabel.ZIndex = 2
+
+            local maxVal = maxValue or 100
+            local currentVal = initialValue or 0
+
+            local function updateProgress(value)
+                currentVal = math.clamp(value, 0, maxVal)
+                local percentage = currentVal / maxVal
+                ProgressFill.Size = UDim2.new(percentage, 0, 1, 0)
+                PercentLabel.Text = math.floor(percentage * 100) .. "%"
+            end
+
+            updateProgress(currentVal)
+
+            local elementData = { frame = ProgressFrame, height = 38, visible = true, isSub = false }
+            table.insert(tabData.elements, elementData)
+            updateLayout()
+
+            local ProgressObject = {
+                SetValue = function(self, value) updateProgress(value) end,
+                GetValue = function(self) return currentVal end,
+                SetMaxValue = function(self, value) maxVal = value; updateProgress(currentVal) end
+            }
+
+            registerConfigElement("ProgressBar", text, ProgressObject,
+                function() return ProgressObject:GetValue() end,
+                function(val) ProgressObject:SetValue(val) end
+            )
+            return ProgressObject
+        end
+
+        -- ── Label ────────────────────────────────────────────────────────────────
+        function tabMethods:AddLabel(text, defaultText)
+            local LabelFrame = Instance.new("Frame", ElementsContainer)
+            LabelFrame.BorderSizePixel = 0
+            LabelFrame.Size = UDim2.new(0, 246, 0, 22)
+            LabelFrame.BackgroundTransparency = 1
+
+            local TitleLabel = Instance.new("TextLabel", LabelFrame)
+            TitleLabel.BorderSizePixel = 0
+            TitleLabel.TextSize = 10
+            TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+            TitleLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+            TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            TitleLabel.BackgroundTransparency = 1
+            TitleLabel.Size = UDim2.new(0, 80, 0, 22)
+            TitleLabel.Text = text or "Label"
+
+            local ValueLabel = Instance.new("TextLabel", LabelFrame)
+            ValueLabel.BorderSizePixel = 0
+            ValueLabel.TextSize = 10
+            ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+            ValueLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium)
+            ValueLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+            ValueLabel.BackgroundTransparency = 1
+            ValueLabel.Size = UDim2.new(0, 146, 0, 22)
+            ValueLabel.Position = UDim2.new(0, 100, 0, 0)
+            ValueLabel.Text = defaultText or ""
+
+            local elementData = { frame = LabelFrame, height = 24, visible = true, isSub = false }
+            table.insert(tabData.elements, elementData)
+            updateLayout()
+
+            local LabelObject = {
+                SetText = function(self, txt) ValueLabel.Text = txt end,
+                GetText = function(self) return ValueLabel.Text end,
+                SetColor = function(self, color) ValueLabel.TextColor3 = color end
+            }
+
+            registerConfigElement("Label", text, LabelObject,
+                function() return LabelObject:GetText() end,
+                function(val) LabelObject:SetText(val) end
+            )
+            return LabelObject
+        end
+
+        -- ── SearchBox ────────────────────────────────────────────────────────────
+        function tabMethods:AddSearchBox(placeholder, callback)
+            local SearchFrame = Instance.new("Frame", ElementsContainer)
+            SearchFrame.BorderSizePixel = 0
+            SearchFrame.Size = UDim2.new(0, 246, 0, 26)
+            SearchFrame.BackgroundTransparency = 1
+
+            local Main = Instance.new("Frame", SearchFrame)
+            Main.BorderSizePixel = 0
+            Main.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
+            Main.Size = UDim2.new(0, 246, 0, 26)
+            Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)
+
+            local SearchIcon = Instance.new("ImageLabel", Main)
+            SearchIcon.AnchorPoint = Vector2.new(0, 0.5)
+            SearchIcon.Position = UDim2.new(0, 8, 0.5, 0)
+            SearchIcon.Size = UDim2.new(0, 14, 0, 14)
+            SearchIcon.BackgroundTransparency = 1
+            SearchIcon.Image = "rbxassetid://7733967969"
+            SearchIcon.ImageColor3 = Color3.fromRGB(150, 150, 150)
+
+            local Input = Instance.new("TextBox", Main)
+            Input.BackgroundTransparency = 1
+            Input.Size = UDim2.new(1, -56, 1, 0)
+            Input.Position = UDim2.new(0, 28, 0, 0)
+            Input.PlaceholderText = placeholder or "Pesquisar..."
+            Input.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
+            Input.Text = ""
+            Input.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Input.TextSize = 11
+            Input.TextXAlignment = Enum.TextXAlignment.Left
+            Input.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold)
+
+            local ClearBtn = Instance.new("TextButton", Main)
+            ClearBtn.BackgroundTransparency = 1
+            ClearBtn.Size = UDim2.new(0, 20, 0, 20)
+            ClearBtn.Position = UDim2.new(1, -24, 0, 3)
+            ClearBtn.Text = "×"
+            ClearBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+            ClearBtn.TextSize = 16
+            ClearBtn.Visible = false
+
+            Input:GetPropertyChangedSignal("Text"):Connect(function()
+                ClearBtn.Visible = Input.Text ~= ""
+                if callback then callback(Input.Text) end
+            end)
+
+            ClearBtn.MouseButton1Click:Connect(function()
+                Input.Text = ""
+                ClearBtn.Visible = false
+                if callback then callback("") end
+            end)
+
+            local elementData = { frame = SearchFrame, height = 34, visible = true, isSub = false }
+            table.insert(tabData.elements, elementData)
+            updateLayout()
+
+            local SearchObject = {
+                GetText = function(self) return Input.Text end,
+                SetText = function(self, txt) Input.Text = txt end,
+                Clear = function(self) Input.Text = "" end
+            }
+
+            return SearchObject
+        end
+
         return tabMethods
     end
 
@@ -1494,6 +2215,10 @@ function UILibrary:CreateWindow(title)
                 local value = elem.getValue()
                 if elem.type == "ColorPicker" and typeof(value) == "Color3" then
                     value = value:ToHex()
+                elseif elem.type == "MultiDropdown" and type(value) == "table" then
+                    value = table.concat(value, "|")
+                elseif elem.type == "Keybind" and typeof(value) == "EnumItem" then
+                    value = value.Name
                 end
                 table.insert(config[tabName], {
                     type = elem.type,
@@ -1516,6 +2241,14 @@ function UILibrary:CreateWindow(title)
                             if elem.type == "ColorPicker" and type(value) == "string" then
                                 local ok, color = pcall(Color3.fromHex, value)
                                 if ok then value = color end
+                            elseif elem.type == "MultiDropdown" and type(value) == "string" then
+                                local parts = {}
+                                for part in value:gmatch("[^|]+") do
+                                    table.insert(parts, part)
+                                end
+                                value = parts
+                            elseif elem.type == "Keybind" and type(value) == "string" then
+                                value = Enum.KeyCode[value]
                             end
                             elem.setValue(value)
                             break
@@ -1536,7 +2269,6 @@ function UILibrary:CreateWindow(title)
         local meta = loadMeta()
         local autoLoadEnabled = meta.autoLoad or false
 
-        -- Ícone de engrenagem para a aba Config
         local configTab = publicMethods:AddTab("Config", "rbxassetid://10709852168")
 
         local currentConfigName = meta.lastConfig or ""
@@ -1590,7 +2322,6 @@ function UILibrary:CreateWindow(title)
 
         configTab:AddSeparator()
 
-        -- Botão SALVAR com ícone personalizado
         configTab:AddButton("Salvar", function()
             local name = nameInput:GetText()
             if not name or name == "" or name == "Nenhuma config salva" then return end
@@ -1602,9 +2333,9 @@ function UILibrary:CreateWindow(title)
             meta.autoLoad = autoLoadEnabled
             saveMeta(meta)
             updateDropdown(name)
-        end, "rbxassetid://97582400811473") -- Ícone Salvar
+            NotificationSystem:CreateNotification("Sucesso", "Configuração salva!", 2, "Success")
+        end, "rbxassetid://97582400811473")
 
-        -- Botão CARREGAR com ícone personalizado
         configTab:AddButton("Carregar", function()
             local name = nameInput:GetText()
             if not name or name == "" then return end
@@ -1617,10 +2348,10 @@ function UILibrary:CreateWindow(title)
                 meta.autoLoad = autoLoadEnabled
                 saveMeta(meta)
                 updateDropdown(name)
+                NotificationSystem:CreateNotification("Sucesso", "Configuração carregada!", 2, "Success")
             end
-        end, "rbxassetid://106415964550855") -- Ícone Carregar
+        end, "rbxassetid://106415964550855")
 
-        -- Botão DELETAR com ícone personalizado
         configTab:AddButton("Deletar", function()
             local name = nameInput:GetText()
             if not name or name == "" then return end
@@ -1634,8 +2365,9 @@ function UILibrary:CreateWindow(title)
                 currentConfigName = ""
                 if nameInput then nameInput:SetText("") end
                 updateDropdown()
+                NotificationSystem:CreateNotification("Deletado", "Configuração removida!", 2, "Warning")
             end
-        end, "rbxassetid://119483803631956") -- Ícone Lixeira
+        end, "rbxassetid://119483803631956")
 
         configTab:AddSeparator()
 
@@ -1653,25 +2385,28 @@ function UILibrary:CreateWindow(title)
 
         configTab:AddSeparator()
 
-        -- Botão ATUALIZAR LISTA com ícone personalizado
         configTab:AddButton("Atualizar Lista", function()
             updateDropdown(currentConfigName)
-        end, "rbxassetid://119636414179025") -- Ícone Atualizar
+        end, "rbxassetid://119636414179025")
 
-        -- Botão RESETAR TUDO com ícone personalizado
         configTab:AddButton("Resetar Tudo", function()
             for _, elements in pairs(configElements) do
                 for _, elem in ipairs(elements) do
-                    if     elem.type == "Toggle"      then elem.setValue(false)
-                    elseif elem.type == "Slider"      then elem.setValue(0)
-                    elseif elem.type == "TextBox"     then elem.setValue("")
-                    elseif elem.type == "Dropdown"    then elem.setValue("")
-                    elseif elem.type == "ColorPicker" then elem.setValue(Color3.fromRGB(255, 255, 255))
-                    elseif elem.type == "RadioButton" then elem.setValue("")
+                    if     elem.type == "Toggle"       then elem.setValue(false)
+                    elseif elem.type == "Slider"       then elem.setValue(0)
+                    elseif elem.type == "TextBox"      then elem.setValue("")
+                    elseif elem.type == "Dropdown"     then elem.setValue("")
+                    elseif elem.type == "ColorPicker"  then elem.setValue(Color3.fromRGB(255, 255, 255))
+                    elseif elem.type == "RadioButton"  then elem.setValue("")
+                    elseif elem.type == "NumberBox"    then elem.setValue(0)
+                    elseif elem.type == "ProgressBar"  then elem.setValue(0)
+                    elseif elem.type == "MultiDropdown" then elem.setValue({})
+                    elseif elem.type == "Label"        then elem.setValue("")
                     end
                 end
             end
-        end, "rbxassetid://93898339468067") -- Ícone Reset
+            NotificationSystem:CreateNotification("Reset", "Tudo foi resetado!", 2, "Warning")
+        end, "rbxassetid://93898339468067")
         
         if currentConfigName ~= "" then
             updateDropdown(currentConfigName)
@@ -1685,6 +2420,7 @@ function UILibrary:CreateWindow(title)
                 if configToLoad then
                     savedConfigs[meta.lastConfig] = configToLoad
                     loadConfiguration(configToLoad)
+                    NotificationSystem:CreateNotification("Auto Load", "Config '" .. meta.lastConfig .. "' carregada!", 3, "Info")
                 end
             end)
         end
@@ -1694,6 +2430,110 @@ function UILibrary:CreateWindow(title)
         wait(0.2)
         createAutoConfigTab()
     end)
+
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- MÉTODOS PÚBLICOS DA JANELA
+    -- ═══════════════════════════════════════════════════════════════════════════
+    
+    function publicMethods:ShowNotification(title, message, duration, notifType)
+        return NotificationSystem:CreateNotification(title, message, duration, notifType)
+    end
+    
+    function publicMethods:ShowConfirmation(title, message, onConfirm, onCancel)
+        -- Criar diálogo de confirmação
+        local confirmGui = Instance.new("ScreenGui")
+        confirmGui.Name = "VLG_ConfirmDialog"
+        confirmGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        confirmGui.ResetOnSpawn = false
+        confirmGui.IgnoreGuiInset = true
+        confirmGui.Parent = CoreGui
+        
+        local bg = Instance.new("Frame", confirmGui)
+        bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        bg.BackgroundTransparency = 0.5
+        bg.Size = UDim2.new(1, 0, 1, 0)
+        bg.ZIndex = 9998
+        
+        local dialog = Instance.new("Frame", bg)
+        dialog.BorderSizePixel = 0
+        dialog.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+        dialog.Size = UDim2.new(0, 260, 0, 120)
+        dialog.Position = UDim2.new(0.5, -130, 0.5, -60)
+        dialog.ZIndex = 9999
+        Instance.new("UICorner", dialog).CornerRadius = UDim.new(0, 6)
+        
+        local titleLabel = Instance.new("TextLabel", dialog)
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Size = UDim2.new(1, -20, 0, 20)
+        titleLabel.Position = UDim2.new(0, 10, 0, 10)
+        titleLabel.Text = title or "Confirmação"
+        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleLabel.TextSize = 14
+        titleLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+        titleLabel.ZIndex = 10000
+        
+        local messageLabel = Instance.new("TextLabel", dialog)
+        messageLabel.BackgroundTransparency = 1
+        messageLabel.Size = UDim2.new(1, -20, 0, 36)
+        messageLabel.Position = UDim2.new(0, 10, 0, 34)
+        messageLabel.Text = message or ""
+        messageLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+        messageLabel.TextSize = 11
+        messageLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium)
+        messageLabel.TextWrapped = true
+        messageLabel.ZIndex = 10000
+        
+        local confirmBtn = Instance.new("TextButton", dialog)
+        confirmBtn.BorderSizePixel = 0
+        confirmBtn.BackgroundColor3 = currentThemeColor
+        confirmBtn.Size = UDim2.new(0, 100, 0, 28)
+        confirmBtn.Position = UDim2.new(0, 24, 0, 80)
+        confirmBtn.Text = "Confirmar"
+        confirmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        confirmBtn.TextSize = 12
+        confirmBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+        confirmBtn.ZIndex = 10000
+        Instance.new("UICorner", confirmBtn).CornerRadius = UDim.new(0, 4)
+        
+        local cancelBtn = Instance.new("TextButton", dialog)
+        cancelBtn.BorderSizePixel = 0
+        cancelBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        cancelBtn.Size = UDim2.new(0, 100, 0, 28)
+        cancelBtn.Position = UDim2.new(0, 136, 0, 80)
+        cancelBtn.Text = "Cancelar"
+        cancelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        cancelBtn.TextSize = 12
+        cancelBtn.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+        cancelBtn.ZIndex = 10000
+        Instance.new("UICorner", cancelBtn).CornerRadius = UDim.new(0, 4)
+        
+        local function closeDialog()
+            confirmGui:Destroy()
+        end
+        
+        confirmBtn.MouseButton1Click:Connect(function()
+            closeDialog()
+            if onConfirm then onConfirm() end
+        end)
+        
+        cancelBtn.MouseButton1Click:Connect(function()
+            closeDialog()
+            if onCancel then onCancel() end
+        end)
+        
+        bg.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                local absPos = dialog.AbsolutePosition
+                local absSize = dialog.AbsoluteSize
+                local mx, my = input.Position.X, input.Position.Y
+                if not (mx >= absPos.X and mx <= absPos.X + absSize.X
+                    and my >= absPos.Y and my <= absPos.Y + absSize.Y) then
+                    closeDialog()
+                end
+            end
+        end)
+    end
 
     return publicMethods
 end
