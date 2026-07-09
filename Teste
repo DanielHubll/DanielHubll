@@ -5,6 +5,7 @@ local UserInputService = game:GetService("UserInputService")
 local ContextActionService = game:GetService("ContextActionService")
 local CoreGui = game:GetService("CoreGui")
 local TextService = game:GetService("TextService")
+local TweenService = game:GetService("TweenService")
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- SISTEMA DE ARQUIVO
@@ -39,7 +40,6 @@ local function getConfigFiles()
         for _, file in ipairs(files) do
             if file:match("%.json$") then
                 local name = file:match("VLG_Configs[/\\](.+)%.json$")
-                -- Ignora o arquivo de metadados interno
                 if name and name ~= "_meta" then
                     table.insert(configs, name)
                 end
@@ -50,7 +50,6 @@ local function getConfigFiles()
     return {}
 end
 
--- Metadados: última config selecionada + estado Auto Load
 local META_FILE = "VLG_Configs/_meta.json"
 
 local function saveMeta(data)
@@ -85,7 +84,6 @@ function UILibrary:CreateWindow(title)
     local configElements = {}
     local savedConfigs = {}
 
-    -- Carrega configs do disco ao iniciar
     local function loadAllConfigsFromDisk()
         local files = getConfigFiles()
         for _, name in ipairs(files) do
@@ -138,7 +136,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Topo_2"]["Size"] = UDim2.new(0, 316, 0, 22)
     LMG2L["Topo_2"]["Position"] = UDim2.new(0, 260, 0, 46)
     LMG2L["Topo_2"]["Name"] = "Topo"
-    LMG2L["Topo_2"]["Active"] = true -- ADAPTAÇÃO PC: Previne clique vazando
+    LMG2L["Topo_2"]["Active"] = true
 
     LMG2L["TitleMenu_3"] = Instance.new("TextLabel", LMG2L["Topo_2"])
     LMG2L["TitleMenu_3"]["TextWrapped"] = true
@@ -153,14 +151,14 @@ function UILibrary:CreateWindow(title)
     LMG2L["TitleMenu_3"]["Text"] = title or "VLG PAINEL"
     LMG2L["TitleMenu_3"]["Position"] = UDim2.new(0, 28, 0, 4)
 
-    -- Botão Fechar (X) agora usa ícone
-LMG2L["CloseMenu_4"] = Instance.new("ImageButton", LMG2L["Topo_2"])
-LMG2L["CloseMenu_4"]["BorderSizePixel"] = 0
-LMG2L["CloseMenu_4"]["BackgroundTransparency"] = 1
-LMG2L["CloseMenu_4"]["Image"] = "rbxassetid://93130444183105"  -- Ícone de "X"
-LMG2L["CloseMenu_4"]["Size"] = UDim2.new(0, 20, 0, 20)
-LMG2L["CloseMenu_4"]["Position"] = UDim2.new(0, 292, 0, 2)
-LMG2L["CloseMenu_4"]["ImageColor3"] = Color3.fromRGB(255, 255, 255)  -- Vermelho para destacar
+    -- Botão Fechar (X)
+    LMG2L["CloseMenu_4"] = Instance.new("ImageButton", LMG2L["Topo_2"])
+    LMG2L["CloseMenu_4"]["BorderSizePixel"] = 0
+    LMG2L["CloseMenu_4"]["BackgroundTransparency"] = 1
+    LMG2L["CloseMenu_4"]["Image"] = "rbxassetid://93130444183105"
+    LMG2L["CloseMenu_4"]["Size"] = UDim2.new(0, 20, 0, 20)
+    LMG2L["CloseMenu_4"]["Position"] = UDim2.new(0, 292, 0, 2)
+    LMG2L["CloseMenu_4"]["ImageColor3"] = Color3.fromRGB(255, 255, 255)
 
     LMG2L["Main_5"] = Instance.new("Frame", LMG2L["Topo_2"])
     LMG2L["Main_5"]["BorderSizePixel"] = 0
@@ -184,7 +182,7 @@ LMG2L["CloseMenu_4"]["ImageColor3"] = Color3.fromRGB(255, 255, 255)  -- Vermelho
     LMG2L["Main_7"]["BackgroundTransparency"] = 1
     LMG2L["Main_7"]["ScrollingDirection"] = Enum.ScrollingDirection.Y
     LMG2L["Main_7"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
-    LMG2L["Main_7"]["Active"] = true -- ADAPTAÇÃO PC: Permite MouseWheel
+    LMG2L["Main_7"]["Active"] = true
 
     LMG2L["Tabs_2a"] = Instance.new("ScrollingFrame", LMG2L["Main_5"])
     LMG2L["Tabs_2a"]["BorderSizePixel"] = 0
@@ -194,17 +192,52 @@ LMG2L["CloseMenu_4"]["ImageColor3"] = Color3.fromRGB(255, 255, 255)  -- Vermelho
     LMG2L["Tabs_2a"]["ScrollBarThickness"] = 0
     LMG2L["Tabs_2a"]["ScrollingDirection"] = Enum.ScrollingDirection.Y
     LMG2L["Tabs_2a"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
-    LMG2L["Tabs_2a"]["Active"] = true -- ADAPTAÇÃO PC: Permite MouseWheel
+    LMG2L["Tabs_2a"]["Active"] = true
 
--- Botão Minimizar (▼) - já era ImageButton, apenas ajustado
-LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])
-LMG2L["OpenName_2d"]["BorderSizePixel"] = 0
-LMG2L["OpenName_2d"]["BackgroundTransparency"] = 1
-LMG2L["OpenName_2d"]["Image"] = "rbxassetid://8539638324"  -- Ícone de seta
-LMG2L["OpenName_2d"]["Size"] = UDim2.new(0, 18, 0, 18)
-LMG2L["OpenName_2d"]["Rotation"] = 180
-LMG2L["OpenName_2d"]["Position"] = UDim2.new(0, 6, 0, 3)
-LMG2L["OpenName_2d"]["ImageColor3"] = Color3.fromRGB(255, 255, 255)
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- BOTÃO MINIMIZAR COM ÍCONES E ANIMAÇÃO
+    -- ═══════════════════════════════════════════════════════════════════════════
+    
+    local MINIMIZE_ICON_OPEN = "rbxassetid://112366764985181"  -- Ícone quando menu está ABERTO
+    local MINIMIZE_ICON_CLOSED = "rbxassetid://119314216582090" -- Ícone quando menu está FECHADO
+
+    LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])
+    LMG2L["OpenName_2d"]["BorderSizePixel"] = 0
+    LMG2L["OpenName_2d"]["BackgroundTransparency"] = 1
+    LMG2L["OpenName_2d"]["Image"] = MINIMIZE_ICON_OPEN -- Começa com o ícone de aberto
+    LMG2L["OpenName_2d"]["Size"] = UDim2.new(0, 18, 0, 18)
+    LMG2L["OpenName_2d"]["Position"] = UDim2.new(0, 6, 0, 3)
+    LMG2L["OpenName_2d"]["ImageColor3"] = Color3.fromRGB(255, 255, 255)
+    
+    -- Função de animação ao clicar no botão minimizar
+    LMG2L["OpenName_2d"].MouseButton1Click:Connect(function()
+        local mainVisible = LMG2L["Main_5"].Visible
+        local newVisible = not mainVisible
+        
+        -- Animação do ícone: muda para o outro ícone
+        local targetIcon = newVisible and MINIMIZE_ICON_OPEN or MINIMIZE_ICON_CLOSED
+        
+        -- Pequena animação de fade/pisca
+        local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local fadeOut = TweenService:Create(LMG2L["OpenName_2d"], tweenInfo, {ImageTransparency = 1})
+        local fadeIn = TweenService:Create(LMG2L["OpenName_2d"], tweenInfo, {ImageTransparency = 0})
+        
+        fadeOut:Play()
+        fadeOut.Completed:Connect(function()
+            LMG2L["OpenName_2d"].Image = targetIcon
+            fadeIn:Play()
+        end)
+        
+        -- Mostra/esconde o menu principal
+        LMG2L["Main_5"].Visible = newVisible
+        
+        -- Se fechar o menu, fecha dropdowns abertos
+        if not newVisible then
+            if openDropdownInfo then 
+                openDropdownInfo.Close() 
+            end
+        end
+    end)
 
     -- HOTKEY PARA ABRIR/FECHAR A UI NO PC (RightControl)
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -544,11 +577,6 @@ LMG2L["OpenName_2d"]["ImageColor3"] = Color3.fromRGB(255, 255, 255)
         for _, toggleData in pairs(activeToggles) do
             if toggleData.getState() == true then toggleData.setState(false) end
         end
-    end)
-
-    LMG2L["OpenName_2d"].MouseButton1Click:Connect(function()
-        LMG2L["Main_5"].Visible = not LMG2L["Main_5"].Visible
-        LMG2L["OpenName_2d"].Rotation = LMG2L["Main_5"].Visible and 0 or 180
     end)
 
     local function updateScrollability(container, totalHeight)
@@ -1019,7 +1047,7 @@ LMG2L["OpenName_2d"]["ImageColor3"] = Color3.fromRGB(255, 255, 255)
             Scroll.ScrollingDirection = Enum.ScrollingDirection.Y
             Scroll.ElasticBehavior = Enum.ElasticBehavior.Never
             Scroll.ClipsDescendants = true
-            Scroll.Active = true -- ADAPTAÇÃO PC: Habilita MouseWheel no Dropdown
+            Scroll.Active = true
             Instance.new("UICorner", Scroll).CornerRadius = UDim.new(0, 3)
 
             local btnHeight = 22
@@ -1105,7 +1133,6 @@ LMG2L["OpenName_2d"]["ImageColor3"] = Color3.fromRGB(255, 255, 255)
                         Btn.TextTruncate = Enum.TextTruncate.AtEnd
                         Btn.ClipsDescendants = true
                         
-                        -- ADAPTAÇÃO PC: Hover Efeito Fluido
                         Btn.MouseEnter:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50) end)
                         Btn.MouseLeave:Connect(function() Btn.BackgroundColor3 = Color3.fromRGB(37, 37, 37) end)
                         
@@ -1157,7 +1184,7 @@ LMG2L["OpenName_2d"]["ImageColor3"] = Color3.fromRGB(255, 255, 255)
             SliderTrack.BorderSizePixel = 0
             SliderTrack.BackgroundColor3 = Color3.fromRGB(37, 37, 37)
             SliderTrack.Size = UDim2.new(0, 168, 0, 22)
-            SliderTrack.Active = true -- ADAPTAÇÃO PC: Captura os cliques corretamente
+            SliderTrack.Active = true
             Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(0, 3)
 
             local SliderFill = Instance.new("Frame", SliderTrack)
@@ -1215,7 +1242,6 @@ LMG2L["OpenName_2d"]["ImageColor3"] = Color3.fromRGB(255, 255, 255)
                 updateValue(minVal + (relativeX * (maxVal - minVal)))
             end
 
-            -- ADAPTAÇÃO PC: Removido o LockCurrentPosition que fazia o mouse sumir
             SliderTrack.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1
                 or input.UserInputType == Enum.UserInputType.Touch then
@@ -1509,7 +1535,6 @@ LMG2L["OpenName_2d"]["ImageColor3"] = Color3.fromRGB(255, 255, 255)
 
         ensureFolder()
 
-        -- Carrega metadados (última config + autoLoad)
         local meta = loadMeta()
         local autoLoadEnabled = meta.autoLoad or false
 
@@ -1519,8 +1544,6 @@ LMG2L["OpenName_2d"]["ImageColor3"] = Color3.fromRGB(255, 255, 255)
         local configDropdown = nil
         local nameInput = nil
         local autoLoadToggle = nil
-
-        -- ── Helpers ──────────────────────────────────────────────────────────────
 
         local function getConfigList()
             local list = {}
@@ -1550,8 +1573,6 @@ LMG2L["OpenName_2d"]["ImageColor3"] = Color3.fromRGB(255, 255, 255)
                 end
             end
         end
-
-        -- ── UI ───────────────────────────────────────────────────────────────────
 
         configTab:AddSection("Gerenciador de Configs")
 
