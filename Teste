@@ -157,7 +157,7 @@ function UILibrary:CreateWindow(title)
 LMG2L["CloseMenu_4"] = Instance.new("ImageButton", LMG2L["Topo_2"])
 LMG2L["CloseMenu_4"]["BorderSizePixel"] = 0
 LMG2L["CloseMenu_4"]["BackgroundTransparency"] = 1
-LMG2L["CloseMenu_4"]["Image"] = "rbxassetid://10747384352"  -- Ícone de "X"
+LMG2L["CloseMenu_4"]["Image"] = "rbxassetid://93130444183105"  -- Ícone de "X"
 LMG2L["CloseMenu_4"]["Size"] = UDim2.new(0, 20, 0, 20)
 LMG2L["CloseMenu_4"]["Position"] = UDim2.new(0, 292, 0, 2)
 LMG2L["CloseMenu_4"]["ImageColor3"] = Color3.fromRGB(255, 60, 60)  -- Vermelho para destacar
