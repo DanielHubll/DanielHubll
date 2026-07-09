@@ -1,5 +1,3 @@
-Melhora sistema do componente textbox, E melhora sistema da aba config tipo faze o auto load funcionar etc, Completo 
-
 local HttpService = game:GetService("HttpService")
 local UILibrary = {}
 
