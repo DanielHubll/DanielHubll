@@ -153,14 +153,15 @@ function UILibrary:CreateWindow(title)
     LMG2L["TitleMenu_3"]["Text"] = title or "VLG PAINEL"
     LMG2L["TitleMenu_3"]["Position"] = UDim2.new(0, 28, 0, 4)
 
-    LMG2L["CloseMenu_4"] = Instance.new("TextButton", LMG2L["Topo_2"])
-    LMG2L["CloseMenu_4"]["BorderSizePixel"] = 0
-    LMG2L["CloseMenu_4"]["TextSize"] = 10
-    LMG2L["CloseMenu_4"]["TextColor3"] = Color3.fromRGB(255, 255, 255)
-    LMG2L["CloseMenu_4"]["BackgroundTransparency"] = 1
-    LMG2L["CloseMenu_4"]["Size"] = UDim2.new(0, 14, 0, 14)
-    LMG2L["CloseMenu_4"]["Text"] = "X"
-    LMG2L["CloseMenu_4"]["Position"] = UDim2.new(0, 296, 0, 4)
+    -- Botão Fechar (X) agora usa ícone
+LMG2L["CloseMenu_4"] = Instance.new("ImageButton", LMG2L["Topo_2"])
+LMG2L["CloseMenu_4"]["BorderSizePixel"] = 0
+LMG2L["CloseMenu_4"]["BackgroundTransparency"] = 1
+LMG2L["CloseMenu_4"]["Image"] = "rbxassetid://10747384352"  -- Ícone de "X"
+LMG2L["CloseMenu_4"]["Size"] = UDim2.new(0, 20, 0, 20)
+LMG2L["CloseMenu_4"]["Position"] = UDim2.new(0, 292, 0, 2)
+LMG2L["CloseMenu_4"]["ImageColor3"] = Color3.fromRGB(255, 60, 60)  -- Vermelho para destacar
+
 
     LMG2L["Main_5"] = Instance.new("Frame", LMG2L["Topo_2"])
     LMG2L["Main_5"]["BorderSizePixel"] = 0
@@ -196,13 +197,15 @@ function UILibrary:CreateWindow(title)
     LMG2L["Tabs_2a"]["ElasticBehavior"] = Enum.ElasticBehavior.Never
     LMG2L["Tabs_2a"]["Active"] = true -- ADAPTAÇÃO PC: Permite MouseWheel
 
-    LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])
-    LMG2L["OpenName_2d"]["BorderSizePixel"] = 0
-    LMG2L["OpenName_2d"]["BackgroundTransparency"] = 1
-    LMG2L["OpenName_2d"]["Image"] = "rbxassetid://8539638324"
-    LMG2L["OpenName_2d"]["Size"] = UDim2.new(0, 14, 0, 14)
-    LMG2L["OpenName_2d"]["Rotation"] = 180
-    LMG2L["OpenName_2d"]["Position"] = UDim2.new(0, 4, 0, 4)
+-- Botão Minimizar (▼) - já era ImageButton, apenas ajustado
+LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])
+LMG2L["OpenName_2d"]["BorderSizePixel"] = 0
+LMG2L["OpenName_2d"]["BackgroundTransparency"] = 1
+LMG2L["OpenName_2d"]["Image"] = "rbxassetid://8539638324"  -- Ícone de seta
+LMG2L["OpenName_2d"]["Size"] = UDim2.new(0, 18, 0, 18)
+LMG2L["OpenName_2d"]["Rotation"] = 180
+LMG2L["OpenName_2d"]["Position"] = UDim2.new(0, 6, 0, 3)
+LMG2L["OpenName_2d"]["ImageColor3"] = Color3.fromRGB(255, 255, 255)
 
     -- HOTKEY PARA ABRIR/FECHAR A UI NO PC (RightControl)
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
