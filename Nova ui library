@@ -1,735 +1,185 @@
---[[
- d888b  db    db d888888b      .d888b.      db      db    db  .d8b.  
-88' Y8b 88    88   `88'        VP  `8D      88      88    88 d8' `8b 
-88      88    88    88            odD'      88      88    88 88ooo88 
-88  ooo 88    88    88          .88'        88      88    88 88~~~88 
-88. ~8~ 88b  d88   .88.        j88.         88booo. 88b  d88 88   88    @uniquadev
- Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  CONVERTER 
---]]
+-- ==========================================
+-- LUMINA UI: SISTEMA DE ABAS E COMPONENTES
+-- ==========================================
 
--- ============================================
--- LUMINA UI LIBRARY
--- ============================================
-local function CreateLumina()
-    -- Services
-    local Players = game:GetService("Players")
-    local TweenService = game:GetService("TweenService")
-    local UserInputService = game:GetService("UserInputService")
-    local RunService = game:GetService("RunService")
-    
-    local LocalPlayer = Players.LocalPlayer
-    local Mouse = LocalPlayer:GetMouse()
-    
-    -- Library
-    local Lumina = {
-        Flags = {},
-        Theme = {
-            Accent = Color3.fromRGB(114, 137, 218),
-            Background = Color3.fromRGB(25, 25, 25),
-            Darker = Color3.fromRGB(20, 20, 20),
-            Lighter = Color3.fromRGB(40, 40, 40),
-            White = Color3.fromRGB(255, 255, 255),
-            Text = Color3.fromRGB(200, 200, 200)
-        }
-    }
-    
-    -- GUI
-    local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "LuminaHub"
-    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    ScreenGui.Parent = game.CoreGui
-    
-    -- Main Frame
-    local MainFrame = Instance.new("Frame")
-    MainFrame.Name = "MainFrame"
-    MainFrame.BackgroundColor3 = Lumina.Theme.Background
-    MainFrame.BorderSizePixel = 0
-    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
-    MainFrame.Size = UDim2.new(0, 600, 0, 400)
-    MainFrame.Parent = ScreenGui
-    
-    local MainCorner = Instance.new("UICorner")
-    MainCorner.CornerRadius = UDim.new(0, 8)
-    MainCorner.Parent = MainFrame
-    
-    -- Top Bar
-    local TopBar = Instance.new("Frame")
-    TopBar.Name = "TopBar"
-    TopBar.BackgroundColor3 = Lumina.Theme.Darker
-    TopBar.BorderSizePixel = 0
-    TopBar.Size = UDim2.new(1, 0, 0, 40)
-    TopBar.Parent = MainFrame
-    
-    local TopBarCorner = Instance.new("UICorner")
-    TopBarCorner.CornerRadius = UDim.new(0, 8)
-    TopBarCorner.Parent = TopBar
-    
-    -- Hide bottom corners
-    local TopBarCover = Instance.new("Frame")
-    TopBarCover.BackgroundColor3 = Lumina.Theme.Darker
-    TopBarCover.BorderSizePixel = 0
-    TopBarCover.Position = UDim2.new(0, 0, 0.5, 0)
-    TopBarCover.Size = UDim2.new(1, 0, 0.5, 0)
-    TopBarCover.Parent = TopBar
-    
-    -- Title
-    local Title = Instance.new("TextLabel")
-    Title.BackgroundTransparency = 1
-    Title.Font = Enum.Font.GothamBold
-    Title.Text = "LUMINA"
-    Title.TextColor3 = Lumina.Theme.White
-    Title.TextSize = 18
-    Title.Size = UDim2.new(0, 100, 1, 0)
-    Title.Position = UDim2.new(0, 20, 0, 0)
-    Title.Parent = TopBar
-    
-    -- Close Button
-    local CloseButton = Instance.new("TextButton")
-    CloseButton.BackgroundTransparency = 1
-    CloseButton.Font = Enum.Font.GothamBold
-    CloseButton.Text = "×"
-    CloseButton.TextColor3 = Lumina.Theme.White
-    CloseButton.TextSize = 24
-    CloseButton.Size = UDim2.new(0, 30, 0, 30)
-    CloseButton.Position = UDim2.new(1, -40, 0, 5)
-    CloseButton.Parent = TopBar
-    
-    CloseButton.MouseButton1Click:Connect(function()
-        ScreenGui:Destroy()
-    end)
-    
-    -- Minimize Button
-    local MinimizeButton = Instance.new("TextButton")
-    MinimizeButton.BackgroundTransparency = 1
-    MinimizeButton.Font = Enum.Font.GothamBold
-    MinimizeButton.Text = "—"
-    MinimizeButton.TextColor3 = Lumina.Theme.White
-    MinimizeButton.TextSize = 18
-    MinimizeButton.Size = UDim2.new(0, 30, 0, 30)
-    MinimizeButton.Position = UDim2.new(1, -70, 0, 5)
-    MinimizeButton.Parent = TopBar
-    
-    local IsMinimized = false
-    MinimizeButton.MouseButton1Click:Connect(function()
-        IsMinimized = not IsMinimized
-        TweenService:Create(MainFrame, TweenInfo.new(0.3), {
-            Size = IsMinimized and UDim2.new(0, 600, 0, 40) or UDim2.new(0, 600, 0, 400)
-        }):Play()
-    end)
-    
-    -- Draggable
-    local Dragging = false
-    local DragStart = nil
-    local StartPos = nil
-    
-    TopBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            Dragging = true
-            DragStart = input.Position
-            StartPos = MainFrame.Position
-        end
-    end)
-    
-    TopBar.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            Dragging = false
-        end
-    end)
-    
-    UserInputService.InputChanged:Connect(function(input)
-        if Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local Delta = input.Position - DragStart
-            MainFrame.Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + Delta.X, StartPos.Y.Scale, StartPos.Y.Offset + Delta.Y)
-        end
-    end)
-    
-    -- Tab System
-    local TabContainer = Instance.new("Frame")
-    TabContainer.BackgroundColor3 = Lumina.Theme.Darker
-    TabContainer.BorderSizePixel = 0
-    TabContainer.Position = UDim2.new(0, 0, 0, 40)
-    TabContainer.Size = UDim2.new(0, 150, 1, -40)
-    TabContainer.Parent = MainFrame
-    
-    local ContentContainer = Instance.new("Frame")
-    ContentContainer.BackgroundTransparency = 1
-    ContentContainer.Position = UDim2.new(0, 155, 0, 45)
-    ContentContainer.Size = UDim2.new(1, -160, 1, -50)
-    ContentContainer.ClipsDescendants = true
-    ContentContainer.Parent = MainFrame
-    
-    -- Scrolling Frame for content
-    local ContentScroll = Instance.new("ScrollingFrame")
-    ContentScroll.BackgroundTransparency = 1
-    ContentScroll.BorderSizePixel = 0
-    ContentScroll.Size = UDim2.new(1, 0, 1, 0)
-    ContentScroll.ScrollBarThickness = 4
-    ContentScroll.ScrollBarImageColor3 = Lumina.Theme.Accent
-    ContentScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-    ContentScroll.Parent = ContentContainer
-    
-    local ContentList = Instance.new("UIListLayout")
-    ContentList.Padding = UDim.new(0, 8)
-    ContentList.SortOrder = Enum.SortOrder.LayoutOrder
-    ContentList.Parent = ContentScroll
-    
-    -- Tab Buttons
-    local Tabs = {}
-    local CurrentTab = nil
-    local TabY = 0
-    
-    -- Tab Creation Function
-    function Lumina:CreateTab(name, icon)
-        local TabButton = Instance.new("TextButton")
-        TabButton.BackgroundColor3 = Lumina.Theme.Darker
-        TabButton.BorderSizePixel = 0
-        TabButton.Font = Enum.Font.Gotham
-        TabButton.Text = "  " .. (icon or "") .. "  " .. name
-        TabButton.TextColor3 = Lumina.Theme.Text
-        TabButton.TextSize = 13
-        TabButton.TextXAlignment = Enum.TextXAlignment.Left
-        TabButton.Size = UDim2.new(1, 0, 0, 35)
-        TabButton.Position = UDim2.new(0, 0, 0, TabY)
-        TabButton.Parent = TabContainer
-        TabY += 35
-        
-        local TabContent = Instance.new("Frame")
-        TabContent.BackgroundTransparency = 1
-        TabContent.Size = UDim2.new(1, 0, 1, 0)
-        TabContent.Visible = false
-        TabContent.Parent = ContentScroll
-        
-        local TabFunctions = {
-            Button = TabButton,
-            Content = TabContent,
-            Sections = {},
-            Elements = {}
-        }
-        
-        TabButton.MouseButton1Click:Connect(function()
-            for _, tab in pairs(Tabs) do
-                tab.Content.Visible = false
-                TweenService:Create(tab.Button, TweenInfo.new(0.2), {
-                    BackgroundColor3 = Lumina.Theme.Darker
-                }):Play()
-            end
-            
-            TabContent.Visible = true
-            CurrentTab = TabFunctions
-            TweenService:Create(TabButton, TweenInfo.new(0.2), {
-                BackgroundColor3 = Lumina.Theme.Accent
-            }):Play()
-        end)
-        
-        table.insert(Tabs, TabFunctions)
-        
-        if #Tabs == 1 then
-            TabContent.Visible = true
-            CurrentTab = TabFunctions
-            TabButton.BackgroundColor3 = Lumina.Theme.Accent
-        end
-        
-        -- Create Section
-        function TabFunctions:CreateSection(name)
-            local Section = Instance.new("Frame")
-            Section.BackgroundTransparency = 1
-            Section.Size = UDim2.new(1, -10, 0, 30)
-            Section.Parent = ContentScroll
-            
-            local SectionTitle = Instance.new("TextLabel")
-            SectionTitle.BackgroundTransparency = 1
-            SectionTitle.Font = Enum.Font.GothamBold
-            SectionTitle.Text = name
-            SectionTitle.TextColor3 = Lumina.Theme.White
-            SectionTitle.TextSize = 14
-            SectionTitle.Size = UDim2.new(1, 0, 1, 0)
-            SectionTitle.Parent = Section
-            
-            local SectionLine = Instance.new("Frame")
-            SectionLine.BackgroundColor3 = Lumina.Theme.Accent
-            SectionLine.BorderSizePixel = 0
-            SectionLine.Size = UDim2.new(1, 0, 0, 2)
-            SectionLine.Position = UDim2.new(0, 0, 1, 0)
-            SectionLine.Parent = Section
-            
-            ContentScroll.CanvasSize = UDim2.new(0, 0, 0, ContentList.AbsoluteContentSize.Y + 10)
-            
-            local SectionFunctions = {
-                Elements = {}
-            }
-            
-            -- Toggle
-            function SectionFunctions:CreateToggle(config)
-                local name = config.Name or "Toggle"
-                local default = config.Default or false
-                local callback = config.Callback or function() end
-                
-                local ToggleFrame = Instance.new("Frame")
-                ToggleFrame.BackgroundColor3 = Lumina.Theme.Lighter
-                ToggleFrame.BorderSizePixel = 0
-                ToggleFrame.Size = UDim2.new(1, -10, 0, 40)
-                ToggleFrame.Parent = ContentScroll
-                
-                local ToggleCorner = Instance.new("UICorner")
-                ToggleCorner.CornerRadius = UDim.new(0, 6)
-                ToggleCorner.Parent = ToggleFrame
-                
-                local ToggleLabel = Instance.new("TextLabel")
-                ToggleLabel.BackgroundTransparency = 1
-                ToggleLabel.Font = Enum.Font.Gotham
-                ToggleLabel.Text = name
-                ToggleLabel.TextColor3 = Lumina.Theme.White
-                ToggleLabel.TextSize = 13
-                ToggleLabel.Size = UDim2.new(0.7, 0, 1, 0)
-                ToggleLabel.Position = UDim2.new(0, 10, 0, 0)
-                ToggleLabel.Parent = ToggleFrame
-                
-                local ToggleButton = Instance.new("Frame")
-                ToggleButton.BackgroundColor3 = default and Lumina.Theme.Accent or Lumina.Theme.Darker
-                ToggleButton.BorderSizePixel = 0
-                ToggleButton.Size = UDim2.new(0, 40, 0, 20)
-                ToggleButton.Position = UDim2.new(1, -50, 0.5, -10)
-                ToggleButton.Parent = ToggleFrame
-                
-                local ToggleButtonCorner = Instance.new("UICorner")
-                ToggleButtonCorner.CornerRadius = UDim.new(1, 0)
-                ToggleButtonCorner.Parent = ToggleButton
-                
-                local ToggleDot = Instance.new("Frame")
-                ToggleDot.BackgroundColor3 = Lumina.Theme.White
-                ToggleDot.BorderSizePixel = 0
-                ToggleDot.Size = UDim2.new(0, 16, 0, 16)
-                ToggleDot.Position = default and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
-                ToggleDot.Parent = ToggleButton
-                
-                local ToggleDotCorner = Instance.new("UICorner")
-                ToggleDotCorner.CornerRadius = UDim.new(1, 0)
-                ToggleDotCorner.Parent = ToggleDot
-                
-                local Toggled = default
-                local FlagName = name:gsub("%s+", "")
-                Lumina.Flags[FlagName] = default
-                
-                ToggleButton.InputBegan:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        Toggled = not Toggled
-                        Lumina.Flags[FlagName] = Toggled
-                        
-                        TweenService:Create(ToggleButton, TweenInfo.new(0.2), {
-                            BackgroundColor3 = Toggled and Lumina.Theme.Accent or Lumina.Theme.Darker
-                        }):Play()
-                        
-                        TweenService:Create(ToggleDot, TweenInfo.new(0.2), {
-                            Position = Toggled and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
-                        }):Play()
-                        
-                        callback(Toggled)
-                    end
-                end)
-                
-                ContentScroll.CanvasSize = UDim2.new(0, 0, 0, ContentList.AbsoluteContentSize.Y + 10)
-                
-                local element = {
-                    Set = function(value)
-                        Toggled = value
-                        Lumina.Flags[FlagName] = value
-                        TweenService:Create(ToggleButton, TweenInfo.new(0.2), {
-                            BackgroundColor3 = value and Lumina.Theme.Accent or Lumina.Theme.Darker
-                        }):Play()
-                        TweenService:Create(ToggleDot, TweenInfo.new(0.2), {
-                            Position = value and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
-                        }):Play()
-                        callback(value)
-                    end
-                }
-                
-                table.insert(SectionFunctions.Elements, element)
-                return element
-            end
-            
-            -- Button
-            function SectionFunctions:CreateButton(config)
-                local name = config.Name or "Button"
-                local callback = config.Callback or function() end
-                
-                local ButtonFrame = Instance.new("TextButton")
-                ButtonFrame.BackgroundColor3 = Lumina.Theme.Accent
-                ButtonFrame.BorderSizePixel = 0
-                ButtonFrame.Font = Enum.Font.Gotham
-                ButtonFrame.Text = name
-                ButtonFrame.TextColor3 = Lumina.Theme.White
-                ButtonFrame.TextSize = 13
-                ButtonFrame.Size = UDim2.new(1, -10, 0, 35)
-                ButtonFrame.Parent = ContentScroll
-                
-                local ButtonCorner = Instance.new("UICorner")
-                ButtonCorner.CornerRadius = UDim.new(0, 6)
-                ButtonCorner.Parent = ButtonFrame
-                
-                ButtonFrame.MouseButton1Click:Connect(function()
-                    TweenService:Create(ButtonFrame, TweenInfo.new(0.1), {
-                        BackgroundColor3 = Lumina.Theme.Darker
-                    }):Play()
-                    callback()
-                    wait(0.1)
-                    TweenService:Create(ButtonFrame, TweenInfo.new(0.1), {
-                        BackgroundColor3 = Lumina.Theme.Accent
-                    }):Play()
-                end)
-                
-                ContentScroll.CanvasSize = UDim2.new(0, 0, 0, ContentList.AbsoluteContentSize.Y + 10)
-                return {}
-            end
-            
-            -- Slider
-            function SectionFunctions:CreateSlider(config)
-                local name = config.Name or "Slider"
-                local min = config.Min or 0
-                local max = config.Max or 100
-                local default = config.Default or 50
-                local callback = config.Callback or function() end
-                
-                local SliderFrame = Instance.new("Frame")
-                SliderFrame.BackgroundColor3 = Lumina.Theme.Lighter
-                SliderFrame.BorderSizePixel = 0
-                SliderFrame.Size = UDim2.new(1, -10, 0, 60)
-                SliderFrame.Parent = ContentScroll
-                
-                local SliderCorner = Instance.new("UICorner")
-                SliderCorner.CornerRadius = UDim.new(0, 6)
-                SliderCorner.Parent = SliderFrame
-                
-                local SliderLabel = Instance.new("TextLabel")
-                SliderLabel.BackgroundTransparency = 1
-                SliderLabel.Font = Enum.Font.Gotham
-                SliderLabel.Text = name .. ": " .. default
-                SliderLabel.TextColor3 = Lumina.Theme.White
-                SliderLabel.TextSize = 13
-                SliderLabel.Size = UDim2.new(1, -20, 0, 20)
-                SliderLabel.Position = UDim2.new(0, 10, 0, 5)
-                SliderLabel.Parent = SliderFrame
-                
-                local SliderBar = Instance.new("Frame")
-                SliderBar.BackgroundColor3 = Lumina.Theme.Darker
-                SliderBar.BorderSizePixel = 0
-                SliderBar.Size = UDim2.new(1, -20, 0, 6)
-                SliderBar.Position = UDim2.new(0, 10, 0, 35)
-                SliderBar.Parent = SliderFrame
-                
-                local SliderBarCorner = Instance.new("UICorner")
-                SliderBarCorner.CornerRadius = UDim.new(1, 0)
-                SliderBarCorner.Parent = SliderBar
-                
-                local SliderFill = Instance.new("Frame")
-                SliderFill.BackgroundColor3 = Lumina.Theme.Accent
-                SliderFill.BorderSizePixel = 0
-                SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-                SliderFill.Parent = SliderBar
-                
-                local SliderFillCorner = Instance.new("UICorner")
-                SliderFillCorner.CornerRadius = UDim.new(1, 0)
-                SliderFillCorner.Parent = SliderFill
-                
-                local SliderDot = Instance.new("Frame")
-                SliderDot.BackgroundColor3 = Lumina.Theme.White
-                SliderDot.BorderSizePixel = 0
-                SliderDot.Size = UDim2.new(0, 14, 0, 14)
-                SliderDot.Position = UDim2.new((default - min) / (max - min), -7, 0.5, -7)
-                SliderDot.AnchorPoint = Vector2.new(0.5, 0.5)
-                SliderDot.Parent = SliderBar
-                
-                local SliderDotCorner = Instance.new("UICorner")
-                SliderDotCorner.CornerRadius = UDim.new(1, 0)
-                SliderDotCorner.Parent = SliderDot
-                
-                local Dragging = false
-                local FlagName = name:gsub("%s+", "")
-                Lumina.Flags[FlagName] = default
-                
-                local function UpdateSlider(input)
-                    local mousePos = UserInputService:GetMouseLocation()
-                    local barPos = SliderBar.AbsolutePosition
-                    local barSize = SliderBar.AbsoluteSize
-                    local percent = math.clamp((mousePos.X - barPos.X) / barSize.X, 0, 1)
-                    local value = math.floor(min + (max - min) * percent)
-                    
-                    SliderFill.Size = UDim2.new(percent, 0, 1, 0)
-                    SliderDot.Position = UDim2.new(percent, 0, 0.5, 0)
-                    SliderLabel.Text = name .. ": " .. value
-                    Lumina.Flags[FlagName] = value
-                    callback(value)
-                end
-                
-                SliderBar.InputBegan:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        Dragging = true
-                        UpdateSlider(input)
-                    end
-                end)
-                
-                UserInputService.InputEnded:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        Dragging = false
-                    end
-                end)
-                
-                UserInputService.InputChanged:Connect(function(input)
-                    if Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                        UpdateSlider(input)
-                    end
-                end)
-                
-                ContentScroll.CanvasSize = UDim2.new(0, 0, 0, ContentList.AbsoluteContentSize.Y + 10)
-                return {}
-            end
-            
-            -- Dropdown
-            function SectionFunctions:CreateDropdown(config)
-                local name = config.Name or "Dropdown"
-                local options = config.Options or {}
-                local default = config.Default or ""
-                local callback = config.Callback or function() end
-                
-                local DropdownFrame = Instance.new("Frame")
-                DropdownFrame.BackgroundColor3 = Lumina.Theme.Lighter
-                DropdownFrame.BorderSizePixel = 0
-                DropdownFrame.Size = UDim2.new(1, -10, 0, 40)
-                DropdownFrame.ClipsDescendants = true
-                DropdownFrame.Parent = ContentScroll
-                
-                local DropdownCorner = Instance.new("UICorner")
-                DropdownCorner.CornerRadius = UDim.new(0, 6)
-                DropdownCorner.Parent = DropdownFrame
-                
-                local DropdownButton = Instance.new("TextButton")
-                DropdownButton.BackgroundTransparency = 1
-                DropdownButton.Font = Enum.Font.Gotham
-                DropdownButton.Text = name .. ": " .. (default ~= "" and default or "Select...")
-                DropdownButton.TextColor3 = Lumina.Theme.White
-                DropdownButton.TextSize = 13
-                DropdownButton.Size = UDim2.new(1, 0, 1, 0)
-                DropdownButton.TextXAlignment = Enum.TextXAlignment.Left
-                DropdownButton.Parent = DropdownFrame
-                
-                local Padding = Instance.new("UIPadding")
-                Padding.PaddingLeft = UDim.new(0, 10)
-                Padding.Parent = DropdownButton
-                
-                local OptionContainer = Instance.new("Frame")
-                OptionContainer.BackgroundColor3 = Lumina.Theme.Darker
-                OptionContainer.BorderSizePixel = 0
-                OptionContainer.Size = UDim2.new(1, 0, 0, 0)
-                OptionContainer.Position = UDim2.new(0, 0, 1, 0)
-                OptionContainer.ClipsDescendants = true
-                OptionContainer.Parent = DropdownFrame
-                
-                local OptionList = Instance.new("UIListLayout")
-                OptionList.Parent = OptionContainer
-                
-                local IsOpen = false
-                local FlagName = name:gsub("%s+", "")
-                Lumina.Flags[FlagName] = default
-                
-                -- Create options
-                for _, option in pairs(options) do
-                    local OptionButton = Instance.new("TextButton")
-                    OptionButton.BackgroundColor3 = Lumina.Theme.Darker
-                    OptionButton.BorderSizePixel = 0
-                    OptionButton.Font = Enum.Font.Gotham
-                    OptionButton.Text = option
-                    OptionButton.TextColor3 = Lumina.Theme.Text
-                    OptionButton.TextSize = 12
-                    OptionButton.Size = UDim2.new(1, 0, 0, 30)
-                    OptionButton.TextXAlignment = Enum.TextXAlignment.Left
-                    OptionButton.Parent = OptionContainer
-                    
-                    local OptionPadding = Instance.new("UIPadding")
-                    OptionPadding.PaddingLeft = UDim.new(0, 10)
-                    OptionPadding.Parent = OptionButton
-                    
-                    OptionButton.MouseButton1Click:Connect(function()
-                        DropdownButton.Text = name .. ": " .. option
-                        Lumina.Flags[FlagName] = option
-                        callback(option)
-                        
-                        IsOpen = false
-                        TweenService:Create(DropdownFrame, TweenInfo.new(0.2), {
-                            Size = UDim2.new(1, -10, 0, 40)
-                        }):Play()
-                        TweenService:Create(OptionContainer, TweenInfo.new(0.2), {
-                            Size = UDim2.new(1, 0, 0, 0)
-                        }):Play()
-                    end)
-                end
-                
-                DropdownButton.MouseButton1Click:Connect(function()
-                    IsOpen = not IsOpen
-                    
-                    if IsOpen then
-                        TweenService:Create(DropdownFrame, TweenInfo.new(0.2), {
-                            Size = UDim2.new(1, -10, 0, 40 + #options * 30)
-                        }):Play()
-                        TweenService:Create(OptionContainer, TweenInfo.new(0.2), {
-                            Size = UDim2.new(1, 0, 0, #options * 30)
-                        }):Play()
-                    else
-                        TweenService:Create(DropdownFrame, TweenInfo.new(0.2), {
-                            Size = UDim2.new(1, -10, 0, 40)
-                        }):Play()
-                        TweenService:Create(OptionContainer, TweenInfo.new(0.2), {
-                            Size = UDim2.new(1, 0, 0, 0)
-                        }):Play()
-                    end
-                end)
-                
-                ContentScroll.CanvasSize = UDim2.new(0, 0, 0, ContentList.AbsoluteContentSize.Y + 10)
-                return {}
-            end
-            
-            -- Label
-            function SectionFunctions:CreateLabel(text)
-                local Label = Instance.new("TextLabel")
-                Label.BackgroundTransparency = 1
-                Label.Font = Enum.Font.Gotham
-                Label.Text = text
-                Label.TextColor3 = Lumina.Theme.Text
-                Label.TextSize = 12
-                Label.Size = UDim2.new(1, -10, 0, 25)
-                Label.TextXAlignment = Enum.TextXAlignment.Left
-                Label.Parent = ContentScroll
-                
-                ContentScroll.CanvasSize = UDim2.new(0, 0, 0, ContentList.AbsoluteContentSize.Y + 10)
-                return {}
-            end
-            
-            -- TextBox
-            function SectionFunctions:CreateTextBox(config)
-                local name = config.Name or "TextBox"
-                local default = config.Default or ""
-                local placeholder = config.Placeholder or "Enter text..."
-                local callback = config.Callback or function() end
-                
-                local TextBoxFrame = Instance.new("Frame")
-                TextBoxFrame.BackgroundColor3 = Lumina.Theme.Lighter
-                TextBoxFrame.BorderSizePixel = 0
-                TextBoxFrame.Size = UDim2.new(1, -10, 0, 50)
-                TextBoxFrame.Parent = ContentScroll
-                
-                local TextBoxCorner = Instance.new("UICorner")
-                TextBoxCorner.CornerRadius = UDim.new(0, 6)
-                TextBoxCorner.Parent = TextBoxFrame
-                
-                local TextBoxLabel = Instance.new("TextLabel")
-                TextBoxLabel.BackgroundTransparency = 1
-                TextBoxLabel.Font = Enum.Font.Gotham
-                TextBoxLabel.Text = name
-                TextBoxLabel.TextColor3 = Lumina.Theme.White
-                TextBoxLabel.TextSize = 12
-                TextBoxLabel.Size = UDim2.new(1, -20, 0, 15)
-                TextBoxLabel.Position = UDim2.new(0, 10, 0, 5)
-                TextBoxLabel.Parent = TextBoxFrame
-                
-                local InputBox = Instance.new("TextBox")
-                InputBox.BackgroundColor3 = Lumina.Theme.Darker
-                InputBox.BorderSizePixel = 0
-                InputBox.Font = Enum.Font.Gotham
-                InputBox.PlaceholderText = placeholder
-                InputBox.Text = default
-                InputBox.TextColor3 = Lumina.Theme.White
-                InputBox.PlaceholderColor3 = Lumina.Theme.Text
-                InputBox.TextSize = 12
-                InputBox.Size = UDim2.new(1, -20, 0, 20)
-                InputBox.Position = UDim2.new(0, 10, 0, 22)
-                InputBox.Parent = TextBoxFrame
-                
-                local InputBoxCorner = Instance.new("UICorner")
-                InputBoxCorner.CornerRadius = UDim.new(0, 4)
-                InputBoxCorner.Parent = InputBox
-                
-                local FlagName = name:gsub("%s+", "")
-                Lumina.Flags[FlagName] = default
-                
-                InputBox.FocusLost:Connect(function()
-                    Lumina.Flags[FlagName] = InputBox.Text
-                    callback(InputBox.Text)
-                end)
-                
-                ContentScroll.CanvasSize = UDim2.new(0, 0, 0, ContentList.AbsoluteContentSize.Y + 10)
-                return {}
-            end
-            
-            table.insert(TabFunctions.Sections, SectionFunctions)
-            return SectionFunctions
-        end
-        
-        return TabFunctions
-    end
-    
-    -- Notification System
-    function Lumina:Notify(title, text, duration)
-        duration = duration or 3
-        
-        local NotifyFrame = Instance.new("Frame")
-        NotifyFrame.BackgroundColor3 = Lumina.Theme.Darker
-        NotifyFrame.BorderSizePixel = 0
-        NotifyFrame.Position = UDim2.new(1, 10, 0, 10)
-        NotifyFrame.Size = UDim2.new(0, 250, 0, 60)
-        NotifyFrame.Parent = ScreenGui
-        
-        local NotifyCorner = Instance.new("UICorner")
-        NotifyCorner.CornerRadius = UDim.new(0, 6)
-        NotifyCorner.Parent = NotifyFrame
-        
-        local AccentBar = Instance.new("Frame")
-        AccentBar.BackgroundColor3 = Lumina.Theme.Accent
-        AccentBar.BorderSizePixel = 0
-        AccentBar.Size = UDim2.new(0, 4, 1, 0)
-        AccentBar.Parent = NotifyFrame
-        
-        local TitleLabel = Instance.new("TextLabel")
-        TitleLabel.BackgroundTransparency = 1
-        TitleLabel.Font = Enum.Font.GothamBold
-        TitleLabel.Text = title
-        TitleLabel.TextColor3 = Lumina.Theme.White
-        TitleLabel.TextSize = 14
-        TitleLabel.Size = UDim2.new(1, -20, 0, 20)
-        TitleLabel.Position = UDim2.new(0, 15, 0, 8)
-        TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-        TitleLabel.Parent = NotifyFrame
-        
-        local TextLabel = Instance.new("TextLabel")
-        TextLabel.BackgroundTransparency = 1
-        TextLabel.Font = Enum.Font.Gotham
-        TextLabel.Text = text or ""
-        TextLabel.TextColor3 = Lumina.Theme.Text
-        TextLabel.TextSize = 12
-        TextLabel.Size = UDim2.new(1, -20, 0, 20)
-        TextLabel.Position = UDim2.new(0, 15, 0, 30)
-        TextLabel.TextXAlignment = Enum.TextXAlignment.Left
-        TextLabel.Parent = NotifyFrame
-        
-        TweenService:Create(NotifyFrame, TweenInfo.new(0.5), {
-            Position = UDim2.new(1, -260, 0, 10)
-        }):Play()
-        
-        task.delay(duration, function()
-            TweenService:Create(NotifyFrame, TweenInfo.new(0.5), {
-                Position = UDim2.new(1, 10, 0, 10)
-            }):Play()
-            task.wait(0.5)
-            NotifyFrame:Destroy()
-        end)
-    end
-    
-    -- Auto-update canvas
-    RunService.RenderStepped:Connect(function()
-        ContentScroll.CanvasSize = UDim2.new(0, 0, 0, ContentList.AbsoluteContentSize.Y + 10)
-    end)
-    
-    return Lumina
+local LuminaLib = {}
+local TweenService = game:GetService("TweenService")
+
+-- Configurações de Design (Estética Premium Dark/Neon)
+local Theme = {
+    Background = Color3.fromRGB(18, 18, 18),
+    ComponentBg = Color3.fromRGB(25, 25, 25),
+    AccentCiano = Color3.fromRGB(0, 255, 255),
+    AccentRoxo = Color3.fromRGB(138, 43, 226),
+    TextWhite = Color3.fromRGB(255, 255, 255),
+    TextGray = Color3.fromRGB(180, 180, 180)
+}
+
+local UI = LMG2L["Lumina UI_1"]
+local TabsContainer = LMG2L["Tabs_c"]
+local MainComponents = LMG2L["Components_1c"]
+
+-- Limpa os componentes iniciais para evitar sobreposição se você rodar de novo
+for _, child in pairs(MainComponents:GetChildren()) do
+    if child:IsA("Frame") then child:Destroy() end
 end
 
--- ============================================
--- RETURN AS LOADSTRING
--- ============================================
-return CreateLumina
+-- Layout da Área de Componentes
+local UIListLayout = Instance.new("UIListLayout", MainComponents)
+UIListLayout.Padding = UDim.new(0, 6)
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local UIPadding = Instance.new("UIPadding", MainComponents)
+UIPadding.PaddingTop = UDim.new(0, 5)
+UIPadding.PaddingLeft = UDim.new(0, 5)
+UIPadding.PaddingRight = UDim.new(0, 5)
+
+local ActiveTabIndicator = nil
+local TabContainers = {}
+
+-- Função para animar cores
+local function TweenColor(instance, property, color, duration)
+    TweenService:Create(instance, TweenInfo.new(duration or 0.2), {[property] = color}):Play()
+end
+
+function LuminaLib:CriarAba(nome, iconeId)
+    local AbaBase = {}
+    
+    -- Cria o botão da Aba clonando o seu Tab1 original (ou criando do zero para garantir)
+    local TabBtn = LMG2L["Tab1_d"]:Clone()
+    TabBtn.Parent = TabsContainer
+    TabBtn.NameTab_f.Text = nome
+    if iconeId then
+        TabBtn.IconTab_10.Image = "rbxassetid://" .. iconeId
+    end
+    
+    -- Cria o container de componentes dessa aba
+    local Page = Instance.new("Frame", MainComponents)
+    Page.Name = nome .. "_Page"
+    Page.Size = UDim2.new(1, 0, 1, 0)
+    Page.BackgroundTransparency = 1
+    Page.Visible = false
+    
+    local PageLayout = Instance.new("UIListLayout", Page)
+    PageLayout.Padding = UDim.new(0, 8)
+    PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    
+    TabContainers[nome] = Page
+    
+    -- Lógica de Clique na Aba
+    TabBtn.OpenTab_11.MouseButton1Click:Connect(function()
+        -- Esconde todas as páginas e reseta cores
+        for _, page in pairs(TabContainers) do
+            page.Visible = false
+        end
+        for _, tab in pairs(TabsContainer:GetChildren()) do
+            if tab:IsA("Frame") and tab.Name ~= "UIListLayout" then
+                TweenColor(tab, "BackgroundColor3", Theme.Background)
+                TweenColor(tab.NameTab_f, "TextColor3", Theme.TextGray)
+            end
+        end
+        
+        -- Ativa a página atual
+        Page.Visible = true
+        TweenColor(TabBtn, "BackgroundColor3", Theme.ComponentBg)
+        TweenColor(TabBtn.NameTab_f, "TextColor3", Theme.AccentCiano) -- Destaque Ciano na aba ativa
+    end)
+    
+    -- Se for a primeira aba, ativa ela por padrão
+    if #MainComponents:GetChildren() == 3 then -- Conta o ListLayout, Padding e a 1ª página
+        Page.Visible = true
+        TabBtn.BackgroundColor3 = Theme.ComponentBg
+        TabBtn.NameTab_f.TextColor3 = Theme.AccentCiano
+    end
+    
+    -- Oculta o Tab1 original que serviu de molde
+    LMG2L["Tab1_d"].Visible = false
+    
+    -- ==========================================
+    -- CRIADOR DE COMPONENTES DA ABA
+    -- ==========================================
+    
+    function AbaBase:CriarBotao(texto, callback)
+        local ButtonFrame = Instance.new("Frame", Page)
+        ButtonFrame.Size = UDim2.new(1, 0, 0, 32)
+        ButtonFrame.BackgroundColor3 = Theme.ComponentBg
+        
+        Instance.new("UICorner", ButtonFrame).CornerRadius = UDim.new(0, 6)
+        local Stroke = Instance.new("UIStroke", ButtonFrame)
+        Stroke.Color = Color3.fromRGB(40, 40, 40)
+        Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        
+        local Btn = Instance.new("TextButton", ButtonFrame)
+        Btn.Size = UDim2.new(1, 0, 1, 0)
+        Btn.BackgroundTransparency = 1
+        Btn.Text = texto
+        Btn.TextColor3 = Theme.TextWhite
+        Btn.Font = Enum.Font.GothamMedium
+        Btn.TextSize = 14
+        
+        Btn.MouseEnter:Connect(function()
+            TweenColor(Stroke, "Color", Theme.AccentRoxo) -- Destaque Roxo no hover
+        end)
+        
+        Btn.MouseLeave:Connect(function()
+            TweenColor(Stroke, "Color", Color3.fromRGB(40, 40, 40))
+        end)
+        
+        Btn.MouseButton1Click:Connect(function()
+            -- Efeito de clique
+            TweenColor(Btn, "TextColor3", Theme.AccentCiano, 0.1)
+            task.wait(0.1)
+            TweenColor(Btn, "TextColor3", Theme.TextWhite, 0.1)
+            if callback then callback() end
+        end)
+    end
+    
+    function AbaBase:CriarToggle(texto, estadoPadrao, callback)
+        local estado = estadoPadrao or false
+        
+        local ToggleFrame = Instance.new("Frame", Page)
+        ToggleFrame.Size = UDim2.new(1, 0, 0, 32)
+        ToggleFrame.BackgroundColor3 = Theme.ComponentBg
+        Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(0, 6)
+        
+        local Label = Instance.new("TextLabel", ToggleFrame)
+        Label.Size = UDim2.new(1, -50, 1, 0)
+        Label.Position = UDim2.new(0, 10, 0, 0)
+        Label.BackgroundTransparency = 1
+        Label.Text = texto
+        Label.TextColor3 = Theme.TextWhite
+        Label.Font = Enum.Font.GothamMedium
+        Label.TextSize = 14
+        Label.TextXAlignment = Enum.TextXAlignment.Left
+        
+        local ToggleOuter = Instance.new("Frame", ToggleFrame)
+        ToggleOuter.Size = UDim2.new(0, 36, 0, 18)
+        ToggleOuter.Position = UDim2.new(1, -46, 0.5, -9)
+        ToggleOuter.BackgroundColor3 = estado and Theme.AccentCiano or Color3.fromRGB(40, 40, 40)
+        Instance.new("UICorner", ToggleOuter).CornerRadius = UDim.new(1, 0)
+        
+        local ToggleInner = Instance.new("Frame", ToggleOuter)
+        ToggleInner.Size = UDim2.new(0, 14, 0, 14)
+        ToggleInner.Position = UDim2.new(estado and 1 or 0, estado and -16 or 2, 0.5, -7)
+        ToggleInner.BackgroundColor3 = Theme.TextWhite
+        Instance.new("UICorner", ToggleInner).CornerRadius = UDim.new(1, 0)
+        
+        local Btn = Instance.new("TextButton", ToggleFrame)
+        Btn.Size = UDim2.new(1, 0, 1, 0)
+        Btn.BackgroundTransparency = 1
+        Btn.Text = ""
+        
+        Btn.MouseButton1Click:Connect(function()
+            estado = not estado
+            local metaOuter = estado and Theme.AccentCiano or Color3.fromRGB(40, 40, 40)
+            local metaInnerPos = estado and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+            
+            TweenColor(ToggleOuter, "BackgroundColor3", metaOuter)
+            TweenService:Create(ToggleInner, TweenInfo.new(0.2), {Position = metaInnerPos}):Play()
+            
+            if callback then callback(estado) end
+        end)
+    end
+    
+    return AbaBase
+end
