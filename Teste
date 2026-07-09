@@ -1277,6 +1277,7 @@ function UILibrary:CreateWindow(title)
         end
 
         -- ── Button ───────────────────────────────────────────────────────────────
+        -- AGORA COM ÍCONE PADRÃO AUTOMÁTICO PARA TODOS OS BOTÕES
 
         function tabMethods:AddButton(text, callback, iconId)
             local ButtonFrame = Instance.new("Frame", ElementsContainer)
@@ -1297,16 +1298,18 @@ function UILibrary:CreateWindow(title)
             Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 3)
             table.insert(themeElements, { type = "Button", instance = Button })
 
-            if iconId then
-                local ButtonIcon = Instance.new("ImageLabel", Button)
-                ButtonIcon.AnchorPoint = Vector2.new(0, 0.5)
-                ButtonIcon.Position = UDim2.new(0, 6, 0.5, 0)
-                ButtonIcon.Size = UDim2.new(0, 14, 0, 14)
-                ButtonIcon.BackgroundTransparency = 1
-                ButtonIcon.Image = "rbxassetid://108767860205161"
-                ButtonIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
-                ButtonIcon.ZIndex = 2
-            end
+            -- ÍCONE PADRÃO PARA TODOS OS BOTÕES
+            -- Se não passar iconId, usa o ícone padrão. Se passar, usa o personalizado.
+            local iconeUsar = iconId or "rbxassetid://108767860205161"  -- ← TROQUE AQUI PELO SEU ÍCONE PADRÃO
+            
+            local ButtonIcon = Instance.new("ImageLabel", Button)
+            ButtonIcon.AnchorPoint = Vector2.new(0, 0.5)
+            ButtonIcon.Position = UDim2.new(0, 6, 0.5, 0)
+            ButtonIcon.Size = UDim2.new(0, 14, 0, 14)
+            ButtonIcon.BackgroundTransparency = 1
+            ButtonIcon.Image = iconeUsar
+            ButtonIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+            ButtonIcon.ZIndex = 2
 
             Button.MouseEnter:Connect(function()
                 local bh, bs, bv = currentThemeColor:ToHSV()
@@ -1587,7 +1590,7 @@ function UILibrary:CreateWindow(title)
 
         configTab:AddSeparator()
 
-        -- Botão SALVAR com ícone de disquete/check
+        -- Botão SALVAR (agora já com ícone automático)
         configTab:AddButton("Salvar", function()
             local name = nameInput:GetText()
             if not name or name == "" or name == "Nenhuma config salva" then return end
@@ -1599,9 +1602,9 @@ function UILibrary:CreateWindow(title)
             meta.autoLoad = autoLoadEnabled
             saveMeta(meta)
             updateDropdown(name)
-        end, "rbxassetid://97582400811473")
+        end)
 
-        -- Botão CARREGAR com ícone de pasta/download
+        -- Botão CARREGAR (agora já com ícone automático)
         configTab:AddButton("Carregar", function()
             local name = nameInput:GetText()
             if not name or name == "" then return end
@@ -1615,9 +1618,9 @@ function UILibrary:CreateWindow(title)
                 saveMeta(meta)
                 updateDropdown(name)
             end
-        end, "rbxassetid://93898339468067")
+        end)
 
-        -- Botão DELETAR com ícone de lixeira/X
+        -- Botão DELETAR (agora já com ícone automático)
         configTab:AddButton("Deletar", function()
             local name = nameInput:GetText()
             if not name or name == "" then return end
@@ -1632,7 +1635,7 @@ function UILibrary:CreateWindow(title)
                 if nameInput then nameInput:SetText("") end
                 updateDropdown()
             end
-        end, "rbxassetid://119483803631956")
+        end)
 
         configTab:AddSeparator()
 
@@ -1650,10 +1653,12 @@ function UILibrary:CreateWindow(title)
 
         configTab:AddSeparator()
 
+        -- Botão ATUALIZAR LISTA (agora já com ícone automático)
         configTab:AddButton("Atualizar Lista", function()
             updateDropdown(currentConfigName)
         end)
 
+        -- Botão RESETAR TUDO (agora já com ícone automático)
         configTab:AddButton("Resetar Tudo", function()
             for _, elements in pairs(configElements) do
                 for _, elem in ipairs(elements) do
