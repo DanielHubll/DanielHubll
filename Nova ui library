@@ -1,185 +1,1520 @@
--- ==========================================
--- LUMINA UI: SISTEMA DE ABAS E COMPONENTES
--- ==========================================
+--[[
+    ╔══════════════════════════════════════════╗
+    ║         LUMINA UI LIBRARY v1.0           ║
+    ║         @uniquadev / @DanielDev          ║
+    ╚══════════════════════════════════════════╝
+]]
 
-local LuminaLib = {}
+-- ═══════════════════════════════════════════
+-- SERVIÇOS
+-- ═══════════════════════════════════════════
+local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
--- Configurações de Design (Estética Premium Dark/Neon)
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- ═══════════════════════════════════════════
+-- TEMA / CONFIGURAÇÃO
+-- ═══════════════════════════════════════════
 local Theme = {
-    Background = Color3.fromRGB(18, 18, 18),
-    ComponentBg = Color3.fromRGB(25, 25, 25),
-    AccentCiano = Color3.fromRGB(0, 255, 255),
-    AccentRoxo = Color3.fromRGB(138, 43, 226),
-    TextWhite = Color3.fromRGB(255, 255, 255),
-    TextGray = Color3.fromRGB(180, 180, 180)
+    Background       = Color3.fromRGB(0, 0, 0),
+    ComponentBg      = Color3.fromRGB(18, 18, 18),
+    TabBg            = Color3.fromRGB(22, 22, 22),
+    TabActive        = Color3.fromRGB(40, 40, 40),
+    Accent           = Color3.fromRGB(100, 140, 255),
+    TextPrimary      = Color3.fromRGB(255, 255, 255),
+    TextSecondary    = Color3.fromRGB(160, 160, 160),
+    ToggleOn         = Color3.fromRGB(80, 200, 120),
+    ToggleOff        = Color3.fromRGB(60, 60, 60),
+    SliderFill       = Color3.fromRGB(100, 140, 255),
+    SliderBg         = Color3.fromRGB(40, 40, 40),
+    DropdownBg       = Color3.fromRGB(30, 30, 30),
+    InputBg          = Color3.fromRGB(30, 30, 30),
+    StrokeColor      = Color3.fromRGB(50, 50, 50),
+    DangerColor      = Color3.fromRGB(220, 60, 60),
 }
 
-local UI = LMG2L["Lumina UI_1"]
-local TabsContainer = LMG2L["Tabs_c"]
-local MainComponents = LMG2L["Components_1c"]
+local Fonts = {
+    Title   = Font.new("rbxasset://fonts/families/Arial.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal),
+    Body    = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal),
+    Bold    = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal),
+    Light   = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal),
+}
 
--- Limpa os componentes iniciais para evitar sobreposição se você rodar de novo
-for _, child in pairs(MainComponents:GetChildren()) do
-    if child:IsA("Frame") then child:Destroy() end
+-- ═══════════════════════════════════════════
+-- TWEEN HELPERS
+-- ═══════════════════════════════════════════
+local TweenInfo_ = {
+    Fast   = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+    Normal = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+    Smooth = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+}
+
+local function Tween(obj, info, props)
+    local tween = TweenService:Create(obj, info or TweenInfo_.Normal, props)
+    tween:Play()
+    return tween
 end
 
--- Layout da Área de Componentes
-local UIListLayout = Instance.new("UIListLayout", MainComponents)
-UIListLayout.Padding = UDim.new(0, 6)
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+-- ═══════════════════════════════════════════
+-- UI LIBRARY
+-- ═══════════════════════════════════════════
+local Lumina = {}
+Lumina.__index = Lumina
 
-local UIPadding = Instance.new("UIPadding", MainComponents)
-UIPadding.PaddingTop = UDim.new(0, 5)
-UIPadding.PaddingLeft = UDim.new(0, 5)
-UIPadding.PaddingRight = UDim.new(0, 5)
+local Tabs = {}
+local ActiveTab = nil
 
-local ActiveTabIndicator = nil
-local TabContainers = {}
-
--- Função para animar cores
-local function TweenColor(instance, property, color, duration)
-    TweenService:Create(instance, TweenInfo.new(duration or 0.2), {[property] = color}):Play()
-end
-
-function LuminaLib:CriarAba(nome, iconeId)
-    local AbaBase = {}
+-- ─────────────────────────────────────────
+-- CRIA A BIBLIOTECA PRINCIPAL
+-- ─────────────────────────────────────────
+function Lumina:New(config)
+    config = config or {}
     
-    -- Cria o botão da Aba clonando o seu Tab1 original (ou criando do zero para garantir)
-    local TabBtn = LMG2L["Tab1_d"]:Clone()
-    TabBtn.Parent = TabsContainer
-    TabBtn.NameTab_f.Text = nome
-    if iconeId then
-        TabBtn.IconTab_10.Image = "rbxassetid://" .. iconeId
-    end
+    local self = setmetatable({}, Lumina)
     
-    -- Cria o container de componentes dessa aba
-    local Page = Instance.new("Frame", MainComponents)
-    Page.Name = nome .. "_Page"
-    Page.Size = UDim2.new(1, 0, 1, 0)
-    Page.BackgroundTransparency = 1
-    Page.Visible = false
+    self.Title = config.Title or "LUMINA"
+    self.Icon  = config.Icon or ""
     
-    local PageLayout = Instance.new("UIListLayout", Page)
-    PageLayout.Padding = UDim.new(0, 8)
-    PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    -- Destroi UI anterior se existir
+    local existing = PlayerGui:FindFirstChild("Lumina UI")
+    if existing then existing:Destroy() end
     
-    TabContainers[nome] = Page
+    -- ═══════════════════════════════════════
+    -- INSTANCIAS PRINCIPAIS
+    -- ═══════════════════════════════════════
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "Lumina UI"
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.Parent = PlayerGui
+    self.ScreenGui = ScreenGui
     
-    -- Lógica de Clique na Aba
-    TabBtn.OpenTab_11.MouseButton1Click:Connect(function()
-        -- Esconde todas as páginas e reseta cores
-        for _, page in pairs(TabContainers) do
-            page.Visible = false
+    -- Folder para organização
+    local Things = Instance.new("Folder")
+    Things.Name = "Things"
+    Things.Parent = ScreenGui
+    
+    -- ═══════════════════════════════════════
+    -- BARRA SUPERIOR (TOP BAR)
+    -- ═══════════════════════════════════════
+    local TopBar = Instance.new("Frame")
+    TopBar.Name = "TopBar"
+    TopBar.BackgroundColor3 = Theme.Background
+    TopBar.BorderSizePixel = 0
+    TopBar.Size = UDim2.new(0, 300, 0, 34)
+    TopBar.Position = UDim2.new(0, 250, 0, 36)
+    TopBar.Parent = Things
+    
+    Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 6)
+    
+    -- Linha inferior do TopBar
+    local TopDivider = Instance.new("Frame")
+    TopDivider.Name = "Divider"
+    TopDivider.BackgroundColor3 = Theme.Background
+    TopDivider.BorderSizePixel = 0
+    TopDivider.Size = UDim2.new(1, 0, 0, 6)
+    TopDivider.Position = UDim2.new(0, 0, 1, -6)
+    TopDivider.Parent = TopBar
+    
+    -- Titulo
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Name = "Title"
+    TitleLabel.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.FontFace = Fonts.Title
+    TitleLabel.TextColor3 = Theme.TextPrimary
+    TitleLabel.TextScaled = true
+    TitleLabel.TextWrapped = true
+    TitleLabel.Size = UDim2.new(0, 80, 0, 22)
+    TitleLabel.Position = UDim2.new(0, 8, 0, 6)
+    TitleLabel.Text = self.Title
+    TitleLabel.Parent = TopBar
+    self.TitleLabel = TitleLabel
+    
+    -- Botão de fechar (X)
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Name = "CloseBtn"
+    CloseBtn.BackgroundColor3 = Theme.DangerColor
+    CloseBtn.BackgroundTransparency = 0.3
+    CloseBtn.BorderSizePixel = 0
+    CloseBtn.Size = UDim2.new(0, 20, 0, 20)
+    CloseBtn.Position = UDim2.new(1, -26, 0, 7)
+    CloseBtn.Text = "✕"
+    CloseBtn.TextColor3 = Theme.TextPrimary
+    CloseBtn.TextSize = 12
+    CloseBtn.FontFace = Fonts.Bold
+    CloseBtn.Parent = TopBar
+    
+    Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 4)
+    
+    CloseBtn.MouseButton1Click:Connect(function()
+        Tween(ScreenGui.Frame or ScreenGui, TweenInfo_.Normal, {})
+        ScreenGui:Destroy()
+    end)
+    
+    -- Botão de minimizar
+    local MinBtn = Instance.new("TextButton")
+    MinBtn.Name = "MinBtn"
+    MinBtn.BackgroundColor3 = Theme.TabBg
+    MinBtn.BackgroundTransparency = 0
+    MinBtn.BorderSizePixel = 0
+    MinBtn.Size = UDim2.new(0, 20, 0, 20)
+    MinBtn.Position = UDim2.new(1, -50, 0, 7)
+    MinBtn.Text = "—"
+    MinBtn.TextColor3 = Theme.TextPrimary
+    MinBtn.TextSize = 12
+    MinBtn.FontFace = Fonts.Bold
+    MinBtn.Parent = TopBar
+    
+    Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
+    
+    local Minimized = false
+    MinBtn.MouseButton1Click:Connect(function()
+        Minimized = not Minimized
+        local Components = ScreenGui:FindFirstChild("Components")
+        local TabsFrame = Things:FindFirstChild("Tabs")
+        local LowBar = Things:FindFirstChild("LowBar")
+        
+        if Components then
+            Components.Visible = not Minimized
         end
-        for _, tab in pairs(TabsContainer:GetChildren()) do
-            if tab:IsA("Frame") and tab.Name ~= "UIListLayout" then
-                TweenColor(tab, "BackgroundColor3", Theme.Background)
-                TweenColor(tab.NameTab_f, "TextColor3", Theme.TextGray)
+        if TabsFrame then
+            TabsFrame.Visible = not Minimized
+        end
+    end)
+    
+    -- ═══════════════════════════════════════
+    -- BARRA DE BUSCA (SEARCH)
+    -- ═══════════════════════════════════════
+    local SearchFrame = Instance.new("Frame")
+    SearchFrame.Name = "Search"
+    SearchFrame.BackgroundColor3 = Theme.Background
+    SearchFrame.BorderSizePixel = 0
+    SearchFrame.Size = UDim2.new(0, 114, 0, 14)
+    SearchFrame.Position = UDim2.new(0, 326, 0, 46)
+    SearchFrame.Parent = Things
+    
+    Instance.new("UICorner", SearchFrame).CornerRadius = UDim.new(0.3, 0)
+    
+    local SearchStroke = Instance.new("UIStroke")
+    SearchStroke.Color = Theme.StrokeColor
+    SearchStroke.Thickness = 1
+    SearchStroke.Parent = SearchFrame
+    
+    local SearchBox = Instance.new("TextBox")
+    SearchBox.Name = "SearchTextbox"
+    SearchBox.BackgroundColor3 = Theme.InputBg
+    SearchBox.BackgroundTransparency = 1
+    SearchBox.BorderSizePixel = 0
+    SearchBox.FontFace = Fonts.Body
+    SearchBox.TextColor3 = Theme.TextPrimary
+    SearchBox.TextSize = 7
+    SearchBox.TextXAlignment = Enum.TextXAlignment.Left
+    SearchBox.TextWrapped = true
+    SearchBox.Size = UDim2.new(0, 88, 0, 14)
+    SearchBox.Position = UDim2.new(0, 6, 0, 0)
+    SearchBox.PlaceholderText = "Buscar..."
+    SearchBox.Text = ""
+    SearchBox.Parent = SearchFrame
+    
+    local SearchIcon = Instance.new("ImageLabel")
+    SearchIcon.Name = "Icon"
+    SearchIcon.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    SearchIcon.BackgroundTransparency = 1
+    SearchIcon.Image = "rbxassetid://121350562740161"
+    SearchIcon.Size = UDim2.new(0, 10, 0, 10)
+    SearchIcon.Position = UDim2.new(1, -14, 0, 2)
+    SearchIcon.Parent = SearchFrame
+    
+    -- ═══════════════════════════════════════
+    -- CONTAINER DE TABS (SIDEBAR)
+    -- ═══════════════════════════════════════
+    local TabsFrame = Instance.new("ScrollingFrame")
+    TabsFrame.Name = "Tabs"
+    TabsFrame.BackgroundColor3 = Theme.Background
+    TabsFrame.BorderSizePixel = 0
+    TabsFrame.Size = UDim2.new(0, 70, 0, 166)
+    TabsFrame.Position = UDim2.new(0, 250, 0, 70)
+    TabsFrame.ScrollBarThickness = 0
+    TabsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    TabsFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    TabsFrame.Parent = Things
+    
+    local TabsLayout = Instance.new("UIListLayout")
+    TabsLayout.Padding = UDim.new(0, 4)
+    TabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    TabsLayout.Parent = TabsFrame
+    
+    local TabsPadding = Instance.new("UIPadding")
+    TabsPadding.PaddingTop = UDim.new(0, 4)
+    TabsPadding.PaddingLeft = UDim.new(0, 6)
+    TabsPadding.PaddingRight = UDim.new(0, 6)
+    TabsPadding.Parent = TabsFrame
+    
+    -- ═══════════════════════════════════════
+    -- CONTAINER DE COMPONENTES (CONTEÚDO)
+    -- ═══════════════════════════════════════
+    local ComponentsFrame = Instance.new("ScrollingFrame")
+    ComponentsFrame.Name = "Components"
+    ComponentsFrame.BackgroundColor3 = Theme.ComponentBg
+    ComponentsFrame.BorderSizePixel = 0
+    ComponentsFrame.Size = UDim2.new(0, 230, 0, 166)
+    ComponentsFrame.Position = UDim2.new(0, 320, 0, 70)
+    ComponentsFrame.ScrollBarThickness = 2
+    ComponentsFrame.ScrollBarImageColor3 = Theme.Accent
+    ComponentsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    ComponentsFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    ComponentsFrame.Parent = ScreenGui
+    
+    Instance.new("UICorner", ComponentsFrame).CornerRadius = UDim.new(0, 6)
+    
+    local CompLayout = Instance.new("UIListLayout")
+    CompLayout.Name = "Layout"
+    CompLayout.Padding = UDim.new(0, 4)
+    CompLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    CompLayout.Parent = ComponentsFrame
+    
+    local CompPadding = Instance.new("UIPadding")
+    CompPadding.PaddingTop = UDim.new(0, 6)
+    CompPadding.PaddingBottom = UDim.new(0, 6)
+    CompPadding.PaddingLeft = UDim.new(0, 8)
+    CompPadding.PaddingRight = UDim.new(0, 8)
+    CompPadding.Parent = ComponentsFrame
+    
+    -- ═══════════════════════════════════════
+    -- BARRA INFERIOR (BOTTOM BAR)
+    -- ═══════════════════════════════════════
+    local LowBar = Instance.new("Frame")
+    LowBar.Name = "LowBar"
+    LowBar.BackgroundColor3 = Theme.Background
+    LowBar.BorderSizePixel = 0
+    LowBar.Size = UDim2.new(0, 300, 0, 34)
+    LowBar.Position = UDim2.new(0, 250, 0, 236)
+    LowBar.Parent = Things
+    
+    Instance.new("UICorner", LowBar).CornerRadius = UDim.new(0, 6)
+    
+    -- Thumbnail do jogador
+    local Thumbnail = Instance.new("ImageLabel")
+    Thumbnail.Name = "Thumbnail"
+    Thumbnail.ZIndex = 2
+    Thumbnail.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
+    Thumbnail.Size = UDim2.new(0, 24, 0, 24)
+    Thumbnail.Position = UDim2.new(0, 6, 0, 5)
+    Thumbnail.Parent = LowBar
+    
+    Instance.new("UICorner", Thumbnail).CornerRadius = UDim.new(1, 0)
+    
+    -- Carrega thumbnail
+    task.spawn(function()
+        local success, thumb = pcall(function()
+            return Players:GetUserThumbnailAsync(
+                LocalPlayer.UserId,
+                Enum.ThumbnailType.HeadShot,
+                Enum.ThumbnailSize.Size150x150
+            )
+        end)
+        if success then
+            Thumbnail.Image = thumb
+        end
+    end)
+    
+    -- Nome do jogador
+    local PlayerName = Instance.new("TextLabel")
+    PlayerName.Name = "PlayerName"
+    PlayerName.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    PlayerName.BackgroundTransparency = 1
+    PlayerName.FontFace = Fonts.Bold
+    PlayerName.TextColor3 = Theme.TextPrimary
+    PlayerName.TextScaled = true
+    PlayerName.TextWrapped = true
+    PlayerName.Size = UDim2.new(0, 60, 0, 8)
+    PlayerName.Position = UDim2.new(0, 34, 0, 8)
+    PlayerName.Text = "@" .. LocalPlayer.Name
+    PlayerName.Parent = LowBar
+    
+    -- "Welcome"
+    local WelcomeLabel = Instance.new("TextLabel")
+    WelcomeLabel.Name = "Welcome"
+    WelcomeLabel.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    WelcomeLabel.BackgroundTransparency = 1
+    WelcomeLabel.FontFace = Fonts.Light
+    WelcomeLabel.TextColor3 = Theme.TextSecondary
+    WelcomeLabel.TextScaled = true
+    WelcomeLabel.TextWrapped = true
+    WelcomeLabel.Size = UDim2.new(0, 50, 0, 8)
+    WelcomeLabel.Position = UDim2.new(0, 34, 0, 17)
+    WelcomeLabel.Text = "Welcome"
+    WelcomeLabel.Parent = LowBar
+    
+    -- Creditos
+    local CreditsLabel = Instance.new("TextLabel")
+    CreditsLabel.Name = "Credits"
+    CreditsLabel.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    CreditsLabel.BackgroundTransparency = 1
+    CreditsLabel.FontFace = Fonts.Light
+    CreditsLabel.TextColor3 = Theme.TextSecondary
+    CreditsLabel.TextSize = 6
+    CreditsLabel.TextXAlignment = Enum.TextXAlignment.Right
+    CreditsLabel.Size = UDim2.new(0, 80, 0, 10)
+    CreditsLabel.Position = UDim2.new(1, -86, 0, 12)
+    CreditsLabel.Text = "Lumina UI v1.0"
+    CreditsLabel.Parent = LowBar
+    
+    -- Linha superior do LowBar
+    local LowDivider = Instance.new("Frame")
+    LowDivider.Name = "Divider"
+    LowDivider.BackgroundColor3 = Theme.Background
+    LowDivider.BorderSizePixel = 0
+    LowDivider.Size = UDim2.new(1, 0, 0, 6)
+    LowDivider.Position = UDim2.new(0, 0, 0, 0)
+    LowDivider.Parent = LowBar
+    
+    -- ═══════════════════════════════════════
+    -- ARMAZENA REFERÊNCIAS
+    -- ═══════════════════════════════════════
+    self.Things = Things
+    self.TopBar = TopBar
+    self.SearchFrame = SearchFrame
+    self.SearchBox = SearchBox
+    self.TabsFrame = TabsFrame
+    self.ComponentsFrame = ComponentsFrame
+    self.LowBar = LowBar
+    self.TabCount = 0
+    
+    -- ═══════════════════════════════════════
+    -- SISTEMA DE BUSCA
+    -- ═══════════════════════════════════════
+    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        local query = SearchBox.Text:lower()
+        local Layout = ComponentsFrame:FindFirstChild("Layout")
+        if not Layout then return end
+        
+        for _, child in pairs(ComponentsFrame:GetChildren()) do
+            if child:IsA("Frame") then
+                local name = child.Name:lower()
+                local searchTag = child:GetAttribute("SearchTag") or ""
+                searchTag = searchTag:lower()
+                
+                if query == "" or name:find(query) or searchTag:find(query) then
+                    child.Visible = true
+                else
+                    child.Visible = false
+                end
+            end
+        end
+    end)
+    
+    -- ═══════════════════════════════════════
+    -- DRAG / ARRASTAR A UI
+    -- ═══════════════════════════════════════
+    local dragging, dragInput, dragStart, startPos
+    
+    TopBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = TopBar.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    TopBar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            local newPos = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+            TopBar.Position = newPos
+            TabsFrame.Position = UDim2.new(
+                newPos.X.Scale, newPos.X.Offset,
+                newPos.Y.Scale, newPos.Y.Offset + 34
+            )
+            ComponentsFrame.Position = UDim2.new(
+                newPos.X.Scale, newPos.X.Offset + 70,
+                newPos.Y.Scale, newPos.Y.Offset + 34
+            )
+            SearchFrame.Position = UDim2.new(
+                newPos.X.Scale, newPos.X.Offset + 76,
+                newPos.Y.Scale, newPos.Y.Offset + 10
+            )
+            LowBar.Position = UDim2.new(
+                newPos.X.Scale, newPos.X.Offset,
+                newPos.Y.Scale, newPos.Y.Offset + 200
+            )
+        end
+    end)
+    
+    return self
+end
+
+-- ═══════════════════════════════════════════════════════
+-- FUNÇÃO: ADICIONAR TAB
+-- ═══════════════════════════════════════════════════════
+function Lumina:AddTab(config)
+    config = config or {}
+    
+    local TabName = config.Name or "Tab " .. (self.TabCount + 1)
+    local TabIcon = config.Icon or ""
+    local TabOrder = self.TabCount
+    
+    self.TabCount = self.TabCount + 1
+    
+    local TabData = {
+        Name = TabName,
+        Components = {},
+        Frame = nil,
+        Button = nil,
+    }
+    
+    -- ═══════════════════════════════════════
+    -- BOTÃO DA TAB (na sidebar)
+    -- ═══════════════════════════════════════
+    local TabBtn = Instance.new("Frame")
+    TabBtn.Name = "Tab_" .. TabName
+    TabBtn.BackgroundColor3 = Theme.TabBg
+    TabBtn.BorderSizePixel = 0
+    TabBtn.Size = UDim2.new(1, 0, 0, 22)
+    TabBtn.LayoutOrder = TabOrder
+    TabBtn.Parent = self.TabsFrame
+    
+    Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 5)
+    
+    -- Ícone da tab
+    local IconLabel = Instance.new("ImageLabel")
+    IconLabel.Name = "IconTab"
+    IconLabel.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    IconLabel.BackgroundTransparency = 1
+    IconLabel.Image = TabIcon
+    IconLabel.Size = UDim2.new(0, 18, 0, 18)
+    IconLabel.Position = UDim2.new(0, 2, 0, 2)
+    IconLabel.Parent = TabBtn
+    
+    -- Nome da tab
+    local NameLabel = Instance.new("TextLabel")
+    NameLabel.Name = "NameTab"
+    NameLabel.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    NameLabel.BackgroundTransparency = 1
+    NameLabel.FontFace = Fonts.Body
+    NameLabel.TextColor3 = Theme.TextPrimary
+    NameLabel.TextScaled = true
+    NameLabel.TextWrapped = true
+    NameLabel.Size = UDim2.new(0, 30, 0, 14)
+    NameLabel.Position = UDim2.new(0, 22, 0, 4)
+    NameLabel.Text = TabName
+    NameLabel.Parent = TabBtn
+    
+    -- Botão invisível pra clique
+    local ClickBtn = Instance.new("TextButton")
+    ClickBtn.Name = "ClickBtn"
+    ClickBtn.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    ClickBtn.BackgroundTransparency = 1
+    ClickBtn.BorderSizePixel = 0
+    ClickBtn.Size = UDim2.new(1, 0, 1, 0)
+    ClickBtn.Text = ""
+    ClickBtn.Parent = TabBtn
+    
+    TabData.Button = TabBtn
+    TabData.ClickBtn = ClickBtn
+    
+    -- ═══════════════════════════════════════
+    -- SISTEMA DE SELEÇÃO DE TAB
+    -- ═══════════════════════════════════════
+    local function SelectTab()
+        -- Desativa todas as tabs
+        for _, tab in pairs(Tabs) do
+            Tween(tab.Button, TweenInfo_.Normal, {
+                BackgroundColor3 = Theme.TabBg
+            })
+            tab.Frame.Visible = false
+        end
+        
+        -- Ativa a tab selecionada
+        Tween(TabBtn, TweenInfo_.Normal, {
+            BackgroundColor3 = Theme.TabActive
+        })
+        
+        -- Limpa o container de componentes
+        for _, child in pairs(self.ComponentsFrame:GetChildren()) do
+            if child:IsA("Frame") then
+                child:Destroy()
             end
         end
         
-        -- Ativa a página atual
-        Page.Visible = true
-        TweenColor(TabBtn, "BackgroundColor3", Theme.ComponentBg)
-        TweenColor(TabBtn.NameTab_f, "TextColor3", Theme.AccentCiano) -- Destaque Ciano na aba ativa
-    end)
-    
-    -- Se for a primeira aba, ativa ela por padrão
-    if #MainComponents:GetChildren() == 3 then -- Conta o ListLayout, Padding e a 1ª página
-        Page.Visible = true
-        TabBtn.BackgroundColor3 = Theme.ComponentBg
-        TabBtn.NameTab_f.TextColor3 = Theme.AccentCiano
+        -- Recria o layout
+        local Layout = self.ComponentsFrame:FindFirstChild("Layout")
+        if not Layout then
+            local newLayout = Instance.new("UIListLayout")
+            newLayout.Name = "Layout"
+            newLayout.Padding = UDim.new(0, 4)
+            newLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            newLayout.Parent = self.ComponentsFrame
+        end
+        
+        -- Renderiza os componentes da tab
+        for _, comp in pairs(TabData.Components) do
+            comp:Render(self.ComponentsFrame)
+        end
+        
+        TabData.Frame = self.ComponentsFrame
+        ActiveTab = TabData
     end
     
-    -- Oculta o Tab1 original que serviu de molde
-    LMG2L["Tab1_d"].Visible = false
+    ClickBtn.MouseButton1Click:Connect(SelectTab)
     
-    -- ==========================================
-    -- CRIADOR DE COMPONENTES DA ABA
-    -- ==========================================
-    
-    function AbaBase:CriarBotao(texto, callback)
-        local ButtonFrame = Instance.new("Frame", Page)
-        ButtonFrame.Size = UDim2.new(1, 0, 0, 32)
-        ButtonFrame.BackgroundColor3 = Theme.ComponentBg
-        
-        Instance.new("UICorner", ButtonFrame).CornerRadius = UDim.new(0, 6)
-        local Stroke = Instance.new("UIStroke", ButtonFrame)
-        Stroke.Color = Color3.fromRGB(40, 40, 40)
-        Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        
-        local Btn = Instance.new("TextButton", ButtonFrame)
-        Btn.Size = UDim2.new(1, 0, 1, 0)
-        Btn.BackgroundTransparency = 1
-        Btn.Text = texto
-        Btn.TextColor3 = Theme.TextWhite
-        Btn.Font = Enum.Font.GothamMedium
-        Btn.TextSize = 14
-        
-        Btn.MouseEnter:Connect(function()
-            TweenColor(Stroke, "Color", Theme.AccentRoxo) -- Destaque Roxo no hover
-        end)
-        
-        Btn.MouseLeave:Connect(function()
-            TweenColor(Stroke, "Color", Color3.fromRGB(40, 40, 40))
-        end)
-        
-        Btn.MouseButton1Click:Connect(function()
-            -- Efeito de clique
-            TweenColor(Btn, "TextColor3", Theme.AccentCiano, 0.1)
-            task.wait(0.1)
-            TweenColor(Btn, "TextColor3", Theme.TextWhite, 0.1)
-            if callback then callback() end
-        end)
+    -- Seleciona automaticamente se for a primeira tab
+    if self.TabCount == 1 then
+        task.defer(SelectTab)
     end
     
-    function AbaBase:CriarToggle(texto, estadoPadrao, callback)
-        local estado = estadoPadrao or false
+    table.insert(Tabs, TabData)
+    
+    -- ═══════════════════════════════════════
+    -- API DA TAB (métodos para adicionar componentes)
+    -- ═══════════════════════════════════════
+    local TabAPI = {}
+    TabAPI.__index = TabAPI
+    TabAPI.TabData = TabData
+    TabAPI.Library = self
+    
+    -- ═════════════════════════════════════
+    -- COMPONENTE: LABEL (Texto simples)
+    -- ═════════════════════════════════════
+    function TabAPI:AddLabel(config)
+        config = config or {}
+        local comp = {}
         
-        local ToggleFrame = Instance.new("Frame", Page)
-        ToggleFrame.Size = UDim2.new(1, 0, 0, 32)
-        ToggleFrame.BackgroundColor3 = Theme.ComponentBg
-        Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(0, 6)
+        comp.Text = config.Text or "Label"
+        comp.Size = config.Size or 14
+        comp.Color = config.Color or Theme.TextPrimary
+        comp.Font = config.Font or Fonts.Body
+        comp.Order = #TabData.Components
         
-        local Label = Instance.new("TextLabel", ToggleFrame)
-        Label.Size = UDim2.new(1, -50, 1, 0)
-        Label.Position = UDim2.new(0, 10, 0, 0)
-        Label.BackgroundTransparency = 1
-        Label.Text = texto
-        Label.TextColor3 = Theme.TextWhite
-        Label.Font = Enum.Font.GothamMedium
-        Label.TextSize = 14
-        Label.TextXAlignment = Enum.TextXAlignment.Left
-        
-        local ToggleOuter = Instance.new("Frame", ToggleFrame)
-        ToggleOuter.Size = UDim2.new(0, 36, 0, 18)
-        ToggleOuter.Position = UDim2.new(1, -46, 0.5, -9)
-        ToggleOuter.BackgroundColor3 = estado and Theme.AccentCiano or Color3.fromRGB(40, 40, 40)
-        Instance.new("UICorner", ToggleOuter).CornerRadius = UDim.new(1, 0)
-        
-        local ToggleInner = Instance.new("Frame", ToggleOuter)
-        ToggleInner.Size = UDim2.new(0, 14, 0, 14)
-        ToggleInner.Position = UDim2.new(estado and 1 or 0, estado and -16 or 2, 0.5, -7)
-        ToggleInner.BackgroundColor3 = Theme.TextWhite
-        Instance.new("UICorner", ToggleInner).CornerRadius = UDim.new(1, 0)
-        
-        local Btn = Instance.new("TextButton", ToggleFrame)
-        Btn.Size = UDim2.new(1, 0, 1, 0)
-        Btn.BackgroundTransparency = 1
-        Btn.Text = ""
-        
-        Btn.MouseButton1Click:Connect(function()
-            estado = not estado
-            local metaOuter = estado and Theme.AccentCiano or Color3.fromRGB(40, 40, 40)
-            local metaInnerPos = estado and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+        function comp:Render(parent)
+            local Label = Instance.new("TextLabel")
+            Label.Name = "Label_" .. comp.Text
+            Label.BackgroundColor3 = Color3.fromRGB(255,255,255)
+            Label.BackgroundTransparency = 1
+            Label.FontFace = comp.Font
+            Label.TextColor3 = comp.Color
+            Label.TextSize = comp.Size
+            Label.TextWrapped = true
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.Size = UDim2.new(1, 0, 0, comp.Size + 8)
+            Label.Text = comp.Text
+            Label.LayoutOrder = comp.Order
+            Label:SetAttribute("SearchTag", comp.Text)
+            Label.Parent = parent
             
-            TweenColor(ToggleOuter, "BackgroundColor3", metaOuter)
-            TweenService:Create(ToggleInner, TweenInfo.new(0.2), {Position = metaInnerPos}):Play()
-            
-            if callback then callback(estado) end
-        end)
+            comp.Instance = Label
+            return Label
+        end
+        
+        table.insert(TabData.Components, comp)
+        if ActiveTab == TabData then comp:Render(self.ComponentsFrame) end
+        return comp
     end
     
-    return AbaBase
+    -- ═════════════════════════════════════
+    -- COMPONENTE: SECTION (Separador)
+    -- ═════════════════════════════════════
+    function TabAPI:AddSection(config)
+        config = config or {}
+        local comp = {}
+        
+        comp.Title = config.Title or ""
+        comp.Order = #TabData.Components
+        
+        function comp:Render(parent)
+            local Section = Instance.new("Frame")
+            Section.Name = "Section_" .. comp.Title
+            Section.BackgroundColor3 = Color3.fromRGB(255,255,255)
+            Section.BackgroundTransparency = 1
+            Section.Size = UDim2.new(1, 0, 0, 24)
+            Section.LayoutOrder = comp.Order
+            Section:SetAttribute("SearchTag", comp.Title)
+            Section.Parent = parent
+            
+            -- Linha divisória
+            local Divider = Instance.new("Frame")
+            Divider.Name = "Divider"
+            Divider.BackgroundColor3 = Theme.StrokeColor
+            Divider.BorderSizePixel = 0
+            Divider.Size = UDim2.new(1, 0, 0, 1)
+            Divider.Position = UDim2.new(0, 0, 0.5, 0)
+            Divider.Parent = Section
+            
+            if comp.Title ~= "" then
+                local TitleBg = Instance.new("Frame")
+                TitleBg.Name = "TitleBg"
+                TitleBg.BackgroundColor3 = Theme.ComponentBg
+                TitleBg.BorderSizePixel = 0
+                TitleBg.AnchorPoint = Vector2.new(0, 0.5)
+                TitleBg.Size = UDim2.new(0, #comp.Title * 6 + 10, 0, 14)
+                TitleBg.Position = UDim2.new(0.5, -((#comp.Title * 6 + 10) / 2), 0.5, 0)
+                TitleBg.Parent = Section
+                
+                local TitleText = Instance.new("TextLabel")
+                TitleText.Name = "Title"
+                TitleText.BackgroundColor3 = Color3.fromRGB(255,255,255)
+                TitleText.BackgroundTransparency = 1
+                TitleText.FontFace = Fonts.Bold
+                TitleText.TextColor3 = Theme.TextSecondary
+                TitleText.TextSize = 8
+                TitleText.Size = UDim2.new(1, -4, 1, 0)
+                TitleText.Text = comp.Title
+                TitleText.Parent = TitleBg
+            end
+            
+            comp.Instance = Section
+            return Section
+        end
+        
+        table.insert(TabData.Components, comp)
+        if ActiveTab == TabData then comp:Render(self.ComponentsFrame) end
+        return comp
+    end
+    
+    -- ═════════════════════════════════════
+    -- COMPONENTE: BUTTON (Botão)
+    -- ═════════════════════════════════════
+    function TabAPI:AddButton(config)
+        config = config or {}
+        local comp = {}
+        
+        comp.Text = config.Text or "Button"
+        comp.Callback = config.Callback or function() end
+        comp.Order = #TabData.Components
+        comp.Hovering = false
+        
+        function comp:Render(parent)
+            local Button = Instance.new("TextButton")
+            Button.Name = "Button_" .. comp.Text
+            Button.BackgroundColor3 = Theme.TabBg
+            Button.BorderSizePixel = 0
+            Button.FontFace = Fonts.Body
+            Button.TextColor3 = Theme.TextPrimary
+            Button.TextSize = 10
+            Button.TextWrapped = true
+            Button.Size = UDim2.new(1, 0, 0, 26)
+            Button.Text = comp.Text
+            Button.LayoutOrder = comp.Order
+            Button.AutoButtonColor = false
+            Button:SetAttribute("SearchTag", comp.Text)
+            Button.Parent = parent
+            
+            Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 5)
+            
+            local Stroke = Instance.new("UIStroke")
+            Stroke.Color = Theme.StrokeColor
+            Stroke.Thickness = 1
+            Stroke.Parent = Button
+            
+            -- Hover effect
+            Button.MouseEnter:Connect(function()
+                Tween(Button, TweenInfo_.Fast, {BackgroundColor3 = Theme.TabActive})
+                comp.Hovering = true
+            end)
+            
+            Button.MouseLeave:Connect(function()
+                Tween(Button, TweenInfo_.Fast, {BackgroundColor3 = Theme.TabBg})
+                comp.Hovering = false
+            end)
+            
+            -- Click effect
+            Button.MouseButton1Down:Connect(function()
+                Tween(Button, TweenInfo_.Fast, {BackgroundColor3 = Theme.Accent})
+            end)
+            
+            Button.MouseButton1Up:Connect(function()
+                Tween(Button, TweenInfo_.Fast, {
+                    BackgroundColor3 = comp.Hovering and Theme.TabActive or Theme.TabBg
+                })
+            end)
+            
+            Button.MouseButton1Click:Connect(function()
+                local success, err = pcall(comp.Callback)
+                if not success then
+                    warn("[Lumina] Erro no callback do botão: " .. tostring(err))
+                end
+            end)
+            
+            comp.Instance = Button
+            return Button
+        end
+        
+        table.insert(TabData.Components, comp)
+        if ActiveTab == TabData then comp:Render(self.ComponentsFrame) end
+        return comp
+    end
+    
+    -- ═════════════════════════════════════
+    -- COMPONENTE: TOGGLE (Switch)
+    -- ═════════════════════════════════════
+    function TabAPI:AddToggle(config)
+        config = config or {}
+        local comp = {}
+        
+        comp.Text = config.Text or "Toggle"
+        comp.Default = config.Default or false
+        comp.Callback = config.Callback or function() end
+        comp.Order = #TabData.Components
+        comp.Value = comp.Default
+        
+        function comp:Render(parent)
+            local Frame = Instance.new("Frame")
+            Frame.Name = "Toggle_" .. comp.Text
+            Frame.BackgroundColor3 = Theme.TabBg
+            Frame.BorderSizePixel = 0
+            Frame.Size = UDim2.new(1, 0, 0, 28)
+            Frame.LayoutOrder = comp.Order
+            Frame:SetAttribute("SearchTag", comp.Text)
+            Frame.Parent = parent
+            
+            Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 5)
+            
+            -- Nome do toggle
+            local NameLabel = Instance.new("TextLabel")
+            NameLabel.Name = "Name"
+            NameLabel.BackgroundColor3 = Color3.fromRGB(255,255,255)
+            NameLabel.BackgroundTransparency = 1
+            NameLabel.FontFace = Fonts.Body
+            NameLabel.TextColor3 = Theme.TextPrimary
+            NameLabel.TextSize = 10
+            NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+            NameLabel.Size = UDim2.new(1, -50, 1, 0)
+            NameLabel.Position = UDim2.new(0, 8, 0, 0)
+            NameLabel.Text = comp.Text
+            NameLabel.Parent = Frame
+            
+            -- Container do switch
+            local SwitchBg = Instance.new("Frame")
+            SwitchBg.Name = "Switch"
+            SwitchBg.BackgroundColor3 = comp.Value and Theme.ToggleOn or Theme.ToggleOff
+            SwitchBg.BorderSizePixel = 0
+            SwitchBg.Size = UDim2.new(0, 30, 0, 16)
+            SwitchBg.Position = UDim2.new(1, -38, 0.5, -8)
+            SwitchBg.AnchorPoint = Vector2.new(0, 0)
+            SwitchBg.Parent = Frame
+            
+            Instance.new("UICorner", SwitchBg).CornerRadius = UDim.new(1, 0)
+            
+            -- Bolinha do switch
+            local SwitchDot = Instance.new("Frame")
+            SwitchDot.Name = "Dot"
+            SwitchDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            SwitchDot.BorderSizePixel = 0
+            SwitchDot.Size = UDim2.new(0, 12, 0, 12)
+            SwitchDot.Position = comp.Value and UDim2.new(1, -14, 0.5, -6) or UDim2.new(0, 2, 0.5, -6)
+            SwitchDot.Parent = SwitchBg
+            
+            Instance.new("UICorner", SwitchDot).CornerRadius = UDim.new(1, 0)
+            
+            -- Botão de clique
+            local ClickArea = Instance.new("TextButton")
+            ClickArea.Name = "ClickArea"
+            ClickArea.BackgroundColor3 = Color3.fromRGB(255,255,255)
+            ClickArea.BackgroundTransparency = 1
+            ClickArea.BorderSizePixel = 0
+            ClickArea.Size = UDim2.new(1, 0, 1, 0)
+            ClickArea.Text = ""
+            ClickArea.Parent = Frame
+            
+            local function UpdateSwitch(value)
+                comp.Value = value
+                Tween(SwitchBg, TweenInfo_.Normal, {
+                    BackgroundColor3 = value and Theme.ToggleOn or Theme.ToggleOff
+                })
+                Tween(SwitchDot, TweenInfo_.Normal, {
+                    Position = value and UDim2.new(1, -14, 0.5, -6) or UDim2.new(0, 2, 0.5, -6)
+                })
+            end
+            
+            ClickArea.MouseButton1Click:Connect(function()
+                UpdateSwitch(not comp.Value)
+                local success, err = pcall(comp.Callback, comp.Value)
+                if not success then
+                    warn("[Lumina] Erro no callback do toggle: " .. tostring(err))
+                end
+            end)
+            
+            -- Aplica valor inicial
+            UpdateSwitch(comp.Value)
+            
+            comp.Instance = Frame
+            comp.SwitchBg = SwitchBg
+            comp.SwitchDot = SwitchDot
+            comp.UpdateSwitch = UpdateSwitch
+            return Frame
+        end
+        
+        function comp:SetValue(value)
+            comp.Value = value
+            if comp.UpdateSwitch then
+                comp.UpdateSwitch(value)
+            end
+        end
+        
+        function comp:GetValue()
+            return comp.Value
+        end
+        
+        table.insert(TabData.Components, comp)
+        if ActiveTab == TabData then comp:Render(self.ComponentsFrame) end
+        return comp
+    end
+    
+    -- ═════════════════════════════════════
+    -- COMPONENTE: SLIDER (Barra deslizante)
+    -- ═════════════════════════════════════
+    function TabAPI:AddSlider(config)
+        config = config or {}
+        local comp = {}
+        
+        comp.Text = config.Text or "Slider"
+        comp.Min = config.Min or 0
+        comp.Max = config.Max or 100
+        comp.Default = config.Default or 50
+        comp.Suffix = config.Suffix or ""
+        comp.Callback = config.Callback or function() end
+        comp.Order = #TabData.Components
+        comp.Value = comp.Default
+        
+        function comp:Render(parent)
+            local Frame = Instance.new("Frame")
+            Frame.Name = "Slider_" .. comp.Text
+            Frame.BackgroundColor3 = Theme.TabBg
+            Frame.BorderSizePixel = 0
+            Frame.Size = UDim2.new(1, 0, 0, 40)
+            Frame.LayoutOrder = comp.Order
+            Frame:SetAttribute("SearchTag", comp.Text)
+            Frame.Parent = parent
+            
+            Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 5)
+            
+            -- Nome
+            local NameLabel = Instance.new("TextLabel")
+            NameLabel.Name = "Name"
+            NameLabel.BackgroundColor3 = Color3.fromRGB(255,255,255)
+            NameLabel.BackgroundTransparency = 1
+            NameLabel.FontFace = Fonts.Body
+            NameLabel.TextColor3 = Theme.TextPrimary
+            NameLabel.TextSize = 10
+            NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+            NameLabel.Size = UDim2.new(0.6, 0, 0, 16)
+            NameLabel.Position = UDim2.new(0, 8, 0, 4)
+            NameLabel.Text = comp.Text
+            NameLabel.Parent = Frame
+            
+            -- Valor
+            local ValueLabel = Instance.new("TextLabel")
+            ValueLabel.Name = "Value"
+            ValueLabel.BackgroundColor3 = Color3.fromRGB(255,255,255)
+            ValueLabel.BackgroundTransparency = 1
+            ValueLabel.FontFace = Fonts.Bold
+            ValueLabel.TextColor3 = Theme.Accent
+            ValueLabel.TextSize = 10
+            ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+            ValueLabel.Size = UDim2.new(0.4, -8, 0, 16)
+            ValueLabel.Position = UDim2.new(0.6, 0, 0, 4)
+            ValueLabel.Text = tostring(comp.Value) .. comp.Suffix
+            ValueLabel.Parent = Frame
+            
+            -- Barra do slider (background)
+            local SliderBar = Instance.new("Frame")
+            SliderBar.Name = "Bar"
+            SliderBar.BackgroundColor3 = Theme.SliderBg
+            SliderBar.BorderSizePixel = 0
+            SliderBar.Size = UDim2.new(1, -16, 0, 6)
+            SliderBar.Position = UDim2.new(0, 8, 0, 26)
+            SliderBar.Parent = Frame
+            
+            Instance.new("UICorner", SliderBar).CornerRadius = UDim.new(1, 0)
+            
+            -- Preenchimento do slider
+            local SliderFill = Instance.new("Frame")
+            SliderFill.Name = "Fill"
+            SliderFill.BackgroundColor3 = Theme.SliderFill
+            SliderFill.BorderSizePixel = 0
+            local fillPercent = (comp.Value - comp.Min) / (comp.Max - comp.Min)
+            SliderFill.Size = UDim2.new(fillPercent, 0, 1, 0)
+            SliderFill.Parent = SliderBar
+            
+            Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
+            
+            -- Área de interação
+            local ClickArea = Instance.new("TextButton")
+            ClickArea.Name = "ClickArea"
+            ClickArea.BackgroundColor3 = Color3.fromRGB(255,255,255)
+            ClickArea.BackgroundTransparency = 1
+            ClickArea.BorderSizePixel = 0
+            ClickArea.Size = UDim2.new(1, -16, 0, 16)
+            ClickArea.Position = UDim2.new(0, 8, 0, 22)
+            ClickArea.Text = ""
+            ClickArea.Parent = Frame
+            
+            local sliding = false
+            
+            local function UpdateSlider(input)
+                local pos = input.Position.X
+                local barPos = SliderBar.AbsolutePosition.X
+                local barSize = SliderBar.AbsoluteSize.X
+                local percent = math.clamp((pos - barPos) / barSize, 0, 1)
+                local newValue = math.floor(comp.Min + (comp.Max - comp.Min) * percent + 0.5)
+                
+                comp.Value = newValue
+                ValueLabel.Text = tostring(newValue) .. comp.Suffix
+                SliderFill.Size = UDim2.new(percent, 0, 1, 0)
+                
+                local success, err = pcall(comp.Callback, newValue)
+                if not success then
+                    warn("[Lumina] Erro no callback do slider: " .. tostring(err))
+                end
+            end
+            
+            ClickArea.MouseButton1Down:Connect(function()
+                sliding = true
+            end)
+            
+            UserInputService.InputChanged:Connect(function(input)
+                if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                    UpdateSlider(input)
+                end
+            end)
+            
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    sliding = false
+                end
+            end)
+            
+            ClickArea.MouseButton1Click:Connect(function()
+                -- clique simples também atualiza
+            end)
+            
+            comp.Instance = Frame
+            comp.SliderFill = SliderFill
+            comp.ValueLabel = ValueLabel
+            return Frame
+        end
+        
+        function comp:SetValue(value)
+            comp.Value = math.clamp(value, comp.Min, comp.Max)
+            if comp.SliderFill then
+                local percent = (comp.Value - comp.Min) / (comp.Max - comp.Min)
+                comp.SliderFill.Size = UDim2.new(percent, 0, 1, 0)
+            end
+            if comp.ValueLabel then
+                comp.ValueLabel.Text = tostring(comp.Value) .. comp.Suffix
+            end
+        end
+        
+        function comp:GetValue()
+            return comp.Value
+        end
+        
+        table.insert(TabData.Components, comp)
+        if ActiveTab == TabData then comp:Render(self.ComponentsFrame) end
+        return comp
+    end
+    
+    -- ═════════════════════════════════════
+    -- COMPONENTE: DROPDOWN (Menu suspenso)
+    -- ═════════════════════════════════════
+    function TabAPI:AddDropdown(config)
+        config = config or {}
+        local comp = {}
+        
+        comp.Text = config.Text or "Dropdown"
+        comp.Options = config.Options or {"Option 1", "Option 2", "Option 3"}
+        comp.Default = config.Default or comp.Options[1]
+        comp.Callback = config.Callback or function() end
+        comp.Order = #TabData.Components
+        comp.Value = comp.Default
+        comp.Open = false
+        
+        function comp:Render(parent)
+            local Frame = Instance.new("Frame")
+            Frame.Name = "Dropdown_" .. comp.Text
+            Frame.BackgroundColor3 = Color3.fromRGB(255,255,255)
+            Frame.BackgroundTransparency = 1
+            Frame.Size = UDim2.new(1, 0, 0, 32)
+            Frame.LayoutOrder = comp.Order
+            Frame.ClipsDescendants = false
+            Frame:SetAttribute("SearchTag", comp.Text)
+            Frame.Parent = parent
+            
+            -- Header do dropdown
+            local Header = Instance.new("TextButton")
+            Header.Name = "Header"
+            Header.BackgroundColor3 = Theme.TabBg
+            Header.BorderSizePixel = 0
+            Header.FontFace = Fonts.Body
+            Header.TextColor3 = Theme.TextPrimary
+            Header.TextSize = 10
+            Header.TextXAlignment = Enum.TextXAlignment.Left
+            Header.Size = UDim2.new(1, 0, 0, 28)
+            Header.Text = "  " .. comp.Value
+            Header.AutoButtonColor = false
+            Header.Parent = Frame
+            
+            Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 5)
+            
+            -- Seta do dropdown
+            local Arrow = Instance.new("TextLabel")
+            Arrow.Name = "Arrow"
+            Arrow.BackgroundColor3 = Color3.fromRGB(255,255,255)
+            Arrow.BackgroundTransparency = 1
+            Arrow.FontFace = Fonts.Bold
+            Arrow.TextColor3 = Theme.TextSecondary
+            Arrow.TextSize = 10
+            Arrow.Size = UDim2.new(0, 20, 0, 28)
+            Arrow.Position = UDim2.new(1, -20, 0, 0)
+            Arrow.Text = "▼"
+            Arrow.Parent = Header
+            
+            -- Label
+            local LabelText = Instance.new("TextLabel")
+            LabelText.Name = "Label"
+            LabelText.BackgroundColor3 = Color3.fromRGB(255,255,255)
+            LabelText.BackgroundTransparency = 1
+            LabelText.FontFace = Fonts.Light
+            LabelText.TextColor3 = Theme.TextSecondary
+            LabelText.TextSize = 7
+            LabelText.TextXAlignment = Enum.TextXAlignment.Left
+            LabelText.Size = UDim2.new(1, 0, 0, 10)
+            LabelText.Position = UDim2.new(0, 4, 0, -2)
+            LabelText.Text = comp.Text
+            LabelText.Parent = Header
+            
+            -- Container das opções
+            local OptionsFrame = Instance.new("Frame")
+            OptionsFrame.Name = "Options"
+            OptionsFrame.BackgroundColor3 = Theme.DropdownBg
+            OptionsFrame.BorderSizePixel = 0
+            OptionsFrame.Size = UDim2.new(1, 0, 0, 0)
+            OptionsFrame.Position = UDim2.new(0, 0, 0, 30)
+            OptionsFrame.Visible = false
+            OptionsFrame.ClipsDescendants = true
+            OptionsFrame.Parent = Frame
+            
+            Instance.new("UICorner", OptionsFrame).CornerRadius = UDim.new(0, 5)
+            
+            local OptionsLayout = Instance.new("UIListLayout")
+            OptionsLayout.Padding = UDim.new(0, 1)
+            OptionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            OptionsLayout.Parent = OptionsFrame
+            
+            -- Popula opções
+            for i, option in pairs(comp.Options) do
+                local OptBtn = Instance.new("TextButton")
+                OptBtn.Name = "Opt_" .. option
+                OptBtn.BackgroundColor3 = Theme.TabBg
+                OptBtn.BackgroundTransparency = 0.5
+                OptBtn.BorderSizePixel = 0
+                OptBtn.FontFace = Fonts.Body
+                OptBtn.TextColor3 = Theme.TextPrimary
+                OptBtn.TextSize = 9
+                OptBtn.TextXAlignment = Enum.TextXAlignment.Left
+                OptBtn.Size = UDim2.new(1, 0, 0, 22)
+                OptBtn.Text = "  " .. tostring(option)
+                OptBtn.AutoButtonColor = false
+                OptBtn.LayoutOrder = i
+                OptBtn.Parent = OptionsFrame
+                
+                OptBtn.MouseEnter:Connect(function()
+                    Tween(OptBtn, TweenInfo_.Fast, {BackgroundColor3 = Theme.TabActive})
+                end)
+                
+                OptBtn.MouseLeave:Connect(function()
+                    Tween(OptBtn, TweenInfo_.Fast, {BackgroundColor3 = Theme.TabBg})
+                end)
+                
+                OptBtn.MouseButton1Click:Connect(function()
+                    comp.Value = option
+                    Header.Text = "  " .. tostring(option)
+                    comp.Open = false
+                    
+                    Tween(OptionsFrame, TweenInfo_.Normal, {
+                        Size = UDim2.new(1, 0, 0, 0)
+                    })
+                    task.delay(0.25, function()
+                        OptionsFrame.Visible = false
+                    end)
+                    Frame.Size = UDim2.new(1, 0, 0, 32)
+                    Arrow.Text = "▼"
+                    
+                    local success, err = pcall(comp.Callback, option)
+                    if not success then
+                        warn("[Lumina] Erro no callback do dropdown: " .. tostring(err))
+                    end
+                end)
+            end
+            
+            -- Toggle dropdown
+            Header.MouseButton1Click:Connect(function()
+                comp.Open = not comp.Open
+                
+                if comp.Open then
+                    OptionsFrame.Visible = true
+                    local optCount = #comp.Options
+                    local totalHeight = optCount * 23
+                    Frame.Size = UDim2.new(1, 0, 0, 32 + totalHeight)
+                    Tween(OptionsFrame, TweenInfo_.Normal, {
+                        Size = UDim2.new(1, 0, 0, totalHeight)
+                    })
+                    Arrow.Text = "▲"
+                else
+                    Tween(OptionsFrame, TweenInfo_.Normal, {
+                        Size = UDim2.new(1, 0, 0, 0)
+                    })
+                    task.delay(0.25, function()
+                        OptionsFrame.Visible = false
+                    end)
+                    Frame.Size = UDim2.new(1, 0, 0, 32)
+                    Arrow.Text = "▼"
+                end
+            end)
+            
+            comp.Instance = Frame
+            comp.Header = Header
+            return Frame
+        end
+        
+        function comp:SetValue(value)
+            comp.Value = value
+            if comp.Header then
+                comp.Header.Text = "  " .. tostring(value)
+            end
+        end
+        
+        function comp:GetValue()
+            return comp.Value
+        end
+        
+        function comp:UpdateOptions(newOptions)
+            comp.Options = newOptions
+            -- Re-render
+            if comp.Instance then
+                local parent = comp.Instance.Parent
+                comp.Instance:Destroy()
+                comp:Render(parent)
+            end
+        end
+        
+        table.insert(TabData.Components, comp)
+        if ActiveTab == TabData then comp:Render(self.ComponentsFrame) end
+        return comp
+    end
+    
+    -- ═════════════════════════════════════
+    -- COMPONENTE: KEYBIND (Atalho de tecla)
+    -- ═════════════════════════════════════
+    function TabAPI:AddKeybind(config)
+        config = config or {}
+        local comp = {}
+        
+        comp.Text = config.Text or "Keybind"
+        comp.Default = config.Default or Enum.KeyCode.Unknown
+        comp.Callback = config.Callback or function() end
+        comp.Order = #TabData.Components
+        comp.Key = comp.Default
+        comp.Listening = false
+        
+        function comp:Render(parent)
+            local Frame = Instance.new("Frame")
+            Frame.Name = "Keybind_" .. comp.Text
+            Frame.BackgroundColor3 = Theme.TabBg
+            Frame.BorderSizePixel = 0
+            Frame.Size = UDim2.new(1, 0, 0, 28)
+            Frame.LayoutOrder = comp.Order
+            Frame:SetAttribute("SearchTag", comp.Text)
+            Frame.Parent = parent
+            
+            Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 5)
+            
+            local NameLabel = Instance.new("TextLabel")
+            NameLabel.Name = "Name"
+            NameLabel.BackgroundColor3 = Color3.fromRGB(255,255,255)
+            NameLabel.BackgroundTransparency = 1
+            NameLabel.FontFace = Fonts.Body
+            NameLabel.TextColor3 = Theme.TextPrimary
+            NameLabel.TextSize = 10
+            NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+            NameLabel.Size = UDim2.new(1, -80, 1, 0)
+            NameLabel.Position = UDim2.new(0, 8, 0, 0)
+            NameLabel.Text = comp.Text
+            NameLabel.Parent = Frame
+            
+            local KeyBtn = Instance.new("TextButton")
+            KeyBtn.Name = "Key"
+            KeyBtn.BackgroundColor3 = Theme.InputBg
+            KeyBtn.BorderSizePixel = 0
+            KeyBtn.FontFace = Fonts.Bold
+            KeyBtn.TextColor3 = Theme.Accent
+            KeyBtn.TextSize = 9
+            KeyBtn.Size = UDim2.new(0, 60, 0, 20)
+            KeyBtn.Position = UDim2.new(1, -66, 0.5, -10)
+            KeyBtn.Text = comp.Key.Name
+            KeyBtn.AutoButtonColor = false
+            KeyBtn.Parent = Frame
+            
+            Instance.new("UICorner", KeyBtn).CornerRadius = UDim.new(0, 4)
+            
+            KeyBtn.MouseButton1Click:Connect(function()
+                comp.Listening = true
+                KeyBtn.Text = "..."
+                KeyBtn.TextColor3 = Theme.DangerColor
+            end)
+            
+            UserInputService.InputBegan:Connect(function(input, processed)
+                if processed then return end
+                
+                if comp.Listening and input.KeyCode ~= Enum.KeyCode.Unknown then
+                    comp.Key = input.KeyCode
+                    comp.Listening = false
+                    KeyBtn.Text = input.KeyCode.Name
+                    KeyBtn.TextColor3 = Theme.Accent
+                    return
+                end
+                
+                if input.KeyCode == comp.Key then
+                    local success, err = pcall(comp.Callback, comp.Key)
+                    if not success then
+                        warn("[Lumina] Erro no callback do keybind: " .. tostring(err))
+                    end
+                end
+            end)
+            
+            comp.Instance = Frame
+            return Frame
+        end
+        
+        function comp:SetKey(keycode)
+            comp.Key = keycode
+        end
+        
+        function comp:GetKey()
+            return comp.Key
+        end
+        
+        table.insert(TabData.Components, comp)
+        if ActiveTab == TabData then comp:Render(self.ComponentsFrame) end
+        return comp
+    end
+    
+    -- ═════════════════════════════════════
+    -- COMPONENTE: TEXTBOX (Campo de texto)
+    -- ═════════════════════════════════════
+    function TabAPI:AddTextbox(config)
+        config = config or {}
+        local comp = {}
+        
+        comp.Text = config.Text or "Input"
+        comp.Placeholder = config.Placeholder or "Digite aqui..."
+        comp.Default = config.Default or ""
+        comp.Callback = config.Callback or function() end
+        comp.Order = #TabData.Components
+        comp.Value = comp.Default
+        
+        function comp:Render(parent)
+            local Frame = Instance.new("Frame")
+            Frame.Name = "Textbox_" .. comp.Text
+            Frame.BackgroundColor3 = Theme.TabBg
+            Frame.BorderSizePixel = 0
+            Frame.Size = UDim2.new(1, 0, 0, 40)
+            Frame.LayoutOrder = comp.Order
+            Frame:SetAttribute("SearchTag", comp.Text)
+            Frame.Parent = parent
+            
+            Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 5)
+            
+            local NameLabel = Instance.new("TextLabel")
+            NameLabel.Name = "Name"
+            NameLabel.BackgroundColor3 = Color3.fromRGB(255,255,255)
+            NameLabel.BackgroundTransparency = 1
+            NameLabel.FontFace = Fonts.Body
+            NameLabel.TextColor3 = Theme.TextPrimary
+            NameLabel.TextSize = 10
+            NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+            NameLabel.Size = UDim2.new(1, -8, 0, 16)
+            NameLabel.Position = UDim2.new(0, 8, 0, 3)
+            NameLabel.Text = comp.Text
+            NameLabel.Parent = Frame
+            
+            local Input = Instance.new("TextBox")
+            Input.Name = "Input"
+            Input.BackgroundColor3 = Theme.InputBg
+            Input.BorderSizePixel = 0
+            Input.FontFace = Fonts.Body
+            Input.TextColor3 = Theme.TextPrimary
+            Input.PlaceholderText = comp.Placeholder
+            Input.PlaceholderColor3 = Theme.TextSecondary
+            Input.TextSize = 9
+            Input.TextXAlignment = Enum.TextXAlignment.Left
+            Input.Size = UDim2.new(1, -16, 0, 16)
+            Input.Position = UDim2.new(0, 8, 0, 20)
+            Input.Text = comp.Default
+            Input.ClearTextOnFocus = false
+            Input.Parent = Frame
+            
+            Instance.new("UICorner", Input).CornerRadius = UDim.new(0, 4)
+            
+            local InputPadding = Instance.new("UIPadding")
+            InputPadding.PaddingLeft = UDim.new(0, 6)
+            InputPadding.PaddingRight = UDim.new(0, 6)
+            InputPadding.Parent = Input
+            
+            Input.FocusLost:Connect(function(enterPressed)
+                comp.Value = Input.Text
+                local success, err = pcall(comp.Callback, Input.Text, enterPressed)
+                if not success then
+                    warn("[Lumina] Erro no callback do textbox: " .. tostring(err))
+                end
+            end)
+            
+            comp.Instance = Frame
+            comp.Input = Input
+            return Frame
+        end
+        
+        function comp:SetValue(value)
+            comp.Value = value
+            if comp.Input then
+                comp.Input.Text = tostring(value)
+            end
+        end
+        
+        function comp:GetValue()
+            return comp.Value
+        end
+        
+        table.insert(TabData.Components, comp)
+        if ActiveTab == TabData then comp:Render(self.ComponentsFrame) end
+        return comp
+    end
+    
+    -- ═════════════════════════════════════
+    -- COMPONENTE: COLOR PICKER (Simples)
+    -- ═════════════════════════════════════
+    function TabAPI:AddColorPicker(config)
+        config = config or {}
+        local comp = {}
+        
+        comp.Text = config.Text or "Color"
+        comp.Default = config.Default or Color3.fromRGB(100, 140, 255)
+        comp.Callback = config.Callback or function() end
+        comp.Order = #TabData.Components
+        comp.Value = comp.Default
+        
+        function comp:Render(parent)
+            local Frame = Instance.new("Frame")
+            Frame.Name = "ColorPicker_" .. comp.Text
+            Frame.BackgroundColor3 = Theme.TabBg
+            Frame.BorderSizePixel = 0
+            Frame.Size = UDim2.new(1, 0, 0, 28)
+            Frame.LayoutOrder = comp.Order
+            Frame:SetAttribute("SearchTag", comp.Text)
+            Frame.Parent = parent
+            
+            Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 5)
+            
+            local NameLabel = Instance.new("TextLabel")
+            NameLabel.Name = "Name"
+            NameLabel.BackgroundColor3 = Color3.fromRGB(255,255,255)
+            NameLabel.BackgroundTransparency = 1
+            NameLabel.FontFace = Fonts.Body
+            NameLabel.TextColor3 = Theme.TextPrimary
+            NameLabel.TextSize = 10
+            NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+            NameLabel.Size = UDim2.new(1, -50, 1, 0)
+            NameLabel.Position = UDim2.new(0, 8, 0, 0)
+            NameLabel.Text = comp.Text
+            NameLabel.Parent = Frame
+            
+            -- Preview da cor
+            local ColorPreview = Instance.new("TextButton")
+            ColorPreview.Name = "Preview"
+            ColorPreview.BackgroundColor3 = comp.Value
+            ColorPreview.BorderSizePixel = 0
+            ColorPreview.Size = UDim2.new(0, 40, 0, 20)
+            ColorPreview.Position = UDim2.new(1, -46, 0.5, -10)
+            ColorPreview.Text = ""
+            ColorPreview.AutoButtonColor = false
+            ColorPreview.Parent = Frame
+            
+            Instance.new("UICorner", ColorPreview).CornerRadius = UDim.new(0, 4)
+            
+            local Stroke = Instance.new("UIStroke")
+            Stroke.Color = Theme.StrokeColor
+            Stroke.Thickness = 1
+            Stroke.Parent = ColorPreview
+            
+            -- Ao clicar, cicla entre cores predefinidas (implementação simples)
+            local colors = {
+                Color3.fromRGB(255, 50, 50),
+                Color3.fromRGB(50, 255, 50),
+                Color3.fromRGB(50, 50, 255),
+                Color3.fromRGB(255, 255, 50),
+                Color3.fromRGB(255, 50, 255),
+                Color3.fromRGB(50, 255, 255),
+                Color3.fromRGB(255, 140, 0),
+                Color3.fromRGB(100, 140, 255),
+            }
+            local colorIndex = 1
+            
+            ColorPreview.MouseButton1Click:Connect(function()
+                colorIndex = colorIndex + 1
+                if colorIndex > #colors then colorIndex = 1 end
+                comp.Value = colors[colorIndex]
+                Tween(ColorPreview, TweenInfo_.Normal, {BackgroundColor3 = comp.Value})
+                local success, err = pcall(comp.Callback, comp.Value)
+                if not success then
+                    warn("[Lumina] Erro no callback do colorpicker: " .. tostring(err))
+                end
+            end)
+            
+            comp.Instance = Frame
+            comp.ColorPreview = ColorPreview
+            return Frame
+        end
+        
+        function comp:SetValue(color)
+            comp.Value = color
+            if comp.ColorPreview then
+                comp.ColorPreview.BackgroundColor3 = color
+            end
+        end
+        
+        function comp:GetValue()
+            return comp.Value
+        end
+        
+        table.insert(TabData.Components, comp)
+        if ActiveTab == TabData then comp:Render(self.ComponentsFrame) end
+        return comp
+    end
+    
+    return TabAPI
 end
+
+-- ═══════════════════════════════════════════════════════
+-- RETORNA A LIBRARY
+-- ═══════════════════════════════════════════════════════
+return Lumina
