@@ -164,7 +164,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Main_5"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0)
     LMG2L["Main_5"]["Size"] = UDim2.new(0, 316, 0, 202)
     LMG2L["Main_5"]["Position"] = UDim2.new(0, 0, 0, 22)
-    LMG2L["Main_5"]["Visible"] = true  -- ⬅️ JÁ VEM ABERTO
+    LMG2L["Main_5"]["Visible"] = true
     LMG2L["Main_5"]["Active"] = true
 
     LMG2L["Effect_6"] = Instance.new("Frame", LMG2L["Main_5"])
@@ -194,37 +194,28 @@ function UILibrary:CreateWindow(title)
     LMG2L["Tabs_2a"]["Active"] = true
 
     -- ═══════════════════════════════════════════════════════════════════════════
-    -- BOTÃO MINIMIZAR COM ÍCONES (SEM ANIMAÇÃO - TROCA DIRETA)
+    -- BOTÃO MINIMIZAR COM ÍCONES
     -- ═══════════════════════════════════════════════════════════════════════════
     
-    local ICON_ABERTO = "rbxassetid://112366764985181"   -- Ícone quando menu está ABERTO
-    local ICON_FECHADO = "rbxassetid://119314216582090"  -- Ícone quando menu está FECHADO
+    local ICON_ABERTO = "rbxassetid://112366764985181"
+    local ICON_FECHADO = "rbxassetid://119314216582090"
 
     LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])
     LMG2L["OpenName_2d"]["BorderSizePixel"] = 0
     LMG2L["OpenName_2d"]["BackgroundTransparency"] = 1
-    LMG2L["OpenName_2d"]["Image"] = ICON_ABERTO  -- ⬅️ Começa com ícone de ABERTO (menu já está aberto)
+    LMG2L["OpenName_2d"]["Image"] = ICON_ABERTO
     LMG2L["OpenName_2d"]["Size"] = UDim2.new(0, 18, 0, 18)
     LMG2L["OpenName_2d"]["Position"] = UDim2.new(0, 6, 0, 3)
     LMG2L["OpenName_2d"]["ImageColor3"] = Color3.fromRGB(255, 255, 255)
 
-    -- Função de minimizar/maximizar com troca direta de ícone
     LMG2L["OpenName_2d"].MouseButton1Click:Connect(function()
         local menuAberto = LMG2L["Main_5"].Visible
-        
-        -- Inverte visibilidade do menu
         LMG2L["Main_5"].Visible = not menuAberto
-        
-        -- Troca o ícone diretamente (sem animação)
         if menuAberto then
-            -- Vai fechar → mostra ícone de fechado
             LMG2L["OpenName_2d"].Image = ICON_FECHADO
         else
-            -- Vai abrir → mostra ícone de aberto
             LMG2L["OpenName_2d"].Image = ICON_ABERTO
         end
-        
-        -- Se fechar o menu, fecha dropdowns abertos
         if not LMG2L["Main_5"].Visible then
             if openDropdownInfo then 
                 openDropdownInfo.Close() 
@@ -232,7 +223,7 @@ function UILibrary:CreateWindow(title)
         end
     end)
 
-    -- HOTKEY PARA ABRIR/FECHAR A UI NO PC (RightControl)
+    -- HOTKEY PARA ABRIR/FECHAR
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then
             LMG2L["Topo_2"].Visible = not LMG2L["Topo_2"].Visible
@@ -1287,7 +1278,7 @@ function UILibrary:CreateWindow(title)
 
         -- ── Button ───────────────────────────────────────────────────────────────
 
-        function tabMethods:AddButton(text, callback)
+        function tabMethods:AddButton(text, callback, iconId)
             local ButtonFrame = Instance.new("Frame", ElementsContainer)
             ButtonFrame.BorderSizePixel = 0
             ButtonFrame.Size = UDim2.new(0, 236, 0, 22)
@@ -1301,10 +1292,21 @@ function UILibrary:CreateWindow(title)
             Button.BackgroundColor3 = currentThemeColor
             Button.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
             Button.Size = UDim2.new(0, 238, 0, 22)
-            Button.Text = text or "Button"
+            Button.Text = "   " .. (text or "Button")
             Button.AutoButtonColor = false
             Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 3)
             table.insert(themeElements, { type = "Button", instance = Button })
+
+            if iconId then
+                local ButtonIcon = Instance.new("ImageLabel", Button)
+                ButtonIcon.AnchorPoint = Vector2.new(0, 0.5)
+                ButtonIcon.Position = UDim2.new(0, 6, 0.5, 0)
+                ButtonIcon.Size = UDim2.new(0, 14, 0, 14)
+                ButtonIcon.BackgroundTransparency = 1
+                ButtonIcon.Image = iconId
+                ButtonIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+                ButtonIcon.ZIndex = 2
+            end
 
             Button.MouseEnter:Connect(function()
                 local bh, bs, bv = currentThemeColor:ToHSV()
@@ -1531,6 +1533,7 @@ function UILibrary:CreateWindow(title)
         local meta = loadMeta()
         local autoLoadEnabled = meta.autoLoad or false
 
+        -- Ícone de engrenagem para a aba Config
         local configTab = publicMethods:AddTab("Config", "rbxassetid://10709852168")
 
         local currentConfigName = meta.lastConfig or ""
@@ -1584,6 +1587,7 @@ function UILibrary:CreateWindow(title)
 
         configTab:AddSeparator()
 
+        -- Botão SALVAR com ícone de disquete/check
         configTab:AddButton("Salvar", function()
             local name = nameInput:GetText()
             if not name or name == "" or name == "Nenhuma config salva" then return end
@@ -1595,8 +1599,9 @@ function UILibrary:CreateWindow(title)
             meta.autoLoad = autoLoadEnabled
             saveMeta(meta)
             updateDropdown(name)
-        end)
+        end, "rbxassetid://93130444183105")
 
+        -- Botão CARREGAR com ícone de pasta/download
         configTab:AddButton("Carregar", function()
             local name = nameInput:GetText()
             if not name or name == "" then return end
@@ -1610,8 +1615,9 @@ function UILibrary:CreateWindow(title)
                 saveMeta(meta)
                 updateDropdown(name)
             end
-        end)
+        end, "rbxassetid://119314216582090")
 
+        -- Botão DELETAR com ícone de lixeira/X
         configTab:AddButton("Deletar", function()
             local name = nameInput:GetText()
             if not name or name == "" then return end
@@ -1626,7 +1632,7 @@ function UILibrary:CreateWindow(title)
                 if nameInput then nameInput:SetText("") end
                 updateDropdown()
             end
-        end)
+        end, "rbxassetid://112366764985181")
 
         configTab:AddSeparator()
 
