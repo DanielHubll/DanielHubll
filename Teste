@@ -1599,7 +1599,7 @@ function UILibrary:CreateWindow(title)
             meta.autoLoad = autoLoadEnabled
             saveMeta(meta)
             updateDropdown(name)
-        end, "rbxassetid://93130444183105")
+        end, "rbxassetid://97582400811473")
 
         -- Botão CARREGAR com ícone de pasta/download
         configTab:AddButton("Carregar", function()
@@ -1615,7 +1615,7 @@ function UILibrary:CreateWindow(title)
                 saveMeta(meta)
                 updateDropdown(name)
             end
-        end, "rbxassetid://119314216582090")
+        end, "rbxassetid://93898339468067")
 
         -- Botão DELETAR com ícone de lixeira/X
         configTab:AddButton("Deletar", function()
@@ -1632,7 +1632,7 @@ function UILibrary:CreateWindow(title)
                 if nameInput then nameInput:SetText("") end
                 updateDropdown()
             end
-        end, "rbxassetid://112366764985181")
+        end, "rbxassetid://119483803631956")
 
         configTab:AddSeparator()
 
