@@ -1602,7 +1602,7 @@ function UILibrary:CreateWindow(title)
             meta.autoLoad = autoLoadEnabled
             saveMeta(meta)
             updateDropdown(name)
-        end, "rbxassetid://97582400811473") -- Ícone Salvar
+        end, "rbxassetid://7734068321") -- Ícone Salvar
 
         -- Botão CARREGAR com ícone personalizado
         configTab:AddButton("Carregar", function()
@@ -1618,7 +1618,7 @@ function UILibrary:CreateWindow(title)
                 saveMeta(meta)
                 updateDropdown(name)
             end
-        end, "rbxassetid://106415964550855") -- Ícone Carregar
+        end, "rbxassetid://7733771692") -- Ícone Carregar
 
         -- Botão DELETAR com ícone personalizado
         configTab:AddButton("Deletar", function()
@@ -1635,7 +1635,7 @@ function UILibrary:CreateWindow(title)
                 if nameInput then nameInput:SetText("") end
                 updateDropdown()
             end
-        end, "rbxassetid://119483803631956") -- Ícone Lixeira
+        end, "rbxassetid://7733920644") -- Ícone Lixeira
 
         configTab:AddSeparator()
 
@@ -1656,7 +1656,7 @@ function UILibrary:CreateWindow(title)
         -- Botão ATUALIZAR LISTA com ícone personalizado
         configTab:AddButton("Atualizar Lista", function()
             updateDropdown(currentConfigName)
-        end, "rbxassetid://119636414179025") -- Ícone Atualizar
+        end, "rbxassetid://7733911828") -- Ícone Atualizar
 
         -- Botão RESETAR TUDO com ícone personalizado
         configTab:AddButton("Resetar Tudo", function()
@@ -1671,7 +1671,7 @@ function UILibrary:CreateWindow(title)
                     end
                 end
             end
-        end, "rbxassetid://93898339468067") -- Ícone Reset
+        end, "rbxassetid://7734053426") -- Ícone Reset
         
         if currentConfigName ~= "" then
             updateDropdown(currentConfigName)
