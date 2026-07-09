@@ -1527,168 +1527,169 @@ function UILibrary:CreateWindow(title)
     end
 
     local autoConfigCreated = false
-local function createAutoConfigTab()
-    if autoConfigCreated then return end
-    autoConfigCreated = true
+    local function createAutoConfigTab()
+        if autoConfigCreated then return end
+        autoConfigCreated = true
 
-    ensureFolder()
+        ensureFolder()
 
-    local meta = loadMeta()
-    local autoLoadEnabled = meta.autoLoad or false
+        local meta = loadMeta()
+        local autoLoadEnabled = meta.autoLoad or false
 
-    -- Ícone de engrenagem para a aba Config
-    local configTab = publicMethods:AddTab("Config", "rbxassetid://10709852168")
+        -- Ícone de engrenagem para a aba Config
+        local configTab = publicMethods:AddTab("Config", "rbxassetid://10709852168")
 
-    local currentConfigName = meta.lastConfig or ""
-    local configDropdown = nil
-    local nameInput = nil
-    local autoLoadToggle = nil
+        local currentConfigName = meta.lastConfig or ""
+        local configDropdown = nil
+        local nameInput = nil
+        local autoLoadToggle = nil
 
-    local function getConfigList()
-        local list = {}
-        loadAllConfigsFromDisk()
-        local diskConfigs = getConfigFiles()
-        for _, name in ipairs(diskConfigs) do
-            table.insert(list, name)
+        local function getConfigList()
+            local list = {}
+            loadAllConfigsFromDisk()
+            local diskConfigs = getConfigFiles()
+            for _, name in ipairs(diskConfigs) do
+                table.insert(list, name)
+            end
+            if #list == 0 then
+                table.insert(list, "Nenhuma config salva")
+            end
+            return list
         end
-        if #list == 0 then
-            table.insert(list, "Nenhuma config salva")
-        end
-        return list
-    end
 
-    local function updateDropdown(selectName)
-        local configList = getConfigList()
-        if configDropdown and configDropdown.Refresh then
-            configDropdown:Refresh(configList)
-        end
-        local nameToSelect = selectName or currentConfigName
-        if nameToSelect and nameToSelect ~= "" and configDropdown and configDropdown.SetValue then
-            for _, v in ipairs(getConfigList()) do
-                if v == nameToSelect then
-                    configDropdown:SetValue(nameToSelect)
-                    break
+        local function updateDropdown(selectName)
+            local configList = getConfigList()
+            if configDropdown and configDropdown.Refresh then
+                configDropdown:Refresh(configList)
+            end
+            local nameToSelect = selectName or currentConfigName
+            if nameToSelect and nameToSelect ~= "" and configDropdown and configDropdown.SetValue then
+                for _, v in ipairs(getConfigList()) do
+                    if v == nameToSelect then
+                        configDropdown:SetValue(nameToSelect)
+                        break
+                    end
                 end
             end
         end
-    end
 
-    configTab:AddSection("Gerenciador de Configs")
+        configTab:AddSection("Gerenciador de Configs")
 
-    nameInput = configTab:AddTextBox("Nome", currentConfigName, function(text)
-        currentConfigName = text
-    end)
+        nameInput = configTab:AddTextBox("Nome", currentConfigName, function(text)
+            currentConfigName = text
+        end)
 
-    configDropdown = configTab:AddDropdown("Configs Salvas", getConfigList(), function(selected)
-        if selected and selected ~= "Nenhuma config salva" then
-            currentConfigName = selected
-            if nameInput then
-                nameInput:SetText(selected)
+        configDropdown = configTab:AddDropdown("Configs Salvas", getConfigList(), function(selected)
+            if selected and selected ~= "Nenhuma config salva" then
+                currentConfigName = selected
+                if nameInput then
+                    nameInput:SetText(selected)
+                end
             end
-        end
-    end)
+        end)
 
-    configTab:AddSeparator()
+        configTab:AddSeparator()
 
-    -- Botão SALVAR com ícone de DISQUETE
-    configTab:AddButton("Salvar", function()
-        local name = nameInput:GetText()
-        if not name or name == "" or name == "Nenhuma config salva" then return end
-        local configData = collectCurrentConfig()
-        savedConfigs[name] = configData
-        saveToFile(configData, name)
-        currentConfigName = name
-        meta.lastConfig = name
-        meta.autoLoad = autoLoadEnabled
-        saveMeta(meta)
-        updateDropdown(name)
-    end, "rbxassetid://97582400811473")  -- ÍCONE DE DISQUETE (SALVAR)
-
-    -- Botão CARREGAR com ícone de PASTA/DOWNLOAD
-    configTab:AddButton("Carregar", function()
-        local name = nameInput:GetText()
-        if not name or name == "" then return end
-        local configToLoad = savedConfigs[name] or loadFromFile(name)
-        if configToLoad then
-            savedConfigs[name] = configToLoad
-            loadConfiguration(configToLoad)
+        -- Botão SALVAR com ícone personalizado
+        configTab:AddButton("Salvar", function()
+            local name = nameInput:GetText()
+            if not name or name == "" or name == "Nenhuma config salva" then return end
+            local configData = collectCurrentConfig()
+            savedConfigs[name] = configData
+            saveToFile(configData, name)
             currentConfigName = name
             meta.lastConfig = name
             meta.autoLoad = autoLoadEnabled
             saveMeta(meta)
             updateDropdown(name)
-        end
-    end, "rbxassetid://93898339468067")  -- ÍCONE DE PASTA (CARREGAR)
+        end, "rbxassetid://7734068321") -- Ícone Salvar
 
-    -- Botão DELETAR com ícone de LIXEIRA
-    configTab:AddButton("Deletar", function()
-        local name = nameInput:GetText()
-        if not name or name == "" then return end
-        if savedConfigs[name] then
-            savedConfigs[name] = nil
-            pcall(function() delfile("VLG_Configs/" .. name .. ".json") end)
-            if meta.lastConfig == name then
-                meta.lastConfig = nil
+        -- Botão CARREGAR com ícone personalizado
+        configTab:AddButton("Carregar", function()
+            local name = nameInput:GetText()
+            if not name or name == "" then return end
+            local configToLoad = savedConfigs[name] or loadFromFile(name)
+            if configToLoad then
+                savedConfigs[name] = configToLoad
+                loadConfiguration(configToLoad)
+                currentConfigName = name
+                meta.lastConfig = name
+                meta.autoLoad = autoLoadEnabled
                 saveMeta(meta)
+                updateDropdown(name)
             end
-            currentConfigName = ""
-            if nameInput then nameInput:SetText("") end
-            updateDropdown()
+        end, "rbxassetid://7733771692") -- Ícone Carregar
+
+        -- Botão DELETAR com ícone personalizado
+        configTab:AddButton("Deletar", function()
+            local name = nameInput:GetText()
+            if not name or name == "" then return end
+            if savedConfigs[name] then
+                savedConfigs[name] = nil
+                pcall(function() delfile("VLG_Configs/" .. name .. ".json") end)
+                if meta.lastConfig == name then
+                    meta.lastConfig = nil
+                    saveMeta(meta)
+                end
+                currentConfigName = ""
+                if nameInput then nameInput:SetText("") end
+                updateDropdown()
+            end
+        end, "rbxassetid://7733920644") -- Ícone Lixeira
+
+        configTab:AddSeparator()
+
+        configTab:AddSection("Auto Load")
+
+        autoLoadToggle = configTab:AddToggle("Auto Load ao Entrar", function(state)
+            autoLoadEnabled = state
+            meta.autoLoad = state
+            saveMeta(meta)
+        end)
+
+        if autoLoadEnabled then
+            autoLoadToggle:SetState(true)
         end
-    end, "rbxassetid://119483803631956")  -- ÍCONE DE LIXEIRA (DELETAR)
 
-    configTab:AddSeparator()
+        configTab:AddSeparator()
 
-    configTab:AddSection("Auto Load")
+        -- Botão ATUALIZAR LISTA com ícone personalizado
+        configTab:AddButton("Atualizar Lista", function()
+            updateDropdown(currentConfigName)
+        end, "rbxassetid://7733911828") -- Ícone Atualizar
 
-    autoLoadToggle = configTab:AddToggle("Auto Load ao Entrar", function(state)
-        autoLoadEnabled = state
-        meta.autoLoad = state
-        saveMeta(meta)
-    end)
-
-    if autoLoadEnabled then
-        autoLoadToggle:SetState(true)
-    end
-
-    configTab:AddSeparator()
-
-    -- Botão ATUALIZAR LISTA com ícone de ATUALIZAR/SETA
-    configTab:AddButton("Atualizar Lista", function()
-        updateDropdown(currentConfigName)
-    end, "rbxassetid://101267399575098")  -- ÍCONE DE ATUALIZAR
-
-    -- Botão RESETAR TUDO com ícone de RESET/ENGENHARIA
-    configTab:AddButton("Resetar Tudo", function()
-        for _, elements in pairs(configElements) do
-            for _, elem in ipairs(elements) do
-                if     elem.type == "Toggle"      then elem.setValue(false)
-                elseif elem.type == "Slider"      then elem.setValue(0)
-                elseif elem.type == "TextBox"     then elem.setValue("")
-                elseif elem.type == "Dropdown"    then elem.setValue("")
-                elseif elem.type == "ColorPicker" then elem.setValue(Color3.fromRGB(255, 255, 255))
-                elseif elem.type == "RadioButton" then elem.setValue("")
+        -- Botão RESETAR TUDO com ícone personalizado
+        configTab:AddButton("Resetar Tudo", function()
+            for _, elements in pairs(configElements) do
+                for _, elem in ipairs(elements) do
+                    if     elem.type == "Toggle"      then elem.setValue(false)
+                    elseif elem.type == "Slider"      then elem.setValue(0)
+                    elseif elem.type == "TextBox"     then elem.setValue("")
+                    elseif elem.type == "Dropdown"    then elem.setValue("")
+                    elseif elem.type == "ColorPicker" then elem.setValue(Color3.fromRGB(255, 255, 255))
+                    elseif elem.type == "RadioButton" then elem.setValue("")
+                    end
                 end
             end
+        end, "rbxassetid://7734053426") -- Ícone Reset
+        
+        if currentConfigName ~= "" then
+            updateDropdown(currentConfigName)
+            if nameInput then nameInput:SetText(currentConfigName) end
         end
-    end, "rbxassetid://101267399575098")  -- ÍCONE DE RESET
 
-    if currentConfigName ~= "" then
-        updateDropdown(currentConfigName)
-        if nameInput then nameInput:SetText(currentConfigName) end
+        if autoLoadEnabled and meta.lastConfig and meta.lastConfig ~= "" then
+            spawn(function()
+                wait(0.5)
+                local configToLoad = savedConfigs[meta.lastConfig] or loadFromFile(meta.lastConfig)
+                if configToLoad then
+                    savedConfigs[meta.lastConfig] = configToLoad
+                    loadConfiguration(configToLoad)
+                end
+            end)
+        end
     end
 
-    if autoLoadEnabled and meta.lastConfig and meta.lastConfig ~= "" then
-        spawn(function()
-            wait(0.5)
-            local configToLoad = savedConfigs[meta.lastConfig] or loadFromFile(meta.lastConfig)
-            if configToLoad then
-                savedConfigs[meta.lastConfig] = configToLoad
-                loadConfiguration(configToLoad)
-            end
-        end)
-    end
-end
     spawn(function()
         wait(0.2)
         createAutoConfigTab()
