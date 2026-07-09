@@ -932,7 +932,7 @@ function UILibrary:CreateWindow(title)
             BrushIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
             BrushIcon.Size = UDim2.new(0, 14, 0, 14)
             BrushIcon.BackgroundTransparency = 1
-            BrushIcon.Image = "rbxassetid://105955025341798"
+            BrushIcon.Image = "rbxassetid://105966009412456"
             BrushIcon.ImageColor3 = Color3.fromRGB(0, 0, 0)
             BrushIcon.ZIndex = 5
 
@@ -1303,7 +1303,7 @@ function UILibrary:CreateWindow(title)
                 ButtonIcon.Position = UDim2.new(0, 6, 0.5, 0)
                 ButtonIcon.Size = UDim2.new(0, 14, 0, 14)
                 ButtonIcon.BackgroundTransparency = 1
-                ButtonIcon.Image = iconId
+                ButtonIcon.Image = "rbxassetid://108767860205161"
                 ButtonIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
                 ButtonIcon.ZIndex = 2
             end
