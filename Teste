@@ -933,7 +933,7 @@ function UILibrary:CreateWindow(title)
             BrushIcon.Size = UDim2.new(0, 14, 0, 14)
             BrushIcon.BackgroundTransparency = 1
             BrushIcon.Image = "rbxassetid://105966009412456"
-            BrushIcon.ImageColor3 = Color3.fromRGB(0, 0, 0)
+            BrushIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
             BrushIcon.ZIndex = 5
 
             ColorBtn.MouseButton1Click:Connect(function()
