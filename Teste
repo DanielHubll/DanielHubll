@@ -641,7 +641,7 @@ function UILibrary:CreateWindow(title)
 
         -- ── TextBox ──────────────────────────────────────────────────────────────
 
-        function tabMethods:AddTextBox(text, default, callback)
+        function tabMethods:AddTextBox(text, defaultOrPlaceholder, callback)
             local TextBoxFrame = Instance.new("Frame", ElementsContainer)
             TextBoxFrame.BorderSizePixel = 0
             TextBoxFrame.Size = UDim2.new(0, 246, 0, 26)
@@ -663,17 +663,31 @@ function UILibrary:CreateWindow(title)
             Main.Size = UDim2.new(0, 168, 0, 26)
             Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 3)
 
+            local UIStroke = Instance.new("UIStroke", Main)
+            UIStroke.Thickness = 1
+            UIStroke.Transparency = 1
+            UIStroke.Color = currentThemeColor
+            table.insert(themeElements, { type = "TextBoxStroke", instance = UIStroke })
+
             local Input = Instance.new("TextBox", Main)
             Input.BackgroundTransparency = 1
             Input.Size = UDim2.new(1, -10, 1, 0)
             Input.Position = UDim2.new(0, 5, 0, 0)
-            Input.Text = default or ""
+            Input.Text = ""
+            Input.PlaceholderText = defaultOrPlaceholder or "Digite aqui..."
             Input.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Input.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
             Input.TextSize = 11
             Input.TextXAlignment = Enum.TextXAlignment.Left
             Input.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold)
+            Input.ClearTextOnFocus = false
+
+            Input.Focused:Connect(function()
+                UIStroke.Transparency = 0
+            end)
 
             Input.FocusLost:Connect(function()
+                UIStroke.Transparency = 1
                 if callback then callback(Input.Text) end
             end)
 
@@ -933,7 +947,7 @@ function UILibrary:CreateWindow(title)
             BrushIcon.Size = UDim2.new(0, 14, 0, 14)
             BrushIcon.BackgroundTransparency = 1
             BrushIcon.Image = "rbxassetid://105966009412456"
-            BrushIcon.ImageColor3 = Color3.fromRGB(0, 0, 0)
+            BrushIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
             BrushIcon.ZIndex = 5
 
             ColorBtn.MouseButton1Click:Connect(function()
@@ -1590,7 +1604,7 @@ function UILibrary:CreateWindow(title)
 
         configTab:AddSeparator()
 
-        -- Botão SALVAR (agora já com ícone automático)
+        -- Botão SALVAR com ícone personalizado
         configTab:AddButton("Salvar", function()
             local name = nameInput:GetText()
             if not name or name == "" or name == "Nenhuma config salva" then return end
@@ -1602,9 +1616,9 @@ function UILibrary:CreateWindow(title)
             meta.autoLoad = autoLoadEnabled
             saveMeta(meta)
             updateDropdown(name)
-        end)
+        end, "rbxassetid://97582400811473") -- Ícone Salvar
 
-        -- Botão CARREGAR (agora já com ícone automático)
+        -- Botão CARREGAR com ícone personalizado
         configTab:AddButton("Carregar", function()
             local name = nameInput:GetText()
             if not name or name == "" then return end
@@ -1618,9 +1632,9 @@ function UILibrary:CreateWindow(title)
                 saveMeta(meta)
                 updateDropdown(name)
             end
-        end)
+        end, "rbxassetid://106415964550855") -- Ícone Carregar
 
-        -- Botão DELETAR (agora já com ícone automático)
+        -- Botão DELETAR com ícone personalizado
         configTab:AddButton("Deletar", function()
             local name = nameInput:GetText()
             if not name or name == "" then return end
@@ -1635,7 +1649,7 @@ function UILibrary:CreateWindow(title)
                 if nameInput then nameInput:SetText("") end
                 updateDropdown()
             end
-        end)
+        end, "rbxassetid://119483803631956") -- Ícone Lixeira
 
         configTab:AddSeparator()
 
@@ -1653,12 +1667,12 @@ function UILibrary:CreateWindow(title)
 
         configTab:AddSeparator()
 
-        -- Botão ATUALIZAR LISTA (agora já com ícone automático)
+        -- Botão ATUALIZAR LISTA com ícone personalizado
         configTab:AddButton("Atualizar Lista", function()
             updateDropdown(currentConfigName)
-        end)
+        end, "rbxassetid://119636414179025") -- Ícone Atualizar
 
-        -- Botão RESETAR TUDO (agora já com ícone automático)
+        -- Botão RESETAR TUDO com ícone personalizado
         configTab:AddButton("Resetar Tudo", function()
             for _, elements in pairs(configElements) do
                 for _, elem in ipairs(elements) do
@@ -1671,8 +1685,8 @@ function UILibrary:CreateWindow(title)
                     end
                 end
             end
-        end)
-
+        end, "rbxassetid://93898339468067") -- Ícone Reset
+        
         if currentConfigName ~= "" then
             updateDropdown(currentConfigName)
             if nameInput then nameInput:SetText(currentConfigName) end
