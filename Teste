@@ -5,7 +5,6 @@ local UserInputService = game:GetService("UserInputService")
 local ContextActionService = game:GetService("ContextActionService")
 local CoreGui = game:GetService("CoreGui")
 local TextService = game:GetService("TextService")
-local TweenService = game:GetService("TweenService")
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- SISTEMA DE ARQUIVO
@@ -165,7 +164,7 @@ function UILibrary:CreateWindow(title)
     LMG2L["Main_5"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0)
     LMG2L["Main_5"]["Size"] = UDim2.new(0, 316, 0, 202)
     LMG2L["Main_5"]["Position"] = UDim2.new(0, 0, 0, 22)
-    LMG2L["Main_5"]["Visible"] = false
+    LMG2L["Main_5"]["Visible"] = true  -- ⬅️ JÁ VEM ABERTO
     LMG2L["Main_5"]["Active"] = true
 
     LMG2L["Effect_6"] = Instance.new("Frame", LMG2L["Main_5"])
@@ -195,44 +194,38 @@ function UILibrary:CreateWindow(title)
     LMG2L["Tabs_2a"]["Active"] = true
 
     -- ═══════════════════════════════════════════════════════════════════════════
-    -- BOTÃO MINIMIZAR COM ÍCONES E ANIMAÇÃO
+    -- BOTÃO MINIMIZAR COM ÍCONES (SEM ANIMAÇÃO - TROCA DIRETA)
     -- ═══════════════════════════════════════════════════════════════════════════
     
-    local MINIMIZE_ICON_OPEN = "rbxassetid://112366764985181"  -- Ícone quando menu está ABERTO
-    local MINIMIZE_ICON_CLOSED = "rbxassetid://119314216582090" -- Ícone quando menu está FECHADO
+    local ICON_ABERTO = "rbxassetid://112366764985181"   -- Ícone quando menu está ABERTO
+    local ICON_FECHADO = "rbxassetid://119314216582090"  -- Ícone quando menu está FECHADO
 
     LMG2L["OpenName_2d"] = Instance.new("ImageButton", LMG2L["Topo_2"])
     LMG2L["OpenName_2d"]["BorderSizePixel"] = 0
     LMG2L["OpenName_2d"]["BackgroundTransparency"] = 1
-    LMG2L["OpenName_2d"]["Image"] = MINIMIZE_ICON_OPEN -- Começa com o ícone de aberto
+    LMG2L["OpenName_2d"]["Image"] = ICON_ABERTO  -- ⬅️ Começa com ícone de ABERTO (menu já está aberto)
     LMG2L["OpenName_2d"]["Size"] = UDim2.new(0, 18, 0, 18)
     LMG2L["OpenName_2d"]["Position"] = UDim2.new(0, 6, 0, 3)
     LMG2L["OpenName_2d"]["ImageColor3"] = Color3.fromRGB(255, 255, 255)
-    
-    -- Função de animação ao clicar no botão minimizar
+
+    -- Função de minimizar/maximizar com troca direta de ícone
     LMG2L["OpenName_2d"].MouseButton1Click:Connect(function()
-        local mainVisible = LMG2L["Main_5"].Visible
-        local newVisible = not mainVisible
+        local menuAberto = LMG2L["Main_5"].Visible
         
-        -- Animação do ícone: muda para o outro ícone
-        local targetIcon = newVisible and MINIMIZE_ICON_OPEN or MINIMIZE_ICON_CLOSED
+        -- Inverte visibilidade do menu
+        LMG2L["Main_5"].Visible = not menuAberto
         
-        -- Pequena animação de fade/pisca
-        local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local fadeOut = TweenService:Create(LMG2L["OpenName_2d"], tweenInfo, {ImageTransparency = 1})
-        local fadeIn = TweenService:Create(LMG2L["OpenName_2d"], tweenInfo, {ImageTransparency = 0})
-        
-        fadeOut:Play()
-        fadeOut.Completed:Connect(function()
-            LMG2L["OpenName_2d"].Image = targetIcon
-            fadeIn:Play()
-        end)
-        
-        -- Mostra/esconde o menu principal
-        LMG2L["Main_5"].Visible = newVisible
+        -- Troca o ícone diretamente (sem animação)
+        if menuAberto then
+            -- Vai fechar → mostra ícone de fechado
+            LMG2L["OpenName_2d"].Image = ICON_FECHADO
+        else
+            -- Vai abrir → mostra ícone de aberto
+            LMG2L["OpenName_2d"].Image = ICON_ABERTO
+        end
         
         -- Se fechar o menu, fecha dropdowns abertos
-        if not newVisible then
+        if not LMG2L["Main_5"].Visible then
             if openDropdownInfo then 
                 openDropdownInfo.Close() 
             end
