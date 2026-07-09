@@ -1590,7 +1590,7 @@ function UILibrary:CreateWindow(title)
 
         configTab:AddSeparator()
 
-        -- Botão SALVAR com ícone personalizado
+        -- Botão SALVAR (agora já com ícone automático)
         configTab:AddButton("Salvar", function()
             local name = nameInput:GetText()
             if not name or name == "" or name == "Nenhuma config salva" then return end
@@ -1602,9 +1602,9 @@ function UILibrary:CreateWindow(title)
             meta.autoLoad = autoLoadEnabled
             saveMeta(meta)
             updateDropdown(name)
-        end, "rbxassetid://7734068321") -- Ícone Salvar
+        end)
 
-        -- Botão CARREGAR com ícone personalizado
+        -- Botão CARREGAR (agora já com ícone automático)
         configTab:AddButton("Carregar", function()
             local name = nameInput:GetText()
             if not name or name == "" then return end
@@ -1618,9 +1618,9 @@ function UILibrary:CreateWindow(title)
                 saveMeta(meta)
                 updateDropdown(name)
             end
-        end, "rbxassetid://7733771692") -- Ícone Carregar
+        end)
 
-        -- Botão DELETAR com ícone personalizado
+        -- Botão DELETAR (agora já com ícone automático)
         configTab:AddButton("Deletar", function()
             local name = nameInput:GetText()
             if not name or name == "" then return end
@@ -1635,7 +1635,7 @@ function UILibrary:CreateWindow(title)
                 if nameInput then nameInput:SetText("") end
                 updateDropdown()
             end
-        end, "rbxassetid://7733920644") -- Ícone Lixeira
+        end)
 
         configTab:AddSeparator()
 
@@ -1653,12 +1653,12 @@ function UILibrary:CreateWindow(title)
 
         configTab:AddSeparator()
 
-        -- Botão ATUALIZAR LISTA com ícone personalizado
+        -- Botão ATUALIZAR LISTA (agora já com ícone automático)
         configTab:AddButton("Atualizar Lista", function()
             updateDropdown(currentConfigName)
-        end, "rbxassetid://7733911828") -- Ícone Atualizar
+        end)
 
-        -- Botão RESETAR TUDO com ícone personalizado
+        -- Botão RESETAR TUDO (agora já com ícone automático)
         configTab:AddButton("Resetar Tudo", function()
             for _, elements in pairs(configElements) do
                 for _, elem in ipairs(elements) do
@@ -1671,8 +1671,8 @@ function UILibrary:CreateWindow(title)
                     end
                 end
             end
-        end, "rbxassetid://7734053426") -- Ícone Reset
-        
+        end)
+
         if currentConfigName ~= "" then
             updateDropdown(currentConfigName)
             if nameInput then nameInput:SetText(currentConfigName) end
