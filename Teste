@@ -1015,7 +1015,7 @@ function UILibrary:CreateWindow(title)
             Open.Size = UDim2.new(0, 22, 0, 22)
             Open.Position = UDim2.new(1, -22, 0, 0)
             Open.Image = "rbxassetid://97131605825921"
-            Open.Rotation = 180
+            Open.Rotation = 90
             Open.BorderSizePixel = 0
             Open.ZIndex = 12
             Instance.new("UICorner", Open).CornerRadius = UDim.new(0, 3)
@@ -1059,7 +1059,7 @@ function UILibrary:CreateWindow(title)
 
             local function CloseDropdown()
                 Scroll.Visible = false
-                Open.Rotation = 180
+                Open.Rotation = -90
                 DropdownFrame.ZIndex = 10
                 Main.ZIndex = 11
                 if openDropdownInfo and openDropdownInfo.Main == Main then
