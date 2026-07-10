@@ -1,11 +1,11 @@
---[[
-    d888b  db    db d888888b      .d888b.      db      db    db  .d8b.  
-   88' Y8b 88    88   88'        VP  8D      88      88    88 d8' `8b 
-   88      88    88    88            odD'      88      88    88 88ooo88 
-   88  ooo 88    88    88          .88'        88      88    88 88~~~88 
-   88. ~8~ 88b  d88   .88.        j88.         88booo. 88b  d88 88   88    @uniquadev
-    Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  UI LIBRARY
---]]
+--[=[
+d888b  db    db d888888b      .d888b.      db      db    db  .d8b.  
+88' Y8b 88    88   88'        VP  8D      88      88    88 d8' `8b 
+88      88    88    88            odD'      88      88    88 88ooo88 
+88  ooo 88    88    88          .88'        88      88    88 88~~~88 
+88. ~8~ 88b  d88   .88.        j88.         88booo. 88b  d88 88   88    @uniquadev
+Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  UI LIBRARY
+--]=]
 
 local Library = {}
 
@@ -28,7 +28,7 @@ local HubBarContainer = findDescendant(CoreGui, "HubBarContainer")
 local PageViewInnerFrame = findDescendant(CoreGui, "PageViewInnerFrame")
 
 -- ============================================================
--- SISTEMA BASE (Gerenciamento de Abas, Redimensionamento e Menus)
+-- SISTEMA DE REDIMENSIONAMENTO DO HUBBAR
 -- ============================================================
 local HubBar = nil
 local BASE_WIDTH = 800
@@ -66,10 +66,16 @@ local function setupHubBar()
         adjustHubBarWidth()
         if HubBarContainer then
             HubBarContainer.ChildAdded:Connect(function(child)
-                if child:IsA("TextButton") then task.wait(0.1) adjustHubBarWidth() end
+                if child:IsA("TextButton") then
+                    task.wait(0.1)
+                    adjustHubBarWidth()
+                end
             end)
             HubBarContainer.ChildRemoved:Connect(function(child)
-                if child:IsA("TextButton") then task.wait(0.1) adjustHubBarWidth() end
+                if child:IsA("TextButton") then
+                    task.wait(0.1)
+                    adjustHubBarWidth()
+                end
             end)
         end
     else
@@ -79,7 +85,9 @@ local function setupHubBar()
 end
 task.spawn(setupHubBar)
 
--- Alternância Global de Páginas
+-- ============================================================
+-- SISTEMA ANTI MULTI-SELEÇÃO + GERENCIAMENTO DE ABAS
+-- ============================================================
 local function deselectButton(button)
     local tabSelection = button:FindFirstChild("TabSelection")
     local tabLabel = button:FindFirstChild("TabLabel")
@@ -112,29 +120,45 @@ local function hideAllPages()
 end
 
 local function onTabClicked(clickedButton)
+    -- Sistema anti multi-seleção: desseleciona todos, depois seleciona o clicado
     for _, child in ipairs(HubBarContainer:GetChildren()) do
         if child:IsA("TextButton") then
-            if child == clickedButton then selectButton(child) else deselectButton(child) end
+            if child == clickedButton then
+                selectButton(child)
+            else
+                deselectButton(child)
+            end
         end
     end
+    
     hideAllPages()
+    
     if PageViewInnerFrame then
         local correspondingPage = PageViewInnerFrame:FindFirstChild(clickedButton.Name)
-        if correspondingPage then correspondingPage.Visible = true end
+        if correspondingPage then
+            correspondingPage.Visible = true
+        end
     end
 end
 
--- Monitoramento do Escudo de Configurações (SettingsShield)
+-- ============================================================
+-- MONITORAMENTO DO SETTINGS SHIELD (para desselecionar ao fechar)
+-- ============================================================
 local function monitorSettingsShield()
     local SettingsShield = findDescendant(CoreGui, "SettingsShield")
     if SettingsShield and SettingsShield:IsA("ImageButton") then
         if SettingsShield.Visible == false then
-            for _, child in ipairs(HubBarContainer:GetChildren()) do if child:IsA("TextButton") then deselectButton(child) end end
+            for _, child in ipairs(HubBarContainer:GetChildren()) do
+                if child:IsA("TextButton") then deselectButton(child) end
+            end
             hideAllPages()
         end
+        
         SettingsShield:GetPropertyChangedSignal("Visible"):Connect(function()
             if SettingsShield.Visible == false then
-                for _, child in ipairs(HubBarContainer:GetChildren()) do if child:IsA("TextButton") then deselectButton(child) end end
+                for _, child in ipairs(HubBarContainer:GetChildren()) do
+                    if child:IsA("TextButton") then deselectButton(child) end
+                end
                 hideAllPages()
             end
         end)
@@ -145,9 +169,8 @@ local function monitorSettingsShield()
 end
 task.spawn(monitorSettingsShield)
 
-
 -- ============================================================
--- CRIAÇÃO DA JANELA / ABAS
+-- FUNÇÃO PRINCIPAL: CRIAR ABA
 -- ============================================================
 function Library:CreateTab(tabName, iconName)
     iconName = iconName or "gear"
@@ -210,6 +233,7 @@ function Library:CreateTab(tabName, iconName)
     Title.AutomaticSize = Enum.AutomaticSize.XY
     Title.Name = "Title"
 
+    -- Conectar clique do botão ao sistema anti multi-seleção
     TabButton.MouseButton1Click:Connect(function()
         onTabClicked(TabButton)
     end)
@@ -233,7 +257,9 @@ function Library:CreateTab(tabName, iconName)
     RowListLayout.SortOrder = Enum.SortOrder.LayoutOrder
     RowListLayout.Name = "RowListLayout"
 
-    -- Métodos da Aba
+    -- ============================================================
+    -- MÉTODOS DA ABA
+    -- ============================================================
     local TabMethods = {}
 
     -- ============================================================
@@ -377,16 +403,23 @@ function Library:CreateTab(tabName, iconName)
             updateToggle()
         end)
 
-        -- Iniciar com valor padrão original
+        -- Iniciar com valor padrão
         updateToggle()
+        
+        return {
+            SetValue = function(value)
+                state = value
+                updateToggle()
+            end
+        }
     end
 
     -- ============================================================
-    -- COMPONENTE: SLIDER (1 a 10 Passos Fixos)
+    -- COMPONENTE: SLIDER (0 a 10 Passos Fixos)
     -- ============================================================
     function TabMethods:AddSlider(sliderName, defaultStep, callback)
         callback = callback or function() end
-        local currentStep = math.clamp(defaultStep or 1, 0, 10)
+        local currentStep = math.clamp(defaultStep or 0, 0, 10)
 
         local SliderFrame = Instance.new("ImageButton", PageFrame)
         SliderFrame.BorderSizePixel = 0
@@ -542,6 +575,13 @@ function Library:CreateTab(tabName, iconName)
         end)
 
         updateSliderVisual()
+        
+        return {
+            SetValue = function(value)
+                currentStep = math.clamp(value, 0, 10)
+                updateSliderVisual()
+            end
+        }
     end
 
     return TabMethods
