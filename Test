@@ -21,7 +21,6 @@ Library._tabsByName = {}
 -- ================= SERVIÇOS =================
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 
 -- ================= UTIL =================
 local function findDescendant(parent, name)
@@ -65,6 +64,8 @@ end
 local HubBar = nil
 local BASE_WIDTH = 800
 local WIDTH_PER_BUTTON = 100
+local MIN_WIDTH = 300
+local IDEAL_BUTTONS = 5
 
 local function countButtons()
 	local count = 0
@@ -76,15 +77,19 @@ local function countButtons()
 	return count
 end
 
+-- ✅ FIX 2: largura proporcional ao nº de botões, sem partir sempre de 800
 local function adjustHubBarWidth()
-	if not (HubBar and HubBar:IsA("GuiObject")) then
-		return
-	end
+	if not (HubBar and HubBar:IsA("GuiObject")) then return end
+
 	local buttonCount = countButtons()
-	local newWidth = BASE_WIDTH
-	if buttonCount > 5 then
-		newWidth = math.max(300, BASE_WIDTH - (WIDTH_PER_BUTTON * (buttonCount - 5)))
+	local newWidth
+
+	if buttonCount <= IDEAL_BUTTONS then
+		newWidth = WIDTH_PER_BUTTON * math.max(buttonCount, 1)
+	else
+		newWidth = math.max(MIN_WIDTH, BASE_WIDTH - (WIDTH_PER_BUTTON * (buttonCount - IDEAL_BUTTONS)))
 	end
+
 	local currentSize = HubBar.Size
 	HubBar.Size = UDim2.new(0, newWidth, currentSize.Y.Scale, currentSize.Y.Offset)
 	print(string.format("[LuminaUI] HubBar: %d botões -> Largura: %d", buttonCount, newWidth))
@@ -96,31 +101,15 @@ local function setupHubBar()
 	if HubBar and HubBar:IsA("ImageLabel") then
 		print("[LuminaUI] HubBar encontrado!")
 
-		-- ✅ CORREÇÃO: Esconder ANTES de ajustar a largura
-		-- Evita o flicker de 800 → largura correta
-		local hiddenChildren = {}
-		for _, child in ipairs(HubBar:GetDescendants()) do
-			if child:IsA("GuiObject") then
-				table.insert(hiddenChildren, {obj = child, vis = child.Visible})
-				child.Visible = false
-			end
-		end
+		-- ✅ FIX 3: esconde durante o ajuste para evitar deformação visual
 		HubBar.Visible = false
 
-		-- Ajustar a largura imediatamente (enquanto está invisível)
+		-- ✅ FIX 1: força largura mínima antes de calcular o valor real
+		HubBar.Size = UDim2.new(0, 1, HubBar.Size.Y.Scale, HubBar.Size.Y.Offset)
 		adjustHubBarWidth()
 
-		-- ✅ Mostrar de volta APENAS depois que a largura foi ajustada
-		task.defer(function()
-			if HubBar and HubBar.Parent then
-				HubBar.Visible = true
-				for _, data in ipairs(hiddenChildren) do
-					if data.obj and data.obj.Parent then
-						data.obj.Visible = data.vis
-					end
-				end
-			end
-		end)
+		task.wait() -- aguarda 1 frame
+		HubBar.Visible = true -- mostra já com o tamanho correto
 
 		HubBarContainer.ChildAdded:Connect(function(child)
 			if child:IsA("TextButton") then
@@ -136,24 +125,16 @@ local function setupHubBar()
 			end
 		end)
 
-		-- ✅ CORREÇÃO: Usar RenderStepped + cache de largura
-		-- Só atualiza se a largura realmente mudou, evitando flicker
-		local lastWidth = nil
-		RunService.RenderStepped:Connect(function()
-			if HubBar and HubBar.Parent then
-				local buttonCount = countButtons()
-				local newWidth = BASE_WIDTH
-				if buttonCount > 5 then
-					newWidth = math.max(300, BASE_WIDTH - (WIDTH_PER_BUTTON * (buttonCount - 5)))
+		task.spawn(function()
+			while true do
+				task.wait(2)
+				if HubBar and HubBar.Parent then
+					adjustHubBarWidth()
+				else
+					HubBar = nil
+					setupHubBar()
+					break
 				end
-				if newWidth ~= lastWidth then
-					lastWidth = newWidth
-					local currentSize = HubBar.Size
-					HubBar.Size = UDim2.new(0, newWidth, currentSize.Y.Scale, currentSize.Y.Offset)
-				end
-			else
-				HubBar = nil
-				setupHubBar()
 			end
 		end)
 	else
@@ -170,7 +151,7 @@ CoreGui.DescendantAdded:Connect(function(descendant)
 end)
 
 -- ============================================================
--- SISTEMA DE SELEÇÃO / DESSELEÇÃO DE ABAS (via atributos - DOM inspection)
+-- SISTEMA DE SELEÇÃO / DESSELEÇÃO DE ABAS (via atributos)
 -- ============================================================
 
 local function deselectButton(button)
@@ -234,7 +215,6 @@ local function getPageForButton(button)
 	return nil
 end
 
--- Seleciona uma aba explicitamente (clique ou Library:SelectTab)
 local function selectTabInternal(clickedButton)
 	for _, child in ipairs(HubBarContainer:GetChildren()) do
 		if child:IsA("TextButton") then
@@ -274,7 +254,7 @@ HubBarContainer.ChildAdded:Connect(function(newChild)
 end)
 
 -- ============================================================
--- MONITORAMENTO DO SETTINGS SHIELD (fecha tudo quando o menu fecha)
+-- MONITORAMENTO DO SETTINGS SHIELD
 -- ============================================================
 
 local function monitorSettingsShield()
@@ -328,13 +308,11 @@ function Library:CreateTab(config)
 	local Name = config.Name or ("Tab" .. (#Library.Tabs + 1))
 	local Icon = config.Icon or "gear"
 
-	-- Prevenção de abas duplicadas
 	if Library._tabsByName[Name] then
 		warn("[LuminaUI] Já existe uma aba chamada '" .. Name .. "'. Retornando a existente.")
 		return Library._tabsByName[Name]
 	end
 
-	-- ---------------- BOTÃO NO HUBBAR ----------------
 	local TabButton = Instance.new("TextButton")
 	TabButton.Selectable = false
 	TabButton.ZIndex = 3
@@ -406,7 +384,6 @@ function Library:CreateTab(config)
 
 	bindTabButtonEvents(TabButton)
 
-	-- ---------------- PÁGINA (CONTEÚDO DA ABA) ----------------
 	local Page = Instance.new("Frame")
 	Page.ZIndex = 5
 	Page.AutomaticSize = Enum.AutomaticSize.Y
@@ -415,7 +392,7 @@ function Library:CreateTab(config)
 	Page.Name = Name
 	Page.BackgroundTransparency = 1
 	Page.SelectionGroup = true
-	Page.Visible = false -- começa desselecionada/oculta por padrão
+	Page.Visible = false
 	Page.Parent = PageViewInnerFrame
 
 	local PagePadding = Instance.new("UIPadding")
@@ -429,7 +406,6 @@ function Library:CreateTab(config)
 	RowListLayout.Name = "RowListLayout"
 	RowListLayout.Parent = Page
 
-	-- ---------------- OBJETO TAB ----------------
 	local self = setmetatable({
 		Name = Name,
 		Button = TabButton,
@@ -461,7 +437,7 @@ local function nextOrder(tabObj)
 end
 
 -- ============================================================
--- HELPER: CRIA UM CONTAINER PADRÃO (usado por Toggle/Slider/Dropdown)
+-- HELPER: CRIA UM CONTAINER PADRÃO
 -- ============================================================
 
 local function createBaseContainer(parent, title, order)
@@ -573,89 +549,75 @@ function Tab:AddToggle(config)
 	RightIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 	RightIcon.Parent = RightButton
 
-	local AutoSelectButton = Instance.new("ImageButton")
-	AutoSelectButton.BackgroundTransparency = 1
-	AutoSelectButton.Selectable = false
-	AutoSelectButton.ZIndex = 2
-	AutoSelectButton.Size = UDim2.new(1, -64, 1, 0)
-	AutoSelectButton.Name = "AutoSelectButton"
-	AutoSelectButton.Position = UDim2.new(0, 32, 0, 0)
-	AutoSelectButton.Parent = Selector
+	local SliderFrame = Instance.new("Frame")
+	SliderFrame.ZIndex = 3
+	SliderFrame.BorderSizePixel = 0
+	SliderFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	SliderFrame.Size = UDim2.new(1, -64, 0, 14)
+	SliderFrame.Name = "SliderFrame"
+	SliderFrame.BackgroundColor3 = Color3.fromRGB(72, 72, 74)
+	SliderFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+	SliderFrame.Parent = Selector
 
-	local Selection1 = Instance.new("TextLabel")
-	Selection1.TextWrapped = true
-	Selection1.ZIndex = 2
-	Selection1.BorderSizePixel = 0
-	Selection1.TextSize = 17
-	Selection1.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-	Selection1.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Selection1.BackgroundTransparency = 1
-	Selection1.Size = UDim2.new(1, -64, 1, 0)
-	Selection1.Text = "Off"
-	Selection1.Name = "Selection1"
-	Selection1.Position = UDim2.new(0, 32, 0, 0)
-	Selection1.Parent = Selector
+	local SliderCorner = Instance.new("UICorner")
+	SliderCorner.CornerRadius = UDim.new(1, 0)
+	SliderCorner.Parent = SliderFrame
 
-	local Selection2 = Instance.new("TextLabel")
-	Selection2.TextWrapped = true
-	Selection2.ZIndex = 2
-	Selection2.BorderSizePixel = 0
-	Selection2.TextSize = 17
-	Selection2.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-	Selection2.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Selection2.BackgroundTransparency = 1
-	Selection2.Size = UDim2.new(1, -64, 1, 0)
-	Selection2.Visible = false
-	Selection2.Text = "On"
-	Selection2.Name = "Selection2"
-	Selection2.Position = UDim2.new(0, 32, 0, 0)
-	Selection2.Parent = Selector
+	local Fill = Instance.new("Frame")
+	Fill.ZIndex = 4
+	Fill.BorderSizePixel = 0
+	Fill.Size = UDim2.new(Default and 1 or 0, 0, 1, 0)
+	Fill.Name = "Fill"
+	Fill.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+	Fill.Parent = SliderFrame
 
-	local currentState = Default and "On" or "Off"
+	local FillCorner = Instance.new("UICorner")
+	FillCorner.CornerRadius = UDim.new(1, 0)
+	FillCorner.Parent = Fill
 
-	local function updateVisual()
-		if currentState == "On" then
-			Selection1.Visible = false
-			Selection2.Visible = true
-		else
-			Selection1.Visible = true
-			Selection2.Visible = false
-		end
-	end
-	updateVisual()
+	local Knob = Instance.new("ImageLabel")
+	Knob.ZIndex = 5
+	Knob.BorderSizePixel = 0
+	Knob.AnchorPoint = Vector2.new(0.5, 0.5)
+	Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Knob.Size = UDim2.new(0, 26, 0, 26)
+	Knob.Name = "Knob"
+	Knob.Position = UDim2.new(Default and 1 or 0, 0, 0.5, 0)
+	Knob.Parent = SliderFrame
 
-	local function SetOn()
-		if currentState ~= "On" then
-			currentState = "On"
-			updateVisual()
-			Callback(true)
-		end
+	local KnobCorner = Instance.new("UICorner")
+	KnobCorner.CornerRadius = UDim.new(1, 0)
+	KnobCorner.Parent = Knob
+
+	local KnobStroke = Instance.new("UIStroke")
+	KnobStroke.Thickness = 0.5
+	KnobStroke.Color = Color3.fromRGB(0, 0, 0)
+	KnobStroke.Transparency = 0.8
+	KnobStroke.Parent = Knob
+
+	local value = Default
+
+	local function setToggle(state, skipCallback)
+		value = state
+		Fill.Size = UDim2.new(state and 1 or 0, 0, 1, 0)
+		Knob.Position = UDim2.new(state and 1 or 0, 0, 0.5, 0)
+		Fill.BackgroundColor3 = state and Color3.fromRGB(0, 122, 255) or Color3.fromRGB(72, 72, 74)
+		if not skipCallback then Callback(value) end
 	end
 
-	local function SetOff()
-		if currentState ~= "Off" then
-			currentState = "Off"
-			updateVisual()
-			Callback(false)
-		end
-	end
+	setToggle(Default, true)
 
-	RightButton.MouseButton1Click:Connect(SetOn)
-	LeftButton.MouseButton1Click:Connect(SetOff)
-	AutoSelectButton.MouseButton1Click:Connect(function()
-		if currentState == "Off" then SetOn() else SetOff() end
-	end)
+	local function toggle() setToggle(not value) end
 
-	if Default then
-		Callback(true)
-	end
+	Frame.MouseButton1Click:Connect(toggle)
+	Selector.MouseButton1Click:Connect(toggle)
+	LeftButton.MouseButton1Click:Connect(function() setToggle(false) end)
+	RightButton.MouseButton1Click:Connect(function() setToggle(true) end)
 
-	return {
-		Frame = Frame,
-		Set = function(_, value)
-			if value then SetOn() else SetOff() end
-		end,
-	}
+	local toggleObj = {}
+	function toggleObj:Set(state) setToggle(state) end
+	function toggleObj:Get() return value end
+	return toggleObj
 end
 
 -- ============================================================
@@ -667,35 +629,38 @@ function Tab:AddSlider(config)
 	local Name = config.Name or "Slider"
 	local Min = config.Min or 0
 	local Max = config.Max or 100
-	local Default = config.Default or Min
+	local Default = math.clamp(config.Default or Min, Min, Max)
 	local Callback = config.Callback or function() end
+	local Format = config.Format or function(v) return tostring(math.floor(v)) end
 
 	local Frame = createBaseContainer(self.Page, Name, nextOrder(self))
 
-	local SliderInner = Instance.new("ImageButton")
-	SliderInner.AutoButtonColor = false
-	SliderInner.BackgroundTransparency = 1
-	SliderInner.Selectable = false
-	SliderInner.ZIndex = 2
-	SliderInner.AnchorPoint = Vector2.new(1, 0.5)
-	SliderInner.Size = UDim2.new(0.6, 0, 0, 50)
-	SliderInner.Name = "Slider"
-	SliderInner.Position = UDim2.new(1, 0, 0.5, 0)
-	SliderInner.Parent = Frame
+	local Selector = Instance.new("ImageButton")
+	Selector.AutoButtonColor = false
+	Selector.BackgroundTransparency = 1
+	Selector.ZIndex = 2
+	Selector.AnchorPoint = Vector2.new(1, 0.5)
+	Selector.Size = UDim2.new(0.6, 0, 0, 50)
+	Selector.Name = "Selector"
+	Selector.Position = UDim2.new(1, 0, 0.5, 0)
+	Selector.Parent = Frame
 
 	local LeftButton = Instance.new("ImageButton")
 	LeftButton.BackgroundTransparency = 1
 	LeftButton.Selectable = false
+	LeftButton.ZIndex = 3
 	LeftButton.AnchorPoint = Vector2.new(0, 0.5)
 	LeftButton.Size = UDim2.new(0, 32, 0, 50)
 	LeftButton.Name = "LeftButton"
 	LeftButton.Position = UDim2.new(0, 0, 0.5, 0)
-	LeftButton.Parent = SliderInner
+	LeftButton.Parent = Selector
 
 	local LeftIcon = Instance.new("ImageLabel")
+	LeftIcon.ZIndex = 4
+	LeftIcon.ImageColor3 = Color3.fromRGB(205, 205, 205)
 	LeftIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-	LeftIcon.Image = "rbxasset://textures/ui/Settings/Slider/Less.png"
-	LeftIcon.Size = UDim2.new(0, 30, 0, 30)
+	LeftIcon.Image = "rbxasset://textures/ui/Settings/Slider/Left.png"
+	LeftIcon.Size = UDim2.new(0, 18, 0, 30)
 	LeftIcon.BackgroundTransparency = 1
 	LeftIcon.Name = "LeftButton"
 	LeftIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -704,168 +669,134 @@ function Tab:AddSlider(config)
 	local RightButton = Instance.new("ImageButton")
 	RightButton.BackgroundTransparency = 1
 	RightButton.Selectable = false
+	RightButton.ZIndex = 3
 	RightButton.AnchorPoint = Vector2.new(1, 0.5)
 	RightButton.Size = UDim2.new(0, 32, 0, 50)
 	RightButton.Name = "RightButton"
 	RightButton.Position = UDim2.new(1, 0, 0.5, 0)
-	RightButton.Parent = SliderInner
+	RightButton.Parent = Selector
 
 	local RightIcon = Instance.new("ImageLabel")
+	RightIcon.ZIndex = 4
+	RightIcon.ImageColor3 = Color3.fromRGB(205, 205, 205)
 	RightIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-	RightIcon.Image = "rbxasset://textures/ui/Settings/Slider/More.png"
-	RightIcon.Size = UDim2.new(0, 30, 0, 30)
+	RightIcon.Image = "rbxasset://textures/ui/Settings/Slider/Right.png"
+	RightIcon.Size = UDim2.new(0, 18, 0, 30)
 	RightIcon.BackgroundTransparency = 1
 	RightIcon.Name = "RightButton"
 	RightIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 	RightIcon.Parent = RightButton
 
-	local StepsContainer = Instance.new("Frame")
-	StepsContainer.AnchorPoint = Vector2.new(0.5, 0.5)
-	StepsContainer.Size = UDim2.new(1, -100, 1, 0)
-	StepsContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
-	StepsContainer.Name = "StepsContainer"
-	StepsContainer.BackgroundTransparency = 1
-	StepsContainer.Parent = SliderInner
+	local SliderFrame = Instance.new("Frame")
+	SliderFrame.ZIndex = 3
+	SliderFrame.BorderSizePixel = 0
+	SliderFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	SliderFrame.Size = UDim2.new(1, -64, 0, 14)
+	SliderFrame.Name = "SliderFrame"
+	SliderFrame.BackgroundColor3 = Color3.fromRGB(72, 72, 74)
+	SliderFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+	SliderFrame.Parent = Selector
 
-	local STEP_COUNT = 10
-	local ACTIVE_COLOR = Color3.fromRGB(255, 255, 255)
-	local INACTIVE_COLOR = Color3.fromRGB(58, 60, 62)
+	local SliderCorner = Instance.new("UICorner")
+	SliderCorner.CornerRadius = UDim.new(1, 0)
+	SliderCorner.Parent = SliderFrame
 
-	local steps, fillers = {}, {}
+	local Fill = Instance.new("Frame")
+	Fill.ZIndex = 4
+	Fill.BorderSizePixel = 0
+	Fill.Name = "Fill"
+	Fill.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+	Fill.Parent = SliderFrame
 
-	for i = 1, STEP_COUNT do
-		local step = Instance.new("ImageButton")
-		step.Active = false
-		step.BorderSizePixel = 0
-		step.AutoButtonColor = false
-		step.ImageTransparency = 0.36
-		step.BackgroundColor3 = INACTIVE_COLOR
-		step.Selectable = false
-		step.AnchorPoint = Vector2.new(0, 0.5)
-		step.Size = UDim2.new(0.1, -4, 0, 24)
-		step.Name = "Step" .. i
-		step.Position = UDim2.new((i - 1) / STEP_COUNT, 2, 0.5, 0)
-		step.Parent = StepsContainer
+	local FillCorner = Instance.new("UICorner")
+	FillCorner.CornerRadius = UDim.new(1, 0)
+	FillCorner.Parent = Fill
 
-		if i == 1 or i == STEP_COUNT then
-			Instance.new("UICorner").Parent = step
-			local filler = Instance.new("Frame")
-			filler.BorderSizePixel = 0
-			filler.BackgroundColor3 = INACTIVE_COLOR
-			filler.Size = UDim2.new(0.25, 0, 1, 0)
-			filler.Position = (i == 1) and UDim2.new(0.75, 0, 0, 0) or UDim2.new(0, 0, 0, 0)
-			filler.Name = "Filler"
-			filler.Parent = step
-			fillers[i] = filler
-		end
+	local Knob = Instance.new("ImageLabel")
+	Knob.ZIndex = 5
+	Knob.BorderSizePixel = 0
+	Knob.AnchorPoint = Vector2.new(0.5, 0.5)
+	Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Knob.Size = UDim2.new(0, 26, 0, 26)
+	Knob.Name = "Knob"
+	Knob.Position = UDim2.new(0, 0, 0.5, 0)
+	Knob.Parent = SliderFrame
 
-		steps[i] = step
+	local KnobCorner = Instance.new("UICorner")
+	KnobCorner.CornerRadius = UDim.new(1, 0)
+	KnobCorner.Parent = Knob
+
+	local KnobStroke = Instance.new("UIStroke")
+	KnobStroke.Thickness = 0.5
+	KnobStroke.Color = Color3.fromRGB(0, 0, 0)
+	KnobStroke.Transparency = 0.8
+	KnobStroke.Parent = Knob
+
+	local ValueLabel = Instance.new("TextLabel")
+	ValueLabel.ZIndex = 6
+	ValueLabel.TextSize = 14
+	ValueLabel.AnchorPoint = Vector2.new(0.5, 1)
+	ValueLabel.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+	ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ValueLabel.BackgroundTransparency = 1
+	ValueLabel.Size = UDim2.new(0, 50, 0, 20)
+	ValueLabel.Name = "ValueLabel"
+	ValueLabel.Position = UDim2.new(0, 0, 0, -2)
+	ValueLabel.Parent = Knob
+
+	local value = Default
+	local dragging = false
+
+	local function updateSlider(v)
+		value = math.clamp(v, Min, Max)
+		local alpha = (value - Min) / (Max - Min)
+		Fill.Size = UDim2.new(alpha, 0, 1, 0)
+		Knob.Position = UDim2.new(alpha, 0, 0.5, 0)
+		ValueLabel.Text = Format(value)
+		Callback(value)
 	end
 
-	local function getLastActiveStep()
-		for i = #steps, 1, -1 do
-			if steps[i].BackgroundColor3 == ACTIVE_COLOR then
-				return i
-			end
-		end
-		return 0
+	local function getAlphaFromInput(inputX)
+		local absSize = SliderFrame.AbsoluteSize.X
+		local absPos = SliderFrame.AbsolutePosition.X
+		return math.clamp((inputX - absPos) / absSize, 0, 1)
 	end
 
-	local function updateButtonsVisibility()
-		local lastActive = getLastActiveStep()
-		RightButton.Visible = lastActive < #steps
-		LeftButton.Visible = lastActive > 0
-	end
-
-	local function activateStep(index)
-		if index >= 1 and index <= #steps then
-			steps[index].BackgroundColor3 = ACTIVE_COLOR
-			if fillers[index] then fillers[index].BackgroundColor3 = ACTIVE_COLOR end
-		end
-	end
-
-	local function deactivateStep(index)
-		if index >= 1 and index <= #steps then
-			steps[index].BackgroundColor3 = INACTIVE_COLOR
-			if fillers[index] then fillers[index].BackgroundColor3 = INACTIVE_COLOR end
-		end
-	end
-
-	local currentValue = Default
-
-	local function setSlider(targetIndex, skipCallback)
-		targetIndex = math.clamp(targetIndex, 0, #steps)
-		local current = getLastActiveStep()
-
-		if targetIndex > current then
-			for i = current + 1, targetIndex do activateStep(i) end
-		elseif targetIndex < current then
-			for i = current, targetIndex + 1, -1 do deactivateStep(i) end
-		end
-		updateButtonsVisibility()
-
-		currentValue = math.floor(Min + ((targetIndex / STEP_COUNT) * (Max - Min)))
-		if not skipCallback then
-			Callback(currentValue)
-		end
-	end
-
-	-- Define valor inicial (Default) sem disparar callback extra
-	local defaultIndex = math.round(((Default - Min) / math.max(Max - Min, 1)) * STEP_COUNT)
-	setSlider(defaultIndex, true)
-
-	RightButton.MouseButton1Click:Connect(function() setSlider(getLastActiveStep() + 1) end)
-	LeftButton.MouseButton1Click:Connect(function() setSlider(getLastActiveStep() - 1) end)
-
-	local isDragging = false
-
-	local function updateFromInput(input)
-		local containerPos = StepsContainer.AbsolutePosition.X
-		local containerSize = StepsContainer.AbsoluteSize.X
-		local inputPos = input.Position.X
-
-		local relativePos = inputPos - containerPos
-		local percentage = math.clamp(relativePos / containerSize, 0, 1)
-
-		setSlider(math.round(percentage * STEP_COUNT))
-	end
-
-	StepsContainer.InputBegan:Connect(function(input)
+	SliderFrame.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			isDragging = true
-			updateFromInput(input)
+			dragging = true
+			local alpha = getAlphaFromInput(input.Position.X)
+			updateSlider(Min + alpha * (Max - Min))
 		end
 	end)
 
-	for i, step in ipairs(steps) do
-		step.InputBegan:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-				isDragging = true
-				setSlider(i)
-			end
-		end)
-	end
-
 	UserInputService.InputChanged:Connect(function(input)
-		if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-			updateFromInput(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local alpha = getAlphaFromInput(input.Position.X)
+			updateSlider(Min + alpha * (Max - Min))
 		end
 	end)
 
 	UserInputService.InputEnded:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			isDragging = false
+			dragging = false
 		end
 	end)
 
-	return {
-		Frame = Frame,
-		Set = function(_, value)
-			local index = math.round(((value - Min) / math.max(Max - Min, 1)) * STEP_COUNT)
-			setSlider(index)
-		end,
-		Get = function() return currentValue end,
-	}
+	LeftButton.MouseButton1Click:Connect(function()
+		updateSlider(value - 1)
+	end)
+
+	RightButton.MouseButton1Click:Connect(function()
+		updateSlider(value + 1)
+	end)
+
+	updateSlider(Default)
+
+	local sliderObj = {}
+	function sliderObj:Set(v) updateSlider(v) end
+	function sliderObj:Get() return value end
+	return sliderObj
 end
 
 -- ============================================================
@@ -877,120 +808,33 @@ function Tab:AddButton(config)
 	local Name = config.Name or "Button"
 	local Callback = config.Callback or function() end
 
-	local Frame = Instance.new("ImageButton")
-	Frame.Active = false
-	Frame.BorderSizePixel = 0
-	Frame.SliceCenter = Rect.new(10, 10, 10, 10)
-	Frame.ScaleType = Enum.ScaleType.Slice
-	Frame.AutoButtonColor = false
-	Frame.ImageTransparency = 1
-	Frame.BackgroundColor3 = Color3.fromRGB(36, 38, 40)
-	Frame.ImageColor3 = Color3.fromRGB(36, 38, 40)
-	Frame.Selectable = false
-	Frame.ZIndex = 2
-	Frame.Image = "rbxasset://textures/ui/VR/rectBackgroundWhite.png"
-	Frame.AutomaticSize = Enum.AutomaticSize.Y
-	Frame.Size = UDim2.new(1, 0, 0, 50)
-	Frame.LayoutOrder = nextOrder(self)
-	Frame.Name = Name
-	Frame.Parent = self.Page
+	local Frame = createBaseContainer(self.Page, Name, nextOrder(self))
 
-	local Corner = Instance.new("UICorner")
-	Corner.Parent = Frame
+	local Btn = Instance.new("ImageButton")
+	Btn.AutoButtonColor = false
+	Btn.BackgroundTransparency = 1
+	Btn.ZIndex = 2
+	Btn.AnchorPoint = Vector2.new(1, 0.5)
+	Btn.Size = UDim2.new(0.6, 0, 0, 50)
+	Btn.Name = "Btn"
+	Btn.Position = UDim2.new(1, 0, 0.5, 0)
+	Btn.Parent = Frame
 
-	local ButtonInner = Instance.new("ImageButton")
-	ButtonInner.Active = false
-	ButtonInner.AutoButtonColor = false
-	ButtonInner.BackgroundColor3 = Color3.fromRGB(36, 38, 40)
-	ButtonInner.ZIndex = 2
-	ButtonInner.AnchorPoint = Vector2.new(0, 0.5)
-	ButtonInner.Size = UDim2.new(0.6, 0, 0, 40)
-	ButtonInner.Name = "Button"
-	ButtonInner.Position = UDim2.new(0.4, 0, 0.5, 0)
-	ButtonInner.Parent = Frame
+	local BtnLabel = Instance.new("TextLabel")
+	BtnLabel.ZIndex = 3
+	BtnLabel.TextSize = 17
+	BtnLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+	BtnLabel.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+	BtnLabel.TextColor3 = Color3.fromRGB(0, 122, 255)
+	BtnLabel.BackgroundTransparency = 1
+	BtnLabel.Size = UDim2.new(1, 0, 1, 0)
+	BtnLabel.Text = "Aplicar"
+	BtnLabel.Name = "BtnLabel"
+	BtnLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+	BtnLabel.Parent = Btn
 
-	local InnerCorner = Instance.new("UICorner")
-	InnerCorner.Parent = ButtonInner
-
-	local Border = Instance.new("UIStroke")
-	Border.Transparency = 0.3
-	Border.Name = "Border"
-	Border.Color = Color3.fromRGB(255, 255, 255)
-	Border.Parent = ButtonInner
-
-	local ButtonTitle = Instance.new("TextLabel")
-	ButtonTitle.TextWrapped = true
-	ButtonTitle.ZIndex = 2
-	ButtonTitle.BorderSizePixel = 0
-	ButtonTitle.TextSize = 14
-	ButtonTitle.TextTransparency = 0.3
-	ButtonTitle.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
-	ButtonTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-	ButtonTitle.BackgroundTransparency = 1
-	ButtonTitle.Size = UDim2.new(1, 0, 1, 0)
-	ButtonTitle.BorderColor3 = Color3.fromRGB(255, 255, 255)
-	ButtonTitle.Text = Name
-	ButtonTitle.Name = "Title"
-	ButtonTitle.Parent = ButtonInner
-
-	local TextConstraint = Instance.new("UITextSizeConstraint")
-	TextConstraint.MaxTextSize = 14
-	TextConstraint.Parent = ButtonTitle
-
-	local ButtonPadding = Instance.new("UIPadding")
-	ButtonPadding.PaddingTop = UDim.new(0, 10)
-	ButtonPadding.PaddingBottom = UDim.new(0, 10)
-	ButtonPadding.Parent = ButtonInner
-
-	local ContainerTitle = Instance.new("TextLabel")
-	ContainerTitle.TextWrapped = true
-	ContainerTitle.ZIndex = 2
-	ContainerTitle.TextSize = 17
-	ContainerTitle.TextXAlignment = Enum.TextXAlignment.Left
-	ContainerTitle.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
-	ContainerTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-	ContainerTitle.BackgroundTransparency = 1
-	ContainerTitle.Size = UDim2.new(0.4, -20, 1, 0)
-	ContainerTitle.Text = Name
-	ContainerTitle.AutomaticSize = Enum.AutomaticSize.Y
-	ContainerTitle.Name = "Title"
-	ContainerTitle.Position = UDim2.new(0, 10, 0, 0)
-	ContainerTitle.Parent = Frame
-
-	local ContainerTitlePadding = Instance.new("UIPadding")
-	ContainerTitlePadding.PaddingTop = UDim.new(0, 10)
-	ContainerTitlePadding.PaddingBottom = UDim.new(0, 10)
-	ContainerTitlePadding.Parent = ContainerTitle
-
-	local DEFAULT_BG = Color3.fromRGB(36, 38, 40)
-	local HOVER_BG = Color3.fromRGB(46, 48, 50)
-	local PRESSED_BG = Color3.fromRGB(26, 28, 30)
-
-	ButtonInner.MouseEnter:Connect(function()
-		ButtonInner.BackgroundColor3 = HOVER_BG
-		ButtonTitle.TextTransparency = 0
-	end)
-
-	ButtonInner.MouseLeave:Connect(function()
-		ButtonInner.BackgroundColor3 = DEFAULT_BG
-		ButtonTitle.TextTransparency = 0.3
-	end)
-
-	ButtonInner.MouseButton1Down:Connect(function()
-		ButtonInner.BackgroundColor3 = PRESSED_BG
-		Border.Transparency = 0.5
-	end)
-
-	ButtonInner.MouseButton1Up:Connect(function()
-		ButtonInner.BackgroundColor3 = HOVER_BG
-		Border.Transparency = 0.3
-	end)
-
-	ButtonInner.MouseButton1Click:Connect(function()
-		Callback()
-	end)
-
-	return { Frame = Frame }
+	Frame.MouseButton1Click:Connect(Callback)
+	Btn.MouseButton1Click:Connect(Callback)
 end
 
 -- ============================================================
@@ -1001,160 +845,125 @@ function Tab:AddDropdown(config)
 	config = config or {}
 	local Name = config.Name or "Dropdown"
 	local Options = config.Options or {}
-	local Default = config.Default or Options[1] or ""
+	local Default = config.Default or (Options[1] or "")
 	local Callback = config.Callback or function() end
 
 	local Frame = createBaseContainer(self.Page, Name, nextOrder(self))
+	Frame.Size = UDim2.new(1, 0, 0, 50)
+	Frame.ClipsDescendants = true
 
-	local DropdownFrameButton = Instance.new("ImageButton")
-	DropdownFrameButton.AutoButtonColor = false
-	DropdownFrameButton.BackgroundColor3 = Color3.fromRGB(57, 58, 60)
-	DropdownFrameButton.ZIndex = 2
-	DropdownFrameButton.AnchorPoint = Vector2.new(1, 0.5)
-	DropdownFrameButton.Size = UDim2.new(0.6, 0, 0, 40)
-	DropdownFrameButton.Name = "DropdownFrameButton"
-	DropdownFrameButton.Position = UDim2.new(1, 0, 0.5, 0)
-	DropdownFrameButton.Parent = Frame
+	local Selector = Instance.new("ImageButton")
+	Selector.AutoButtonColor = false
+	Selector.BackgroundTransparency = 1
+	Selector.ZIndex = 2
+	Selector.AnchorPoint = Vector2.new(1, 0)
+	Selector.Size = UDim2.new(0.6, 0, 0, 50)
+	Selector.Name = "Selector"
+	Selector.Position = UDim2.new(1, 0, 0, 0)
+	Selector.Parent = Frame
 
-	local DDCorner = Instance.new("UICorner")
-	DDCorner.Parent = DropdownFrameButton
+	local CurrentLabel = Instance.new("TextLabel")
+	CurrentLabel.ZIndex = 3
+	CurrentLabel.TextSize = 17
+	CurrentLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+	CurrentLabel.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+	CurrentLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	CurrentLabel.BackgroundTransparency = 1
+	CurrentLabel.Size = UDim2.new(1, -30, 1, 0)
+	CurrentLabel.Text = Default
+	CurrentLabel.Name = "CurrentLabel"
+	CurrentLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+	CurrentLabel.Parent = Selector
 
-	local Border = Instance.new("UIStroke")
-	Border.Transparency = 0.8
-	Border.Name = "Border"
-	Border.Color = Color3.fromRGB(255, 255, 255)
-	Border.Parent = DropdownFrameButton
+	local Arrow = Instance.new("TextLabel")
+	Arrow.ZIndex = 3
+	Arrow.TextSize = 14
+	Arrow.AnchorPoint = Vector2.new(1, 0.5)
+	Arrow.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+	Arrow.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Arrow.BackgroundTransparency = 1
+	Arrow.Size = UDim2.new(0, 20, 0, 20)
+	Arrow.Text = "▼"
+	Arrow.Name = "Arrow"
+	Arrow.Position = UDim2.new(1, -5, 0.5, 0)
+	Arrow.Parent = Selector
 
-	local SelectionText = Instance.new("TextLabel")
-	SelectionText.TextWrapped = true
-	SelectionText.ZIndex = 2
-	SelectionText.BorderSizePixel = 0
-	SelectionText.TextSize = 17
-	SelectionText.TextXAlignment = Enum.TextXAlignment.Left
-	SelectionText.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
-	SelectionText.TextColor3 = Color3.fromRGB(255, 255, 255)
-	SelectionText.BackgroundTransparency = 1
-	SelectionText.Size = UDim2.new(1, -50, 1, 0)
-	SelectionText.ClipsDescendants = true
-	SelectionText.Text = Default
-	SelectionText.Name = "DropdownSelectionText"
-	SelectionText.Position = UDim2.new(0, 15, 0, 0)
-	SelectionText.Parent = DropdownFrameButton
+	local OptionsFrame = Instance.new("Frame")
+	OptionsFrame.ZIndex = 4
+	OptionsFrame.BorderSizePixel = 0
+	OptionsFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 30)
+	OptionsFrame.Size = UDim2.new(0.6, 0, 0, #Options * 40)
+	OptionsFrame.Name = "OptionsFrame"
+	OptionsFrame.AnchorPoint = Vector2.new(1, 0)
+	OptionsFrame.Position = UDim2.new(1, 0, 0, 50)
+	OptionsFrame.Visible = false
+	OptionsFrame.Parent = Frame
 
-	local TextConstraint = Instance.new("UITextSizeConstraint")
-	TextConstraint.MaxTextSize = 17
-	TextConstraint.Parent = SelectionText
+	local OptionsCorner = Instance.new("UICorner")
+	OptionsCorner.Parent = OptionsFrame
 
-	local DropdownIcon = Instance.new("ImageLabel")
-	DropdownIcon.ZIndex = 2
-	DropdownIcon.AnchorPoint = Vector2.new(1, 0.5)
-	DropdownIcon.Image = "rbxasset://textures/ui/Settings/DropDown/DropDown.png"
-	DropdownIcon.Size = UDim2.new(0, 15, 0, 10)
-	DropdownIcon.BackgroundTransparency = 1
-	DropdownIcon.Name = "DropdownIcone"
-	DropdownIcon.Position = UDim2.new(1, -12, 0.5, 0)
-	DropdownIcon.Parent = DropdownFrameButton
+	local OptionsLayout = Instance.new("UIListLayout")
+	OptionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	OptionsLayout.Parent = OptionsFrame
 
-	-- Painel flutuante (fica no RobloxGui para ficar por cima de tudo)
-	local DropdownFrame = Instance.new("ImageButton")
-	DropdownFrame.BorderSizePixel = 0
-	DropdownFrame.AutoButtonColor = false
-	DropdownFrame.Visible = false
-	DropdownFrame.BackgroundTransparency = 0.2
-	DropdownFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	DropdownFrame.Selectable = false
-	DropdownFrame.ZIndex = 10
-	DropdownFrame.Size = UDim2.new(1, 0, 1, 58)
-	DropdownFrame.Name = "DropdownFrame_" .. Name
-	DropdownFrame.Position = UDim2.new(0, 0, 0, -58)
-	DropdownFrame.Parent = RobloxGui
+	local value = Default
+	local open = false
 
-	local SelectionFrame = Instance.new("ImageLabel")
-	SelectionFrame.ZIndex = 10
-	SelectionFrame.SliceCenter = Rect.new(8, 6, 46, 44)
-	SelectionFrame.BackgroundColor3 = Color3.fromRGB(58, 60, 62)
-	SelectionFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-	SelectionFrame.Size = UDim2.new(0, 400, 0.9, 0)
-	SelectionFrame.Name = "DropdownSelectionFrame"
-	SelectionFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-	SelectionFrame.Parent = DropdownFrame
-
-	local SFCorner = Instance.new("UICorner")
-	SFCorner.Parent = SelectionFrame
-
-	local ScrollingFrame = Instance.new("ScrollingFrame")
-	ScrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-	ScrollingFrame.ZIndex = 10
-	ScrollingFrame.BorderSizePixel = 0
-	ScrollingFrame.Name = "DropdownScrollingFrame"
-	ScrollingFrame.Size = UDim2.new(1, -20, 1, -25)
-	ScrollingFrame.Position = UDim2.new(0, 10, 0, 10)
-	ScrollingFrame.ScrollBarThickness = 1
-	ScrollingFrame.BackgroundTransparency = 1
-	ScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-	ScrollingFrame.Parent = SelectionFrame
-
-	local ScrollLayout = Instance.new("UIListLayout")
-	ScrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	ScrollLayout.Parent = ScrollingFrame
-
-	local currentValue = Default
-
-	local function selectOption(text)
-		currentValue = text
-		SelectionText.Text = text
-		DropdownFrame.Visible = false
-		Callback(text)
+	local function closeDropdown()
+		open = false
+		Arrow.Text = "▼"
+		OptionsFrame.Visible = false
+		Frame.Size = UDim2.new(1, 0, 0, 50)
+		Frame.ClipsDescendants = true
 	end
 
-	local function createOptionButton(optionText, order)
-		local Option = Instance.new("TextButton")
-		Option.BorderSizePixel = 0
-		Option.TextSize = 17
-		Option.AutoButtonColor = false
-		Option.TextColor3 = Color3.fromRGB(255, 255, 255)
-		Option.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-		Option.ZIndex = 10
-		Option.BackgroundTransparency = 1
-		Option.Size = UDim2.new(1, -28, 0, 50)
-		Option.Text = optionText
-		Option.Name = "Selection_" .. order
-		Option.LayoutOrder = order
-		Option.Parent = ScrollingFrame
+	local function openDropdown()
+		open = true
+		Arrow.Text = "▲"
+		OptionsFrame.Visible = true
+		Frame.ClipsDescendants = false
+		Frame.Size = UDim2.new(1, 0, 0, 50 + #Options * 40)
+	end
 
-		Option.MouseButton1Click:Connect(function()
-			selectOption(optionText)
+	for i, opt in ipairs(Options) do
+		local OptionBtn = Instance.new("TextButton")
+		OptionBtn.ZIndex = 5
+		OptionBtn.BackgroundTransparency = 1
+		OptionBtn.Size = UDim2.new(1, 0, 0, 40)
+		OptionBtn.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+		OptionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		OptionBtn.TextSize = 16
+		OptionBtn.Text = opt
+		OptionBtn.Name = opt
+		OptionBtn.LayoutOrder = i
+		OptionBtn.Parent = OptionsFrame
+
+		OptionBtn.MouseButton1Click:Connect(function()
+			value = opt
+			CurrentLabel.Text = opt
+			Callback(value)
+			closeDropdown()
 		end)
-
-		return Option
 	end
 
-	for i, optionText in ipairs(Options) do
-		createOptionButton(optionText, i)
+	Selector.MouseButton1Click:Connect(function()
+		if open then closeDropdown() else openDropdown() end
+	end)
+
+	local dropdownObj = {}
+	function dropdownObj:Set(opt) 
+		if table.find(Options, opt) then
+			value = opt
+			CurrentLabel.Text = opt
+			Callback(value)
+		end
 	end
-
-	DropdownFrameButton.MouseButton1Click:Connect(function()
-		DropdownFrame.Visible = not DropdownFrame.Visible
-	end)
-
-	DropdownFrame.MouseButton1Click:Connect(function()
-		DropdownFrame.Visible = false
-	end)
-
-	return {
-		Frame = Frame,
-		Set = function(_, value) selectOption(value) end,
-		Get = function() return currentValue end,
-		Refresh = function(_, newOptions)
-			for _, child in ipairs(ScrollingFrame:GetChildren()) do
-				if child:IsA("TextButton") then child:Destroy() end
-			end
-			for i, optionText in ipairs(newOptions) do
-				createOptionButton(optionText, i)
-			end
-		end,
-	}
+	function dropdownObj:Get() return value end
+	return dropdownObj
 end
+
+-- ============================================================
+-- RETORNO
+-- ============================================================
 
 return Library
