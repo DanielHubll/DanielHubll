@@ -59,7 +59,7 @@ end
 
 -- ============================================================
 -- SISTEMA DE AJUSTE AUTOMÁTICO DO HUBBAR (largura dinâmica)
--- VERSÃO OTIMIZADA - Sem glitch visual
+-- VERSÃO OTIMIZADA - Sem glitch visual, sem loop infinito
 -- ============================================================
 
 local HubBar = nil
@@ -110,23 +110,23 @@ local function setupHubBar()
 	if HubBar and HubBar:IsA("ImageLabel") then
 		print("[LuminaUI] HubBar encontrado!")
 		
-		-- Esconde o HubBar primeiro
+		-- Esconde o HubBar primeiro para evitar glitch visual
 		HubBar.Visible = false
 		
 		-- Aplica o ajuste imediatamente
 		forceAdjust()
 		
-		-- Mostra o HubBar no próximo frame
+		-- Mostra o HubBar no próximo frame (após o ajuste)
 		task.defer(function()
 			if HubBar and HubBar.Parent then
 				HubBar.Visible = true
 			end
 		end)
 
-		-- Monitora mudanças de tamanho (inclui quando o Roblox tenta colocar 800px)
+		-- Monitora mudanças de tamanho (substitui o loop de 2 segundos)
 		HubBar:GetPropertyChangedSignal("Size"):Connect(forceAdjust)
 
-		-- Monitora adição/remoção de botões
+		-- Monitora adição de botões no HubBarContainer
 		HubBarContainer.ChildAdded:Connect(function(child)
 			if child:IsA("TextButton") then
 				task.wait(0.1)
@@ -134,6 +134,7 @@ local function setupHubBar()
 			end
 		end)
 
+		-- Monitora remoção de botões no HubBarContainer
 		HubBarContainer.ChildRemoved:Connect(function(child)
 			if child:IsA("TextButton") then
 				task.wait(0.1)
@@ -141,11 +142,13 @@ local function setupHubBar()
 			end
 		end)
 	else
+		-- Se ainda não encontrou, tenta novamente em 1 segundo
 		task.delay(1, setupHubBar)
 	end
 end
 setupHubBar()
 
+-- Monitora se o HubBar for criado dinamicamente depois
 CoreGui.DescendantAdded:Connect(function(descendant)
 	if descendant.Name == "HubBar" and descendant:IsA("ImageLabel") and not HubBar then
 		print("[LuminaUI] HubBar detectado dinamicamente!")
@@ -245,12 +248,14 @@ local function bindTabButtonEvents(button)
 	end)
 end
 
+-- Vincula eventos aos botões já existentes
 for _, child in ipairs(HubBarContainer:GetChildren()) do
 	if child:IsA("TextButton") then
 		bindTabButtonEvents(child)
 	end
 end
 
+-- Vincula eventos aos novos botões que surgirem
 HubBarContainer.ChildAdded:Connect(function(newChild)
 	if newChild:IsA("TextButton") then
 		bindTabButtonEvents(newChild)
@@ -424,7 +429,8 @@ function Library:CreateTab(config)
 	Library.Tabs[#Library.Tabs + 1] = self
 	Library._tabsByName[Name] = self
 
-	adjustHubBarWidth()
+	-- Ajusta a largura do HubBar após criar a aba
+	forceAdjust()
 
 	return self
 end
@@ -436,6 +442,37 @@ function Library:SelectTab(nameOrTab)
 	end
 	if tabObj and tabObj.Button then
 		selectTabInternal(tabObj.Button)
+	end
+end
+
+function Library:RemoveTab(nameOrTab)
+	local tabObj = nameOrTab
+	if type(nameOrTab) == "string" then
+		tabObj = Library._tabsByName[nameOrTab]
+	end
+	
+	if tabObj then
+		-- Remove dos registros
+		Library._tabsByName[tabObj.Name] = nil
+		for i, t in ipairs(Library.Tabs) do
+			if t == tabObj then
+				table.remove(Library.Tabs, i)
+				break
+			end
+		end
+		
+		-- Destroi elementos da UI
+		if tabObj.Button then
+			tabObj.Button:Destroy()
+		end
+		if tabObj.Page then
+			tabObj.Page:Destroy()
+		end
+		
+		-- Ajusta largura do HubBar após remover
+		forceAdjust()
+		
+		print("[LuminaUI] Aba removida: " .. tabObj.Name)
 	end
 end
 
