@@ -1,1291 +1,679 @@
---[[
-    COMPONENTES LUMINA UI
-    Toggle, Slider, Button, Dropdown, ColorPicker, Keybind, Label, Section
-    
-    Para usar: Adicione ao final do seu script da Library
---]]
+--[=[
+d888b  db    db d888888b      .d888b.      db      db    db  .d8b.
+88' Y8b 88    88   88'        VP  8D      88      88    88 d8' `8b
+88      88    88    88            odD'      88      88    88 88ooo88
+88  ooo 88    88    88          .88'        88      88    88 88~~~88
+88. ~8~ 88b  d88   .88.        j88.         88booo. 88b  d88 88   88    @uniquadev
+Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  CONVERTER
 
--- ============================================================
--- COMPONENTES UI
--- ============================================================
+designed using localmaze gui creator
+--]=]
 
--- Referência aos serviços
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
+local Library = {}
 
--- Constantes de design
-local COLORS = {
-    Accent = Color3.fromRGB(99, 102, 241),      -- Roxo/Indigo
-    AccentDark = Color3.fromRGB(79, 70, 229),
-    Background = Color3.fromRGB(30, 30, 35),
-    Surface = Color3.fromRGB(40, 40, 48),
-    SurfaceLight = Color3.fromRGB(50, 50, 58),
-    Text = Color3.fromRGB(255, 255, 255),
-    TextSecondary = Color3.fromRGB(160, 160, 170),
-    Success = Color3.fromRGB(52, 211, 153),     -- Verde
-    Danger = Color3.fromRGB(248, 113, 113),     -- Vermelho
-    Warning = Color3.fromRGB(251, 191, 36)      -- Amarelo
-}
+-- Serviços
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 
-local TYPOGRAPHY = {
-    Title = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal),
-    Body = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal),
-    Caption = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-}
+-- Variáveis do sistema
+local HubBarContainer = nil
+local PageViewInnerFrame = nil
+local HubBar = nil
+local SettingsShield = nil
+local activeTab = nil
+local systemReady = false
+local monitoringConnections = {}
 
-local ROUNDING = {
-    Small = UDim.new(0, 6),
-    Medium = UDim.new(0, 8),
-    Large = UDim.new(0, 12)
-}
+-- Configurações
+local BASE_WIDTH = 800
+local WIDTH_REDUCTION_PER_BUTTON = 100
+
+-- Sistema de debounce
+local lastAdjustTime = 0
+local ADJUST_DEBOUNCE = 0.1
+local adjustDebounce = false
 
 -- ============================================================
 -- FUNÇÕES UTILITÁRIAS
 -- ============================================================
 
-local function createTween(obj, props, duration)
-    return TweenService:Create(obj, TweenInfo.new(duration, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), props)
+local function findDescendant(parent, name)
+	for _, v in ipairs(parent:GetDescendants()) do
+		if v.Name == name then
+			return v
+		end
+	end
+	return nil
 end
 
-local function addStroke(element, color, thickness)
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = color or COLORS.SurfaceLight
-    stroke.Thickness = thickness or 1
-    stroke.Parent = element
-    return stroke
+local function waitForElement(parent, name, timeout)
+	timeout = timeout or 10
+	local startTime = tick()
+	
+	while tick() - startTime < timeout do
+		local element = findDescendant(parent, name)
+		if element then
+			return element
+		end
+		task.wait(0.1)
+	end
+	
+	return nil
 end
 
-local function addCorner(element, radius)
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = radius or ROUNDING.Medium
-    corner.Parent = element
-    return corner
-end
-
-local function addGradient(element, colors)
-    local gradient = Instance.new("UIGradient")
-    gradient.Color = ColorSequence.new(colors or {
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(99, 102, 241)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(168, 85, 247))
-    })
-    gradient.Rotation = 90
-    gradient.Parent = element
-    return gradient
-end
-
--- ============================================================
--- TOGGLE COMPONENT
--- ============================================================
-
-function Library:CreateToggle(tab, config)
-    config = config or {}
-    local title = config.Title or "Toggle"
-    local description = config.Description or ""
-    local default = config.Default or false
-    local callback = config.Callback or function() end
-    local flag = config.Flag or nil
-    
-    local page = tab.Page
-    if not page or not page.Parent then return end
-    
-    -- Container principal
-    local toggleFrame = Instance.new("Frame")
-    toggleFrame.Name = "Toggle_" .. title
-    toggleFrame.BackgroundColor3 = COLORS.Surface
-    toggleFrame.Size = UDim2.new(1, -24, 0, 50)
-    toggleFrame.Position = UDim2.new(0, 0, 0, 8)
-    toggleFrame.BackgroundTransparency = 0
-    toggleFrame.Parent = page
-    
-    addCorner(toggleFrame, ROUNDING.Large)
-    addStroke(toggleFrame)
-    
-    -- Layout
-    local layout = Instance.new("UIListLayout")
-    layout.FillDirection = Enum.FillDirection.Horizontal
-    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    layout.VerticalAlignment = Enum.VerticalAlignment.Center
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 12)
-    layout.Parent = toggleFrame
-    
-    -- Padding
-    local padding = Instance.new("UIPadding")
-    padding.PaddingLeft = UDim.new(0, 16)
-    padding.PaddingRight = UDim.new(0, 16)
-    padding.Parent = toggleFrame
-    
-    -- Info container (esquerda)
-    local infoFrame = Instance.new("Frame")
-    infoFrame.Name = "Info"
-    infoFrame.BackgroundTransparency = 1
-    infoFrame.Size = UDim2.new(1, -60, 1, 0)
-    infoFrame.Parent = toggleFrame
-    
-    local infoLayout = Instance.new("UIListLayout")
-    infoLayout.FillDirection = Enum.FillDirection.Vertical
-    infoLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    infoLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-    infoLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    infoLayout.Padding = UDim.new(0, 2)
-    infoLayout.Parent = infoFrame
-    
-    -- Título
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "Title"
-    titleLabel.Text = title
-    titleLabel.TextColor3 = COLORS.Text
-    titleLabel.FontFace = TYPOGRAPHY.Body
-    titleLabel.TextSize = 14
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Size = UDim2.new(1, 0, 0, 16)
-    titleLabel.Parent = infoFrame
-    
-    -- Descrição (se houver)
-    if description ~= "" then
-        local descLabel = Instance.new("TextLabel")
-        descLabel.Name = "Description"
-        descLabel.Text = description
-        descLabel.TextColor3 = COLORS.TextSecondary
-        descLabel.FontFace = TYPOGRAPHY.Caption
-        descLabel.TextSize = 12
-        descLabel.TextXAlignment = Enum.TextXAlignment.Left
-        descLabel.BackgroundTransparency = 1
-        descLabel.Size = UDim2.new(1, 0, 0, 14)
-        descLabel.Parent = infoFrame
-    end
-    
-    -- Botão do toggle
-    local toggleButton = Instance.new("TextButton")
-    toggleButton.Name = "ToggleButton"
-    toggleButton.Text = ""
-    toggleButton.BackgroundColor3 = default and COLORS.Accent or COLORS.SurfaceLight
-    toggleButton.Size = UDim2.new(0, 44, 0, 24)
-    toggleButton.AutoButtonColor = false
-    toggleButton.Parent = toggleFrame
-    
-    addCorner(toggleButton, UDim.new(1, 0))
-    addStroke(toggleButton, COLORS.SurfaceLight, 0)
-    
-    -- Bolinha do toggle
-    local toggleKnob = Instance.new("Frame")
-    toggleKnob.Name = "Knob"
-    toggleKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    toggleKnob.Size = UDim2.new(0, 18, 0, 18)
-    toggleKnob.Position = default and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9)
-    toggleKnob.Parent = toggleButton
-    
-    addCorner(toggleKnob, UDim.new(1, 0))
-    
-    -- Estado
-    local toggled = default
-    
-    -- Função de atualização visual
-    local function updateVisual(state)
-        toggled = state
-        local bgGoal = state and COLORS.Accent or COLORS.SurfaceLight
-        local posGoal = state and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9)
-        
-        -- Animação do background
-        createTween(toggleButton, {BackgroundColor3 = bgGoal}, 0.2):Play()
-        
-        -- Animação do knob
-        createTween(toggleKnob, {Position = posGoal}, 0.2):Play()
-    end
-    
-    -- Clique
-    toggleButton.MouseButton1Click:Connect(function()
-        toggled = not toggled
-        updateVisual(toggled)
-        callback(toggled)
-        
-        -- Salvar flag
-        if flag then
-            if saveSystem and saveSystem.SetFlag then
-                saveSystem.SetFlag(flag, toggled)
-            end
-        end
-    end)
-    
-    -- Métodos públicos
-    local ToggleComponent = {
-        Instance = toggleFrame,
-        Button = toggleButton,
-        Knob = toggleKnob,
-        Set = function(self, value)
-            if value ~= toggled then
-                toggled = value
-                updateVisual(value)
-                callback(value)
-            end
-        end,
-        Get = function(self)
-            return toggled
-        end,
-        Toggle = function(self)
-            toggled = not toggled
-            updateVisual(toggled)
-            callback(toggled)
-        end
-    }
-    
-    -- Ajustar layout da página
-    local rowLayout = page:FindFirstChild("RowListLayout")
-    if rowLayout then
-        rowLayout.Padding = UDim.new(0, 8)
-    end
-    
-    return ToggleComponent
+local function isValidElement(element)
+	return element and element.Parent and element:IsDescendantOf(CoreGui)
 end
 
 -- ============================================================
--- SLIDER COMPONENT
+-- SISTEMA DE CONTAGEM DE TABS PELA UI
 -- ============================================================
 
-function Library:CreateSlider(tab, config)
-    config = config or {}
-    local title = config.Title or "Slider"
-    local min = config.Min or 0
-    local max = config.Max or 100
-    local default = config.Default or 50
-    local suffix = config.Suffix or ""
-    local callback = config.Callback or function() end
-    local flag = config.Flag or nil
-    
-    local page = tab.Page
-    if not page or not page.Parent then return end
-    
-    -- Container
-    local sliderFrame = Instance.new("Frame")
-    sliderFrame.Name = "Slider_" .. title
-    sliderFrame.BackgroundColor3 = COLORS.Surface
-    sliderFrame.Size = UDim2.new(1, -24, 0, 80)
-    sliderFrame.Parent = page
-    
-    addCorner(sliderFrame, ROUNDING.Large)
-    addStroke(sliderFrame)
-    
-    -- Padding
-    local padding = Instance.new("UIPadding")
-    padding.PaddingLeft = UDim.new(0, 16)
-    padding.PaddingRight = UDim.new(0, 16)
-    padding.PaddingTop = UDim.new(0, 12)
-    padding.PaddingBottom = UDim.new(0, 12)
-    padding.Parent = sliderFrame
-    
-    -- Header (título + valor)
-    local headerFrame = Instance.new("Frame")
-    headerFrame.Name = "Header"
-    headerFrame.BackgroundTransparency = 1
-    headerFrame.Size = UDim2.new(1, 0, 0, 20)
-    headerFrame.Parent = sliderFrame
-    
-    local headerLayout = Instance.new("UIListLayout")
-    headerLayout.FillDirection = Enum.FillDirection.Horizontal
-    headerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    headerLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-    headerLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    headerLayout.Padding = UDim.new(0, 4)
-    headerLayout.Parent = headerFrame
-    
-    -- Título
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "Title"
-    titleLabel.Text = title
-    titleLabel.TextColor3 = COLORS.Text
-    titleLabel.FontFace = TYPOGRAPHY.Body
-    titleLabel.TextSize = 14
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Size = UDim2.new(1, -60, 0, 20)
-    titleLabel.Parent = headerFrame
-    
-    -- Valor
-    local valueLabel = Instance.new("TextLabel")
-    valueLabel.Name = "Value"
-    valueLabel.Text = tostring(default) .. suffix
-    valueLabel.TextColor3 = COLORS.Accent
-    valueLabel.FontFace = TYPOGRAPHY.Body
-    valueLabel.TextSize = 14
-    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
-    valueLabel.BackgroundTransparency = 1
-    valueLabel.Size = UDim2.new(0, 60, 0, 20)
-    valueLabel.Parent = headerFrame
-    
-    -- Slider container
-    local sliderContainer = Instance.new("Frame")
-    sliderContainer.Name = "SliderContainer"
-    sliderContainer.BackgroundColor3 = COLORS.SurfaceLight
-    sliderContainer.Size = UDim2.new(1, 0, 0, 6)
-    sliderContainer.Position = UDim2.new(0, 0, 0, 36)
-    sliderContainer.BorderSizePixel = 0
-    sliderContainer.Parent = sliderFrame
-    
-    addCorner(sliderContainer, UDim.new(0, 3))
-    
-    -- Slider fill
-    local sliderFill = Instance.new("Frame")
-    sliderFill.Name = "Fill"
-    sliderFill.BackgroundColor3 = COLORS.Accent
-    sliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-    sliderFill.BorderSizePixel = 0
-    sliderFill.Parent = sliderContainer
-    
-    addCorner(sliderFill, UDim.new(0, 3))
-    
-    -- Slider knob
-    local sliderKnob = Instance.new("Frame")
-    sliderKnob.Name = "Knob"
-    sliderKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    sliderKnob.Size = UDim2.new(0, 16, 0, 16)
-    sliderKnob.Position = UDim2.new((default - min) / (max - min), -8, 0.5, -8)
-    sliderKnob.Parent = sliderContainer
-    
-    addCorner(sliderKnob, UDim.new(1, 0))
-    addStroke(sliderKnob, COLORS.Accent, 2)
-    
-    -- Variáveis de arrasto
-    local isDragging = false
-    local currentValue = default
-    
-    -- Função de atualização
-    local function updateValue(value)
-        -- Clampar valor
-        value = math.clamp(value, min, max)
-        
-        -- Arredondar para inteiro se necessário
-        if max - min > 1 then
-            value = math.floor(value + 0.5)
-        else
-            value = math.floor(value * 100 + 0.5) / 100
-        end
-        
-        if value ~= currentValue then
-            currentValue = value
-            local percent = (value - min) / (max - min)
-            
-            -- Atualizar fill
-            sliderFill.Size = UDim2.new(percent, 0, 1, 0)
-            
-            -- Atualizar knob
-            sliderKnob.Position = UDim2.new(percent, -8, 0.5, -8)
-            
-            -- Atualizar label
-            valueLabel.Text = tostring(value) .. suffix
-            
-            -- Callback
-            callback(value)
-            
-            -- Flag
-            if flag then
-                if saveSystem and saveSystem.SetFlag then
-                    saveSystem.SetFlag(flag, value)
-                end
-            end
-        end
-    end
-    
-    -- Eventos de arrasto
-    sliderKnob.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            isDragging = true
-        end
-    end)
-    
-    sliderContainer.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            isDragging = true
-            local mousePos = UserInputService:GetMouseLocation()
-            local sliderPos = sliderContainer.AbsolutePosition.X
-            local sliderSize = sliderContainer.AbsoluteSize.X
-            local relativeX = math.clamp((mousePos.X - sliderPos) / sliderSize, 0, 1)
-            updateValue(min + (max - min) * relativeX)
-        end
-    end)
-    
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            isDragging = false
-        end
-    end)
-    
-    UserInputService.InputChanged:Connect(function(input)
-        if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local sliderPos = sliderContainer.AbsolutePosition.X
-            local sliderSize = sliderContainer.AbsoluteSize.X
-            local relativeX = math.clamp((input.Position.X - sliderPos) / sliderSize, 0, 1)
-            updateValue(min + (max - min) * relativeX)
-        end
-    end)
-    
-    -- Métodos públicos
-    local SliderComponent = {
-        Instance = sliderFrame,
-        Fill = sliderFill,
-        Knob = sliderKnob,
-        Set = function(self, value)
-            updateValue(value)
-        end,
-        Get = function(self)
-            return currentValue
-        end
-    }
-    
-    return SliderComponent
+local function getLibraryTabCount()
+	local count = 0
+	
+	if HubBarContainer and isValidElement(HubBarContainer) then
+		for _, v in ipairs(HubBarContainer:GetChildren()) do
+			if v:IsA("TextButton") and v:GetAttribute("LuminaTab") then
+				count += 1
+			end
+		end
+	end
+	
+	return count
 end
 
 -- ============================================================
--- BUTTON COMPONENT
+-- SISTEMA DE INICIALIZAÇÃO
 -- ============================================================
 
-function Library:CreateButton(tab, config)
-    config = config or {}
-    local title = config.Title or "Button"
-    local description = config.Description or ""
-    local callback = config.Callback or function() end
-    local buttonText = config.ButtonText or "Click"
-    
-    local page = tab.Page
-    if not page or not page.Parent then return end
-    
-    -- Container
-    local buttonFrame = Instance.new("Frame")
-    buttonFrame.Name = "Button_" .. title
-    buttonFrame.BackgroundColor3 = COLORS.Surface
-    buttonFrame.Size = UDim2.new(1, -24, 0, 50)
-    buttonFrame.Parent = page
-    
-    addCorner(buttonFrame, ROUNDING.Large)
-    addStroke(buttonFrame)
-    
-    -- Layout horizontal
-    local layout = Instance.new("UIListLayout")
-    layout.FillDirection = Enum.FillDirection.Horizontal
-    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    layout.VerticalAlignment = Enum.VerticalAlignment.Center
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 12)
-    layout.Parent = buttonFrame
-    
-    -- Padding
-    local padding = Instance.new("UIPadding")
-    padding.PaddingLeft = UDim.new(0, 16)
-    padding.PaddingRight = UDim.new(0, 16)
-    padding.Parent = buttonFrame
-    
-    -- Info
-    local infoFrame = Instance.new("Frame")
-    infoFrame.Name = "Info"
-    infoFrame.BackgroundTransparency = 1
-    infoFrame.Size = UDim2.new(1, -100, 1, 0)
-    infoFrame.Parent = buttonFrame
-    
-    local infoLayout = Instance.new("UIListLayout")
-    infoLayout.FillDirection = Enum.FillDirection.Vertical
-    infoLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    infoLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-    infoLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    infoLayout.Padding = UDim.new(0, 2)
-    infoLayout.Parent = infoFrame
-    
-    -- Título
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "Title"
-    titleLabel.Text = title
-    titleLabel.TextColor3 = COLORS.Text
-    titleLabel.FontFace = TYPOGRAPHY.Body
-    titleLabel.TextSize = 14
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Size = UDim2.new(1, 0, 0, 16)
-    titleLabel.Parent = infoFrame
-    
-    -- Descrição
-    if description ~= "" then
-        local descLabel = Instance.new("TextLabel")
-        descLabel.Name = "Description"
-        descLabel.Text = description
-        descLabel.TextColor3 = COLORS.TextSecondary
-        descLabel.FontFace = TYPOGRAPHY.Caption
-        descLabel.TextSize = 12
-        descLabel.TextXAlignment = Enum.TextXAlignment.Left
-        descLabel.BackgroundTransparency = 1
-        descLabel.Size = UDim2.new(1, 0, 0, 14)
-        descLabel.Parent = infoFrame
-    end
-    
-    -- Botão
-    local actionButton = Instance.new("TextButton")
-    actionButton.Name = "ActionButton"
-    actionButton.Text = buttonText
-    actionButton.TextColor3 = COLORS.Text
-    actionButton.FontFace = TYPOGRAPHY.Body
-    actionButton.TextSize = 13
-    actionButton.BackgroundColor3 = COLORS.Accent
-    actionButton.Size = UDim2.new(0, 80, 0, 32)
-    actionButton.AutoButtonColor = false
-    actionButton.Parent = buttonFrame
-    
-    addCorner(actionButton, ROUNDING.Small)
-    
-    -- Hover/Press effects
-    actionButton.MouseEnter:Connect(function()
-        createTween(actionButton, {BackgroundColor3 = COLORS.AccentDark}, 0.15):Play()
-    end)
-    
-    actionButton.MouseLeave:Connect(function()
-        createTween(actionButton, {BackgroundColor3 = COLORS.Accent}, 0.15):Play()
-    end)
-    
-    actionButton.MouseButton1Click:Connect(function()
-        -- Efeito de clique
-        createTween(actionButton, {Size = UDim2.new(0, 76, 0, 30)}, 0.1):Play()
-        task.wait(0.1)
-        createTween(actionButton, {Size = UDim2.new(0, 80, 0, 32)}, 0.1):Play()
-        
-        callback()
-    end)
-    
-    local ButtonComponent = {
-        Instance = buttonFrame,
-        Button = actionButton,
-        Click = function(self)
-            callback()
-        end
-    }
-    
-    return ButtonComponent
+local function initializeSystem()
+	HubBarContainer = waitForElement(CoreGui, "HubBarContainer", 15)
+	PageViewInnerFrame = waitForElement(CoreGui, "PageViewInnerFrame", 15)
+	
+	if not HubBarContainer or not PageViewInnerFrame then
+		warn("[Library] Não foi possível encontrar os elementos principais do CoreGui")
+		return false
+	end
+	
+	print("[Library] Sistema inicializado com sucesso!")
+	return true
 end
 
 -- ============================================================
--- DROPDOWN COMPONENT
+-- SISTEMA DE HUBBAR
 -- ============================================================
 
-function Library:CreateDropdown(tab, config)
-    config = config or {}
-    local title = config.Title or "Dropdown"
-    local options = config.Options or {}
-    local default = config.Default or ""
-    local callback = config.Callback or function() end
-    local flag = config.Flag or nil
-    
-    local page = tab.Page
-    if not page or not page.Parent then return end
-    
-    -- Container
-    local dropdownFrame = Instance.new("Frame")
-    dropdownFrame.Name = "Dropdown_" .. title
-    dropdownFrame.BackgroundColor3 = COLORS.Surface
-    dropdownFrame.Size = UDim2.new(1, -24, 0, 50)
-    dropdownFrame.ClipsDescendants = false
-    dropdownFrame.Parent = page
-    
-    addCorner(dropdownFrame, ROUNDING.Large)
-    addStroke(dropdownFrame)
-    
-    -- Padding
-    local padding = Instance.new("UIPadding")
-    padding.PaddingLeft = UDim.new(0, 16)
-    padding.PaddingRight = UDim.new(0, 16)
-    padding.Parent = dropdownFrame
-    
-    -- Layout
-    local layout = Instance.new("UIListLayout")
-    layout.FillDirection = Enum.FillDirection.Horizontal
-    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    layout.VerticalAlignment = Enum.VerticalAlignment.Center
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 12)
-    layout.Parent = dropdownFrame
-    
-    -- Título
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "Title"
-    titleLabel.Text = title
-    titleLabel.TextColor3 = COLORS.Text
-    titleLabel.FontFace = TYPOGRAPHY.Body
-    titleLabel.TextSize = 14
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Size = UDim2.new(1, -160, 1, 0)
-    titleLabel.Parent = dropdownFrame
-    
-    -- Botão do dropdown
-    local dropButton = Instance.new("TextButton")
-    dropButton.Name = "DropButton"
-    dropButton.Text = default ~= "" and default or "Select..."
-    dropButton.TextColor3 = COLORS.Text
-    dropButton.FontFace = TYPOGRAPHY.Body
-    dropButton.TextSize = 13
-    dropButton.BackgroundColor3 = COLORS.SurfaceLight
-    dropButton.Size = UDim2.new(0, 140, 0, 32)
-    dropButton.TextXAlignment = Enum.TextXAlignment.Left
-    dropButton.AutoButtonColor = false
-    dropButton.Parent = dropdownFrame
-    
-    addCorner(dropButton, ROUNDING.Small)
-    
-    -- Padding do texto
-    local textPadding = Instance.new("UIPadding")
-    textPadding.PaddingLeft = UDim.new(0, 10)
-    textPadding.Parent = dropButton
-    
-    -- Ícone de seta
-    local arrowIcon = Instance.new("TextLabel")
-    arrowIcon.Name = "Arrow"
-    arrowIcon.Text = "▼"
-    arrowIcon.TextColor3 = COLORS.TextSecondary
-    arrowIcon.FontFace = TYPOGRAPHY.Body
-    arrowIcon.TextSize = 10
-    arrowIcon.BackgroundTransparency = 1
-    arrowIcon.Size = UDim2.new(0, 20, 0, 20)
-    arrowIcon.Position = UDim2.new(1, -25, 0.5, -10)
-    arrowIcon.Parent = dropButton
-    
-    -- Container de opções
-    local optionsFrame = Instance.new("Frame")
-    optionsFrame.Name = "Options"
-    optionsFrame.BackgroundColor3 = COLORS.SurfaceLight
-    optionsFrame.Size = UDim2.new(1, 0, 0, 0)
-    optionsFrame.Position = UDim2.new(0, 0, 1, 5)
-    optionsFrame.Visible = false
-    optionsFrame.ClipsDescendants = true
-    optionsFrame.ZIndex = 100
-    optionsFrame.Parent = dropButton
-    
-    addCorner(optionsFrame, ROUNDING.Small)
-    
-    -- Layout das opções
-    local optionsLayout = Instance.new("UIListLayout")
-    optionsLayout.FillDirection = Enum.FillDirection.Vertical
-    optionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    optionsLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-    optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    optionsLayout.Parent = optionsFrame
-    
-    -- Variáveis
-    local isOpen = false
-    local selectedOption = default
-    local optionButtons = {}
-    
-    -- Função para criar opções
-    local function createOptions()
-        -- Limpar opções existentes
-        for _, btn in pairs(optionButtons) do
-            btn:Destroy()
-        end
-        optionButtons = {}
-        
-        for i, option in ipairs(options) do
-            local optionBtn = Instance.new("TextButton")
-            optionBtn.Name = "Option_" .. option
-            optionBtn.Text = option
-            optionBtn.TextColor3 = COLORS.Text
-            optionBtn.FontFace = TYPOGRAPHY.Body
-            optionBtn.TextSize = 13
-            optionBtn.BackgroundColor3 = option == selectedOption and COLORS.Accent or COLORS.SurfaceLight
-            optionBtn.Size = UDim2.new(1, 0, 0, 30)
-            optionBtn.AutoButtonColor = false
-            optionBtn.ZIndex = 101
-            optionBtn.TextXAlignment = Enum.TextXAlignment.Left
-            optionBtn.Parent = optionsFrame
-            
-            -- Padding
-            local optPadding = Instance.new("UIPadding")
-            optPadding.PaddingLeft = UDim.new(0, 10)
-            optPadding.Parent = optionBtn
-            
-            -- Hover
-            optionBtn.MouseEnter:Connect(function()
-                if option ~= selectedOption then
-                    createTween(optionBtn, {BackgroundColor3 = COLORS.AccentDark}, 0.1):Play()
-                end
-            end)
-            
-            optionBtn.MouseLeave:Connect(function()
-                if option ~= selectedOption then
-                    createTween(optionBtn, {BackgroundColor3 = COLORS.SurfaceLight}, 0.1):Play()
-                end
-            end)
-            
-            -- Clique
-            optionBtn.MouseButton1Click:Connect(function()
-                selectedOption = option
-                dropButton.Text = option
-                
-                -- Atualizar visual de todas as opções
-                for _, btn in pairs(optionButtons) do
-                    btn.BackgroundColor3 = btn.Name == "Option_" .. option and COLORS.Accent or COLORS.SurfaceLight
-                end
-                
-                -- Fechar dropdown
-                closeDropdown()
-                
-                -- Callback
-                callback(option)
-                
-                -- Flag
-                if flag then
-                    if saveSystem and saveSystem.SetFlag then
-                        saveSystem.SetFlag(flag, option)
-                    end
-                end
-            end)
-            
-            table.insert(optionButtons, optionBtn)
-        end
-        
-        -- Atualizar tamanho
-        optionsFrame.Size = UDim2.new(1, 0, 0, #options * 30)
-    end
-    
-    -- Função para abrir dropdown
-    local function openDropdown()
-        if isOpen then return end
-        isOpen = true
-        optionsFrame.Visible = true
-        
-        -- Altura automática
-        local pageBottom = page.AbsolutePosition.Y + page.AbsoluteSize.Y
-        local dropdownBottom = dropButton.AbsolutePosition.Y + dropButton.AbsoluteSize.Y + (#options * 30) + 10
-        
-        if dropdownBottom > pageBottom then
-            -- Abrir para cima
-            optionsFrame.Position = UDim2.new(0, 0, 0, -(#options * 30 + 5))
-        else
-            optionsFrame.Position = UDim2.new(0, 0, 1, 5)
-        end
-        
-        createTween(arrowIcon, {Rotation = 180}, 0.2):Play()
-    end
-    
-    -- Função para fechar dropdown
-    local function closeDropdown()
-        if not isOpen then return end
-        isOpen = false
-        optionsFrame.Visible = false
-        createTween(arrowIcon, {Rotation = 0}, 0.2):Play()
-    end
-    
-    -- Alternar dropdown
-    dropButton.MouseButton1Click:Connect(function()
-        if isOpen then
-            closeDropdown()
-        else
-            openDropdown()
-        end
-    end)
-    
-    -- Fechar ao clicar fora
-    UserInputService.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 and isOpen then
-            local mousePos = UserInputService:GetMouseLocation()
-            local dropBounds = dropButton.AbsolutePosition
-            local dropSize = dropButton.AbsoluteSize
-            local optsSize = optionsFrame.AbsoluteSize
-            
-            local inDropdown = mousePos.X >= dropBounds.X and mousePos.X <= dropBounds.X + dropSize.X
-                and mousePos.Y >= dropBounds.Y - optsSize.Y and mousePos.Y <= dropBounds.Y + dropSize.Y + optsSize.Y
-            
-            if not inDropdown then
-                closeDropdown()
-            end
-        end
-    end)
-    
-    -- Criar opções
-    createOptions()
-    
-    -- Atualizar opções
-    local function updateOptions(newOptions)
-        options = newOptions
-        createOptions()
-    end
-    
-    local DropdownComponent = {
-        Instance = dropdownFrame,
-        Button = dropButton,
-        Options = optionsFrame,
-        SetOptions = function(self, newOptions)
-            updateOptions(newOptions)
-        end,
-        Get = function(self)
-            return selectedOption
-        end,
-        Set = function(self, value)
-            if table.find(options, value) then
-                selectedOption = value
-                dropButton.Text = value
-                for _, btn in pairs(optionButtons) do
-                    btn.BackgroundColor3 = btn.Name == "Option_" .. value and COLORS.Accent or COLORS.SurfaceLight
-                end
-            end
-        end
-    }
-    
-    return DropdownComponent
+local function calculateOptimalWidth()
+	local count = getLibraryTabCount()
+	return BASE_WIDTH - (count * WIDTH_REDUCTION_PER_BUTTON)
+end
+
+local function adjustHubBarWidth(force)
+	local currentTime = tick()
+	if not force and (currentTime - lastAdjustTime) < ADJUST_DEBOUNCE then
+		if adjustDebounce then
+			return
+		end
+	end
+	
+	adjustDebounce = true
+	
+	task.spawn(function()
+		task.wait(ADJUST_DEBOUNCE)
+		
+		if not HubBar or not isValidElement(HubBar) then
+			HubBar = findDescendant(CoreGui, "HubBar")
+			if not HubBar or not HubBar:IsA("ImageLabel") then
+				adjustDebounce = false
+				return
+			end
+		end
+		
+		local count = getLibraryTabCount()
+		local optimalWidth = calculateOptimalWidth()
+		
+		local currentSize = HubBar.Size
+		HubBar.Size = UDim2.new(0, optimalWidth, currentSize.Y.Scale, currentSize.Y.Offset)
+		
+		lastAdjustTime = tick()
+		adjustDebounce = false
+		
+		print(string.format("[Library] HubBar ajustado: %d tabs -> %dpx", count, optimalWidth))
+	end)
 end
 
 -- ============================================================
--- COLORPICKER COMPONENT
+-- SISTEMA DE SELEÇÃO VISUAL (CORRIGIDO!)
 -- ============================================================
 
-function Library:CreateColorPicker(tab, config)
-    config = config or {}
-    local title = config.Title or "Color Picker"
-    local default = config.Default or Color3.fromRGB(99, 102, 241)
-    local callback = config.Callback or function() end
-    local flag = config.Flag or nil
-    
-    local page = tab.Page
-    if not page or not page.Parent then return end
-    
-    -- Container
-    local colorFrame = Instance.new("Frame")
-    colorFrame.Name = "ColorPicker_" .. title
-    colorFrame.BackgroundColor3 = COLORS.Surface
-    colorFrame.Size = UDim2.new(1, -24, 0, 50)
-    colorFrame.Parent = page
-    
-    addCorner(colorFrame, ROUNDING.Large)
-    addStroke(colorFrame)
-    
-    -- Layout
-    local layout = Instance.new("UIListLayout")
-    layout.FillDirection = Enum.FillDirection.Horizontal
-    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    layout.VerticalAlignment = Enum.VerticalAlignment.Center
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 12)
-    layout.Parent = colorFrame
-    
-    -- Padding
-    local padding = Instance.new("UIPadding")
-    padding.PaddingLeft = UDim.new(0, 16)
-    padding.PaddingRight = UDim.new(0, 16)
-    padding.Parent = colorFrame
-    
-    -- Título
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "Title"
-    titleLabel.Text = title
-    titleLabel.TextColor3 = COLORS.Text
-    titleLabel.FontFace = TYPOGRAPHY.Body
-    titleLabel.TextSize = 14
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Size = UDim2.new(1, -60, 1, 0)
-    titleLabel.Parent = colorFrame
-    
-    -- Preview da cor
-    local colorPreview = Instance.new("Frame")
-    colorPreview.Name = "ColorPreview"
-    colorPreview.BackgroundColor3 = default
-    colorPreview.Size = UDim2.new(0, 32, 0, 32)
-    colorPreview.Parent = colorFrame
-    
-    addCorner(colorPreview, UDim.new(1, 0))
-    addStroke(colorPreview, Color3.fromRGB(255, 255, 255), 2)
-    
-    -- Valor HEX
-    local hexLabel = Instance.new("TextLabel")
-    hexLabel.Name = "HexValue"
-    hexLabel.Text = string.format("#%02X%02X%02X", default.R * 255, default.G * 255, default.B * 255)
-    hexLabel.TextColor3 = COLORS.TextSecondary
-    hexLabel.FontFace = TYPOGRAPHY.Caption
-    hexLabel.TextSize = 11
-    hexLabel.BackgroundTransparency = 1
-    hexLabel.Size = UDim2.new(0, 70, 0, 14)
-    hexLabel.Position = UDim2.new(0, 0, 1, -18)
-    hexLabel.TextXAlignment = Enum.TextXAlignment.Center
-    hexLabel.Parent = colorPreview
-    
-    -- Variáveis
-    local currentColor = default
-    
-    -- Função de atualização
-    local function updateColor(color)
-        currentColor = color
-        colorPreview.BackgroundColor3 = color
-        hexLabel.Text = string.format("#%02X%02X%02X", color.R * 255, color.G * 255, color.B * 255)
-        callback(color)
-        
-        if flag then
-            if saveSystem and saveSystem.SetFlag then
-                saveSystem.SetFlag(flag, {color.R, color.G, color.B})
-            end
-        end
-    end
-    
-    -- Criar popup de seleção de cores (simplificado)
-    colorPreview.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            -- Criar popup
-            local popup = Instance.new("Frame")
-            popup.Name = "ColorPopup"
-            popup.BackgroundColor3 = COLORS.Background
-            popup.Size = UDim2.new(0, 200, 0, 200)
-            popup.Position = UDim2.new(0.5, 0, 0.5, 0)
-            popup.AnchorPoint = Vector2.new(0.5, 0.5)
-            popup.ZIndex = 1000
-            popup.Parent = page
-            
-            addCorner(popup, ROUNDING.Medium)
-            addStroke(popup)
-            
-            -- Background para fechar
-            local bgClose = Instance.new("TextButton")
-            bgClose.Name = "BackgroundClose"
-            bgClose.Text = ""
-            bgClose.BackgroundTransparency = 1
-            bgClose.Size = UDim2.new(1, 0, 1, 0)
-            bgClose.ZIndex = -1
-            bgClose.Parent = popup
-            
-            -- Cores predefinidas
-            local presetColors = {
-                Color3.fromRGB(99, 102, 241),
-                Color3.fromRGB(255, 99, 132),
-                Color3.fromRGB(52, 211, 153),
-                Color3.fromRGB(251, 191, 36),
-                Color3.fromRGB(255, 255, 255),
-                Color3.fromRGB(0, 0, 0),
-                Color3.fromRGB(239, 68, 68),
-                Color3.fromRGB(168, 85, 247),
-                Color3.fromRGB(59, 130, 246)
-            }
-            
-            -- Grid de cores
-            local grid = Instance.new("UIGridLayout")
-            grid.CellSize = UDim2.new(0, 40, 0, 40)
-            grid.CellPadding = UDim2.new(0, 8, 0, 8)
-            grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
-            grid.VerticalAlignment = Enum.VerticalAlignment.Center
-            grid.Parent = popup
-            
-            -- Criar botões de cor
-            for _, color in ipairs(presetColors) do
-                local colorBtn = Instance.new("TextButton")
-                colorBtn.Text = ""
-                colorBtn.BackgroundColor3 = color
-                colorBtn.AutoButtonColor = false
-                colorBtn.ZIndex = 1001
-                colorBtn.Parent = popup
-                
-                addCorner(colorBtn, UDim.new(1, 0))
-                addStroke(colorBtn, Color3.fromRGB(255, 255, 255), 1)
-                
-                colorBtn.MouseButton1Click:Connect(function()
-                    updateColor(color)
-                    popup:Destroy()
-                end)
-            end
-            
-            -- Fechar ao clicar fora
-            bgClose.MouseButton1Click:Connect(function()
-                popup:Destroy()
-            end)
-        end
-    end)
-    
-    local ColorPickerComponent = {
-        Instance = colorFrame,
-        Preview = colorPreview,
-        Set = function(self, color)
-            updateColor(color)
-        end,
-        Get = function(self)
-            return currentColor
-        end
-    }
-    
-    return ColorPickerComponent
+local function deselectButton(button)
+	if not isValidElement(button) then return end
+	
+	local tabSelection = button:FindFirstChild("TabSelection")
+	local tabLabel = button:FindFirstChild("TabLabel")
+	
+	if tabSelection then
+		tabSelection.Visible = false
+	end
+	
+	if tabLabel then
+		local icon = tabLabel:FindFirstChild("Icon")
+		local title = tabLabel:FindFirstChild("Title")
+		if icon then icon.TextTransparency = 0.5 end
+		if title then title.TextTransparency = 0.5 end
+	end
+end
+
+local function selectButton(button)
+	if not isValidElement(button) then return end
+	
+	local tabSelection = button:FindFirstChild("TabSelection")
+	local tabLabel = button:FindFirstChild("TabLabel")
+	
+	if tabSelection then
+		tabSelection.Visible = true
+	end
+	
+	if tabLabel then
+		local icon = tabLabel:FindFirstChild("Icon")
+		local title = tabLabel:FindFirstChild("Title")
+		if icon then icon.TextTransparency = 0 end
+		if title then title.TextTransparency = 0 end
+	end
 end
 
 -- ============================================================
--- KEYBIND COMPONENT
+-- SISTEMA DE PÁGINAS
 -- ============================================================
 
-function Library:CreateKeybind(tab, config)
-    config = config or {}
-    local title = config.Title or "Keybind"
-    local default = config.Default or Enum.KeyCode.E
-    local callback = config.Callback or function() end
-    local flag = config.Flag or nil
-    
-    local page = tab.Page
-    if not page or not page.Parent then return end
-    
-    -- Container
-    local keybindFrame = Instance.new("Frame")
-    keybindFrame.Name = "Keybind_" .. title
-    keybindFrame.BackgroundColor3 = COLORS.Surface
-    keybindFrame.Size = UDim2.new(1, -24, 0, 50)
-    keybindFrame.Parent = page
-    
-    addCorner(keybindFrame, ROUNDING.Large)
-    addStroke(keybindFrame)
-    
-    -- Layout
-    local layout = Instance.new("UIListLayout")
-    layout.FillDirection = Enum.FillDirection.Horizontal
-    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    layout.VerticalAlignment = Enum.VerticalAlignment.Center
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 12)
-    layout.Parent = keybindFrame
-    
-    -- Padding
-    local padding = Instance.new("UIPadding")
-    padding.PaddingLeft = UDim.new(0, 16)
-    padding.PaddingRight = UDim.new(0, 16)
-    padding.Parent = keybindFrame
-    
-    -- Título
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "Title"
-    titleLabel.Text = title
-    titleLabel.TextColor3 = COLORS.Text
-    titleLabel.FontFace = TYPOGRAPHY.Body
-    titleLabel.TextSize = 14
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Size = UDim2.new(1, -120, 1, 0)
-    titleLabel.Parent = keybindFrame
-    
-    -- Botão de keybind
-    local keyButton = Instance.new("TextButton")
-    keyButton.Name = "KeyButton"
-    keyButton.Text = default.Name
-    keyButton.TextColor3 = COLORS.Text
-    keyButton.FontFace = TYPOGRAPHY.Body
-    keyButton.TextSize = 13
-    keyButton.BackgroundColor3 = COLORS.SurfaceLight
-    keyButton.Size = UDim2.new(0, 100, 0, 32)
-    keyButton.AutoButtonColor = false
-    keyButton.Parent = keybindFrame
-    
-    addCorner(keyButton, ROUNDING.Small)
-    
-    -- Variáveis
-    local currentKey = default
-    local isBinding = false
-    
-    -- Função de atualização
-    local function updateKey(key)
-        currentKey = key
-        keyButton.Text = key.Name
-        callback(key)
-        
-        if flag then
-            if saveSystem and saveSystem.SetFlag then
-                saveSystem.SetFlag(flag, key.Name)
-            end
-        end
-    end
-    
-    -- Binding
-    keyButton.MouseButton1Click:Connect(function()
-        isBinding = true
-        keyButton.Text = "..."
-        keyButton.BackgroundColor3 = COLORS.Accent
-    end)
-    
-    -- Detectar input
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if isBinding and input.UserInputType == Enum.UserInputType.Keyboard and not gameProcessed then
-            isBinding = false
-            keyButton.BackgroundColor3 = COLORS.SurfaceLight
-            updateKey(input.KeyCode)
-        elseif not isBinding and input.KeyCode == currentKey and not gameProcessed then
-            callback(currentKey, true) -- true = pressed
-        end
-    end)
-    
-    UserInputService.InputEnded:Connect(function(input)
-        if not isBinding and input.KeyCode == currentKey then
-            callback(currentKey, false) -- false = released
-        end
-    end)
-    
-    local KeybindComponent = {
-        Instance = keybindFrame,
-        Button = keyButton,
-        Set = function(self, key)
-            updateKey(key)
-        end,
-        Get = function(self)
-            return currentKey
-        end
-    }
-    
-    return KeybindComponent
+local function getPageForButton(button)
+	if not PageViewInnerFrame or not isValidElement(PageViewInnerFrame) then return nil end
+	for _, child in ipairs(PageViewInnerFrame:GetChildren()) do
+		if child:IsA("Frame") and child.Name == button.Name then
+			return child
+		end
+	end
+	return nil
+end
+
+local function hideAllPages()
+	if not PageViewInnerFrame or not isValidElement(PageViewInnerFrame) then return end
+	for _, child in ipairs(PageViewInnerFrame:GetChildren()) do
+		if child:IsA("Frame") then
+			child.Visible = false
+		end
+	end
 end
 
 -- ============================================================
--- LABEL COMPONENT
+-- SISTEMA DE CLIQUE NA TAB (CORRIGIDO - SOLUÇÃO ROBUSTA!)
 -- ============================================================
 
-function Library:CreateLabel(tab, config)
-    config = config or {}
-    local text = config.Text or "Label"
-    
-    local page = tab.Page
-    if not page or not page.Parent then return end
-    
-    local labelFrame = Instance.new("Frame")
-    labelFrame.Name = "Label_" .. text:sub(1, 20)
-    labelFrame.BackgroundColor3 = COLORS.Surface
-    labelFrame.Size = UDim2.new(1, -24, 0, 40)
-    labelFrame.Parent = page
-    
-    addCorner(labelFrame, ROUNDING.Large)
-    addStroke(labelFrame)
-    
-    local padding = Instance.new("UIPadding")
-    padding.PaddingLeft = UDim.new(0, 16)
-    padding.PaddingRight = UDim.new(0, 16)
-    padding.Parent = labelFrame
-    
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Name = "Text"
-    textLabel.Text = text
-    textLabel.TextColor3 = COLORS.Text
-    textLabel.FontFace = TYPOGRAPHY.Body
-    textLabel.TextSize = 14
-    textLabel.TextXAlignment = Enum.TextXAlignment.Left
-    textLabel.BackgroundTransparency = 1
-    textLabel.Size = UDim2.new(1, 0, 1, 0)
-    textLabel.Parent = labelFrame
-    
-    local LabelComponent = {
-        Instance = labelFrame,
-        SetText = function(self, newText)
-            textLabel.Text = newText
-        end,
-        GetText = function(self)
-            return textLabel.Text
-        end
-    }
-    
-    return LabelComponent
+local function onTabClicked(clickedButton)
+	if not isValidElement(clickedButton) then
+		return
+	end
+	
+	-- Desseleciona TODAS as tabs existentes (não só as da library)
+	if HubBarContainer and isValidElement(HubBarContainer) then
+		for _, child in ipairs(HubBarContainer:GetChildren()) do
+			if child:IsA("TextButton") then
+				deselectButton(child)
+			end
+		end
+	end
+	
+	-- Esconde todas as páginas
+	hideAllPages()
+	
+	-- Seleciona somente a clicada
+	selectButton(clickedButton)
+	
+	-- Mostra apenas a página correspondente
+	local page = getPageForButton(clickedButton)
+	if page then
+		page.Visible = true
+	end
+	
+	activeTab = clickedButton
+	print("[Library] Aba selecionada: " .. clickedButton.Name)
 end
 
 -- ============================================================
--- SECTION COMPONENT
+-- SISTEMA DE SETTINGS SHIELD
 -- ============================================================
 
-function Library:CreateSection(tab, config)
-    config = config or {}
-    local title = config.Title or "Section"
-    
-    local page = tab.Page
-    if not page or not page.Parent then return end
-    
-    local sectionFrame = Instance.new("Frame")
-    sectionFrame.Name = "Section_" .. title
-    sectionFrame.BackgroundColor3 = COLORS.Background
-    sectionFrame.Size = UDim2.new(1, -24, 0, 35)
-    sectionFrame.Parent = page
-    
-    addCorner(sectionFrame, ROUNDING.Medium)
-    
-    local padding = Instance.new("UIPadding")
-    padding.PaddingLeft = UDim.new(0, 16)
-    padding.Parent = sectionFrame
-    
-    local layout = Instance.new("UIListLayout")
-    layout.FillDirection = Enum.FillDirection.Horizontal
-    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    layout.VerticalAlignment = Enum.VerticalAlignment.Center
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 8)
-    layout.Parent = sectionFrame
-    
-    -- Indicador
-    local indicator = Instance.new("Frame")
-    indicator.Name = "Indicator"
-    indicator.BackgroundColor3 = COLORS.Accent
-    indicator.Size = UDim2.new(0, 3, 0, 20)
-    indicator.Parent = sectionFrame
-    
-    addCorner(indicator, UDim.new(0, 2))
-    
-    -- Título
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "Title"
-    titleLabel.Text = title:upper()
-    titleLabel.TextColor3 = COLORS.Accent
-    titleLabel.FontFace = TYPOGRAPHY.Title
-    titleLabel.TextSize = 13
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Size = UDim2.new(1, 0, 1, 0)
-    titleLabel.Parent = sectionFrame
-    
-    local SectionComponent = {
-        Instance = sectionFrame,
-        SetTitle = function(self, newTitle)
-            titleLabel.Text = newTitle:upper()
-        end
-    }
-    
-    return SectionComponent
+local function setupSettingsShieldMonitor()
+	SettingsShield = findDescendant(CoreGui, "SettingsShield")
+	
+	if SettingsShield and SettingsShield:IsA("ImageButton") then
+		print("[Library] SettingsShield encontrado! Monitorando...")
+		
+		if SettingsShield.Visible == false then
+			-- Desseleciona todas as tabs quando o menu está fechado
+			if HubBarContainer and isValidElement(HubBarContainer) then
+				for _, child in ipairs(HubBarContainer:GetChildren()) do
+					if child:IsA("TextButton") then
+						deselectButton(child)
+					end
+				end
+			end
+			hideAllPages()
+			activeTab = nil
+		end
+		
+		local connection
+		connection = SettingsShield:GetPropertyChangedSignal("Visible"):Connect(function()
+			if SettingsShield.Visible == false then
+				print("[Library] SettingsShield fechado - Desselecionando todas as abas")
+				-- Desseleciona TODAS as tabs
+				if HubBarContainer and isValidElement(HubBarContainer) then
+					for _, child in ipairs(HubBarContainer:GetChildren()) do
+						if child:IsA("TextButton") then
+							deselectButton(child)
+						end
+					end
+				end
+				hideAllPages()
+				activeTab = nil
+			else
+				-- Quando reabre, ajustar largura novamente
+				task.wait(0.5)
+				adjustHubBarWidth(true)
+			end
+		end)
+		
+		SettingsShield.AncestryChanged:Connect(function(_, parent)
+			if not parent then
+				print("[Library] SettingsShield removido - Procurando novamente...")
+				if connection then
+					connection:Disconnect()
+				end
+				task.wait(0.5)
+				setupSettingsShieldMonitor()
+			end
+		end)
+	else
+		print("[Library] SettingsShield não encontrado - Tentando em 1s...")
+		task.wait(1)
+		setupSettingsShieldMonitor()
+	end
 end
 
 -- ============================================================
--- INICIALIZAÇÃO DOS MÉTODOS NA TAB
+-- CRIAÇÃO DE BOTÃO NO HUBBAR
 -- ============================================================
 
--- Atualizar a função Library:CreateTab para adicionar os métodos
-local oldCreateTab = Library.CreateTab
-Library.CreateTab = function(self, config)
-    local tab = oldCreateTab(self, config)
-    
-    -- Adicionar métodos à tab
-    tab.CreateToggle = function(config)
-        return Library:CreateToggle(tab, config)
-    end
-    
-    tab.CreateSlider = function(config)
-        return Library:CreateSlider(tab, config)
-    end
-    
-    tab.CreateButton = function(config)
-        return Library:CreateButton(tab, config)
-    end
-    
-    tab.CreateDropdown = function(config)
-        return Library:CreateDropdown(tab, config)
-    end
-    
-    tab.CreateColorPicker = function(config)
-        return Library:CreateColorPicker(tab, config)
-    end
-    
-    tab.CreateKeybind = function(config)
-        return Library:CreateKeybind(tab, config)
-    end
-    
-    tab.CreateLabel = function(config)
-        return Library:CreateLabel(tab, config)
-    end
-    
-    tab.CreateSection = function(config)
-        return Library:CreateSection(tab, config)
-    end
-    
-    return tab
+local function createHubBarButton(name, icon)
+	-- Verificar se já existe um botão com esse nome
+	if HubBarContainer and isValidElement(HubBarContainer) then
+		local existingButton = HubBarContainer:FindFirstChild(name)
+		if existingButton and existingButton:IsA("TextButton") and existingButton:GetAttribute("LuminaTab") then
+			print("[Library] Botão já existe: " .. name .. " - Retornando existente")
+			return existingButton
+		end
+	end
+	
+	local button = Instance.new("TextButton")
+	button.Name = name
+	button:SetAttribute("LuminaTab", true)
+	
+	button.Selectable = false
+	button.ZIndex = 3
+	button.BackgroundTransparency = 1
+	button.Size = UDim2.new(0.2, 0, 1, 0)
+	button.Text = ""
+	button.AutoButtonColor = false
+	button.Parent = HubBarContainer
+	
+	-- TabSelection (indicador visual de seleção)
+	local tabSelection = Instance.new("ImageLabel")
+	tabSelection.Name = "TabSelection"
+	tabSelection.ZIndex = 3
+	tabSelection.BorderSizePixel = 0
+	tabSelection.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	tabSelection.Size = UDim2.new(1, -2, 0, 2)
+	tabSelection.Visible = false
+	tabSelection.Position = UDim2.new(0, 3, 1, -2)
+	tabSelection.Parent = button
+	
+	-- TabLabel (container do ícone e título)
+	local tabLabel = Instance.new("Frame")
+	tabLabel.Name = "TabLabel"
+	tabLabel.ZIndex = 3
+	tabLabel.BorderSizePixel = 0
+	tabLabel.Size = UDim2.new(1, 0, 1, 0)
+	tabLabel.BackgroundTransparency = 1
+	tabLabel.Parent = button
+	
+	-- Layout
+	local layout = Instance.new("UIListLayout")
+	layout.Name = "Layout"
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.Padding = UDim.new(0, 10)
+	layout.VerticalAlignment = Enum.VerticalAlignment.Center
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.FillDirection = Enum.FillDirection.Horizontal
+	layout.Parent = tabLabel
+	
+	-- Ícone
+	local iconLabel = Instance.new("TextLabel")
+	iconLabel.Name = "Icon"
+	iconLabel.TextWrapped = true
+	iconLabel.ZIndex = 3
+	iconLabel.TextTransparency = 0.5
+	iconLabel.TextScaled = true
+	iconLabel.FontFace = Font.new(
+		"rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json",
+		Enum.FontWeight.Regular,
+		Enum.FontStyle.Normal
+	)
+	iconLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	iconLabel.BackgroundTransparency = 1
+	iconLabel.Size = UDim2.new(0, 24, 0, 24)
+	iconLabel.Text = icon or "gear"
+	iconLabel.Position = UDim2.new(0, 10, 0.5, -18)
+	iconLabel.Parent = tabLabel
+	
+	local aspectRatio = Instance.new("UIAspectRatioConstraint")
+	aspectRatio.Name = "AspectRatioConstraint"
+	aspectRatio.Parent = iconLabel
+	
+	-- Título
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Name = "Title"
+	titleLabel.ZIndex = 3
+	titleLabel.TextSize = 19
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.TextTransparency = 0.5
+	titleLabel.FontFace = Font.new(
+		"rbxasset://fonts/families/BuilderSans.json",
+		Enum.FontWeight.Medium,
+		Enum.FontStyle.Normal
+	)
+	titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Text = name
+	titleLabel.AutomaticSize = Enum.AutomaticSize.XY
+	titleLabel.Position = UDim2.new(1.2, 5, 0, -2)
+	titleLabel.Parent = tabLabel
+	
+	-- Conectar clique
+	button.MouseButton1Click:Connect(function()
+		onTabClicked(button)
+	end)
+	
+	print("[Library] Novo botão criado: " .. name)
+	return button
 end
 
-print("[Library Components] ✓ Todos os componentes carregados!")
-print("  • Toggle")
-print("  • Slider")
-print("  • Button")
-print("  • Dropdown")
-print("  • ColorPicker")
-print("  • Keybind")
-print("  • Label")
-print("  • Section")
+-- ============================================================
+-- CRIAÇÃO DE PÁGINA (FRAME)
+-- ============================================================
+
+local function createPage(name)
+	-- Verificar se já existe uma página com esse nome
+	if PageViewInnerFrame and isValidElement(PageViewInnerFrame) then
+		local existingPage = PageViewInnerFrame:FindFirstChild(name)
+		if existingPage and existingPage:IsA("Frame") then
+			print("[Library] Página já existe: " .. name .. " - Retornando existente")
+			return existingPage
+		end
+	end
+	
+	local page = Instance.new("Frame")
+	page.Name = name
+	page.ZIndex = 5
+	page.AutomaticSize = Enum.AutomaticSize.Y
+	page.Size = UDim2.new(1, 0, 0, 1174)
+	page.Position = UDim2.new(0, 0, 0, 0)
+	page.BackgroundTransparency = 1
+	page.SelectionGroup = true
+	page.Visible = false
+	page.Parent = PageViewInnerFrame
+	
+	-- UIPadding
+	local padding = Instance.new("UIPadding")
+	padding.PaddingRight = UDim.new(0, 11)
+	padding.PaddingLeft = UDim.new(0, 12)
+	padding.Parent = page
+	
+	-- RowListLayout
+	local layout = Instance.new("UIListLayout")
+	layout.Name = "RowListLayout"
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = page
+	
+	print("[Library] Nova página criada: " .. name)
+	return page
+end
+
+-- ============================================================
+-- API PÚBLICA
+-- ============================================================
+
+function Library:CreateTab(config)
+	config = config or {}
+	local tabName = config.Name or "Tab"
+	local tabIcon = config.Icon or "gear"
+	
+	-- Criar botão no HubBar
+	local button = createHubBarButton(tabName, tabIcon)
+	
+	-- Garantir que o botão nasce desselecionado (CORREÇÃO IMPORTANTE!)
+	deselectButton(button)
+	
+	-- Criar página correspondente
+	local page = createPage(tabName)
+	
+	-- Criar objeto Tab
+	local Tab = {
+		Name = tabName,
+		Icon = tabIcon,
+		Button = button,
+		Page = page,
+		Toggle = nil,
+		Slider = nil,
+		Textbox = nil,
+		Dropdown = nil,
+		ColorPicker = nil,
+		Keybind = nil,
+		Label = nil,
+		Paragraph = nil,
+		Section = nil
+	}
+	
+	-- NÃO selecionar automaticamente mais
+	-- O usuário deve clicar ou usar Library:SelectTab()
+	
+	print(string.format("[Library] Tab criada: %s (Ícone: %s) | Total tabs: %d | Largura: %dpx", 
+		tabName, tabIcon, getLibraryTabCount(), calculateOptimalWidth()))
+	
+	return Tab
+end
+
+function Library:SelectTab(tab)
+	if not tab or not tab.Button then return end
+	
+	-- Usa a mesma lógica robusta do onTabClicked
+	if HubBarContainer and isValidElement(HubBarContainer) then
+		for _, child in ipairs(HubBarContainer:GetChildren()) do
+			if child:IsA("TextButton") then
+				deselectButton(child)
+			end
+		end
+	end
+	
+	hideAllPages()
+	
+	selectButton(tab.Button)
+	
+	local page = getPageForButton(tab.Button)
+	if page then
+		page.Visible = true
+	end
+	
+	activeTab = tab.Button
+	print("[Library] Tab selecionada via API: " .. tab.Name)
+end
+
+function Library:GetTabs()
+	local tabs = {}
+	if HubBarContainer and isValidElement(HubBarContainer) then
+		for _, child in ipairs(HubBarContainer:GetChildren()) do
+			if child:IsA("TextButton") and child:GetAttribute("LuminaTab") then
+				table.insert(tabs, child)
+			end
+		end
+	end
+	return tabs
+end
+
+function Library:GetActiveTab()
+	return activeTab
+end
+
+function Library:GetTabCount()
+	return getLibraryTabCount()
+end
+
+-- ============================================================
+-- SISTEMA DE MONITORAMENTO AUTOMÁTICO (CORRIGIDO - UNIVERSAL!)
+-- ============================================================
+
+local function cleanupConnections()
+	for _, conn in ipairs(monitoringConnections) do
+		if conn then
+			conn:Disconnect()
+		end
+	end
+	monitoringConnections = {}
+end
+
+local function setupMonitoring()
+	cleanupConnections()
+	
+	setupSettingsShieldMonitor()
+	
+	-- Sistema universal de clique em abas (MONITORA TODAS AS ABAS!)
+	if HubBarContainer and isValidElement(HubBarContainer) then
+		-- Função para conectar cliques em QUALQUER botão
+		local function connectButton(button)
+			-- Evita conectar múltiplas vezes no mesmo botão
+			if button:GetAttribute("LuminaConnected") then
+				return
+			end
+			
+			button:SetAttribute("LuminaConnected", true)
+			
+			-- Conecta o evento de clique
+			button.MouseButton1Click:Connect(function()
+				task.defer(function()
+					-- Desseleciona TODAS as abas (inclusive as nativas do Roblox)
+					for _, v in ipairs(HubBarContainer:GetChildren()) do
+						if v:IsA("TextButton") and v ~= button then
+							deselectButton(v)
+							
+							-- Esconde a página correspondente
+							local page = getPageForButton(v)
+							if page then
+								page.Visible = false
+							end
+						end
+					end
+					
+					-- Seleciona a aba clicada
+					selectButton(button)
+					
+					-- Mostra a página correspondente
+					local page = getPageForButton(button)
+					if page then
+						page.Visible = true
+					end
+					
+					-- Atualiza a aba ativa
+					activeTab = button
+					
+					print("[Library] Aba clicada (monitor universal): " .. button.Name)
+				end)
+			end)
+		end
+		
+		-- Conecta todas as abas existentes
+		for _, child in ipairs(HubBarContainer:GetChildren()) do
+			if child:IsA("TextButton") then
+				connectButton(child)
+			end
+		end
+		
+		-- Monitora novas abas adicionadas
+		local childAddedConn = HubBarContainer.ChildAdded:Connect(function(child)
+			if child:IsA("TextButton") then
+				connectButton(child)
+				
+				if child:GetAttribute("LuminaTab") then
+					print("[Library] Nova aba da library detectada: " .. child.Name)
+					adjustHubBarWidth(true)
+				end
+			end
+		end)
+		table.insert(monitoringConnections, childAddedConn)
+		
+		-- Monitora remoção de abas
+		local childRemovedConn = HubBarContainer.ChildRemoved:Connect(function(child)
+			if child:IsA("TextButton") and child:GetAttribute("LuminaTab") then
+				print("[Library] Aba da library removida: " .. child.Name)
+				if activeTab == child then
+					activeTab = nil
+				end
+				adjustHubBarWidth(true)
+			end
+		end)
+		table.insert(monitoringConnections, childRemovedConn)
+	end
+	
+	-- Monitora adição de elementos importantes no CoreGui
+	local descendantAddedConn = CoreGui.DescendantAdded:Connect(function(descendant)
+		if descendant.Name == "SettingsShield" and descendant:IsA("ImageButton") then
+			setupSettingsShieldMonitor()
+		elseif descendant.Name == "HubBar" and descendant:IsA("ImageLabel") then
+			HubBar = descendant
+			task.wait(0.2)
+			adjustHubBarWidth(true)
+		elseif descendant.Name == "HubBarContainer" then
+			HubBarContainer = descendant
+			setupMonitoring() -- Reinicia o monitoramento com o novo container
+			task.wait(0.3)
+			adjustHubBarWidth(true)
+		elseif descendant.Name == "PageViewInnerFrame" then
+			PageViewInnerFrame = descendant
+		end
+	end)
+	table.insert(monitoringConnections, descendantAddedConn)
+	
+	print("[Library] Monitoramento universal configurado! Todas as abas serão controladas.")
+end
+
+-- ============================================================
+-- INICIALIZAÇÃO AUTOMÁTICA
+-- ============================================================
+
+task.spawn(function()
+	systemReady = initializeSystem()
+	
+	if systemReady then
+		setupMonitoring()
+		
+		task.wait(0.5)
+		adjustHubBarWidth(true)
+		
+		print(string.format("[Library] Pronta para uso! Tabs existentes: %d", getLibraryTabCount()))
+	else
+		warn("[Library] Falha na inicialização. Tente novamente mais tarde.")
+	end
+end)
+
+return Library
