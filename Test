@@ -59,13 +59,11 @@ end
 
 -- ============================================================
 -- SISTEMA DE AJUSTE AUTOMÁTICO DO HUBBAR (largura dinâmica)
--- VERSÃO OTIMIZADA - Sem glitch visual
 -- ============================================================
 
 local HubBar = nil
 local BASE_WIDTH = 800
 local WIDTH_PER_BUTTON = 100
-local adjusting = false
 
 local function countButtons()
 	local count = 0
@@ -77,31 +75,18 @@ local function countButtons()
 	return count
 end
 
-local function forceAdjust()
-	if adjusting or not HubBar then
+local function adjustHubBarWidth()
+	if not (HubBar and HubBar:IsA("GuiObject")) then
 		return
 	end
-
-	adjusting = true
-
 	local buttonCount = countButtons()
 	local newWidth = BASE_WIDTH
-
 	if buttonCount > 5 then
 		newWidth = math.max(300, BASE_WIDTH - (WIDTH_PER_BUTTON * (buttonCount - 5)))
 	end
-
-	if HubBar.Size.X.Offset ~= newWidth then
-		HubBar.Size = UDim2.new(
-			0,
-			newWidth,
-			HubBar.Size.Y.Scale,
-			HubBar.Size.Y.Offset
-		)
-		print(string.format("[LuminaUI] HubBar: %d botões -> Largura: %d", buttonCount, newWidth))
-	end
-
-	adjusting = false
+	local currentSize = HubBar.Size
+	HubBar.Size = UDim2.new(0, newWidth, currentSize.Y.Scale, currentSize.Y.Offset)
+	print(string.format("[LuminaUI] HubBar: %d botões -> Largura: %d", buttonCount, newWidth))
 end
 
 local function setupHubBar()
@@ -109,35 +94,32 @@ local function setupHubBar()
 
 	if HubBar and HubBar:IsA("ImageLabel") then
 		print("[LuminaUI] HubBar encontrado!")
-		
-		-- Esconde o HubBar primeiro
-		HubBar.Visible = false
-		
-		-- Aplica o ajuste imediatamente
-		forceAdjust()
-		
-		-- Mostra o HubBar no próximo frame
-		task.defer(function()
-			if HubBar and HubBar.Parent then
-				HubBar.Visible = true
-			end
-		end)
+		adjustHubBarWidth()
 
-		-- Monitora mudanças de tamanho (inclui quando o Roblox tenta colocar 800px)
-		HubBar:GetPropertyChangedSignal("Size"):Connect(forceAdjust)
-
-		-- Monitora adição/remoção de botões
 		HubBarContainer.ChildAdded:Connect(function(child)
 			if child:IsA("TextButton") then
 				task.wait(0.1)
-				forceAdjust()
+				adjustHubBarWidth()
 			end
 		end)
 
 		HubBarContainer.ChildRemoved:Connect(function(child)
 			if child:IsA("TextButton") then
 				task.wait(0.1)
-				forceAdjust()
+				adjustHubBarWidth()
+			end
+		end)
+
+		task.spawn(function()
+			while true do
+				task.wait(2)
+				if HubBar and HubBar.Parent then
+					adjustHubBarWidth()
+				else
+					HubBar = nil
+					setupHubBar()
+					break
+				end
 			end
 		end)
 	else
