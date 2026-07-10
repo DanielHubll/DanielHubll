@@ -34,11 +34,6 @@ local lastAdjustTime = 0
 local ADJUST_DEBOUNCE = 0.1
 local adjustDebounce = false
 
--- Proteção contra múltiplos cliques
-local isProcessingClick = false
-local lastClickTime = 0
-local CLICK_COOLDOWN = 0.2
-
 -- ============================================================
 -- FUNÇÕES UTILITÁRIAS
 -- ============================================================
@@ -150,60 +145,30 @@ local function adjustHubBarWidth(force)
 end
 
 -- ============================================================
--- SISTEMA DE SELEÇÃO VISUAL (MEGA CORRIGIDO!)
+-- SISTEMA DE SELEÇÃO VISUAL (CORRIGIDO!)
 -- ============================================================
 
--- Função que força desselecionar TODOS os botões do HubBarContainer
-local function forceDeselectAllButtons()
-	if not HubBarContainer or not isValidElement(HubBarContainer) then
-		return
+local function deselectButton(button)
+	if not isValidElement(button) then return end
+	
+	local tabSelection = button:FindFirstChild("TabSelection")
+	local tabLabel = button:FindFirstChild("TabLabel")
+	
+	if tabSelection then
+		tabSelection.Visible = false
 	end
 	
-	print("[Library] Forçando desseleção de TODOS os botões")
-	
-	for _, child in ipairs(HubBarContainer:GetChildren()) do
-		if child:IsA("TextButton") then
-			-- Tenta desselecionar usando TabSelection (padrão da library)
-			local tabSelection = child:FindFirstChild("TabSelection")
-			local tabLabel = child:FindFirstChild("TabLabel")
-			
-			if tabSelection then
-				tabSelection.Visible = false
-			end
-			
-			if tabLabel then
-				local icon = tabLabel:FindFirstChild("Icon")
-				local title = tabLabel:FindFirstChild("Title")
-				if icon then 
-					icon.TextTransparency = 0.5 
-				end
-				if title then 
-					title.TextTransparency = 0.5 
-				end
-			end
-			
-			-- Tenta desselecionar usando Selected (padrão de algumas tabs nativas)
-			pcall(function()
-				child.Selected = false
-			end)
-			
-			-- Força a cor de fundo transparente (para tabs nativas)
-			pcall(function()
-				child.BackgroundTransparency = 1
-			end)
-		end
+	if tabLabel then
+		local icon = tabLabel:FindFirstChild("Icon")
+		local title = tabLabel:FindFirstChild("Title")
+		if icon then icon.TextTransparency = 0.5 end
+		if title then title.TextTransparency = 0.5 end
 	end
 end
 
 local function selectButton(button)
 	if not isValidElement(button) then return end
 	
-	print("[Library] Selecionando botão: " .. button.Name)
-	
-	-- PRIMEIRO: Desseleciona TUDO de forma agressiva
-	forceDeselectAllButtons()
-	
-	-- DEPOIS: Seleciona apenas o botão clicado
 	local tabSelection = button:FindFirstChild("TabSelection")
 	local tabLabel = button:FindFirstChild("TabLabel")
 	
@@ -214,18 +179,9 @@ local function selectButton(button)
 	if tabLabel then
 		local icon = tabLabel:FindFirstChild("Icon")
 		local title = tabLabel:FindFirstChild("Title")
-		if icon then 
-			icon.TextTransparency = 0 
-		end
-		if title then 
-			title.TextTransparency = 0 
-		end
+		if icon then icon.TextTransparency = 0 end
+		if title then title.TextTransparency = 0 end
 	end
-	
-	-- Também tenta usar Selected se for uma tab nativa
-	pcall(function()
-		button.Selected = true
-	end)
 end
 
 -- ============================================================
@@ -244,9 +200,6 @@ end
 
 local function hideAllPages()
 	if not PageViewInnerFrame or not isValidElement(PageViewInnerFrame) then return end
-	
-	print("[Library] Escondendo TODAS as páginas")
-	
 	for _, child in ipairs(PageViewInnerFrame:GetChildren()) do
 		if child:IsA("Frame") then
 			child.Visible = false
@@ -255,7 +208,7 @@ local function hideAllPages()
 end
 
 -- ============================================================
--- SISTEMA DE CLIQUE NA TAB (SOLUÇÃO NUCLEAR!)
+-- SISTEMA DE CLIQUE NA TAB (CORRIGIDO - SOLUÇÃO ROBUSTA!)
 -- ============================================================
 
 local function onTabClicked(clickedButton)
@@ -263,50 +216,29 @@ local function onTabClicked(clickedButton)
 		return
 	end
 	
-	-- Proteção contra cliques muito rápidos
-	local currentTime = tick()
-	if currentTime - lastClickTime < CLICK_COOLDOWN then
-		print("[Library] Clique ignorado - cooldown ativo")
-		return
+	-- Desseleciona TODAS as tabs existentes (não só as da library)
+	if HubBarContainer and isValidElement(HubBarContainer) then
+		for _, child in ipairs(HubBarContainer:GetChildren()) do
+			if child:IsA("TextButton") then
+				deselectButton(child)
+			end
+		end
 	end
 	
-	if isProcessingClick then
-		print("[Library] Clique ignorado - processamento em andamento")
-		return
-	end
-	
-	isProcessingClick = true
-	lastClickTime = currentTime
-	
-	print("[Library] ========== NOVO CLIQUE DETECTADO ==========")
-	print("[Library] Botão clicado: " .. clickedButton.Name)
-	print("[Library] É da library? " .. tostring(clickedButton:GetAttribute("LuminaTab") or false))
-	
-	-- PASSO 1: Desseleciona TODOS os botões AGRESSIVAMENTE
-	forceDeselectAllButtons()
-	
-	-- PASSO 2: Esconde TODAS as páginas
+	-- Esconde todas as páginas
 	hideAllPages()
 	
-	-- PASSO 3: Seleciona APENAS o botão clicado
+	-- Seleciona somente a clicada
 	selectButton(clickedButton)
 	
-	-- PASSO 4: Mostra APENAS a página correspondente
+	-- Mostra apenas a página correspondente
 	local page = getPageForButton(clickedButton)
 	if page then
 		page.Visible = true
-		print("[Library] Página mostrada: " .. page.Name)
-	else
-		print("[Library] Nenhuma página encontrada para: " .. clickedButton.Name)
 	end
 	
 	activeTab = clickedButton
-	print("[Library] Aba ativa agora: " .. clickedButton.Name)
-	print("[Library] =========================================")
-	
-	-- Liberar processamento após um pequeno delay
-	task.wait(0.1)
-	isProcessingClick = false
+	print("[Library] Aba selecionada: " .. clickedButton.Name)
 end
 
 -- ============================================================
@@ -319,10 +251,15 @@ local function setupSettingsShieldMonitor()
 	if SettingsShield and SettingsShield:IsA("ImageButton") then
 		print("[Library] SettingsShield encontrado! Monitorando...")
 		
-		-- Estado inicial
 		if SettingsShield.Visible == false then
-			print("[Library] SettingsShield está fechado inicialmente")
-			forceDeselectAllButtons()
+			-- Desseleciona todas as tabs quando o menu está fechado
+			if HubBarContainer and isValidElement(HubBarContainer) then
+				for _, child in ipairs(HubBarContainer:GetChildren()) do
+					if child:IsA("TextButton") then
+						deselectButton(child)
+					end
+				end
+			end
 			hideAllPages()
 			activeTab = nil
 		end
@@ -330,12 +267,19 @@ local function setupSettingsShieldMonitor()
 		local connection
 		connection = SettingsShield:GetPropertyChangedSignal("Visible"):Connect(function()
 			if SettingsShield.Visible == false then
-				print("[Library] Menu fechado - Limpando TUDO")
-				forceDeselectAllButtons()
+				print("[Library] SettingsShield fechado - Desselecionando todas as abas")
+				-- Desseleciona TODAS as tabs
+				if HubBarContainer and isValidElement(HubBarContainer) then
+					for _, child in ipairs(HubBarContainer:GetChildren()) do
+						if child:IsA("TextButton") then
+							deselectButton(child)
+						end
+					end
+				end
 				hideAllPages()
 				activeTab = nil
 			else
-				print("[Library] Menu aberto - Ajustando largura")
+				-- Quando reabre, ajustar largura novamente
 				task.wait(0.5)
 				adjustHubBarWidth(true)
 			end
@@ -343,7 +287,7 @@ local function setupSettingsShieldMonitor()
 		
 		SettingsShield.AncestryChanged:Connect(function(_, parent)
 			if not parent then
-				print("[Library] SettingsShield removido - Reconectando...")
+				print("[Library] SettingsShield removido - Procurando novamente...")
 				if connection then
 					connection:Disconnect()
 				end
@@ -519,8 +463,8 @@ function Library:CreateTab(config)
 	-- Criar botão no HubBar
 	local button = createHubBarButton(tabName, tabIcon)
 	
-	-- Garantir que o botão nasce TOTALMENTE desselecionado
-	forceDeselectAllButtons()
+	-- Garantir que o botão nasce desselecionado (CORREÇÃO IMPORTANTE!)
+	deselectButton(button)
 	
 	-- Criar página correspondente
 	local page = createPage(tabName)
@@ -542,6 +486,9 @@ function Library:CreateTab(config)
 		Section = nil
 	}
 	
+	-- NÃO selecionar automaticamente mais
+	-- O usuário deve clicar ou usar Library:SelectTab()
+	
 	print(string.format("[Library] Tab criada: %s (Ícone: %s) | Total tabs: %d | Largura: %dpx", 
 		tabName, tabIcon, getLibraryTabCount(), calculateOptimalWidth()))
 	
@@ -551,8 +498,15 @@ end
 function Library:SelectTab(tab)
 	if not tab or not tab.Button then return end
 	
-	-- Força desseleção total antes de selecionar
-	forceDeselectAllButtons()
+	-- Usa a mesma lógica robusta do onTabClicked
+	if HubBarContainer and isValidElement(HubBarContainer) then
+		for _, child in ipairs(HubBarContainer:GetChildren()) do
+			if child:IsA("TextButton") then
+				deselectButton(child)
+			end
+		end
+	end
+	
 	hideAllPages()
 	
 	selectButton(tab.Button)
@@ -587,7 +541,7 @@ function Library:GetTabCount()
 end
 
 -- ============================================================
--- SISTEMA DE MONITORAMENTO AUTOMÁTICO
+-- SISTEMA DE MONITORAMENTO AUTOMÁTICO (CORRIGIDO - UNIVERSAL!)
 -- ============================================================
 
 local function cleanupConnections()
@@ -604,18 +558,74 @@ local function setupMonitoring()
 	
 	setupSettingsShieldMonitor()
 	
+	-- Sistema universal de clique em abas (MONITORA TODAS AS ABAS!)
 	if HubBarContainer and isValidElement(HubBarContainer) then
+		-- Função para conectar cliques em QUALQUER botão
+		local function connectButton(button)
+			-- Evita conectar múltiplas vezes no mesmo botão
+			if button:GetAttribute("LuminaConnected") then
+				return
+			end
+			
+			button:SetAttribute("LuminaConnected", true)
+			
+			-- Conecta o evento de clique
+			button.MouseButton1Click:Connect(function()
+				task.defer(function()
+					-- Desseleciona TODAS as abas (inclusive as nativas do Roblox)
+					for _, v in ipairs(HubBarContainer:GetChildren()) do
+						if v:IsA("TextButton") and v ~= button then
+							deselectButton(v)
+							
+							-- Esconde a página correspondente
+							local page = getPageForButton(v)
+							if page then
+								page.Visible = false
+							end
+						end
+					end
+					
+					-- Seleciona a aba clicada
+					selectButton(button)
+					
+					-- Mostra a página correspondente
+					local page = getPageForButton(button)
+					if page then
+						page.Visible = true
+					end
+					
+					-- Atualiza a aba ativa
+					activeTab = button
+					
+					print("[Library] Aba clicada (monitor universal): " .. button.Name)
+				end)
+			end)
+		end
+		
+		-- Conecta todas as abas existentes
+		for _, child in ipairs(HubBarContainer:GetChildren()) do
+			if child:IsA("TextButton") then
+				connectButton(child)
+			end
+		end
+		
+		-- Monitora novas abas adicionadas
 		local childAddedConn = HubBarContainer.ChildAdded:Connect(function(child)
-			if child:IsA("TextButton") and child:GetAttribute("LuminaTab") then
-				print("[Library] Nova aba detectada: " .. child.Name)
-				adjustHubBarWidth(true)
+			if child:IsA("TextButton") then
+				connectButton(child)
+				
+				if child:GetAttribute("LuminaTab") then
+					print("[Library] Nova aba da library detectada: " .. child.Name)
+					adjustHubBarWidth(true)
+				end
 			end
 		end)
 		table.insert(monitoringConnections, childAddedConn)
 		
+		-- Monitora remoção de abas
 		local childRemovedConn = HubBarContainer.ChildRemoved:Connect(function(child)
 			if child:IsA("TextButton") and child:GetAttribute("LuminaTab") then
-				print("[Library] Aba removida: " .. child.Name)
+				print("[Library] Aba da library removida: " .. child.Name)
 				if activeTab == child then
 					activeTab = nil
 				end
@@ -625,6 +635,7 @@ local function setupMonitoring()
 		table.insert(monitoringConnections, childRemovedConn)
 	end
 	
+	-- Monitora adição de elementos importantes no CoreGui
 	local descendantAddedConn = CoreGui.DescendantAdded:Connect(function(descendant)
 		if descendant.Name == "SettingsShield" and descendant:IsA("ImageButton") then
 			setupSettingsShieldMonitor()
@@ -634,7 +645,7 @@ local function setupMonitoring()
 			adjustHubBarWidth(true)
 		elseif descendant.Name == "HubBarContainer" then
 			HubBarContainer = descendant
-			setupMonitoring()
+			setupMonitoring() -- Reinicia o monitoramento com o novo container
 			task.wait(0.3)
 			adjustHubBarWidth(true)
 		elseif descendant.Name == "PageViewInnerFrame" then
@@ -643,7 +654,7 @@ local function setupMonitoring()
 	end)
 	table.insert(monitoringConnections, descendantAddedConn)
 	
-	print("[Library] Monitoramento configurado!")
+	print("[Library] Monitoramento universal configurado! Todas as abas serão controladas.")
 end
 
 -- ============================================================
@@ -654,10 +665,6 @@ task.spawn(function()
 	systemReady = initializeSystem()
 	
 	if systemReady then
-		-- Primeira coisa: desselecionar TUDO que já existe
-		forceDeselectAllButtons()
-		hideAllPages()
-		
 		setupMonitoring()
 		
 		task.wait(0.5)
