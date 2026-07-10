@@ -41,6 +41,9 @@ local adjustDebounce = false
 local ActiveKeybind = nil
 local KeybindConnection = nil
 
+-- Track de dropdowns abertos (para fechar quando outro abrir)
+local activeDropdowns = {}
+
 -- Tipos de input aceitos (mouse + touch)
 local CLICK_INPUTS = {
 	[Enum.UserInputType.MouseButton1] = true,
@@ -86,30 +89,137 @@ local function waitForElement(parent, name, timeout)
 		end
 		task.wait(0.1)
 	end
-
 	return nil
 end
 
 local function isValidElement(element)
-	return element and element.Parent and element:IsDescendantOf(CoreGui)
+	return element and element.Parent ~= nil
 end
 
 -- ============================================================
--- SISTEMA DE CONTAGEM DE TABS PELA UI
+-- SISTEMA DE GERENCIAMENTO DE Z-INDEX
 -- ============================================================
 
-local function getLibraryTabCount()
-	local count = 0
+-- Sistema de camadas para garantir que dropdowns e popups fiquem sempre no topo
+local TOP_ZINDEX_BASE = 100
+local currentTopZIndex = TOP_ZINDEX_BASE
 
-	if HubBarContainer and isValidElement(HubBarContainer) then
-		for _, v in ipairs(HubBarContainer:GetChildren()) do
-			if v:IsA("TextButton") and v:GetAttribute("LuminaTab") then
-				count += 1
-			end
+local function getTopZIndex()
+	currentTopZIndex = currentTopZIndex + 1
+	return currentTopZIndex
+end
+
+local function resetTopZIndex()
+	currentTopZIndex = TOP_ZINDEX_BASE
+end
+
+-- Função para trazer elemento para a frente de tudo
+local function bringToFront(element, parentZIndex)
+	if not isValidElement(element) then return end
+	
+	local topZ = getTopZIndex()
+	
+	-- Atualiza z-index do elemento e todos seus filhos
+	local function updateZIndexRecursive(parent, baseZ)
+		if parent:IsA("GuiObject") then
+			parent.ZIndex = baseZ
+			baseZ = baseZ + 1
+		end
+		for _, child in ipairs(parent:GetChildren()) do
+			updateZIndexRecursive(child, baseZ)
 		end
 	end
+	
+	updateZIndexRecursive(element, topZ)
+end
 
-	return count
+-- Fecha todos os dropdowns abertos
+local function closeAllDropdowns(exceptDropdown)
+	for dropdown, _ in pairs(activeDropdowns) do
+		if dropdown ~= exceptDropdown and isValidElement(dropdown) then
+			dropdown.IsOpen = false
+			if dropdown.UpdateDropdown then
+				dropdown.UpdateDropdown(false, true)
+			end
+			activeDropdowns[dropdown] = nil
+		end
+	end
+end
+
+-- ============================================================
+-- SISTEMA DE SCROLL AVANÇADO (SEM ELASTICIDADE)
+-- ============================================================
+
+local function createAdvancedScrollFrame(parent)
+	local scrollFrame = Instance.new("ScrollingFrame")
+	scrollFrame.Name = "PageScroll"
+	scrollFrame.Size = UDim2.new(1, 0, 1, 0)
+	scrollFrame.Position = UDim2.new(0, 0, 0, 0)
+	scrollFrame.BackgroundTransparency = 1
+	scrollFrame.BorderSizePixel = 0
+	scrollFrame.ScrollBarThickness = isMobile and 3 or 4
+	scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80)
+	scrollFrame.ScrollBarImageTransparency = 0.3
+	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+	scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	scrollFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+	scrollFrame.ZIndex = 5
+	scrollFrame.Active = true
+	scrollFrame.ClipsDescendants = true
+	
+	-- Remove elasticidade e configura scroll suave
+	scrollFrame.ElasticBehavior = Enum.ElasticBehavior.Never  -- Remove efeito elástico
+	scrollFrame.ScrollingEnabled = true
+	scrollFrame.VerticalScrollBarInset = Enum.ScrollBarInset.Always
+	scrollFrame.VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Right
+	
+	-- Configuração de inércia e suavidade
+	scrollFrame.ScrollBarImageTransparency = 0.3
+	scrollFrame.MidImage = "rbxassetid://"
+	scrollFrame.TopImage = "rbxassetid://"
+	scrollFrame.BottomImage = "rbxassetid://"
+	
+	-- Sistema anti-elasticidade adicional
+	local lastCanvasPosition = Vector2.new(0, 0)
+	local velocity = 0
+	
+	scrollFrame:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+		local newPos = scrollFrame.CanvasPosition
+		local canvasSize = scrollFrame.CanvasSize.Y.Offset
+		local windowSize = scrollFrame.AbsoluteWindowSize.Y
+		local maxScroll = math.max(0, canvasSize - windowSize)
+		
+		-- Limita scroll para não ultrapassar os limites
+		if newPos.Y < 0 then
+			scrollFrame.CanvasPosition = Vector2.new(newPos.X, 0)
+		elseif newPos.Y > maxScroll then
+			scrollFrame.CanvasPosition = Vector2.new(newPos.X, maxScroll)
+		end
+		
+		lastCanvasPosition = scrollFrame.CanvasPosition
+	end)
+	
+	-- Suporte a scroll com wheel (PC)
+	scrollFrame.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseWheel then
+			-- Scroll controlado manualmente para evitar elasticidade
+			local delta = input.Position.Z * (isMobile and 40 or 60)
+			local newY = scrollFrame.CanvasPosition.Y - delta
+			local canvasSize = scrollFrame.CanvasSize.Y.Offset
+			local windowSize = scrollFrame.AbsoluteWindowSize.Y
+			local maxScroll = math.max(0, canvasSize - windowSize)
+			
+			newY = math.clamp(newY, 0, maxScroll)
+			
+			TweenService:Create(scrollFrame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				CanvasPosition = Vector2.new(scrollFrame.CanvasPosition.X, newY)
+			}):Play()
+		end
+	end)
+	
+	scrollFrame.Parent = parent
+	
+	return scrollFrame
 end
 
 -- ============================================================
@@ -117,66 +227,89 @@ end
 -- ============================================================
 
 local function initializeSystem()
-	HubBarContainer = waitForElement(CoreGui, "HubBarContainer", 15)
-	PageViewInnerFrame = waitForElement(CoreGui, "PageViewInnerFrame", 15)
+	task.wait(0.5)
 
-	if not HubBarContainer or not PageViewInnerFrame then
-		warn("[Library] Não foi possível encontrar os elementos principais do CoreGui")
+	HubBar = findDescendant(CoreGui, "HubBar")
+	if HubBar then
+		print("[Library] HubBar encontrado!")
+	else
+		warn("[Library] HubBar não encontrado")
 		return false
 	end
 
-	print("[Library] Sistema inicializado com sucesso!")
-	print("[Library] Plataforma: " .. (isMobile and "Mobile" or "PC"))
-	return true
+	PageViewInnerFrame = findDescendant(CoreGui, "PageViewInnerFrame")
+	if PageViewInnerFrame then
+		print("[Library] PageViewInnerFrame encontrado!")
+	else
+		warn("[Library] PageViewInnerFrame não encontrado")
+		return false
+	end
+
+	HubBarContainer = findDescendant(CoreGui, "HubBarContainer")
+	if HubBarContainer then
+		print("[Library] HubBarContainer encontrado!")
+	else
+		warn("[Library] HubBarContainer não encontrado")
+		return false
+	end
+
+	return HubBarContainer ~= nil and PageViewInnerFrame ~= nil
 end
 
 -- ============================================================
--- SISTEMA DE HUBBAR
+-- SISTEMA DE AJUSTE DE LARGURA
 -- ============================================================
 
 local function calculateOptimalWidth()
-	local count = getLibraryTabCount()
-	if isMobile then
-		-- No mobile, usar largura proporcional à tela
-		local viewportSize = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(800, 600)
-		local screenWidth = viewportSize.X
-		return math.min(screenWidth * 0.85, BASE_WIDTH - (count * WIDTH_REDUCTION_PER_BUTTON))
+	local tabCount = 0
+	if HubBarContainer and isValidElement(HubBarContainer) then
+		for _, child in ipairs(HubBarContainer:GetChildren()) do
+			if child:IsA("TextButton") and child:GetAttribute("LuminaTab") then
+				tabCount = tabCount + 1
+			end
+		end
 	end
-	return BASE_WIDTH - (count * WIDTH_REDUCTION_PER_BUTTON)
+	return math.max(BASE_WIDTH, tabCount * 100)
+end
+
+local function getLibraryTabCount()
+	local count = 0
+	if HubBarContainer and isValidElement(HubBarContainer) then
+		for _, child in ipairs(HubBarContainer:GetChildren()) do
+			if child:IsA("TextButton") and child:GetAttribute("LuminaTab") then
+				count = count + 1
+			end
+		end
+	end
+	return count
 end
 
 local function adjustHubBarWidth(force)
+	if not isValidElement(HubBar) then return end
+
 	local currentTime = tick()
-	if not force and (currentTime - lastAdjustTime) < ADJUST_DEBOUNCE then
-		if adjustDebounce then
-			return
+	if not force and currentTime - lastAdjustTime < ADJUST_DEBOUNCE then
+		return
+	end
+	lastAdjustTime = currentTime
+
+	local count = getLibraryTabCount()
+	local optimalWidth = calculateOptimalWidth()
+
+	if count >= 6 then
+		local width = BASE_WIDTH + ((count - 6) * WIDTH_REDUCTION_PER_BUTTON)
+		HubBar.Size = UDim2.new(0, width, 0, 45)
+		if HubBarContainer and isValidElement(HubBarContainer) then
+			HubBarContainer.Size = UDim2.new(0, width - 4, 0, 45)
+		end
+	else
+		HubBar.Size = UDim2.new(0, optimalWidth, 0, 45)
+		if HubBarContainer and isValidElement(HubBarContainer) then
+			HubBarContainer.Size = UDim2.new(0, optimalWidth - 4, 0, 45)
 		end
 	end
 
-	adjustDebounce = true
-
-	task.spawn(function()
-		task.wait(ADJUST_DEBOUNCE)
-
-		if not HubBar or not isValidElement(HubBar) then
-			HubBar = findDescendant(CoreGui, "HubBar")
-			if not HubBar or not HubBar:IsA("ImageLabel") then
-				adjustDebounce = false
-				return
-			end
-		end
-
-		local count = getLibraryTabCount()
-		local optimalWidth = calculateOptimalWidth()
-
-		local currentSize = HubBar.Size
-		HubBar.Size = UDim2.new(0, optimalWidth, currentSize.Y.Scale, currentSize.Y.Offset)
-
-		lastAdjustTime = tick()
-		adjustDebounce = false
-
-		print(string.format("[Library] HubBar ajustado: %d tabs -> %dpx", count, optimalWidth))
-	end)
+	print(string.format("[Library] Ajuste: %d tabs | Largura: %dpx", count, optimalWidth))
 end
 
 -- ============================================================
@@ -261,6 +394,9 @@ local function onTabClicked(clickedButton)
 
 	hideAllPages()
 	selectButton(clickedButton)
+	
+	-- Fecha todos dropdowns ao trocar de aba
+	closeAllDropdowns()
 
 	local page = getPageForButton(clickedButton)
 	if page then
@@ -305,6 +441,7 @@ local function setupSettingsShieldMonitor()
 					end
 				end
 				hideAllPages()
+				closeAllDropdowns()
 				activeTab = nil
 			else
 				task.wait(0.5)
@@ -430,7 +567,7 @@ local function createHubBarButton(name, icon)
 end
 
 -- ============================================================
--- CRIAÇÃO DE PÁGINA (FRAME) COM SCROLL
+-- CRIAÇÃO DE PÁGINA (FRAME) COM SCROLL AVANÇADO
 -- ============================================================
 
 local function createPage(name)
@@ -453,23 +590,8 @@ local function createPage(name)
 	page.ClipsDescendants = true
 	page.Parent = PageViewInnerFrame
 
-	-- ScrollingFrame para suportar scroll em mobile e PC
-	local scrollFrame = Instance.new("ScrollingFrame")
-	scrollFrame.Name = "PageScroll"
-	scrollFrame.Size = UDim2.new(1, 0, 1, 0)
-	scrollFrame.Position = UDim2.new(0, 0, 0, 0)
-	scrollFrame.BackgroundTransparency = 1
-	scrollFrame.BorderSizePixel = 0
-	scrollFrame.ScrollBarThickness = isMobile and 3 or 4
-	scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80)
-	scrollFrame.ScrollBarImageTransparency = 0.3
-	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-	scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	scrollFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-	scrollFrame.ZIndex = 5
-	scrollFrame.Active = true
-	scrollFrame.ClipsDescendants = true
-	scrollFrame.Parent = page
+	-- ScrollingFrame com sistema avançado (sem elasticidade)
+	local scrollFrame = createAdvancedScrollFrame(page)
 
 	local scrollPadding = Instance.new("UIPadding")
 	scrollPadding.PaddingRight = UDim.new(0, 11)
@@ -517,6 +639,20 @@ local function createSection(parent, Name)
 
 	return Section
 end
+
+-- Sistema de clique global para fechar dropdowns quando clicar fora
+local function setupGlobalClickHandler()
+	UserInputService.InputBegan:Connect(function(input)
+		if isClickInput(input) then
+			-- Fecha todos dropdowns quando clicar fora
+			-- Os dropdowns individuais vão verificar se o clique foi neles ou não
+			closeAllDropdowns()
+		end
+	end)
+end
+
+-- Configurar handler global
+setupGlobalClickHandler()
 
 function Library:CreateTab(config)
 	config = config or {}
@@ -1118,7 +1254,7 @@ function Library:CreateTab(config)
 	end
 
 	-- ============================================================
-	-- DROPDOWN (Mobile + PC)
+	-- DROPDOWN (Mobile + PC) — CORRIGIDO E MELHORADO
 	-- ============================================================
 	function Tab:Dropdown(config)
 		config = config or {}
@@ -1131,14 +1267,15 @@ function Library:CreateTab(config)
 
 		local Value = Default
 		local IsOpen = false
+		local self = {}  -- Referência para o próprio dropdown
 
 		local DropdownFrame = Instance.new("TextButton")
 		DropdownFrame.Name = Name
 		DropdownFrame.Size = UDim2.new(1, -24, 0, isMobile and 52 or 50)
 		DropdownFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 		DropdownFrame.BorderSizePixel = 0
-		DropdownFrame.ClipsDescendants = false
-		DropdownFrame.ZIndex = 10
+		DropdownFrame.ClipsDescendants = false  -- Permite que o menu saia dos limites
+		DropdownFrame.ZIndex = 5
 		DropdownFrame.Text = ""
 		DropdownFrame.AutoButtonColor = false
 		DropdownFrame.Parent = page
@@ -1157,7 +1294,7 @@ function Library:CreateTab(config)
 		Label.TextXAlignment = Enum.TextXAlignment.Left
 		Label.Text = Value ~= "" and Name .. ": " .. Value or Name
 		Label.TextWrapped = true
-		Label.ZIndex = 11
+		Label.ZIndex = 6
 		Label.Parent = DropdownFrame
 
 		local Arrow = Instance.new("TextLabel")
@@ -1168,22 +1305,43 @@ function Library:CreateTab(config)
 		Arrow.TextSize = isMobile and 12 or 14
 		Arrow.TextColor3 = Color3.fromRGB(255, 255, 255)
 		Arrow.Text = "▼"
-		Arrow.ZIndex = 11
+		Arrow.ZIndex = 6
 		Arrow.Parent = DropdownFrame
 
+		-- Container do dropdown com Z-Index elevado
 		local OptionContainer = Instance.new("Frame")
 		OptionContainer.Size = UDim2.new(1, 0, 0, 0)
 		OptionContainer.Position = UDim2.new(0, 0, 1, 5)
 		OptionContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 		OptionContainer.BorderSizePixel = 0
 		OptionContainer.ClipsDescendants = true
-		OptionContainer.ZIndex = 20
+		OptionContainer.ZIndex = 999  -- Z-Index MUITO alto para ficar acima de tudo
 		OptionContainer.Visible = false
-		OptionContainer.Parent = DropdownFrame
+		OptionContainer.Parent = page  -- Parent é a página, não o frame do dropdown
+		
+		-- Posiciona o container relativo ao DropdownFrame
+		local function updateContainerPosition()
+			local dropdownPos = DropdownFrame.AbsolutePosition
+			local dropdownSize = DropdownFrame.AbsoluteSize
+			local scrollFrame = page
+			local scrollPos = scrollFrame.AbsolutePosition
+			
+			OptionContainer.Position = UDim2.new(
+				0, dropdownPos.X - scrollPos.X,
+				0, (dropdownPos.Y - scrollPos.Y) + dropdownSize.Y + 5
+			)
+		end
 
 		local OptionCorner = Instance.new("UICorner")
 		OptionCorner.CornerRadius = UDim.new(0, 10)
 		OptionCorner.Parent = OptionContainer
+
+		-- Sombra no container
+		local ContainerStroke = Instance.new("UIStroke")
+		ContainerStroke.Color = Color3.fromRGB(0, 0, 0)
+		ContainerStroke.Transparency = 0.5
+		ContainerStroke.Thickness = 2
+		ContainerStroke.Parent = OptionContainer
 
 		local OptionList = Instance.new("UIListLayout")
 		OptionList.SortOrder = Enum.SortOrder.LayoutOrder
@@ -1197,8 +1355,14 @@ function Library:CreateTab(config)
 		OptionPadding.PaddingRight = UDim.new(0, 5)
 		OptionPadding.Parent = OptionContainer
 
-		local function UpdateDropdown(animate)
+		-- Função para atualizar estado do dropdown
+		function self.UpdateDropdown(animate, forceClose)
+			if forceClose then
+				IsOpen = false
+			end
+			
 			if IsOpen then
+				updateContainerPosition()
 				OptionContainer.Visible = true
 				local targetHeight = #Options * (isMobile and 40 or 35) + 10
 				if animate then
@@ -1206,12 +1370,15 @@ function Library:CreateTab(config)
 						Size = UDim2.new(1, 0, 0, targetHeight)
 					}):Play()
 					TweenService:Create(Arrow, TweenInfo.new(0.2), {
-						Text = "▲"
+						Rotation = 180
 					}):Play()
 				else
 					OptionContainer.Size = UDim2.new(1, 0, 0, targetHeight)
-					Arrow.Text = "▲"
+					Arrow.Rotation = 180
 				end
+				
+				-- Registra como dropdown ativo
+				activeDropdowns[self] = true
 			else
 				if animate then
 					local tween = TweenService:Create(OptionContainer, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
@@ -1219,16 +1386,21 @@ function Library:CreateTab(config)
 					})
 					tween:Play()
 					tween.Completed:Connect(function()
-						OptionContainer.Visible = false
+						if not IsOpen then
+							OptionContainer.Visible = false
+						end
 					end)
 					TweenService:Create(Arrow, TweenInfo.new(0.15), {
-						Text = "▼"
+						Rotation = 0
 					}):Play()
 				else
 					OptionContainer.Size = UDim2.new(1, 0, 0, 0)
 					OptionContainer.Visible = false
-					Arrow.Text = "▼"
+					Arrow.Rotation = 0
 				end
+				
+				-- Remove dos dropdowns ativos
+				activeDropdowns[self] = nil
 			end
 		end
 
@@ -1255,7 +1427,7 @@ function Library:CreateTab(config)
 				OptionButton.TextColor3 = option == Value and Color3.fromRGB(0, 170, 100) or Color3.fromRGB(200, 200, 200)
 				OptionButton.Text = option
 				OptionButton.TextXAlignment = Enum.TextXAlignment.Left
-				OptionButton.ZIndex = 21
+				OptionButton.ZIndex = 1000
 				OptionButton.AutoButtonColor = false
 				OptionButton.Parent = OptionContainer
 
@@ -1286,7 +1458,7 @@ function Library:CreateTab(config)
 					Value = option
 					Label.Text = Name .. ": " .. Value
 					IsOpen = false
-					UpdateDropdown(true)
+					self.UpdateDropdown(false, true)
 					pcall(Callback, Value)
 
 					if Flag then
@@ -1303,9 +1475,22 @@ function Library:CreateTab(config)
 
 		-- Clique para abrir/fechar (funciona em mouse e touch)
 		DropdownFrame.MouseButton1Click:Connect(function()
+			-- Fecha outros dropdowns primeiro
+			closeAllDropdowns(self)
+			
 			IsOpen = not IsOpen
-			UpdateDropdown(true)
+			self.UpdateDropdown(true)
 		end)
+
+		-- Monitor de scroll para reposicionar
+		local scrollConnection
+		if page and page:IsA("ScrollingFrame") then
+			scrollConnection = page:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+				if IsOpen then
+					updateContainerPosition()
+				end
+			end)
+		end
 
 		local DropdownObject = {}
 
@@ -1334,6 +1519,19 @@ function Library:CreateTab(config)
 			Label.Text = Name
 			BuildOptions()
 		end
+		
+		function DropdownObject:Destroy()
+			if scrollConnection then
+				scrollConnection:Disconnect()
+			end
+			activeDropdowns[self] = nil
+			if isValidElement(DropdownFrame) then
+				DropdownFrame:Destroy()
+			end
+			if isValidElement(OptionContainer) then
+				OptionContainer:Destroy()
+			end
+		end
 
 		return DropdownObject
 	end
@@ -1358,7 +1556,7 @@ function Library:CreateTab(config)
 		PickerFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 		PickerFrame.BorderSizePixel = 0
 		PickerFrame.ClipsDescendants = false
-		PickerFrame.ZIndex = 10
+		PickerFrame.ZIndex = 5
 		PickerFrame.Text = ""
 		PickerFrame.AutoButtonColor = false
 		PickerFrame.Parent = page
@@ -1376,7 +1574,7 @@ function Library:CreateTab(config)
 		Label.TextColor3 = Color3.fromRGB(200, 200, 200)
 		Label.TextXAlignment = Enum.TextXAlignment.Left
 		Label.Text = Name
-		Label.ZIndex = 11
+		Label.ZIndex = 6
 		Label.Parent = PickerFrame
 
 		local previewSize = isMobile and 28 or 24
@@ -1385,7 +1583,7 @@ function Library:CreateTab(config)
 		ColorPreview.Position = UDim2.new(1, -(previewSize + 15), 0.5, -(previewSize / 2))
 		ColorPreview.BackgroundColor3 = Value
 		ColorPreview.BorderSizePixel = 0
-		ColorPreview.ZIndex = 11
+		ColorPreview.ZIndex = 6
 		ColorPreview.Parent = PickerFrame
 
 		local PreviewCorner = Instance.new("UICorner")
@@ -1404,13 +1602,33 @@ function Library:CreateTab(config)
 		ColorContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 		ColorContainer.BorderSizePixel = 0
 		ColorContainer.ClipsDescendants = true
-		ColorContainer.ZIndex = 15
+		ColorContainer.ZIndex = 999  -- Z-Index alto
 		ColorContainer.Visible = false
-		ColorContainer.Parent = PickerFrame
+		ColorContainer.Parent = page
 
 		local ContainerCorner = Instance.new("UICorner")
 		ContainerCorner.CornerRadius = UDim.new(0, 10)
 		ContainerCorner.Parent = ColorContainer
+		
+		-- Shadow
+		local ContainerStroke = Instance.new("UIStroke")
+		ContainerStroke.Color = Color3.fromRGB(0, 0, 0)
+		ContainerStroke.Transparency = 0.5
+		ContainerStroke.Thickness = 2
+		ContainerStroke.Parent = ColorContainer
+		
+		-- Posicionamento dinâmico
+		local function updateContainerPosition()
+			local pickerPos = PickerFrame.AbsolutePosition
+			local pickerSize = PickerFrame.AbsoluteSize
+			local scrollFrame = page
+			local scrollPos = scrollFrame.AbsolutePosition
+			
+			ColorContainer.Position = UDim2.new(
+				0, pickerPos.X - scrollPos.X,
+				0, (pickerPos.Y - scrollPos.Y) + pickerSize.Y + 5
+			)
+		end
 
 		-- Campo de texto para hex
 		local HexInput = Instance.new("TextBox")
@@ -1424,7 +1642,7 @@ function Library:CreateTab(config)
 		HexInput.PlaceholderText = "#FFFFFF"
 		HexInput.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
 		HexInput.Text = "#" .. string.format("%02X%02X%02X", math.floor(Value.R * 255), math.floor(Value.G * 255), math.floor(Value.B * 255))
-		HexInput.ZIndex = 16
+		HexInput.ZIndex = 1000
 		HexInput.Parent = ColorContainer
 
 		local HexCorner = Instance.new("UICorner")
@@ -1439,7 +1657,7 @@ function Library:CreateTab(config)
 			SliderFrame.Size = UDim2.new(1, -20, 0, sliderHeight)
 			SliderFrame.Position = UDim2.new(0, 10, 0, posY)
 			SliderFrame.BackgroundTransparency = 1
-			SliderFrame.ZIndex = 16
+			SliderFrame.ZIndex = 1000
 			SliderFrame.Parent = parent
 
 			local SliderLabel = Instance.new("TextLabel")
@@ -1449,7 +1667,7 @@ function Library:CreateTab(config)
 			SliderLabel.TextSize = isMobile and 11 or 12
 			SliderLabel.TextColor3 = color
 			SliderLabel.Text = name
-			SliderLabel.ZIndex = 16
+			SliderLabel.ZIndex = 1001
 			SliderLabel.Parent = SliderFrame
 
 			local ValueDisplay = Instance.new("TextLabel")
@@ -1460,7 +1678,7 @@ function Library:CreateTab(config)
 			ValueDisplay.TextSize = isMobile and 10 or 11
 			ValueDisplay.TextColor3 = Color3.fromRGB(180, 180, 180)
 			ValueDisplay.TextXAlignment = Enum.TextXAlignment.Right
-			ValueDisplay.ZIndex = 16
+			ValueDisplay.ZIndex = 1001
 			ValueDisplay.Parent = SliderFrame
 
 			local barHeight = isMobile and 8 or 4
@@ -1469,7 +1687,7 @@ function Library:CreateTab(config)
 			SliderBar.Position = UDim2.new(0, 28, 0.5, -(barHeight / 2))
 			SliderBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 			SliderBar.BorderSizePixel = 0
-			SliderBar.ZIndex = 16
+			SliderBar.ZIndex = 1000
 			SliderBar.Parent = SliderFrame
 
 			local BarCorner = Instance.new("UICorner")
@@ -1480,7 +1698,7 @@ function Library:CreateTab(config)
 			Fill.Size = UDim2.new(0, 0, 1, 0)
 			Fill.BackgroundColor3 = color
 			Fill.BorderSizePixel = 0
-			Fill.ZIndex = 16
+			Fill.ZIndex = 1001
 			Fill.Parent = SliderBar
 
 			local FillCorner = Instance.new("UICorner")
@@ -1493,7 +1711,7 @@ function Library:CreateTab(config)
 			HitArea.Position = UDim2.new(0, 0, 0.5, -(isMobile and 10 or 6))
 			HitArea.BackgroundTransparency = 1
 			HitArea.Text = ""
-			HitArea.ZIndex = 17
+			HitArea.ZIndex = 1002
 			HitArea.AutoButtonColor = false
 			HitArea.Parent = SliderBar
 
@@ -1591,6 +1809,7 @@ function Library:CreateTab(config)
 			IsOpen = not IsOpen
 			ColorContainer.Visible = IsOpen
 			if IsOpen then
+				updateContainerPosition()
 				TweenService:Create(ColorContainer, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
 					Size = UDim2.new(1, 0, 0, containerHeight)
 				}):Play()
@@ -1606,6 +1825,15 @@ function Library:CreateTab(config)
 				end)
 			end
 		end)
+		
+		-- Monitor de scroll
+		if page and page:IsA("ScrollingFrame") then
+			page:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+				if IsOpen then
+					updateContainerPosition()
+				end
+			end)
+		end
 
 		local ColorPickerObject = {}
 
@@ -1824,6 +2052,7 @@ function Library:SelectTab(tab)
 	end
 
 	hideAllPages()
+	closeAllDropdowns()
 	selectButton(tab.Button)
 
 	local page = getPageForButton(tab.Button)
@@ -1899,6 +2128,7 @@ local function setupMonitoring()
 					end
 
 					selectButton(button)
+					closeAllDropdowns()
 
 					local page = getPageForButton(button)
 					if page then
