@@ -1,4 +1,4 @@
---[[
+--[=[
 d888b  db    db d888888b      .d888b.      db      db    db  .d8b.
 88' Y8b 88    88   88'        VP  8D      88      88    88 d8' `8b
 88      88    88    88            odD'      88      88    88 88ooo88
@@ -7,7 +7,7 @@ d888b  db    db d888888b      .d888b.      db      db    db  .d8b.
 Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  CONVERTER
 
 designed using localmaze gui creator
-]]
+]=]
 
 local Library = {}
 
@@ -26,14 +26,7 @@ local activeTab = nil
 
 -- Configurações
 local BASE_WIDTH = 800
-local MIN_WIDTH = 400
-local BUTTON_BASE_WIDTH = 160  -- Largura base por botão
-local MAX_BUTTONS_FULL_WIDTH = 5  -- Até 5 botões usa largura total
-
--- Sistema de debounce
-local lastAdjustTime = 0
-local ADJUST_DEBOUNCE = 0.2  -- 200ms entre ajustes
-local adjustDebounce = false
+local WIDTH_PER_BUTTON = 100
 
 -- ============================================================
 -- FUNÇÕES UTILITÁRIAS
@@ -54,120 +47,51 @@ local function waitForElement(parent, name, timeout)
 	
 	while tick() - startTime < timeout do
 		local element = findDescendant(parent, name)
-		if element then
-			return element
-		end
+		if element then return element end
 		task.wait(0.1)
 	end
-	
 	return nil
 end
 
-local function isValidElement(element)
-	return element and element.Parent and element:IsDescendantOf(CoreGui)
+local function adjustHubBarWidth()
+	if not HubBar or not HubBarContainer then return end
+	
+	local buttonCount = 0
+	for _, child in ipairs(HubBarContainer:GetChildren()) do
+		if child:IsA("TextButton") then
+			buttonCount = buttonCount + 1
+		end
+	end
+	
+	-- Começa em 800 e subtrai 100 para CADA botão existente
+	local newWidth = BASE_WIDTH - (WIDTH_PER_BUTTON * buttonCount)
+	
+	-- Trava de segurança para a barra não ficar pequena demais ou com largura negativa
+	if newWidth < 300 then
+		newWidth = 300
+	end
+	
+	local currentSize = HubBar.Size
+	HubBar.Size = UDim2.new(0, newWidth, currentSize.Y.Scale, currentSize.Y.Offset)
 end
 
 -- ============================================================
--- SISTEMA DE INICIALIZAÇÃO
+-- INICIALIZAÇÃO
 -- ============================================================
 
 local function initializeSystem()
-	-- Aguardar elementos principais
-	HubBarContainer = waitForElement(CoreGui, "HubBarContainer", 15)
-	PageViewInnerFrame = waitForElement(CoreGui, "PageViewInnerFrame", 15)
+	local robloxGui = waitForElement(CoreGui, "RobloxGui", 5)
+	if not robloxGui then return false end
 	
-	if not HubBarContainer or not PageViewInnerFrame then
-		warn("[Library] Não foi possível encontrar os elementos principais do CoreGui")
-		return false
+	HubBar = waitForElement(robloxGui, "HubBar", 5)
+	HubBarContainer = waitForElement(robloxGui, "HubBarContainer", 5)
+	PageViewInnerFrame = waitForElement(robloxGui, "PageViewInnerFrame", 5)
+	
+	if HubBar and HubBarContainer and PageViewInnerFrame then
+		return true
 	end
 	
-	print("[Library] Sistema inicializado com sucesso!")
-	return true
-end
-
--- ============================================================
--- SISTEMA DE HUBBAR - CORRIGIDO
--- ============================================================
-
-local function countButtons()
-	local count = 0
-	if HubBarContainer and isValidElement(HubBarContainer) then
-		for _, child in ipairs(HubBarContainer:GetChildren()) do
-			if child:IsA("TextButton") then
-				count = count + 1
-			end
-		end
-	end
-	return count
-end
-
-local function calculateOptimalWidth(buttonCount)
-	if buttonCount == 0 then
-		return BASE_WIDTH
-	end
-	
-	-- Se tem até MAX_BUTTONS_FULL_WIDTH, usa largura total
-	if buttonCount <= MAX_BUTTONS_FULL_WIDTH then
-		return BASE_WIDTH
-	end
-	
-	-- Para mais botões, calcula proporcionalmente
-	local extraButtons = buttonCount - MAX_BUTTONS_FULL_WIDTH
-	local reductionPerButton = BUTTON_BASE_WIDTH
-	
-	local newWidth = BASE_WIDTH - (reductionPerButton * extraButtons)
-	
-	-- Garante que não fica menor que o mínimo
-	if newWidth < MIN_WIDTH then
-		newWidth = MIN_WIDTH
-	end
-	
-	return newWidth
-end
-
-local function adjustHubBarWidth(force)
-	-- Debounce check
-	local currentTime = tick()
-	if not force and (currentTime - lastAdjustTime) < ADJUST_DEBOUNCE then
-		if adjustDebounce then
-			return
-		end
-	end
-	
-	adjustDebounce = true
-	
-	task.spawn(function()
-		task.wait(ADJUST_DEBOUNCE)
-		
-		-- Verificar se HubBar ainda existe e é válido
-		if not HubBar or not isValidElement(HubBar) then
-			HubBar = findDescendant(CoreGui, "HubBar")
-			if not HubBar or not HubBar:IsA("ImageLabel") then
-				adjustDebounce = false
-				return
-			end
-		end
-		
-		-- Verificar se HubBarContainer ainda existe
-		if not HubBarContainer or not isValidElement(HubBarContainer) then
-			HubBarContainer = findDescendant(CoreGui, "HubBarContainer")
-			if not HubBarContainer then
-				adjustDebounce = false
-				return
-			end
-		end
-		
-		local buttonCount = countButtons()
-		local optimalWidth = calculateOptimalWidth(buttonCount)
-		
-		local currentSize = HubBar.Size
-		HubBar.Size = UDim2.new(0, optimalWidth, currentSize.Y.Scale, currentSize.Y.Offset)
-		
-		lastAdjustTime = tick()
-		adjustDebounce = false
-		
-		print(string.format("[Library] HubBar ajustado: %d botões -> %dpx", buttonCount, optimalWidth))
-	end)
+	return false
 end
 
 -- ============================================================
@@ -175,8 +99,6 @@ end
 -- ============================================================
 
 local function deselectButton(button)
-	if not isValidElement(button) then return end
-	
 	local tabSelection = button:FindFirstChild("TabSelection")
 	local tabLabel = button:FindFirstChild("TabLabel")
 	
@@ -193,8 +115,6 @@ local function deselectButton(button)
 end
 
 local function selectButton(button)
-	if not isValidElement(button) then return end
-	
 	local tabSelection = button:FindFirstChild("TabSelection")
 	local tabLabel = button:FindFirstChild("TabLabel")
 	
@@ -215,7 +135,7 @@ end
 -- ============================================================
 
 local function getPageForButton(button)
-	if not PageViewInnerFrame or not isValidElement(PageViewInnerFrame) then return nil end
+	if not PageViewInnerFrame then return nil end
 	for _, child in ipairs(PageViewInnerFrame:GetChildren()) do
 		if child:IsA("Frame") and child.Name == button.Name then
 			return child
@@ -225,7 +145,7 @@ local function getPageForButton(button)
 end
 
 local function hideAllPages()
-	if not PageViewInnerFrame or not isValidElement(PageViewInnerFrame) then return end
+	if not PageViewInnerFrame then return end
 	for _, child in ipairs(PageViewInnerFrame:GetChildren()) do
 		if child:IsA("Frame") then
 			child.Visible = false
@@ -234,16 +154,12 @@ local function hideAllPages()
 end
 
 local function showPage(page)
-	if not page or not isValidElement(page) then return end
+	if not page then return end
 	hideAllPages()
 	page.Visible = true
 end
 
 local function onTabClicked(clickedButton)
-	if not isValidElement(clickedButton) or not HubBarContainer or not isValidElement(HubBarContainer) then
-		return
-	end
-	
 	-- Controlar visual dos botões
 	for _, child in ipairs(HubBarContainer:GetChildren()) do
 		if child:IsA("TextButton") then
@@ -271,7 +187,7 @@ end
 -- ============================================================
 
 local function deselectAllButtons()
-	if HubBarContainer and isValidElement(HubBarContainer) then
+	if HubBarContainer then
 		for _, child in ipairs(HubBarContainer:GetChildren()) do
 			if child:IsA("TextButton") then
 				deselectButton(child)
@@ -299,20 +215,24 @@ local function setupSettingsShieldMonitor()
 				deselectAllButtons()
 				hideAllPages()
 			else
-				-- Quando reabre, ajustar largura novamente
-				task.spawn(function()
-					task.wait(0.5)
-					adjustHubBarWidth(true)
-				end)
+				print("[Library] SettingsShield aberto - Restaurando largura do HubBar")
+				-- Espera o Roblox resetar a UI dele, e então forçamos a nossa largura
+				task.wait(0.1) 
+				adjustHubBarWidth()
+				
+				-- Restaura a aba ativa ou abre a primeira aba
+				if activeTab then
+					onTabClicked(activeTab)
+				elseif #tabs > 0 then
+					onTabClicked(tabs[1].Button)
+				end
 			end
 		end)
 		
 		SettingsShield.AncestryChanged:Connect(function(_, parent)
 			if not parent then
 				print("[Library] SettingsShield removido - Procurando novamente...")
-				if connection then
-					connection:Disconnect()
-				end
+				connection:Disconnect()
 				task.wait(0.5)
 				setupSettingsShieldMonitor()
 			end
@@ -492,11 +412,9 @@ function Library:CreateTab(config)
 		onTabClicked(button)
 	end
 	
-	-- Ajustar largura do HubBar com força
-	task.spawn(function()
-		task.wait(0.15)
-		adjustHubBarWidth(true)
-	end)
+	-- Ajustar largura do HubBar
+	task.wait(0.1)
+	adjustHubBarWidth()
 	
 	print(string.format("[Library] Tab criada: %s (Ícone: %s)", tabName, tabIcon))
 	
@@ -512,91 +430,46 @@ function Library:GetActiveTab()
 end
 
 -- ============================================================
--- INICIALIZAÇÃO AUTOMÁTICA - CORRIGIDA
+-- INICIALIZAÇÃO AUTOMÁTICA
 -- ============================================================
 
 local systemReady = false
-local monitoringConnections = {}
-
-local function cleanupConnections()
-	for _, conn in ipairs(monitoringConnections) do
-		if conn then
-			conn:Disconnect()
-		end
-	end
-	monitoringConnections = {}
-end
-
-local function setupMonitoring()
-	-- Limpar conexões antigas
-	cleanupConnections()
-	
-	-- Configurar monitoramento do SettingsShield
-	setupSettingsShieldMonitor()
-	
-	-- Configurar ajuste automático do HubBar com verificação de integridade
-	if HubBarContainer and isValidElement(HubBarContainer) then
-		local childAddedConn = HubBarContainer.ChildAdded:Connect(function(child)
-			if child:IsA("TextButton") then
-				task.spawn(function()
-					task.wait(0.15)
-					adjustHubBarWidth(true)
-				end)
-			end
-		end)
-		table.insert(monitoringConnections, childAddedConn)
-		
-		local childRemovedConn = HubBarContainer.ChildRemoved:Connect(function(child)
-			if child:IsA("TextButton") then
-				task.spawn(function()
-					task.wait(0.15)
-					adjustHubBarWidth(true)
-				end)
-			end
-		end)
-		table.insert(monitoringConnections, childRemovedConn)
-	end
-	
-	-- Monitorar adição de novos elementos com reconexão
-	local descendantAddedConn = CoreGui.DescendantAdded:Connect(function(descendant)
-		if descendant.Name == "SettingsShield" and descendant:IsA("ImageButton") then
-			setupSettingsShieldMonitor()
-		elseif descendant.Name == "HubBar" and descendant:IsA("ImageLabel") then
-			HubBar = descendant
-			task.spawn(function()
-				task.wait(0.2)
-				adjustHubBarWidth(true)
-			end)
-		elseif descendant.Name == "HubBarContainer" then
-			-- Reconfigurar monitoramento se container for recriado
-			HubBarContainer = descendant
-			task.spawn(function()
-				task.wait(0.3)
-				setupMonitoring()
-				adjustHubBarWidth(true)
-			end)
-		elseif descendant.Name == "PageViewInnerFrame" then
-			PageViewInnerFrame = descendant
-		end
-	end)
-	table.insert(monitoringConnections, descendantAddedConn)
-	
-	print("[Library] Monitoramento configurado!")
-end
 
 task.spawn(function()
 	systemReady = initializeSystem()
 	
 	if systemReady then
-		setupMonitoring()
+		-- Configurar monitoramento do SettingsShield
+		setupSettingsShieldMonitor()
 		
-		-- Forçar ajuste inicial
-		task.wait(0.5)
-		adjustHubBarWidth(true)
+		-- Configurar ajuste automático do HubBar
+		HubBarContainer.ChildAdded:Connect(function(child)
+			if child:IsA("TextButton") then
+				task.wait(0.1)
+				adjustHubBarWidth()
+			end
+		end)
+		
+		HubBarContainer.ChildRemoved:Connect(function(child)
+			if child:IsA("TextButton") then
+				task.wait(0.1)
+				adjustHubBarWidth()
+			end
+		end)
+		
+		-- Monitorar adição de novos elementos
+		CoreGui.DescendantAdded:Connect(function(descendant)
+			if descendant.Name == "SettingsShield" and descendant:IsA("ImageButton") then
+				setupSettingsShieldMonitor()
+			elseif descendant.Name == "HubBar" and descendant:IsA("ImageLabel") then
+				HubBar = descendant
+				adjustHubBarWidth()
+			end
+		end)
 		
 		print("[Library] Pronta para uso!")
 	else
-		warn("[Library] Falha na inicialização. Tente novamente mais tarde.")
+		warn("[Library] Falha na inicialização. Interface do Roblox não encontrada.")
 	end
 end)
 
