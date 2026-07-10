@@ -1,457 +1,583 @@
---[=[
+--[[
  d888b  db    db d888888b      .d888b.      db      db    db  .d8b.  
 88' Y8b 88    88   `88'        VP  `8D      88      88    88 d8' `8b 
 88      88    88    88            odD'      88      88    88 88ooo88 
 88  ooo 88    88    88          .88'        88      88    88 88~~~88 
 88. ~8~ 88b  d88   .88.        j88.         88booo. 88b  d88 88   88    @uniquadev
- Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  CONVERTER 
+ Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  UI LIBRARY v2
+--]]
 
-designed using localmaze gui creator
-]=]
+local Library = {}
 
--- Instances: 26 | Scripts: 1 | Modules: 0 | Tags: 0
-local LMG2L = {};
+-- Serviços Principais
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
 
--- Players.akskkskakjda.PlayerGui.ScreenGui
-LMG2L["ScreenGui_1"] = Instance.new("ScreenGui", game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"));
-LMG2L["ScreenGui_1"]["ZIndexBehavior"] = Enum.ZIndexBehavior.Sibling;
+-- Função auxiliar para varredura profunda de elementos
+local function findDescendant(parent, name)
+    for _, v in ipairs(parent:GetDescendants()) do
+        if v.Name == name then
+            return v
+        end
+    end
+    return nil
+end
 
+-- Contêineres nativos do Roblox do menu CoreGui
+local HubBarContainer = findDescendant(CoreGui, "HubBarContainer")
+local PageViewInnerFrame = findDescendant(CoreGui, "PageViewInnerFrame")
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider
-LMG2L["Slider_2"] = Instance.new("ImageButton", LMG2L["ScreenGui_1"]);
-LMG2L["Slider_2"]["Active"] = false;
-LMG2L["Slider_2"]["BorderSizePixel"] = 0;
-LMG2L["Slider_2"]["SliceCenter"] = Rect.new(2, 2, 18, 18);
-LMG2L["Slider_2"]["ScaleType"] = Enum.ScaleType.Slice;
-LMG2L["Slider_2"]["AutoButtonColor"] = false;
-LMG2L["Slider_2"]["ImageTransparency"] = 1;
-LMG2L["Slider_2"]["BackgroundTransparency"] = 1;
--- LMG2L["Slider_2"]["ImageContent"] = ;
-LMG2L["Slider_2"]["BackgroundColor3"] = Color3.fromRGB(36, 38, 40);
-LMG2L["Slider_2"]["ImageColor3"] = Color3.fromRGB(36, 38, 40);
-LMG2L["Slider_2"]["Selectable"] = false;
-LMG2L["Slider_2"]["ZIndex"] = 2;
-LMG2L["Slider_2"]["Image"] = [[rbxasset://textures/ui/VR/rectBackgroundWhite.png]];
-LMG2L["Slider_2"]["Size"] = UDim2.new(1, 0, 0, 50);
-LMG2L["Slider_2"]["LayoutOrder"] = 29;
-LMG2L["Slider_2"]["Name"] = [[Slider]];
--- Attributes
-LMG2L["Slider_2"]:SetAttribute([[SelectionImageObject]], [[]]);
+-- ============================================================
+-- SISTEMA 1: REDIMENSIONAMENTO DINÂMICO DO HUBBAR
+-- ============================================================
+local HubBar = nil
+local BASE_WIDTH = 800
+local WIDTH_PER_BUTTON = 100
 
+local function countButtons()
+    local count = 0
+    if HubBarContainer then
+        for _, child in ipairs(HubBarContainer:GetChildren()) do
+            if child:IsA("TextButton") then
+                count = count + 1
+            end
+        end
+    end
+    return count
+end
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.UICorner
-LMG2L["UICorner_3"] = Instance.new("UICorner", LMG2L["Slider_2"]);
+local function adjustHubBarWidth()
+    local buttonCount = countButtons()
+    if HubBar and HubBar:IsA("GuiObject") then
+        -- Se passar de 5 botões na barra, começa a reduzir proporcionalmente
+        if buttonCount > 5 then
+            local extraButtons = buttonCount - 5
+            local newWidth = BASE_WIDTH - (WIDTH_PER_BUTTON * extraButtons)
+            if newWidth < 300 then newWidth = 300 end -- Trava de segurança mínima
+            HubBar.Size = UDim2.new(0, newWidth, HubBar.Size.Y.Scale, HubBar.Size.Y.Offset)
+        else
+            HubBar.Size = UDim2.new(0, BASE_WIDTH, HubBar.Size.Y.Scale, HubBar.Size.Y.Offset)
+        end
+    end
+end
 
+-- Loop persistente agressivo (Roblox recria o HubBar em tempo de execução)
+task.spawn(function()
+    while true do
+        task.wait(0.2)
+        if not HubBar or not HubBar.Parent then
+            HubBar = findDescendant(CoreGui, "HubBar")
+        end
+        if HubBar then
+            adjustHubBarWidth()
+        end
+    end
+end)
 
+-- Captura instantânea de recriação via CoreGui
+CoreGui.DescendantAdded:Connect(function(v)
+    if v.Name == "HubBar" and v:IsA("ImageLabel") then
+        HubBar = v
+        adjustHubBarWidth()
+    end
+end)
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider
-LMG2L["Slider_4"] = Instance.new("ImageButton", LMG2L["Slider_2"]);
-LMG2L["Slider_4"]["AutoButtonColor"] = false;
-LMG2L["Slider_4"]["BackgroundTransparency"] = 1;
-LMG2L["Slider_4"]["Selectable"] = false;
-LMG2L["Slider_4"]["ZIndex"] = 2;
-LMG2L["Slider_4"]["AnchorPoint"] = Vector2.new(1, 0.5);
-LMG2L["Slider_4"]["Size"] = UDim2.new(0.6, 0, 0, 50);
-LMG2L["Slider_4"]["Name"] = [[Slider]];
-LMG2L["Slider_4"]["Position"] = UDim2.new(1, 0, 0.5, 0);
--- Attributes
-LMG2L["Slider_4"]:SetAttribute([[SelectionImageObject]], [[]]);
+-- Conexões de contagem quando botões entram/saem
+if HubBarContainer then
+    HubBarContainer.ChildAdded:Connect(function(child)
+        if child:IsA("TextButton") then task.wait(0.1) adjustHubBarWidth() end
+    end)
+    HubBarContainer.ChildRemoved:Connect(function(child)
+        if child:IsA("TextButton") then task.wait(0.1) adjustHubBarWidth() end
+    end)
+end
 
+-- ============================================================
+-- SISTEMA 2: GERENCIAMENTO DE ABAS E ANTI-MULTI SELEÇÃO GLOBAL
+-- ============================================================
+local CurrentSelectedTab = nil
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.LocalScript
-LMG2L["LocalScript_5"] = Instance.new("LocalScript", LMG2L["Slider_4"]);
+local function deselectButton(button)
+    if not button then return end
+    local tabSelection = button:FindFirstChild("TabSelection")
+    local tabLabel = button:FindFirstChild("TabLabel")
+    if tabSelection then tabSelection.Visible = false end
+    if tabLabel then
+        local icon = tabLabel:FindFirstChild("Icon")
+        local title = tabLabel:FindFirstChild("Title")
+        if icon then icon.TextTransparency = 0.5 end
+        if title then title.TextTransparency = 0.5 end
+    end
+end
 
+local function selectButton(button)
+    if not button then return end
+    local tabSelection = button:FindFirstChild("TabSelection")
+    local tabLabel = button:FindFirstChild("TabLabel")
+    if tabSelection then tabSelection.Visible = true end
+    if tabLabel then
+        local icon = tabLabel:FindFirstChild("Icon")
+        local title = tabLabel:FindFirstChild("Title")
+        if icon then icon.TextTransparency = 0 end
+        if title then title.TextTransparency = 0 end
+    end
+end
 
+local function hideAllPages()
+    if not PageViewInnerFrame then return end
+    for _, child in ipairs(PageViewInnerFrame:GetChildren()) do
+        if child:IsA("Frame") then child.Visible = false end
+    end
+end
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.LeftButton
-LMG2L["LeftButton_6"] = Instance.new("ImageButton", LMG2L["Slider_4"]);
-LMG2L["LeftButton_6"]["BackgroundTransparency"] = 1;
-LMG2L["LeftButton_6"]["Selectable"] = false;
-LMG2L["LeftButton_6"]["AnchorPoint"] = Vector2.new(0, 0.5);
-LMG2L["LeftButton_6"]["Size"] = UDim2.new(0, 32, 0, 50);
-LMG2L["LeftButton_6"]["Name"] = [[LeftButton]];
-LMG2L["LeftButton_6"]["Position"] = UDim2.new(0, 0, 0.5, 0);
--- Attributes
-LMG2L["LeftButton_6"]:SetAttribute([[SelectionImageObject]], [[]]);
+local function selectTab(tab)
+    if CurrentSelectedTab and CurrentSelectedTab ~= tab then
+        deselectButton(CurrentSelectedTab)
+    end
 
+    CurrentSelectedTab = tab
+    selectButton(tab)
+    hideAllPages()
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.LeftButton.LeftButton
-LMG2L["LeftButton_7"] = Instance.new("ImageLabel", LMG2L["LeftButton_6"]);
--- LMG2L["LeftButton_7"]["ImageContent"] = ;
-LMG2L["LeftButton_7"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
-LMG2L["LeftButton_7"]["Image"] = [[rbxasset://textures/ui/Settings/Slider/Less.png]];
-LMG2L["LeftButton_7"]["Size"] = UDim2.new(0, 30, 0, 30);
-LMG2L["LeftButton_7"]["BackgroundTransparency"] = 1;
-LMG2L["LeftButton_7"]["Name"] = [[LeftButton]];
-LMG2L["LeftButton_7"]["Position"] = UDim2.new(0.5, 0, 0.5, 0);
+    if PageViewInnerFrame then
+        local page = PageViewInnerFrame:FindFirstChild(tab.Name)
+        if page then
+            page.Visible = true
+        end
+    end
+end
 
+-- Escuta global de cliques (Varre botões da Library, Roblox e outros scripts)
+if HubBarContainer then
+    for _, child in ipairs(HubBarContainer:GetChildren()) do
+        if child:IsA("TextButton") then
+            child.MouseButton1Click:Connect(function()
+                selectTab(child)
+            end)
+        end
+    end
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.RightButton
-LMG2L["RightButton_8"] = Instance.new("ImageButton", LMG2L["Slider_4"]);
-LMG2L["RightButton_8"]["BackgroundTransparency"] = 1;
-LMG2L["RightButton_8"]["Selectable"] = false;
-LMG2L["RightButton_8"]["AnchorPoint"] = Vector2.new(1, 0.5);
-LMG2L["RightButton_8"]["Size"] = UDim2.new(0, 32, 0, 50);
-LMG2L["RightButton_8"]["Name"] = [[RightButton]];
-LMG2L["RightButton_8"]["Position"] = UDim2.new(1, 0, 0.5, 0);
--- Attributes
-LMG2L["RightButton_8"]:SetAttribute([[SelectionImageObject]], [[]]);
+    HubBarContainer.ChildAdded:Connect(function(child)
+        if child:IsA("TextButton") then
+            child.MouseButton1Click:Connect(function()
+                selectTab(child)
+            end)
+        end
+    end)
+end
 
+-- ============================================================
+-- SISTEMA 3: SINAL DE FECHAMENTO (SettingsShield)
+-- ============================================================
+local function monitorSettingsShield()
+    local SettingsShield = findDescendant(CoreGui, "SettingsShield")
+    if SettingsShield and SettingsShield:IsA("ImageButton") then
+        if SettingsShield.Visible == false then
+            if CurrentSelectedTab then deselectButton(CurrentSelectedTab) end
+            hideAllPages()
+        end
+        SettingsShield:GetPropertyChangedSignal("Visible"):Connect(function()
+            if SettingsShield.Visible == false then
+                if CurrentSelectedTab then deselectButton(CurrentSelectedTab) end
+                hideAllPages()
+            end
+        end)
+    else
+        task.wait(1)
+        monitorSettingsShield()
+    end
+end
+task.spawn(monitorSettingsShield)
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.RightButton.RightButton
-LMG2L["RightButton_9"] = Instance.new("ImageLabel", LMG2L["RightButton_8"]);
--- LMG2L["RightButton_9"]["ImageContent"] = ;
-LMG2L["RightButton_9"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
-LMG2L["RightButton_9"]["Image"] = [[rbxasset://textures/ui/Settings/Slider/More.png]];
-LMG2L["RightButton_9"]["Size"] = UDim2.new(0, 30, 0, 30);
-LMG2L["RightButton_9"]["BackgroundTransparency"] = 1;
-LMG2L["RightButton_9"]["Name"] = [[RightButton]];
-LMG2L["RightButton_9"]["Position"] = UDim2.new(0.5, 0, 0.5, 0);
+-- ============================================================
+-- METODOS PRINCIPAIS: CRIAÇÃO DE ABAS
+-- ============================================================
+function Library:CreateTab(tabName, iconName)
+    iconName = iconName or "gear"
+    
+    -- Criação do botão no HubBar com tamanhos ajustados para AutomaticSize.X
+    local TabButton = Instance.new("TextButton", HubBarContainer)
+    TabButton.Selectable = false
+    TabButton.ZIndex = 3
+    TabButton.BackgroundTransparency = 1
+    TabButton.AutomaticSize = Enum.AutomaticSize.X
+    TabButton.Size = UDim2.new(0, 3, 1, -2) -- Customização aplicada de tamanho base
+    TabButton.Text = ""
+    TabButton.Name = tabName
 
+    local TabSelection = Instance.new("ImageLabel", TabButton)
+    TabSelection.ZIndex = 3
+    TabSelection.BorderSizePixel = 0
+    TabSelection.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    TabSelection.Size = UDim2.new(1, -2, 0, 2)
+    TabSelection.Visible = false -- Inicia oculta
+    TabSelection.Name = "TabSelection"
+    TabSelection.Position = UDim2.new(0, 3, 1, -2)
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.StepsContainer
-LMG2L["StepsContainer_a"] = Instance.new("Frame", LMG2L["Slider_4"]);
-LMG2L["StepsContainer_a"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
-LMG2L["StepsContainer_a"]["Size"] = UDim2.new(1, -100, 1, 0);
-LMG2L["StepsContainer_a"]["Position"] = UDim2.new(0.5, 0, 0.5, 0);
-LMG2L["StepsContainer_a"]["Name"] = [[StepsContainer]];
-LMG2L["StepsContainer_a"]["BackgroundTransparency"] = 1;
+    local TabLabel = Instance.new("Frame", TabButton)
+    TabLabel.ZIndex = 3
+    TabLabel.BorderSizePixel = 0
+    TabLabel.Size = UDim2.new(1, 0, 1, 0)
+    TabLabel.Name = "TabLabel"
+    TabLabel.BackgroundTransparency = 1
 
+    local Layout = Instance.new("UIListLayout", TabLabel)
+    Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    Layout.Padding = UDim.new(0, 10)
+    Layout.VerticalAlignment = Enum.VerticalAlignment.Center
+    Layout.SortOrder = Enum.SortOrder.LayoutOrder
+    Layout.FillDirection = Enum.FillDirection.Horizontal
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.StepsContainer.Step8
-LMG2L["Step8_b"] = Instance.new("ImageButton", LMG2L["StepsContainer_a"]);
-LMG2L["Step8_b"]["Active"] = false;
-LMG2L["Step8_b"]["BorderSizePixel"] = 0;
-LMG2L["Step8_b"]["AutoButtonColor"] = false;
-LMG2L["Step8_b"]["ImageTransparency"] = 0.36;
-LMG2L["Step8_b"]["BackgroundColor3"] = Color3.fromRGB(58, 60, 62);
-LMG2L["Step8_b"]["Selectable"] = false;
-LMG2L["Step8_b"]["AnchorPoint"] = Vector2.new(0, 0.5);
-LMG2L["Step8_b"]["Size"] = UDim2.new(0.1, -4, 0, 24);
-LMG2L["Step8_b"]["Name"] = [[Step8]];
-LMG2L["Step8_b"]["Position"] = UDim2.new(0.7, 2, 0.5, 0);
--- Attributes
-LMG2L["Step8_b"]:SetAttribute([[SelectionImageObject]], [[]]);
+    local Icon = Instance.new("TextLabel", TabLabel)
+    Icon.TextWrapped = true
+    Icon.ZIndex = 3
+    Icon.TextTransparency = 0.5 -- Transparência inicial desmarcada
+    Icon.TextScaled = true
+    Icon.FontFace = Font.new("rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+    Icon.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Icon.BackgroundTransparency = 1
+    Icon.Size = UDim2.new(0, 24, 0, 24)
+    Icon.Text = iconName
+    Icon.Name = "Icon"
 
+    Instance.new("UIAspectRatioConstraint", Icon)
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.StepsContainer.Step7
-LMG2L["Step7_c"] = Instance.new("ImageButton", LMG2L["StepsContainer_a"]);
-LMG2L["Step7_c"]["Active"] = false;
-LMG2L["Step7_c"]["BorderSizePixel"] = 0;
-LMG2L["Step7_c"]["AutoButtonColor"] = false;
-LMG2L["Step7_c"]["ImageTransparency"] = 0.36;
-LMG2L["Step7_c"]["BackgroundColor3"] = Color3.fromRGB(58, 60, 62);
-LMG2L["Step7_c"]["Selectable"] = false;
-LMG2L["Step7_c"]["AnchorPoint"] = Vector2.new(0, 0.5);
-LMG2L["Step7_c"]["Size"] = UDim2.new(0.1, -4, 0, 24);
-LMG2L["Step7_c"]["Name"] = [[Step7]];
-LMG2L["Step7_c"]["Position"] = UDim2.new(0.6, 2, 0.5, 0);
--- Attributes
-LMG2L["Step7_c"]:SetAttribute([[SelectionImageObject]], [[]]);
+    local Title = Instance.new("TextLabel", TabLabel)
+    Title.ZIndex = 3
+    Title.TextSize = 19
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.TextTransparency = 0.5 -- Transparência inicial desmarcada
+    Title.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.BackgroundTransparency = 1
+    Title.Text = tabName
+    Title.AutomaticSize = Enum.AutomaticSize.XY
+    Title.Name = "Title"
 
+    -- Criação da página oculta por padrão no PageViewInnerFrame
+    local PageFrame = Instance.new("Frame", PageViewInnerFrame)
+    PageFrame.ZIndex = 5
+    PageFrame.AutomaticSize = Enum.AutomaticSize.Y
+    PageFrame.Size = UDim2.new(1, 0, 0, 1174)
+    PageFrame.Name = tabName
+    PageFrame.BackgroundTransparency = 1
+    PageFrame.SelectionGroup = true
+    PageFrame.Visible = false -- Nasce oculta
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.StepsContainer.Step4
-LMG2L["Step4_d"] = Instance.new("ImageButton", LMG2L["StepsContainer_a"]);
-LMG2L["Step4_d"]["Active"] = false;
-LMG2L["Step4_d"]["BorderSizePixel"] = 0;
-LMG2L["Step4_d"]["AutoButtonColor"] = false;
-LMG2L["Step4_d"]["ImageTransparency"] = 0.36;
-LMG2L["Step4_d"]["BackgroundColor3"] = Color3.fromRGB(58, 60, 62);
-LMG2L["Step4_d"]["Selectable"] = false;
-LMG2L["Step4_d"]["AnchorPoint"] = Vector2.new(0, 0.5);
-LMG2L["Step4_d"]["Size"] = UDim2.new(0.1, -4, 0, 24);
-LMG2L["Step4_d"]["Name"] = [[Step4]];
-LMG2L["Step4_d"]["Position"] = UDim2.new(0.3, 2, 0.5, 0);
--- Attributes
-LMG2L["Step4_d"]:SetAttribute([[SelectionImageObject]], [[]]);
+    local UIPadding = Instance.new("UIPadding", PageFrame)
+    UIPadding.PaddingRight = UDim.new(0, 11)
+    UIPadding.PaddingLeft = UDim.new(0, 12)
 
+    local RowListLayout = Instance.new("UIListLayout", PageFrame)
+    RowListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    RowListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    RowListLayout.Name = "RowListLayout"
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.StepsContainer.Step2
-LMG2L["Step2_e"] = Instance.new("ImageButton", LMG2L["StepsContainer_a"]);
-LMG2L["Step2_e"]["Active"] = false;
-LMG2L["Step2_e"]["BorderSizePixel"] = 0;
-LMG2L["Step2_e"]["AutoButtonColor"] = false;
-LMG2L["Step2_e"]["ImageTransparency"] = 0.36;
-LMG2L["Step2_e"]["BackgroundColor3"] = Color3.fromRGB(58, 60, 62);
-LMG2L["Step2_e"]["Selectable"] = false;
-LMG2L["Step2_e"]["AnchorPoint"] = Vector2.new(0, 0.5);
-LMG2L["Step2_e"]["Size"] = UDim2.new(0.1, -4, 0, 24);
-LMG2L["Step2_e"]["Name"] = [[Step2]];
-LMG2L["Step2_e"]["Position"] = UDim2.new(0.1, 2, 0.5, 0);
--- Attributes
-LMG2L["Step2_e"]:SetAttribute([[SelectionImageObject]], [[]]);
+    -- ============================================================
+    -- ELEMENTOS INTERNOS DA ABA (MÉTODOS)
+    -- ============================================================
+    local TabMethods = {}
 
+    -- Método: Criar Alternador (Toggle)
+    function TabMethods:AddToggle(toggleName, default, callback)
+        callback = callback or function() end
+        local state = default or false
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.StepsContainer.Step1
-LMG2L["Step1_f"] = Instance.new("ImageButton", LMG2L["StepsContainer_a"]);
-LMG2L["Step1_f"]["Active"] = false;
-LMG2L["Step1_f"]["BorderSizePixel"] = 0;
-LMG2L["Step1_f"]["AutoButtonColor"] = false;
-LMG2L["Step1_f"]["ImageTransparency"] = 0.36;
-LMG2L["Step1_f"]["BackgroundColor3"] = Color3.fromRGB(58, 60, 62);
-LMG2L["Step1_f"]["Selectable"] = false;
-LMG2L["Step1_f"]["AnchorPoint"] = Vector2.new(0, 0.5);
-LMG2L["Step1_f"]["Size"] = UDim2.new(0.1, -4, 0, 24);
-LMG2L["Step1_f"]["Name"] = [[Step1]];
-LMG2L["Step1_f"]["Position"] = UDim2.new(0, 2, 0.5, 0);
--- Attributes
-LMG2L["Step1_f"]:SetAttribute([[SelectionImageObject]], [[]]);
+        local ToggleFrame = Instance.new("ImageButton", PageFrame)
+        ToggleFrame.BorderSizePixel = 0
+        ToggleFrame.SliceCenter = Rect.new(2, 2, 18, 18)
+        ToggleFrame.ScaleType = Enum.ScaleType.Slice
+        ToggleFrame.AutoButtonColor = false
+        ToggleFrame.ImageTransparency = 1
+        ToggleFrame.BackgroundTransparency = 1
+        ToggleFrame.BackgroundColor3 = Color3.fromRGB(36, 38, 40)
+        ToggleFrame.Selectable = false
+        ToggleFrame.ZIndex = 2
+        ToggleFrame.Image = "rbxasset://textures/ui/VR/rectBackgroundWhite.png"
+        ToggleFrame.Size = UDim2.new(1, 0, 0, 50)
+        ToggleFrame.Name = toggleName .. "Frame"
 
+        Instance.new("UICorner", ToggleFrame)
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.StepsContainer.Step1.Filler
-LMG2L["Filler_10"] = Instance.new("Frame", LMG2L["Step1_f"]);
-LMG2L["Filler_10"]["BorderSizePixel"] = 0;
-LMG2L["Filler_10"]["BackgroundColor3"] = Color3.fromRGB(58, 60, 62);
-LMG2L["Filler_10"]["Size"] = UDim2.new(0.25, 0, 1, 0);
-LMG2L["Filler_10"]["Position"] = UDim2.new(0.75, 0, 0, 0);
-LMG2L["Filler_10"]["Name"] = [[Filler]];
+        local T_Title = Instance.new("TextLabel", ToggleFrame)
+        T_Title.TextWrapped = true
+        T_Title.ZIndex = 2
+        T_Title.TextSize = 17
+        T_Title.TextXAlignment = Enum.TextXAlignment.Left
+        T_Title.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+        T_Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+        T_Title.BackgroundTransparency = 1
+        T_Title.Size = UDim2.new(0.4, -20, 1, 0)
+        T_Title.Text = toggleName
+        T_Title.AutomaticSize = Enum.AutomaticSize.Y
+        T_Title.Name = "Title"
+        T_Title.Position = UDim2.new(0, 10, 0, 0)
 
+        local T_Padding = Instance.new("UIPadding", T_Title)
+        T_Padding.PaddingTop = UDim.new(0, 10)
+        T_Padding.PaddingBottom = UDim.new(0, 10)
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.StepsContainer.Step1.UICorner
-LMG2L["UICorner_11"] = Instance.new("UICorner", LMG2L["Step1_f"]);
+        local Selector = Instance.new("ImageButton", ToggleFrame)
+        Selector.AutoButtonColor = false
+        Selector.BackgroundTransparency = 1
+        Selector.ZIndex = 2
+        Selector.AnchorPoint = Vector2.new(1, 0.5)
+        Selector.Size = UDim2.new(0.6, 0, 0, 50)
+        Selector.Name = "Selector"
+        Selector.Position = UDim2.new(1, 0, 0.5, 0)
 
+        local LeftButton = Instance.new("ImageButton", Selector)
+        LeftButton.BackgroundTransparency = 1
+        LeftButton.Selectable = false
+        LeftButton.ZIndex = 3
+        LeftButton.AnchorPoint = Vector2.new(0, 0.5)
+        LeftButton.Size = UDim2.new(0, 32, 0, 50)
+        LeftButton.Position = UDim2.new(0, 0, 0.5, 0)
 
+        local LeftIcon = Instance.new("ImageLabel", LeftButton)
+        LeftIcon.ZIndex = 4
+        LeftIcon.ImageColor3 = Color3.fromRGB(205, 205, 205)
+        LeftIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+        LeftIcon.Image = "rbxasset://textures/ui/Settings/Slider/Left.png"
+        LeftIcon.Size = UDim2.new(0, 18, 0, 30)
+        LeftIcon.BackgroundTransparency = 1
+        LeftIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.StepsContainer.Step6
-LMG2L["Step6_12"] = Instance.new("ImageButton", LMG2L["StepsContainer_a"]);
-LMG2L["Step6_12"]["Active"] = false;
-LMG2L["Step6_12"]["BorderSizePixel"] = 0;
-LMG2L["Step6_12"]["AutoButtonColor"] = false;
-LMG2L["Step6_12"]["ImageTransparency"] = 0.36;
-LMG2L["Step6_12"]["BackgroundColor3"] = Color3.fromRGB(58, 60, 62);
-LMG2L["Step6_12"]["Selectable"] = false;
-LMG2L["Step6_12"]["AnchorPoint"] = Vector2.new(0, 0.5);
-LMG2L["Step6_12"]["Size"] = UDim2.new(0.1, -4, 0, 24);
-LMG2L["Step6_12"]["Name"] = [[Step6]];
-LMG2L["Step6_12"]["Position"] = UDim2.new(0.5, 2, 0.5, 0);
--- Attributes
-LMG2L["Step6_12"]:SetAttribute([[SelectionImageObject]], [[]]);
+        local RightButton = Instance.new("ImageButton", Selector)
+        RightButton.BackgroundTransparency = 1
+        RightButton.Selectable = false
+        RightButton.ZIndex = 3
+        RightButton.AnchorPoint = Vector2.new(1, 0.5)
+        RightButton.Size = UDim2.new(0, 32, 0, 50)
+        RightButton.Position = UDim2.new(1, 0, 0.5, 0)
 
+        local RightIcon = Instance.new("ImageLabel", RightButton)
+        RightIcon.ZIndex = 4
+        RightIcon.ImageColor3 = Color3.fromRGB(205, 205, 205)
+        RightIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+        RightIcon.Image = "rbxasset://textures/ui/Settings/Slider/Right.png"
+        RightIcon.Size = UDim2.new(0, 18, 0, 30)
+        RightIcon.BackgroundTransparency = 1
+        RightIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.StepsContainer.Step3
-LMG2L["Step3_13"] = Instance.new("ImageButton", LMG2L["StepsContainer_a"]);
-LMG2L["Step3_13"]["Active"] = false;
-LMG2L["Step3_13"]["BorderSizePixel"] = 0;
-LMG2L["Step3_13"]["AutoButtonColor"] = false;
-LMG2L["Step3_13"]["ImageTransparency"] = 0.36;
-LMG2L["Step3_13"]["BackgroundColor3"] = Color3.fromRGB(58, 60, 62);
-LMG2L["Step3_13"]["Selectable"] = false;
-LMG2L["Step3_13"]["AnchorPoint"] = Vector2.new(0, 0.5);
-LMG2L["Step3_13"]["Size"] = UDim2.new(0.1, -4, 0, 24);
-LMG2L["Step3_13"]["Name"] = [[Step3]];
-LMG2L["Step3_13"]["Position"] = UDim2.new(0.2, 2, 0.5, 0);
--- Attributes
-LMG2L["Step3_13"]:SetAttribute([[SelectionImageObject]], [[]]);
+        local AutoSelectButton = Instance.new("ImageButton", Selector)
+        AutoSelectButton.BackgroundTransparency = 1
+        AutoSelectButton.Selectable = false
+        AutoSelectButton.ZIndex = 2
+        AutoSelectButton.Size = UDim2.new(1, -64, 1, 0)
+        AutoSelectButton.Position = UDim2.new(0, 32, 0, 0)
 
+        local Selection1 = Instance.new("TextLabel", Selector)
+        Selection1.TextWrapped = true
+        Selection1.ZIndex = 2
+        Selection1.BorderSizePixel = 0
+        Selection1.TextSize = 17
+        Selection1.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+        Selection1.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Selection1.BackgroundTransparency = 1
+        Selection1.Size = UDim2.new(1, -64, 1, 0)
+        Selection1.Text = "Off"
+        Selection1.Position = UDim2.new(0, 32, 0, 0)
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.StepsContainer.Step5
-LMG2L["Step5_14"] = Instance.new("ImageButton", LMG2L["StepsContainer_a"]);
-LMG2L["Step5_14"]["Active"] = false;
-LMG2L["Step5_14"]["BorderSizePixel"] = 0;
-LMG2L["Step5_14"]["AutoButtonColor"] = false;
-LMG2L["Step5_14"]["ImageTransparency"] = 0.36;
-LMG2L["Step5_14"]["BackgroundColor3"] = Color3.fromRGB(58, 60, 62);
-LMG2L["Step5_14"]["Selectable"] = false;
-LMG2L["Step5_14"]["AnchorPoint"] = Vector2.new(0, 0.5);
-LMG2L["Step5_14"]["Size"] = UDim2.new(0.1, -4, 0, 24);
-LMG2L["Step5_14"]["Name"] = [[Step5]];
-LMG2L["Step5_14"]["Position"] = UDim2.new(0.4, 2, 0.5, 0);
--- Attributes
-LMG2L["Step5_14"]:SetAttribute([[SelectionImageObject]], [[]]);
+        local Selection2 = Instance.new("TextLabel", Selector)
+        Selection2.TextWrapped = true
+        Selection2.ZIndex = 2
+        Selection2.BorderSizePixel = 0
+        Selection2.TextSize = 17
+        Selection2.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+        Selection2.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Selection2.BackgroundTransparency = 1
+        Selection2.Size = UDim2.new(1, -64, 1, 0)
+        Selection2.Text = "On"
+        Selection2.Visible = false
+        Selection2.Position = UDim2.new(0, 32, 0, 0)
 
+        local function updateToggle()
+            if state then
+                Selection1.Visible = false
+                Selection2.Visible = true
+            else
+                Selection1.Visible = true
+                Selection2.Visible = false
+            end
+            pcall(callback, state)
+        end
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.StepsContainer.Step9
-LMG2L["Step9_15"] = Instance.new("ImageButton", LMG2L["StepsContainer_a"]);
-LMG2L["Step9_15"]["Active"] = false;
-LMG2L["Step9_15"]["BorderSizePixel"] = 0;
-LMG2L["Step9_15"]["AutoButtonColor"] = false;
-LMG2L["Step9_15"]["ImageTransparency"] = 0.36;
-LMG2L["Step9_15"]["BackgroundColor3"] = Color3.fromRGB(58, 60, 62);
-LMG2L["Step9_15"]["Selectable"] = false;
-LMG2L["Step9_15"]["AnchorPoint"] = Vector2.new(0, 0.5);
-LMG2L["Step9_15"]["Size"] = UDim2.new(0.1, -4, 0, 24);
-LMG2L["Step9_15"]["Name"] = [[Step9]];
-LMG2L["Step9_15"]["Position"] = UDim2.new(0.8, 2, 0.5, 0);
--- Attributes
-LMG2L["Step9_15"]:SetAttribute([[SelectionImageObject]], [[]]);
+        RightButton.MouseButton1Click:Connect(function()
+            if not state then state = true updateToggle() end
+        end)
 
+        LeftButton.MouseButton1Click:Connect(function()
+            if state then state = false updateToggle() end
+        end)
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.StepsContainer.Step10
-LMG2L["Step10_16"] = Instance.new("ImageButton", LMG2L["StepsContainer_a"]);
-LMG2L["Step10_16"]["Active"] = false;
-LMG2L["Step10_16"]["BorderSizePixel"] = 0;
-LMG2L["Step10_16"]["AutoButtonColor"] = false;
-LMG2L["Step10_16"]["ImageTransparency"] = 0.36;
-LMG2L["Step10_16"]["BackgroundColor3"] = Color3.fromRGB(58, 60, 62);
-LMG2L["Step10_16"]["Selectable"] = false;
-LMG2L["Step10_16"]["AnchorPoint"] = Vector2.new(0, 0.5);
-LMG2L["Step10_16"]["Size"] = UDim2.new(0.1, -4, 0, 24);
-LMG2L["Step10_16"]["Name"] = [[Step10]];
-LMG2L["Step10_16"]["Position"] = UDim2.new(0.9, 2, 0.5, 0);
--- Attributes
-LMG2L["Step10_16"]:SetAttribute([[SelectionImageObject]], [[]]);
+        AutoSelectButton.MouseButton1Click:Connect(function()
+            state = not state
+            updateToggle()
+        end)
 
+        updateToggle()
+    end
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.StepsContainer.Step10.Filler
-LMG2L["Filler_17"] = Instance.new("Frame", LMG2L["Step10_16"]);
-LMG2L["Filler_17"]["BorderSizePixel"] = 0;
-LMG2L["Filler_17"]["BackgroundColor3"] = Color3.fromRGB(58, 60, 62);
-LMG2L["Filler_17"]["Size"] = UDim2.new(0.25, 0, 1, 0);
-LMG2L["Filler_17"]["Name"] = [[Filler]];
+    -- Método: Criar Controle Deslizante (Slider de 10 Passos)
+    function TabMethods:AddSlider(sliderName, defaultStep, callback)
+        callback = callback or function() end
+        local currentStep = math.clamp(defaultStep or 0, 0, 10)
 
+        local SliderFrame = Instance.new("ImageButton", PageFrame)
+        SliderFrame.BorderSizePixel = 0
+        SliderFrame.SliceCenter = Rect.new(2, 2, 18, 18)
+        SliderFrame.ScaleType = Enum.ScaleType.Slice
+        SliderFrame.AutoButtonColor = false
+        SliderFrame.ImageTransparency = 1
+        SliderFrame.BackgroundTransparency = 1
+        SliderFrame.BackgroundColor3 = Color3.fromRGB(36, 38, 40)
+        SliderFrame.Selectable = false
+        SliderFrame.ZIndex = 2
+        SliderFrame.Image = "rbxasset://textures/ui/VR/rectBackgroundWhite.png"
+        SliderFrame.Size = UDim2.new(1, 0, 0, 50)
+        SliderFrame.Name = sliderName .. "Frame"
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.StepsContainer.Step10.UICorner
-LMG2L["UICorner_18"] = Instance.new("UICorner", LMG2L["Step10_16"]);
+        Instance.new("UICorner", SliderFrame)
 
+        local SliderInner = Instance.new("ImageButton", SliderFrame)
+        SliderInner.AutoButtonColor = false
+        SliderInner.BackgroundTransparency = 1
+        SliderInner.Selectable = false
+        SliderInner.ZIndex = 2
+        SliderInner.AnchorPoint = Vector2.new(1, 0.5)
+        SliderInner.Size = UDim2.new(0.6, 0, 0, 50)
+        SliderInner.Position = UDim2.new(1, 0, 0.5, 0)
 
+        local S_LeftButton = Instance.new("ImageButton", SliderInner)
+        S_LeftButton.BackgroundTransparency = 1
+        S_LeftButton.Selectable = false
+        S_LeftButton.AnchorPoint = Vector2.new(0, 0.5)
+        S_LeftButton.Size = UDim2.new(0, 32, 0, 50)
+        S_LeftButton.Position = UDim2.new(0, 0, 0.5, 0)
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Title
-LMG2L["Title_19"] = Instance.new("TextLabel", LMG2L["Slider_2"]);
-LMG2L["Title_19"]["TextWrapped"] = true;
-LMG2L["Title_19"]["TextSize"] = 17;
-LMG2L["Title_19"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-LMG2L["Title_19"]["FontFace"] = Font.new([[rbxasset://fonts/families/BuilderSans.json]], Enum.FontWeight.Medium, Enum.FontStyle.Normal);
-LMG2L["Title_19"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-LMG2L["Title_19"]["BackgroundTransparency"] = 1;
-LMG2L["Title_19"]["Size"] = UDim2.new(0.4, -20, 1, 0);
-LMG2L["Title_19"]["Text"] = [[Teste]];
-LMG2L["Title_19"]["AutomaticSize"] = Enum.AutomaticSize.Y;
-LMG2L["Title_19"]["Name"] = [[Title]];
-LMG2L["Title_19"]["Position"] = UDim2.new(0, 10, 0, 0);
+        local S_LeftIcon = Instance.new("ImageLabel", S_LeftButton)
+        S_LeftIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+        S_LeftIcon.Image = "rbxasset://textures/ui/Settings/Slider/Less.png"
+        S_LeftIcon.Size = UDim2.new(0, 30, 0, 30)
+        S_LeftIcon.BackgroundTransparency = 1
+        S_LeftIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 
+        local S_RightButton = Instance.new("ImageButton", SliderInner)
+        S_RightButton.BackgroundTransparency = 1
+        S_RightButton.Selectable = false
+        S_RightButton.AnchorPoint = Vector2.new(1, 0.5)
+        S_RightButton.Size = UDim2.new(0, 32, 0, 50)
+        S_RightButton.Position = UDim2.new(1, 0, 0.5, 0)
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Title.Graphics QualityUIPadding
-LMG2L["Graphics QualityUIPadding_1a"] = Instance.new("UIPadding", LMG2L["Title_19"]);
-LMG2L["Graphics QualityUIPadding_1a"]["PaddingTop"] = UDim.new(0, 10);
-LMG2L["Graphics QualityUIPadding_1a"]["Name"] = [[Graphics QualityUIPadding]];
-LMG2L["Graphics QualityUIPadding_1a"]["PaddingBottom"] = UDim.new(0, 10);
+        local S_RightIcon = Instance.new("ImageLabel", S_RightButton)
+        S_RightIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+        S_RightIcon.Image = "rbxasset://textures/ui/Settings/Slider/More.png"
+        S_RightIcon.Size = UDim2.new(0, 30, 0, 30)
+        S_RightIcon.BackgroundTransparency = 1
+        S_RightIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 
+        local StepsContainer = Instance.new("Frame", SliderInner)
+        StepsContainer.AnchorPoint = Vector2.new(0.5, 0.5)
+        StepsContainer.Size = UDim2.new(1, -100, 1, 0)
+        StepsContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+        StepsContainer.BackgroundTransparency = 1
 
--- Players.akskkskakjda.PlayerGui.ScreenGui.Slider.Slider.LocalScript
-local function C_5()
-	local script = LMG2L["LocalScript_5"];
-	-- Script local para o ImageButton "Slider"	
+        local S_Title = Instance.new("TextLabel", SliderFrame)
+        S_Title.TextWrapped = true
+        S_Title.TextSize = 17
+        S_Title.TextXAlignment = Enum.TextXAlignment.Left
+        S_Title.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+        S_Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+        S_Title.BackgroundTransparency = 1
+        S_Title.Size = UDim2.new(0.4, -20, 1, 0)
+        S_Title.Text = sliderName
+        S_Title.AutomaticSize = Enum.AutomaticSize.Y
+        S_Title.Position = UDim2.new(0, 10, 0, 0)
 
+        local S_Padding = Instance.new("UIPadding", S_Title)
+        S_Padding.PaddingTop = UDim.new(0, 10)
+        S_Padding.PaddingBottom = UDim.new(0, 10)
 
-	local Slider = script.Parent	
-	local LeftButton = Slider:WaitForChild("LeftButton")	
-	local RightButton = Slider:WaitForChild("RightButton")	
-	local StepsContainer = Slider:WaitForChild("StepsContainer")	
-	
-	-- Cores	
-	local ACTIVE_COLOR = Color3.fromRGB(255, 255, 255) -- Branco	
-	local INACTIVE_COLOR = Color3.fromRGB(57, 59, 61) -- Cinza escuro	
-	
-	-- Coletar todos os Steps e seus Fillers	
-	local steps = {}	
-	local fillers = {}	
-	
-	for i = 1, 10 do	
-	    local step = StepsContainer:FindFirstChild("Step" .. i)	
-	    if step then	
-	        step.BackgroundColor3 = INACTIVE_COLOR -- Inicializa step como inativo	
-	        table.insert(steps, step)	
-	        	
-	        -- Procura o Filler dentro do Step	
-	        local filler = step:FindFirstChild("Filler")	
-	        if filler then	
-	            filler.BackgroundColor3 = INACTIVE_COLOR -- Inicializa filler como inativo	
-	            fillers[i] = filler	
-	        else	
-	            print("Aviso: Filler não encontrado no Step" .. i)	
-	        end	
-	    end	
-	end	
-	
-	-- Inicializa visibilidade dos botões	
-	LeftButton.Visible = false -- Começa sem nenhum ativo, então LeftButton invisível	
-	RightButton.Visible = true -- Pode aumentar, então RightButton visível	
-	
-	-- Função para encontrar o último step ativo	
-	local function GetLastActiveStep()	
-	    for i = #steps, 1, -1 do	
-	        if steps[i].BackgroundColor3 == ACTIVE_COLOR then	
-	            return i	
-	        end	
-	    end	
-	    return 0 -- Nenhum ativo	
-	end	
-	
-	-- Função para atualizar visibilidade dos botões	
-	local function UpdateButtonsVisibility()	
-	    local lastActive = GetLastActiveStep()	
-	    	
-	    -- Se todos os steps estiverem ativos (10), esconde RightButton	
-	    if lastActive >= #steps then	
-	        RightButton.Visible = false	
-	    else	
-	        RightButton.Visible = true	
-	    end	
-	    	
-	    -- Se nenhum step estiver ativo (0), esconde LeftButton	
-	    if lastActive <= 0 then	
-	        LeftButton.Visible = false	
-	    else	
-	        LeftButton.Visible = true	
-	    end	
-	end	
-	
-	-- Função para ativar um step e seu filler	
-	local function ActivateStep(index)	
-	    if index >= 1 and index <= #steps then	
-	        steps[index].BackgroundColor3 = ACTIVE_COLOR	
-	        	
-	        -- Ativa o Filler se existir	
-	        if fillers[index] then	
-	            fillers[index].BackgroundColor3 = ACTIVE_COLOR	
-	        end	
-	    end	
-	end	
-	
-	-- Função para desativar um step e seu filler	
-	local function DeactivateStep(index)	
-	    if index >= 1 and index <= #steps then	
-	        steps[index].BackgroundColor3 = INACTIVE_COLOR	
-	        	
-	        -- Desativa o Filler se existir	
-	        if fillers[index] then	
-	            fillers[index].BackgroundColor3 = INACTIVE_COLOR	
-	        end	
-	    end	
-	end	
-	
-	-- Função para aumentar o slider	
-	local function IncreaseSlider()	
-	    local lastActive = GetLastActiveStep()	
-	    	
-	    if lastActive < #steps then	
-	        -- Ativa o próximo step e seu filler	
-	        ActivateStep(lastActive + 1)	
-	        	
-	        -- Atualiza visibilidade dos botões	
-	        UpdateButtonsVisibility()	
-	    end	
-	end	
-	
-	-- Função para diminuir o slider	
-	local function DecreaseSlider()	
-	    local lastActive = GetLastActiveStep()	
-	    	
-	    if lastActive > 0 then	
-	        -- Desativa o último step ativo e seu filler (de trás para frente)	
-	        DeactivateStep(lastActive)	
-	        	
-	        -- Atualiza visibilidade dos botões	
-	        UpdateButtonsVisibility()	
-	    end	
-	end	
-	
-	-- Conectar os botões	
-	RightButton.MouseButton1Click:Connect(IncreaseSlider)	
-	LeftButton.MouseButton1Click:Connect(DecreaseSlider)	
-	
-	print("Sistema de Slider com Filler e visibilidade dos botões iniciado!")	
-end;
-task.spawn(C_5);
+        local ACTIVE_COLOR = Color3.fromRGB(255, 255, 255)
+        local INACTIVE_COLOR = Color3.fromRGB(57, 59, 61)
+        local steps = {}
+        local fillers = {}
 
-return LMG2L["ScreenGui_1"], require;
+        local stepPositions = {0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9}
+
+        for i = 1, 10 do
+            local step = Instance.new("ImageButton", StepsContainer)
+            step.Active = false
+            step.BorderSizePixel = 0
+            step.AutoButtonColor = false
+            step.ImageTransparency = 0.36
+            step.BackgroundColor3 = INACTIVE_COLOR
+            step.Selectable = false
+            step.AnchorPoint = Vector2.new(0, 0.5)
+            step.Size = UDim2.new(0.1, -4, 0, 24)
+            step.Name = "Step" .. i
+            step.Position = UDim2.new(stepPositions[i], 2, 0.5, 0)
+
+            if i == 1 or i == 10 then
+                Instance.new("UICorner", step)
+            end
+
+            if i == 1 then
+                local filler = Instance.new("Frame", step)
+                filler.BorderSizePixel = 0
+                filler.BackgroundColor3 = INACTIVE_COLOR
+                filler.Size = UDim2.new(0.25, 0, 1, 0)
+                filler.Position = UDim2.new(0.75, 0, 0, 0)
+                filler.Name = "Filler"
+                fillers[i] = filler
+            elseif i == 10 then
+                local filler = Instance.new("Frame", step)
+                filler.BorderSizePixel = 0
+                filler.BackgroundColor3 = INACTIVE_COLOR
+                filler.Size = UDim2.new(0.25, 0, 1, 0)
+                filler.Name = "Filler"
+                fillers[i] = filler
+            end
+
+            table.insert(steps, step)
+        end
+
+        local function updateSliderVisual()
+            for i = 1, #steps do
+                if i <= currentStep then
+                    steps[i].BackgroundColor3 = ACTIVE_COLOR
+                    if fillers[i] then fillers[i].BackgroundColor3 = ACTIVE_COLOR end
+                else
+                    steps[i].BackgroundColor3 = INACTIVE_COLOR
+                    if fillers[i] then fillers[i].BackgroundColor3 = INACTIVE_COLOR end
+                end
+            end
+            
+            S_LeftButton.Visible = (currentStep > 0)
+            S_RightButton.Visible = (currentStep < 10)
+
+            pcall(callback, currentStep)
+        end
+
+        S_RightButton.MouseButton1Click:Connect(function()
+            if currentStep < 10 then
+                currentStep = currentStep + 1
+                updateSliderVisual()
+            end
+        end)
+
+        S_LeftButton.MouseButton1Click:Connect(function()
+            if currentStep > 0 then
+                currentStep = currentStep - 1
+                updateSliderVisual()
+            end
+        end)
+
+        updateSliderVisual()
+    end
+
+    return TabMethods
+end
+
+return Library
