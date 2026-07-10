@@ -24,9 +24,11 @@ local SettingsShield = nil
 local tabs = {}
 local activeTab = nil
 
--- Configurações
+-- Configurações CORRIGIDAS
 local BASE_WIDTH = 800
-local WIDTH_PER_BUTTON = 100
+local MIN_WIDTH = 300
+local WIDTH_PER_BUTTON = 90  -- Reduzido para caber mais botões
+local MAX_BUTTONS_DEFAULT = 5  -- Máximo de botões sem reduzir
 
 -- ============================================================
 -- FUNÇÕES UTILITÁRIAS
@@ -64,8 +66,9 @@ local function initializeSystem()
 	-- Aguardar elementos principais
 	HubBarContainer = waitForElement(CoreGui, "HubBarContainer", 15)
 	PageViewInnerFrame = waitForElement(CoreGui, "PageViewInnerFrame", 15)
+	HubBar = waitForElement(CoreGui, "HubBar", 15)
 	
-	if not HubBarContainer or not PageViewInnerFrame then
+	if not HubBarContainer or not PageViewInnerFrame or not HubBar then
 		warn("[Library] Não foi possível encontrar os elementos principais do CoreGui")
 		return false
 	end
@@ -75,14 +78,14 @@ local function initializeSystem()
 end
 
 -- ============================================================
--- SISTEMA DE HUBBAR
+-- SISTEMA DE HUBBAR CORRIGIDO
 -- ============================================================
 
 local function countButtons()
 	local count = 0
 	if HubBarContainer then
 		for _, child in ipairs(HubBarContainer:GetChildren()) do
-			if child:IsA("TextButton") then
+			if child:IsA("TextButton") and child:IsDescendantOf(HubBarContainer) then
 				count = count + 1
 			end
 		end
@@ -90,27 +93,89 @@ local function countButtons()
 	return count
 end
 
+-- Função para obter a largura total disponível do HubBar
+local function getHubBarTotalWidth()
+	if not HubBar or not HubBar:IsA("GuiObject") then
+		return BASE_WIDTH
+	end
+	
+	-- Verificar se o HubBar tem um tamanho definido pelo Roblox
+	local absoluteSize = HubBar.AbsoluteSize
+	if absoluteSize.X > 0 then
+		return absoluteSize.X
+	end
+	
+	return BASE_WIDTH
+end
+
+-- Função para calcular a largura ideal baseada no número de botões
+local function calculateIdealWidth(buttonCount)
+	if buttonCount <= MAX_BUTTONS_DEFAULT then
+		return BASE_WIDTH
+	end
+	
+	-- Cálculo mais preciso: espaço total = base + (botões extras * largura por botão)
+	local extraButtons = buttonCount - MAX_BUTTONS_DEFAULT
+	local additionalWidth = extraButtons * WIDTH_PER_BUTTON
+	
+	-- Se o HubBar original já for maior que o base, usar como referência
+	local currentWidth = getHubBarTotalWidth()
+	local baseReference = math.max(BASE_WIDTH, currentWidth)
+	
+	local idealWidth = baseReference + additionalWidth
+	
+	-- Limitar tamanho mínimo e máximo
+	idealWidth = math.max(MIN_WIDTH, idealWidth)
+	idealWidth = math.min(idealWidth, 2000) -- Limite máximo para não ficar muito grande
+	
+	return idealWidth
+end
+
 local function adjustHubBarWidth()
-	if not HubBar then
+	if not HubBar or not HubBar:IsA("GuiObject") then
 		HubBar = findDescendant(CoreGui, "HubBar")
-		if not HubBar or not HubBar:IsA("ImageLabel") then
+		if not HubBar then
 			return
 		end
 	end
 	
-	local buttonCount = countButtons()
-	
-	if buttonCount > 5 then
-		local extraButtons = buttonCount - 5
-		local newWidth = BASE_WIDTH - (WIDTH_PER_BUTTON * extraButtons)
-		if newWidth < 300 then newWidth = 300 end
-		
-		local currentSize = HubBar.Size
-		HubBar.Size = UDim2.new(0, newWidth, currentSize.Y.Scale, currentSize.Y.Offset)
-	else
-		local currentSize = HubBar.Size
-		HubBar.Size = UDim2.new(0, BASE_WIDTH, currentSize.Y.Scale, currentSize.Y.Offset)
+	-- Verificar se o HubBar ainda é válido
+	if not HubBar.Parent then
+		HubBar = nil
+		return
 	end
+	
+	local buttonCount = countButtons()
+	local idealWidth = calculateIdealWidth(buttonCount)
+	
+	-- Obter tamanho atual para comparação
+	local currentSize = HubBar.Size
+	local currentAbsoluteWidth = HubBar.AbsoluteSize.X
+	
+	-- Só ajustar se a diferença for significativa (evitar ajustes desnecessários)
+	if math.abs(currentAbsoluteWidth - idealWidth) > 5 then
+		-- Manter a escala Y e ajustar apenas o offset X
+		HubBar.Size = UDim2.new(0, idealWidth, currentSize.Y.Scale, currentSize.Y.Offset)
+		
+		-- Também ajustar o HubBarContainer se necessário
+		if HubBarContainer and HubBarContainer:IsA("GuiObject") then
+			local containerSize = HubBarContainer.Size
+			HubBarContainer.Size = UDim2.new(0, idealWidth, containerSize.Y.Scale, containerSize.Y.Offset)
+		end
+		
+		print(string.format("[Library] HubBar ajustado: %d botões -> Largura: %dpx", buttonCount, idealWidth))
+	end
+end
+
+-- Função para forçar o recálculo após mudanças
+local function forceRecalculate()
+	task.wait(0.05) -- Pequena espera para garantir que os elementos foram criados
+	adjustHubBarWidth()
+	
+	-- Segundo ajuste após um tempo para garantir
+	task.delay(0.5, function()
+		adjustHubBarWidth()
+	end)
 end
 
 -- ============================================================
@@ -118,6 +183,8 @@ end
 -- ============================================================
 
 local function deselectButton(button)
+	if not button or not button.Parent then return end
+	
 	local tabSelection = button:FindFirstChild("TabSelection")
 	local tabLabel = button:FindFirstChild("TabLabel")
 	
@@ -134,6 +201,8 @@ local function deselectButton(button)
 end
 
 local function selectButton(button)
+	if not button or not button.Parent then return end
+	
 	local tabSelection = button:FindFirstChild("TabSelection")
 	local tabLabel = button:FindFirstChild("TabLabel")
 	
@@ -179,6 +248,8 @@ local function showPage(page)
 end
 
 local function onTabClicked(clickedButton)
+	if not clickedButton or not clickedButton.Parent then return end
+	
 	-- Controlar visual dos botões
 	for _, child in ipairs(HubBarContainer:GetChildren()) do
 		if child:IsA("TextButton") then
@@ -195,7 +266,6 @@ local function onTabClicked(clickedButton)
 	if correspondingPage then
 		showPage(correspondingPage)
 		activeTab = clickedButton
-		print("[Library] Aba ativada: " .. clickedButton.Name)
 	else
 		warn("[Library] Página não encontrada para: " .. clickedButton.Name)
 	end
@@ -233,6 +303,9 @@ local function setupSettingsShieldMonitor()
 				print("[Library] SettingsShield fechado - Desselecionando todas as abas")
 				deselectAllButtons()
 				hideAllPages()
+			elseif SettingsShield.Visible == true then
+				-- Quando o SettingsShield abrir, verificar se precisa reajustar
+				forceRecalculate()
 			end
 		end)
 		
@@ -256,12 +329,17 @@ end
 -- ============================================================
 
 local function createHubBarButton(name, icon)
+	if not HubBarContainer then
+		warn("[Library] HubBarContainer não encontrado!")
+		return nil
+	end
+	
 	local button = Instance.new("TextButton")
 	button.Name = name
 	button.Selectable = false
 	button.ZIndex = 3
 	button.BackgroundTransparency = 1
-	button.Size = UDim2.new(0.2, 0, 1, 0)
+	button.Size = UDim2.new(0, 100, 1, 0) -- Largura fixa para cada botão
 	button.Text = ""
 	button.Parent = HubBarContainer
 	
@@ -271,9 +349,9 @@ local function createHubBarButton(name, icon)
 	tabSelection.ZIndex = 3
 	tabSelection.BorderSizePixel = 0
 	tabSelection.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	tabSelection.Size = UDim2.new(1, -2, 0, 2)
+	tabSelection.Size = UDim2.new(1, -4, 0, 2)
 	tabSelection.Visible = false
-	tabSelection.Position = UDim2.new(0, 3, 1, -2)
+	tabSelection.Position = UDim2.new(0, 2, 1, -2)
 	tabSelection.Parent = button
 	
 	-- TabLabel (container do ícone e título)
@@ -289,7 +367,7 @@ local function createHubBarButton(name, icon)
 	local layout = Instance.new("UIListLayout")
 	layout.Name = "Layout"
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	layout.Padding = UDim.new(0, 10)
+	layout.Padding = UDim.new(0, 8)
 	layout.VerticalAlignment = Enum.VerticalAlignment.Center
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.FillDirection = Enum.FillDirection.Horizontal
@@ -309,9 +387,8 @@ local function createHubBarButton(name, icon)
 	)
 	iconLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 	iconLabel.BackgroundTransparency = 1
-	iconLabel.Size = UDim2.new(0, 24, 0, 24)
+	iconLabel.Size = UDim2.new(0, 20, 0, 20)
 	iconLabel.Text = icon or "gear"
-	iconLabel.Position = UDim2.new(0, 10, 0.5, -18)
 	iconLabel.Parent = tabLabel
 	
 	local aspectRatio = Instance.new("UIAspectRatioConstraint")
@@ -322,7 +399,7 @@ local function createHubBarButton(name, icon)
 	local titleLabel = Instance.new("TextLabel")
 	titleLabel.Name = "Title"
 	titleLabel.ZIndex = 3
-	titleLabel.TextSize = 19
+	titleLabel.TextSize = 16
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	titleLabel.TextTransparency = 0.5
 	titleLabel.FontFace = Font.new(
@@ -334,7 +411,6 @@ local function createHubBarButton(name, icon)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.Text = name
 	titleLabel.AutomaticSize = Enum.AutomaticSize.XY
-	titleLabel.Position = UDim2.new(1.2, 5, 0, -2)
 	titleLabel.Parent = tabLabel
 	
 	-- Conectar clique
@@ -350,11 +426,16 @@ end
 -- ============================================================
 
 local function createPage(name)
+	if not PageViewInnerFrame then
+		warn("[Library] PageViewInnerFrame não encontrado!")
+		return nil
+	end
+	
 	local page = Instance.new("Frame")
 	page.Name = name
 	page.ZIndex = 5
 	page.AutomaticSize = Enum.AutomaticSize.Y
-	page.Size = UDim2.new(1, 0, 0, 1174)
+	page.Size = UDim2.new(1, 0, 0, 0)
 	page.Position = UDim2.new(0, 0, 0, 0)
 	page.BackgroundTransparency = 1
 	page.SelectionGroup = true
@@ -363,15 +444,18 @@ local function createPage(name)
 	
 	-- UIPadding
 	local padding = Instance.new("UIPadding")
-	padding.PaddingRight = UDim.new(0, 11)
+	padding.PaddingRight = UDim.new(0, 12)
 	padding.PaddingLeft = UDim.new(0, 12)
+	padding.PaddingTop = UDim.new(0, 8)
+	padding.PaddingBottom = UDim.new(0, 8)
 	padding.Parent = page
 	
-	-- RowListLayout
+	-- UIListLayout para organizar componentes futuros
 	local layout = Instance.new("UIListLayout")
-	layout.Name = "RowListLayout"
+	layout.Name = "ContentLayout"
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0, 4)
 	layout.Parent = page
 	
 	return page
@@ -386,11 +470,28 @@ function Library:CreateTab(config)
 	local tabName = config.Name or "Tab"
 	local tabIcon = config.Icon or "gear"
 	
+	-- Verificar se já existe uma tab com esse nome
+	for _, existingTab in ipairs(tabs) do
+		if existingTab.Name == tabName then
+			warn("[Library] Já existe uma tab com o nome: " .. tabName)
+			return existingTab
+		end
+	end
+	
 	-- Criar botão no HubBar
 	local button = createHubBarButton(tabName, tabIcon)
+	if not button then
+		warn("[Library] Falha ao criar botão para: " .. tabName)
+		return nil
+	end
 	
 	-- Criar página correspondente
 	local page = createPage(tabName)
+	if not page then
+		warn("[Library] Falha ao criar página para: " .. tabName)
+		button:Destroy()
+		return nil
+	end
 	
 	-- Criar objeto Tab
 	local Tab = {
@@ -416,14 +517,14 @@ function Library:CreateTab(config)
 	
 	-- Se for a primeira tab, selecionar automaticamente
 	if #tabs == 1 then
+		task.wait(0.1) -- Pequena espera para garantir que está tudo pronto
 		onTabClicked(button)
 	end
 	
-	-- Ajustar largura do HubBar
-	task.wait(0.1)
-	adjustHubBarWidth()
+	-- Ajustar largura do HubBar com delay para garantir
+	forceRecalculate()
 	
-	print(string.format("[Library] Tab criada: %s (Ícone: %s)", tabName, tabIcon))
+	print(string.format("[Library] Tab criada: %s (Ícone: %s) - Total: %d tabs", tabName, tabIcon, #tabs))
 	
 	return Tab
 end
@@ -434,6 +535,40 @@ end
 
 function Library:GetActiveTab()
 	return activeTab
+end
+
+function Library:RemoveTab(tabName)
+	for i, tab in ipairs(tabs) do
+		if tab.Name == tabName then
+			-- Remover botão
+			if tab.Button and tab.Button.Parent then
+				tab.Button:Destroy()
+			end
+			
+			-- Remover página
+			if tab.Page and tab.Page.Parent then
+				tab.Page:Destroy()
+			end
+			
+			-- Remover da lista
+			table.remove(tabs, i)
+			
+			-- Se era a tab ativa, desselecionar
+			if activeTab and activeTab.Name == tabName then
+				deselectAllButtons()
+				hideAllPages()
+			end
+			
+			-- Reajustar HubBar
+			forceRecalculate()
+			
+			print("[Library] Tab removida: " .. tabName)
+			return true
+		end
+	end
+	
+	warn("[Library] Tab não encontrada para remover: " .. tabName)
+	return false
 end
 
 -- ============================================================
@@ -450,27 +585,53 @@ task.spawn(function()
 		setupSettingsShieldMonitor()
 		
 		-- Configurar ajuste automático do HubBar
-		HubBarContainer.ChildAdded:Connect(function(child)
-			if child:IsA("TextButton") then
+		if HubBarContainer then
+			HubBarContainer.ChildAdded:Connect(function(child)
+				if child:IsA("TextButton") then
+					forceRecalculate()
+				end
+			end)
+			
+			HubBarContainer.ChildRemoved:Connect(function(child)
+				if child:IsA("TextButton") then
+					forceRecalculate()
+				end
+			end)
+		end
+		
+		-- Monitorar redimensionamento da janela
+		if HubBar then
+			HubBar:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+				-- Recalcular quando a janela for redimensionada
 				task.wait(0.1)
 				adjustHubBarWidth()
-			end
-		end)
+			end)
+		end
 		
-		HubBarContainer.ChildRemoved:Connect(function(child)
-			if child:IsA("TextButton") then
-				task.wait(0.1)
-				adjustHubBarWidth()
-			end
-		end)
-		
-		-- Monitorar adição de novos elementos
+		-- Monitorar adição de novos elementos no CoreGui
 		CoreGui.DescendantAdded:Connect(function(descendant)
 			if descendant.Name == "SettingsShield" and descendant:IsA("ImageButton") then
 				setupSettingsShieldMonitor()
 			elseif descendant.Name == "HubBar" and descendant:IsA("ImageLabel") then
 				HubBar = descendant
-				adjustHubBarWidth()
+				forceRecalculate()
+			elseif descendant.Name == "HubBarContainer" then
+				HubBarContainer = descendant
+				forceRecalculate()
+			elseif descendant.Name == "PageViewInnerFrame" then
+				PageViewInnerFrame = descendant
+			end
+		end)
+		
+		-- Verificação periódica para garantir que o HubBar está correto
+		task.spawn(function()
+			while true do
+				task.wait(3)
+				if HubBar and HubBar.Parent then
+					adjustHubBarWidth()
+				else
+					HubBar = findDescendant(CoreGui, "HubBar")
+				end
 			end
 		end)
 		
