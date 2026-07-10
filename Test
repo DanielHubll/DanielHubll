@@ -27,6 +27,7 @@ local activeTab = nil
 -- Configurações
 local BASE_WIDTH = 800
 local WIDTH_PER_BUTTON = 100
+local MIN_WIDTH = 300
 
 -- ============================================================
 -- FUNÇÕES UTILITÁRIAS
@@ -91,25 +92,29 @@ local function countButtons()
 end
 
 local function adjustHubBarWidth()
-	if not HubBar then
-		HubBar = findDescendant(CoreGui, "HubBar")
-		if not HubBar or not HubBar:IsA("ImageLabel") then
-			return
-		end
+	HubBar = findDescendant(CoreGui, "HubBar")
+
+	if not HubBar or not HubBar:IsA("ImageLabel") then
+		return
 	end
-	
-	local buttonCount = countButtons()
-	
-	if buttonCount > 5 then
-		local extraButtons = buttonCount - 5
-		local newWidth = BASE_WIDTH - (WIDTH_PER_BUTTON * extraButtons)
-		if newWidth < 300 then newWidth = 300 end
-		
-		local currentSize = HubBar.Size
-		HubBar.Size = UDim2.new(0, newWidth, currentSize.Y.Scale, currentSize.Y.Offset)
-	else
-		local currentSize = HubBar.Size
-		HubBar.Size = UDim2.new(0, BASE_WIDTH, currentSize.Y.Scale, currentSize.Y.Offset)
+
+	local buttons = countButtons()
+	local width = BASE_WIDTH
+
+	if buttons > 5 then
+		width = math.max(
+			MIN_WIDTH,
+			BASE_WIDTH - ((buttons - 5) * WIDTH_PER_BUTTON)
+		)
+	end
+
+	if HubBar.Size.X.Offset ~= width then
+		HubBar.Size = UDim2.new(
+			0,
+			width,
+			HubBar.Size.Y.Scale,
+			HubBar.Size.Y.Offset
+		)
 	end
 end
 
@@ -419,10 +424,6 @@ function Library:CreateTab(config)
 		onTabClicked(button)
 	end
 	
-	-- Ajustar largura do HubBar
-	task.wait(0.1)
-	adjustHubBarWidth()
-	
 	print(string.format("[Library] Tab criada: %s (Ícone: %s)", tabName, tabIcon))
 	
 	return Tab
@@ -449,28 +450,13 @@ task.spawn(function()
 		-- Configurar monitoramento do SettingsShield
 		setupSettingsShieldMonitor()
 		
-		-- Configurar ajuste automático do HubBar
-		HubBarContainer.ChildAdded:Connect(function(child)
-			if child:IsA("TextButton") then
+		-- Configurar ajuste contínuo do HubBar
+		task.spawn(function()
+			while true do
+				if systemReady then
+					adjustHubBarWidth()
+				end
 				task.wait(0.1)
-				adjustHubBarWidth()
-			end
-		end)
-		
-		HubBarContainer.ChildRemoved:Connect(function(child)
-			if child:IsA("TextButton") then
-				task.wait(0.1)
-				adjustHubBarWidth()
-			end
-		end)
-		
-		-- Monitorar adição de novos elementos
-		CoreGui.DescendantAdded:Connect(function(descendant)
-			if descendant.Name == "SettingsShield" and descendant:IsA("ImageButton") then
-				setupSettingsShieldMonitor()
-			elseif descendant.Name == "HubBar" and descendant:IsA("ImageLabel") then
-				HubBar = descendant
-				adjustHubBarWidth()
 			end
 		end)
 		
