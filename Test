@@ -26,7 +26,7 @@ local activeTab = nil
 
 -- Configurações
 local BASE_WIDTH = 800
-local WIDTH_REDUCTION_PER_BUTTON = 100  -- Reduz 100px por botão
+local WIDTH_REDUCTION_PER_BUTTON = 100  -- Reduz 100px por tab criada pela library
 
 -- Sistema de debounce
 local lastAdjustTime = 0
@@ -86,22 +86,9 @@ end
 -- SISTEMA DE HUBBAR
 -- ============================================================
 
-local function countButtons()
-	local count = 0
-	if HubBarContainer and isValidElement(HubBarContainer) then
-		for _, child in ipairs(HubBarContainer:GetChildren()) do
-			if child:IsA("TextButton") then
-				count = count + 1
-			end
-		end
-	end
-	return count
-end
-
-local function calculateOptimalWidth(buttonCount)
-	-- Largura base é 800px, subtrai 100px para cada botão
-	local newWidth = BASE_WIDTH - (buttonCount * WIDTH_REDUCTION_PER_BUTTON)
-	
+local function calculateOptimalWidth()
+	-- Conta APENAS as tabs criadas pela library, não os botões nativos do jogo
+	local newWidth = BASE_WIDTH - (#tabs * WIDTH_REDUCTION_PER_BUTTON)
 	return newWidth
 end
 
@@ -128,17 +115,7 @@ local function adjustHubBarWidth(force)
 			end
 		end
 		
-		-- Verificar se HubBarContainer ainda existe
-		if not HubBarContainer or not isValidElement(HubBarContainer) then
-			HubBarContainer = findDescendant(CoreGui, "HubBarContainer")
-			if not HubBarContainer then
-				adjustDebounce = false
-				return
-			end
-		end
-		
-		local buttonCount = countButtons()
-		local optimalWidth = calculateOptimalWidth(buttonCount)
+		local optimalWidth = calculateOptimalWidth()
 		
 		local currentSize = HubBar.Size
 		HubBar.Size = UDim2.new(0, optimalWidth, currentSize.Y.Scale, currentSize.Y.Offset)
@@ -146,7 +123,7 @@ local function adjustHubBarWidth(force)
 		lastAdjustTime = tick()
 		adjustDebounce = false
 		
-		print(string.format("[Library] HubBar ajustado: %d botões -> %dpx", buttonCount, optimalWidth))
+		print(string.format("[Library] HubBar ajustado: %d tabs -> %dpx", #tabs, optimalWidth))
 	end)
 end
 
@@ -472,13 +449,13 @@ function Library:CreateTab(config)
 		onTabClicked(button)
 	end
 	
-	-- Ajustar largura do HubBar com força
+	-- Ajustar largura do HubBar - agora conta só #tabs
 	task.spawn(function()
 		task.wait(0.15)
 		adjustHubBarWidth(true)
 	end)
 	
-	print(string.format("[Library] Tab criada: %s (Ícone: %s)", tabName, tabIcon))
+	print(string.format("[Library] Tab criada: %s (Ícone: %s) | Total tabs: %d | Largura: %dpx", tabName, tabIcon, #tabs, calculateOptimalWidth()))
 	
 	return Tab
 end
@@ -514,29 +491,6 @@ local function setupMonitoring()
 	-- Configurar monitoramento do SettingsShield
 	setupSettingsShieldMonitor()
 	
-	-- Configurar ajuste automático do HubBar
-	if HubBarContainer and isValidElement(HubBarContainer) then
-		local childAddedConn = HubBarContainer.ChildAdded:Connect(function(child)
-			if child:IsA("TextButton") then
-				task.spawn(function()
-					task.wait(0.15)
-					adjustHubBarWidth(true)
-				end)
-			end
-		end)
-		table.insert(monitoringConnections, childAddedConn)
-		
-		local childRemovedConn = HubBarContainer.ChildRemoved:Connect(function(child)
-			if child:IsA("TextButton") then
-				task.spawn(function()
-					task.wait(0.15)
-					adjustHubBarWidth(true)
-				end)
-			end
-		end)
-		table.insert(monitoringConnections, childRemovedConn)
-	end
-	
 	-- Monitorar adição de novos elementos
 	local descendantAddedConn = CoreGui.DescendantAdded:Connect(function(descendant)
 		if descendant.Name == "SettingsShield" and descendant:IsA("ImageButton") then
@@ -551,7 +505,6 @@ local function setupMonitoring()
 			HubBarContainer = descendant
 			task.spawn(function()
 				task.wait(0.3)
-				setupMonitoring()
 				adjustHubBarWidth(true)
 			end)
 		elseif descendant.Name == "PageViewInnerFrame" then
@@ -569,7 +522,7 @@ task.spawn(function()
 	if systemReady then
 		setupMonitoring()
 		
-		-- Forçar ajuste inicial
+		-- Forçar ajuste inicial (0 tabs = 800px)
 		task.wait(0.5)
 		adjustHubBarWidth(true)
 		
