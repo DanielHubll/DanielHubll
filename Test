@@ -1,145 +1,593 @@
-local UI_Library = {}
+--[[
+    CONVERTED UILIBRARY - Based on LocalMaze GUI Creator
+    Original design by @uniquadev
+    Converted to loadstring-compatible library
+--]]
 
-local function getMainGui()
-    return game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("Guizin")
+local UILibrary = {}
+
+-- ============================================================
+-- SERVIÇOS
+-- ============================================================
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+-- ============================================================
+-- UTILITÁRIOS
+-- ============================================================
+local function findDescendant(parent, name)
+    for _, v in ipairs(parent:GetDescendants()) do
+        if v.Name == name then
+            return v
+        end
+    end
+    return nil
 end
 
--- Cria o painel principal
-function UI_Library.CreatePanel(title)
-    local mainGui = getMainGui()
-    
-    local painel = mainGui:FindFirstChild("Painel") or Instance.new("Frame")
-    painel.Name = "Painel"
-    painel.Size = UDim2.new(0, 140, 0, 170)
-    painel.Position = UDim2.new(0, 10, 0, 16)
-    painel.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
-    painel.BackgroundTransparency = 0.2
-    painel.BorderSizePixel = 0
-    
-    -- Título
-    local titulo = painel:FindFirstChild("Título") or Instance.new("TextLabel", painel)
-    titulo.Name = "Título"
-    titulo.Size = UDim2.new(0, 108, 0, 24)
-    titulo.Position = UDim2.new(0, 2, 0, 2)
-    titulo.BackgroundColor3 = Color3.fromRGB(74, 74, 74)
-    titulo.BackgroundTransparency = 0.5
-    titulo.TextColor3 = Color3.new(1,1,1)
-    titulo.Font = Enum.Font.DenkOne
-    titulo.TextScaled = true
-    titulo.TextWrapped = true
-    titulo.Text = title or "Título"
-    local corner = titulo:FindFirstChildOfClass("UICorner") or Instance.new("UICorner", titulo)
-    
-    -- Botão fechar
-    local fecharBtn = painel:FindFirstChild("Fechar Botão") or Instance.new("TextButton", painel)
-    fecharBtn.Name = "Fechar Botão"
-    fecharBtn.Size = UDim2.new(0, 22, 0, 24)
-    fecharBtn.Position = UDim2.new(0, 114, 0, 2)
-    fecharBtn.Text = "X"
-    fecharBtn.TextColor3 = Color3.new(1, 0, 0)
-    fecharBtn.BackgroundColor3 = Color3.fromRGB(98, 98, 98)
-    fecharBtn.Font = Enum.Font.DenkOne
-    fecharBtn.TextScaled = true
-    local cornerBtn = Instance.new("UICorner", fecharBtn)
-    -- Evento fechar
-    fecharBtn.MouseButton1Click:Connect(function()
-        painel.Visible = false
-    end)
-    
-    -- Container de conteúdo
-    local content = painel:FindFirstChild("Conterne") or Instance.new("ScrollingFrame", painel)
-    content.Name = "Conterne"
-    content.Size = UDim2.new(0, 132, 0, 126)
-    content.Position = UDim2.new(0, 4, 0, 32)
-    content.BackgroundColor3 = Color3.fromRGB(89, 89, 89)
-    content.BackgroundTransparency = 0.5
-    content.BorderSizePixel = 0
-    content.ScrollBarThickness = 3
-    local cornerContent = Instance.new("UICorner", content)
-    
-    -- Funções de controle
-    local panelTable = {}
-    function panelTable.Show()
-        painel.Visible = true
+local function waitForObject(parent, name, timeout)
+    timeout = timeout or 10
+    local start = tick()
+    while tick() - start < timeout do
+        local obj = findDescendant(parent, name)
+        if obj then
+            return obj
+        end
+        task.wait(0.1)
     end
-    function panelTable.Hide()
-        painel.Visible = false
-    end
-    function panelTable.Toggle()
-        painel.Visible = not painel.Visible
-    end
-    function panelTable.SetTitle(newTitle)
-        titulo.Text = newTitle
-    end
-    
-    panelTable.Panel = painel
-    panelTable.Title = titulo
-    panelTable.CloseButton = fecharBtn
-    panelTable.Content = content
-    
-    return panelTable
+    return nil
 end
 
--- Cria um botão normal
-function UI_Library.CreateButton(parent, text, callback)
-    local btn = Instance.new("TextButton", parent)
-    btn.Size = UDim2.new(0, 116, 0, 24)
-    btn.BackgroundColor3 = Color3.fromRGB(174, 174, 174)
-    btn.Text = text or "Botão"
-    btn.Font = Enum.Font.DenkOne
-    btn.TextScaled = true
-    btn.BorderSizePixel = 0
-    local corner = Instance.new("UICorner", btn)
-    btn.MouseButton1Click:Connect(function()
-        if callback then callback() end
-    end)
-    return btn
+-- ============================================================
+-- CLASSE PRINCIPAL DA WINDOW
+-- ============================================================
+local Window = {}
+Window.__index = Window
+
+function Window.new(name, icon, hubBarContainer, pageViewInnerFrame)
+    local self = setmetatable({}, Window)
+    
+    self.Name = name or "MyTab"
+    self.Icon = icon or "gear"
+    self.HubBarContainer = hubBarContainer
+    self.PageViewInnerFrame = pageViewInnerFrame
+    self.Elements = {}
+    self.LayoutOrder = 0
+    
+    -- Criar botão na HubBar
+    self:CreateHubButton()
+    
+    -- Criar página no PageViewInnerFrame
+    self:CreatePage()
+    
+    return self
 end
 
--- Cria um botão toggle
-function UI_Library.CreateToggleButton(parent, text, initialState, callback)
-    local toggleFrame = Instance.new("Frame", parent)
-    toggleFrame.Size = UDim2.new(0, 118, 0, 26)
-    toggleFrame.BackgroundColor3 = Color3.fromRGB(174, 174, 174)
-    local corner = Instance.new("UICorner", toggleFrame)
+function Window:CreateHubButton()
+    local button = Instance.new("TextButton")
+    button.Name = self.Name
+    button.Text = ""
+    button.Size = UDim2.new(0.2, 0, 1, 0)
+    button.BackgroundTransparency = 1
+    button.Selectable = false
+    button.ZIndex = 3
+    button.Parent = self.HubBarContainer
+    
+    -- TabSelection
+    local tabSelection = Instance.new("ImageLabel")
+    tabSelection.Name = "TabSelection"
+    tabSelection.Size = UDim2.new(1, -2, 0, 2)
+    tabSelection.Position = UDim2.new(0, 3, 1, -2)
+    tabSelection.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    tabSelection.BorderSizePixel = 0
+    tabSelection.Visible = false
+    tabSelection.ZIndex = 3
+    tabSelection.Parent = button
+    
+    -- TabLabel
+    local tabLabel = Instance.new("Frame")
+    tabLabel.Name = "TabLabel"
+    tabLabel.Size = UDim2.new(1, 0, 1, 0)
+    tabLabel.BackgroundTransparency = 1
+    tabLabel.ZIndex = 3
+    tabLabel.Parent = button
+    
+    -- Layout
+    local layout = Instance.new("UIListLayout")
+    layout.Name = "Layout"
+    layout.FillDirection = Enum.FillDirection.Horizontal
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.VerticalAlignment = Enum.VerticalAlignment.Center
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 10)
+    layout.Parent = tabLabel
+    
+    -- Icon
+    local iconLabel = Instance.new("TextLabel")
+    iconLabel.Name = "Icon"
+    iconLabel.Text = self.Icon
+    iconLabel.Size = UDim2.new(0, 24, 0, 24)
+    iconLabel.Position = UDim2.new(0, 10, 0.5, -18)
+    iconLabel.BackgroundTransparency = 1
+    iconLabel.FontFace = Font.new("rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+    iconLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    iconLabel.TextTransparency = 0.5
+    iconLabel.TextScaled = true
+    iconLabel.ZIndex = 3
+    iconLabel.Parent = tabLabel
+    
+    local aspectRatio = Instance.new("UIAspectRatioConstraint")
+    aspectRatio.Parent = iconLabel
+    
+    -- Title
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "Title"
+    titleLabel.Text = self.Name
+    titleLabel.Size = UDim2.new(1.2, 5, 0, -2)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.TextTransparency = 0.5
+    titleLabel.TextSize = 19
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.ZIndex = 3
+    titleLabel.AutomaticSize = Enum.AutomaticSize.XY
+    titleLabel.Parent = tabLabel
+    
+    self.Button = button
+    self.TabSelection = tabSelection
+    self.IconLabel = iconLabel
+    self.TitleLabel = titleLabel
+end
+
+function Window:CreatePage()
+    local page = Instance.new("Frame")
+    page.Name = self.Name
+    page.Size = UDim2.new(1, 0, 0, 0)
+    page.BackgroundTransparency = 1
+    page.ZIndex = 5
+    page.Visible = false
+    page.SelectionGroup = true
+    page.AutomaticSize = Enum.AutomaticSize.Y
+    page.Parent = self.PageViewInnerFrame
+    
+    -- Padding
+    local padding = Instance.new("UIPadding")
+    padding.PaddingLeft = UDim.new(0, 12)
+    padding.PaddingRight = UDim.new(0, 11)
+    padding.Parent = page
+    
+    -- RowListLayout
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.Name = "RowListLayout"
+    listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    listLayout.Parent = page
+    
+    self.Page = page
+    self.PagePadding = padding
+    self.PageLayout = listLayout
+end
+
+-- ============================================================
+-- MÉTODOS DA WINDOW
+-- ============================================================
+
+function Window:AddToggle(config)
+    config = config or {}
+    local name = config.Name or "Toggle"
+    local callback = config.Callback or function() end
+    local default = config.Default or false
+    
+    self.LayoutOrder = self.LayoutOrder + 1
+    local state = default
+    
+    -- Frame principal
+    local mainFrame = Instance.new("ImageButton")
+    mainFrame.Name = name .. "Frame"
+    mainFrame.Size = UDim2.new(0, 200, 0, 50)
+    mainFrame.BackgroundTransparency = 1
+    mainFrame.BackgroundColor3 = Color3.fromRGB(36, 38, 40)
+    mainFrame.Image = "rbxasset://textures/ui/VR/rectBackgroundWhite.png"
+    mainFrame.ImageColor3 = Color3.fromRGB(36, 38, 40)
+    mainFrame.ImageTransparency = 1
+    mainFrame.ScaleType = Enum.ScaleType.Slice
+    mainFrame.SliceCenter = Rect.new(2, 2, 18, 18)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.ZIndex = 2
+    mainFrame.LayoutOrder = self.LayoutOrder
+    mainFrame.Selectable = false
+    mainFrame.AutoButtonColor = false
+    mainFrame.Active = false
+    mainFrame.Parent = self.Page
+    
+    local corner = Instance.new("UICorner")
+    corner.Parent = mainFrame
     
     -- Label
-    local label = Instance.new("TextLabel", toggleFrame)
-    label.Size = UDim2.new(1, -24, 1, 0)
-    label.Position = UDim2.new(0, 2, 0, 0)
+    local label = Instance.new("TextLabel")
+    label.Name = name .. "Label"
+    label.Text = name
+    label.Size = UDim2.new(0.4, -20, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0)
     label.BackgroundTransparency = 1
-    label.Text = text or "Toggle"
-    label.TextColor3 = Color3.new(0,0,0)
-    label.Font = Enum.Font.DenkOne
-    label.TextScaled = true
+    label.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 17
     label.TextXAlignment = Enum.TextXAlignment.Left
+    label.ZIndex = 2
+    label.AutomaticSize = Enum.AutomaticSize.Y
+    label.TextWrapped = true
+    label.Parent = mainFrame
     
-    -- Frame do toggle
-    local toggle = Instance.new("Frame", toggleFrame)
-    toggle.Size = UDim2.new(0, 24, 0, 22)
-    toggle.Position = UDim2.new(1, -26, 0, 2)
-    local color = initialState and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 255, 255)
-    toggle.BackgroundColor3 = color
-    toggle.BorderSizePixel = 0
-    local cornerToggle = Instance.new("UICorner", toggle)
+    local labelPadding = Instance.new("UIPadding")
+    labelPadding.PaddingTop = UDim.new(0, 10)
+    labelPadding.PaddingBottom = UDim.new(0, 10)
+    labelPadding.Name = name .. "UIPadding"
+    labelPadding.Parent = label
     
-    -- Estado
-    local state = initialState or false
-    local function setState(val)
-        state = val
-        toggle.BackgroundColor3 = state and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 255, 255)
-        if callback then callback(state) end
+    -- Selector
+    local selector = Instance.new("ImageButton")
+    selector.Name = "Selector"
+    selector.Size = UDim2.new(0.6, 0, 0, 50)
+    selector.Position = UDim2.new(1, 0, 0.5, 0)
+    selector.AnchorPoint = Vector2.new(1, 0.5)
+    selector.BackgroundTransparency = 1
+    selector.ZIndex = 2
+    selector.AutoButtonColor = false
+    selector.Parent = mainFrame
+    
+    -- Left Button
+    local leftButton = Instance.new("ImageButton")
+    leftButton.Name = "LeftButton"
+    leftButton.Size = UDim2.new(0, 32, 0, 50)
+    leftButton.Position = UDim2.new(0, 0, 0.5, 0)
+    leftButton.AnchorPoint = Vector2.new(0, 0.5)
+    leftButton.BackgroundTransparency = 1
+    leftButton.Selectable = false
+    leftButton.ZIndex = 3
+    leftButton.Parent = selector
+    
+    local leftIcon = Instance.new("ImageLabel")
+    leftIcon.Name = "LeftIcon"
+    leftIcon.Size = UDim2.new(0, 18, 0, 30)
+    leftIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+    leftIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+    leftIcon.BackgroundTransparency = 1
+    leftIcon.Image = "rbxasset://textures/ui/Settings/Slider/Left.png"
+    leftIcon.ImageColor3 = Color3.fromRGB(205, 205, 205)
+    leftIcon.ZIndex = 4
+    leftIcon.Parent = leftButton
+    
+    -- Right Button
+    local rightButton = Instance.new("ImageButton")
+    rightButton.Name = "RightButton"
+    rightButton.Size = UDim2.new(0, 32, 0, 50)
+    rightButton.Position = UDim2.new(1, 0, 0.5, 0)
+    rightButton.AnchorPoint = Vector2.new(1, 0.5)
+    rightButton.BackgroundTransparency = 1
+    rightButton.Selectable = false
+    rightButton.ZIndex = 3
+    rightButton.Parent = selector
+    
+    local rightIcon = Instance.new("ImageLabel")
+    rightIcon.Name = "RightIcon"
+    rightIcon.Size = UDim2.new(0, 18, 0, 30)
+    rightIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+    rightIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+    rightIcon.BackgroundTransparency = 1
+    rightIcon.Image = "rbxasset://textures/ui/Settings/Slider/Right.png"
+    rightIcon.ImageColor3 = Color3.fromRGB(205, 205, 205)
+    rightIcon.ZIndex = 4
+    rightIcon.Parent = rightButton
+    
+    -- Auto Select Button (middle click area)
+    local autoSelect = Instance.new("ImageButton")
+    autoSelect.Name = "AutoSelectButton"
+    autoSelect.Size = UDim2.new(1, -64, 1, 0)
+    autoSelect.Position = UDim2.new(0, 32, 0, 0)
+    autoSelect.BackgroundTransparency = 1
+    autoSelect.Selectable = false
+    autoSelect.ZIndex = 2
+    autoSelect.Parent = selector
+    
+    -- Selection1 (Off)
+    local selection1 = Instance.new("TextLabel")
+    selection1.Name = "Selection1"
+    selection1.Text = "Off"
+    selection1.Size = UDim2.new(1, -64, 1, 0)
+    selection1.Position = UDim2.new(0, 32, 0, 0)
+    selection1.BackgroundTransparency = 1
+    selection1.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+    selection1.TextColor3 = Color3.fromRGB(255, 255, 255)
+    selection1.TextSize = 17
+    selection1.BorderSizePixel = 0
+    selection1.ZIndex = 2
+    selection1.TextWrapped = true
+    selection1.Parent = selector
+    
+    -- Selection2 (On)
+    local selection2 = Instance.new("TextLabel")
+    selection2.Name = "Selection2"
+    selection2.Text = "On"
+    selection2.Size = UDim2.new(1, -64, 1, 0)
+    selection2.Position = UDim2.new(0, 96, 0, 0)
+    selection2.BackgroundTransparency = 1
+    selection2.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+    selection2.TextColor3 = Color3.fromRGB(255, 255, 255)
+    selection2.TextSize = 17
+    selection2.TextTransparency = 1
+    selection2.BorderSizePixel = 0
+    selection2.ZIndex = 2
+    selection2.TextWrapped = true
+    selection2.Parent = selector
+    
+    -- Função para atualizar visual
+    local function updateVisual(value)
+        if value then
+            selection1.TextTransparency = 1
+            selection2.TextTransparency = 0
+        else
+            selection1.TextTransparency = 0
+            selection2.TextTransparency = 1
+        end
     end
     
-    toggle.MouseButton1Click:Connect(function()
-        setState(not state)
-    end)
+    -- Configurar estado inicial
+    updateVisual(state)
+    if default then
+        callback(state)
+    end
     
-    return {
-        Frame = toggle,
-        SetState = setState,
-        GetState = function() return state end
-    }
+    -- Conectar eventos
+    local function toggle()
+        state = not state
+        updateVisual(state)
+        callback(state)
+    end
+    
+    leftButton.MouseButton1Click:Connect(toggle)
+    rightButton.MouseButton1Click:Connect(toggle)
+    autoSelect.MouseButton1Click:Connect(toggle)
+    
+    -- Guardar referências
+    table.insert(self.Elements, {
+        Type = "Toggle",
+        Frame = mainFrame,
+        State = function() return state end,
+        SetState = function(val)
+            state = val
+            updateVisual(state)
+            callback(state)
+        end
+    })
+    
+    return self
 end
 
-return UI_Library
+-- ============================================================
+-- GERENCIADOR DE UI (HUBBAR CONTROLLER)
+-- ============================================================
+local UIManager = {}
+UIManager.__index = UIManager
+
+function UIManager.new()
+    local self = setmetatable({}, UIManager)
+    
+    self.Windows = {}
+    self.HubBarContainer = nil
+    self.PageViewInnerFrame = nil
+    self.HubBar = nil
+    self.SettingsShield = nil
+    self.Initialized = false
+    
+    -- Aguardar objetos necessários
+    self:WaitForContainers()
+    
+    -- Inicializar sistemas
+    self:InitHubBarSystem()
+    self:InitSettingsShieldMonitor()
+    
+    self.Initialized = true
+    
+    return self
+end
+
+function UIManager:WaitForContainers()
+    -- Aguardar HubBarContainer
+    self.HubBarContainer = waitForObject(CoreGui, "HubBarContainer", 10)
+    if not self.HubBarContainer then
+        warn("[UILibrary] HubBarContainer não encontrado!")
+        return
+    end
+    
+    -- Aguardar PageViewInnerFrame
+    self.PageViewInnerFrame = waitForObject(CoreGui, "PageViewInnerFrame", 10)
+    if not self.PageViewInnerFrame then
+        warn("[UILibrary] PageViewInnerFrame não encontrado!")
+        return
+    end
+    
+    -- Aguardar HubBar
+    self.HubBar = waitForObject(CoreGui, "HubBar", 5)
+end
+
+function UIManager:SelectWindow(window)
+    if not self.HubBarContainer then return end
+    
+    -- Desselecionar todos os botões
+    for _, win in ipairs(self.Windows) do
+        if win.TabSelection then
+            win.TabSelection.Visible = false
+        end
+        if win.IconLabel then
+            win.IconLabel.TextTransparency = 0.5
+        end
+        if win.TitleLabel then
+            win.TitleLabel.TextTransparency = 0.5
+        end
+        if win.Page then
+            win.Page.Visible = false
+        end
+    end
+    
+    -- Selecionar a window clicada
+    if window.TabSelection then
+        window.TabSelection.Visible = true
+    end
+    if window.IconLabel then
+        window.IconLabel.TextTransparency = 0
+    end
+    if window.TitleLabel then
+        window.TitleLabel.TextTransparency = 0
+    end
+    if window.Page then
+        window.Page.Visible = true
+    end
+end
+
+function UIManager:DeselectAll()
+    for _, win in ipairs(self.Windows) do
+        if win.TabSelection then
+            win.TabSelection.Visible = false
+        end
+        if win.IconLabel then
+            win.IconLabel.TextTransparency = 0.5
+        end
+        if win.TitleLabel then
+            win.TitleLabel.TextTransparency = 0.5
+        end
+        if win.Page then
+            win.Page.Visible = false
+        end
+    end
+end
+
+function UIManager:AdjustHubBarWidth()
+    if not self.HubBar then return end
+    if not self.HubBar:IsA("GuiObject") then return end
+    
+    local buttonCount = #self.Windows
+    local baseWidth = 800
+    local widthPerButton = 100
+    
+    if buttonCount > 5 then
+        local extraButtons = buttonCount - 5
+        local newWidth = baseWidth - (widthPerButton * extraButtons)
+        if newWidth < 300 then newWidth = 300 end
+        
+        local currentSize = self.HubBar.Size
+        self.HubBar.Size = UDim2.new(0, newWidth, currentSize.Y.Scale, currentSize.Y.Offset)
+    else
+        local currentSize = self.HubBar.Size
+        self.HubBar.Size = UDim2.new(0, baseWidth, currentSize.Y.Scale, currentSize.Y.Offset)
+    end
+end
+
+function UIManager:InitHubBarSystem()
+    if not self.HubBarContainer then return end
+    
+    -- Conectar eventos de clique para windows já existentes
+    self.HubBarContainer.ChildAdded:Connect(function(child)
+        if child:IsA("TextButton") then
+            -- Encontrar a window correspondente
+            for _, win in ipairs(self.Windows) do
+                if win.Button == child then
+                    child.MouseButton1Click:Connect(function()
+                        self:SelectWindow(win)
+                    end)
+                    break
+                end
+            end
+            task.wait(0.1)
+            self:AdjustHubBarWidth()
+        end
+    end)
+    
+    self.HubBarContainer.ChildRemoved:Connect(function(child)
+        if child:IsA("TextButton") then
+            task.wait(0.1)
+            self:AdjustHubBarWidth()
+        end
+    end)
+end
+
+function UIManager:InitSettingsShieldMonitor()
+    local function monitor()
+        self.SettingsShield = findDescendant(CoreGui, "SettingsShield")
+        
+        if self.SettingsShield and self.SettingsShield:IsA("ImageButton") then
+            if self.SettingsShield.Visible == false then
+                self:DeselectAll()
+            end
+            
+            local connection
+            connection = self.SettingsShield:GetPropertyChangedSignal("Visible"):Connect(function()
+                if self.SettingsShield.Visible == false then
+                    self:DeselectAll()
+                end
+            end)
+            
+            self.SettingsShield.AncestryChanged:Connect(function(_, parent)
+                if not parent then
+                    connection:Disconnect()
+                    task.wait(0.5)
+                    monitor()
+                end
+            end)
+        else
+            task.wait(1)
+            monitor()
+        end
+    end
+    
+    monitor()
+    
+    -- Também monitorar quando SettingsShield for criado
+    CoreGui.DescendantAdded:Connect(function(descendant)
+        if descendant.Name == "SettingsShield" and descendant:IsA("ImageButton") then
+            monitor()
+        end
+    end)
+end
+
+-- ============================================================
+-- FUNÇÃO PÚBLICA: CreateWindow
+-- ============================================================
+function UILibrary.CreateWindow(name, icon)
+    if not UILibrary.__manager then
+        UILibrary.__manager = UIManager.new()
+    end
+    
+    local manager = UILibrary.__manager
+    
+    if not manager.HubBarContainer or not manager.PageViewInnerFrame then
+        warn("[UILibrary] Containers não encontrados. Tentando novamente...")
+        manager:WaitForContainers()
+    end
+    
+    if not manager.HubBarContainer or not manager.PageViewInnerFrame then
+        error("[UILibrary] Não foi possível encontrar os containers necessários!")
+    end
+    
+    local window = Window.new(name, icon, manager.HubBarContainer, manager.PageViewInnerFrame)
+    table.insert(manager.Windows, window)
+    
+    -- Conectar clique
+    if window.Button then
+        window.Button.MouseButton1Click:Connect(function()
+            manager:SelectWindow(window)
+        end)
+    end
+    
+    -- Ajustar largura da HubBar
+    task.wait(0.1)
+    manager:AdjustHubBarWidth()
+    
+    return window
+end
+
+-- ============================================================
+-- RETORNAR A BIBLIOTECA
+-- ============================================================
+return UILibrary
