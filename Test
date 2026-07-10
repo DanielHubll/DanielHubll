@@ -1,583 +1,1219 @@
---[[
+--[=[
  d888b  db    db d888888b      .d888b.      db      db    db  .d8b.  
 88' Y8b 88    88   `88'        VP  `8D      88      88    88 d8' `8b 
 88      88    88    88            odD'      88      88    88 88ooo88 
 88  ooo 88    88    88          .88'        88      88    88 88~~~88 
 88. ~8~ 88b  d88   .88.        j88.         88booo. 88b  d88 88   88    @uniquadev
- Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  UI LIBRARY v2
---]]
+ Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  CONVERTER 
 
-local Library = {}
+designed using localmaze gui creator
+]=]
 
--- Serviços Principais
+local LMG2L = {};
+
+-- Serviços
 local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
--- Função auxiliar para varredura profunda de elementos
+-- Função para encontrar descendentes
 local function findDescendant(parent, name)
-    for _, v in ipairs(parent:GetDescendants()) do
-        if v.Name == name then
-            return v
-        end
-    end
-    return nil
+	for _, v in ipairs(parent:GetDescendants()) do
+		if v.Name == name then
+			return v
+		end
+	end
+	return nil
 end
 
--- Contêineres nativos do Roblox do menu CoreGui
+-- Buscar HubBarContainer e PageViewInnerFrame
 local HubBarContainer = findDescendant(CoreGui, "HubBarContainer")
 local PageViewInnerFrame = findDescendant(CoreGui, "PageViewInnerFrame")
 
 -- ============================================================
--- SISTEMA 1: REDIMENSIONAMENTO DINÂMICO DO HUBBAR
+-- CORREÇÃO 1: DEFINIR RobloxGui ANTES DE USAR
 -- ============================================================
+local RobloxGui = findDescendant(CoreGui, "RobloxGui")
+
+if not RobloxGui then
+    warn("RobloxGui não encontrado!")
+    return
+end
+
+-- ============================================================
+-- CRIAÇÃO DO BOTÃO NO HUBBAR
+-- ============================================================
+
+LMG2L["1"] = Instance.new("TextButton", HubBarContainer);
+LMG2L["1"]["Selectable"] = false;
+LMG2L["1"]["ZIndex"] = 3;
+LMG2L["1"]["BackgroundTransparency"] = 1;
+LMG2L["1"]["Size"] = UDim2.new(0.2, 0, 1, 0);
+LMG2L["1"]["Text"] = [[]];
+LMG2L["1"]["Name"] = [[MeuBotaoCustomizado]];
+
+LMG2L["2"] = Instance.new("ImageLabel", LMG2L["1"]);
+LMG2L["2"]["ZIndex"] = 3;
+LMG2L["2"]["BorderSizePixel"] = 0;
+LMG2L["2"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+LMG2L["2"]["Size"] = UDim2.new(1, -2, 0, 2);
+LMG2L["2"]["Visible"] = false;
+LMG2L["2"]["Name"] = [[TabSelection]];
+LMG2L["2"]["Position"] = UDim2.new(0, 3, 1, -2);
+
+LMG2L["3"] = Instance.new("Frame", LMG2L["1"]);
+LMG2L["3"]["ZIndex"] = 3;
+LMG2L["3"]["BorderSizePixel"] = 0;
+LMG2L["3"]["Size"] = UDim2.new(1, 0, 1, 0);
+LMG2L["3"]["Name"] = [[TabLabel]];
+LMG2L["3"]["BackgroundTransparency"] = 1;
+
+LMG2L["4"] = Instance.new("UIListLayout", LMG2L["3"]);
+LMG2L["4"]["HorizontalAlignment"] = Enum.HorizontalAlignment.Center;
+LMG2L["4"]["Padding"] = UDim.new(0, 10);
+LMG2L["4"]["VerticalAlignment"] = Enum.VerticalAlignment.Center;
+LMG2L["4"]["SortOrder"] = Enum.SortOrder.LayoutOrder;
+LMG2L["4"]["Name"] = [[Layout]];
+LMG2L["4"]["FillDirection"] = Enum.FillDirection.Horizontal;
+
+LMG2L["5"] = Instance.new("TextLabel", LMG2L["3"]);
+LMG2L["5"]["TextWrapped"] = true;
+LMG2L["5"]["ZIndex"] = 3;
+LMG2L["5"]["TextTransparency"] = 0.5;
+LMG2L["5"]["TextScaled"] = true;
+LMG2L["5"]["FontFace"] = Font.new([[rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+LMG2L["5"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+LMG2L["5"]["BackgroundTransparency"] = 1;
+LMG2L["5"]["Size"] = UDim2.new(0, 24, 0, 24);
+LMG2L["5"]["Text"] = [[gear]];
+LMG2L["5"]["Name"] = [[Icon]];
+LMG2L["5"]["Position"] = UDim2.new(0, 10, 0.5, -18);
+
+LMG2L["6"] = Instance.new("UIAspectRatioConstraint", LMG2L["5"]);
+LMG2L["6"]["Name"] = [[AspectRatioConstraint]];
+
+LMG2L["7"] = Instance.new("TextLabel", LMG2L["3"]);
+LMG2L["7"]["ZIndex"] = 3;
+LMG2L["7"]["TextSize"] = 19;
+LMG2L["7"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+LMG2L["7"]["TextTransparency"] = 0.5;
+LMG2L["7"]["FontFace"] = Font.new([[rbxasset://fonts/families/BuilderSans.json]], Enum.FontWeight.Medium, Enum.FontStyle.Normal);
+LMG2L["7"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+LMG2L["7"]["BackgroundTransparency"] = 1;
+LMG2L["7"]["Text"] = [[Settings]];
+LMG2L["7"]["AutomaticSize"] = Enum.AutomaticSize.XY;
+LMG2L["7"]["Name"] = [[Title]];
+LMG2L["7"]["Position"] = UDim2.new(1.2, 5, 0, -2);
+
+
+-- ============================================================
+-- CRIAÇÃO DO FRAME (PAGE) DENTRO DO PageViewInnerFrame
+-- ============================================================
+
+LMG2L["Page_2"] = Instance.new("Frame", PageViewInnerFrame);
+LMG2L["Page_2"]["ZIndex"] = 5;
+LMG2L["Page_2"]["AutomaticSize"] = Enum.AutomaticSize.Y;
+LMG2L["Page_2"]["Size"] = UDim2.new(1, 0, 0, 1174);
+LMG2L["Page_2"]["Position"] = UDim2.new(0, 0, 0, 0);
+LMG2L["Page_2"]["Name"] = LMG2L["1"]["Name"];
+LMG2L["Page_2"]["BackgroundTransparency"] = 1;
+LMG2L["Page_2"]["SelectionGroup"] = true;
+LMG2L["Page_2"]["Visible"] = false;
+
+-- UIPadding
+LMG2L["UIPadding_3"] = Instance.new("UIPadding", LMG2L["Page_2"]);
+LMG2L["UIPadding_3"]["PaddingRight"] = UDim.new(0, 11);
+LMG2L["UIPadding_3"]["PaddingLeft"] = UDim.new(0, 12);
+
+-- RowListLayout
+LMG2L["RowListLayout_4"] = Instance.new("UIListLayout", LMG2L["Page_2"]);
+LMG2L["RowListLayout_4"]["HorizontalAlignment"] = Enum.HorizontalAlignment.Center;
+LMG2L["RowListLayout_4"]["SortOrder"] = Enum.SortOrder.LayoutOrder;
+LMG2L["RowListLayout_4"]["Name"] = [[RowListLayout]];
+
+-- ============================================================
+-- SISTEMA DE TOGGLE (Camera Inverted)
+-- ============================================================
+
+-- Camera InvertedFrame (Toggle Container)
+LMG2L["Camera InvertedFrame_5"] = Instance.new("ImageButton", LMG2L["Page_2"]);
+LMG2L["Camera InvertedFrame_5"]["Active"] = false;
+LMG2L["Camera InvertedFrame_5"]["BorderSizePixel"] = 0;
+LMG2L["Camera InvertedFrame_5"]["SliceCenter"] = Rect.new(2, 2, 18, 18);
+LMG2L["Camera InvertedFrame_5"]["ScaleType"] = Enum.ScaleType.Slice;
+LMG2L["Camera InvertedFrame_5"]["AutoButtonColor"] = false;
+LMG2L["Camera InvertedFrame_5"]["ImageTransparency"] = 1;
+LMG2L["Camera InvertedFrame_5"]["BackgroundTransparency"] = 1;
+LMG2L["Camera InvertedFrame_5"]["BackgroundColor3"] = Color3.fromRGB(36, 38, 40);
+LMG2L["Camera InvertedFrame_5"]["ImageColor3"] = Color3.fromRGB(36, 38, 40);
+LMG2L["Camera InvertedFrame_5"]["Selectable"] = false;
+LMG2L["Camera InvertedFrame_5"]["ZIndex"] = 2;
+LMG2L["Camera InvertedFrame_5"]["Image"] = [[rbxasset://textures/ui/VR/rectBackgroundWhite.png]];
+LMG2L["Camera InvertedFrame_5"]["Size"] = UDim2.new(1, 0, 0, 50);
+LMG2L["Camera InvertedFrame_5"]["LayoutOrder"] = 37;
+LMG2L["Camera InvertedFrame_5"]["Name"] = [[Camera InvertedFrame]];
+
+-- UICorner
+LMG2L["UICorner_6"] = Instance.new("UICorner", LMG2L["Camera InvertedFrame_5"]);
+
+-- Title Label
+LMG2L["Camera InvertedLabel_7"] = Instance.new("TextLabel", LMG2L["Camera InvertedFrame_5"]);
+LMG2L["Camera InvertedLabel_7"]["TextWrapped"] = true;
+LMG2L["Camera InvertedLabel_7"]["ZIndex"] = 2;
+LMG2L["Camera InvertedLabel_7"]["TextSize"] = 17;
+LMG2L["Camera InvertedLabel_7"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+LMG2L["Camera InvertedLabel_7"]["FontFace"] = Font.new([[rbxasset://fonts/families/BuilderSans.json]], Enum.FontWeight.Medium, Enum.FontStyle.Normal);
+LMG2L["Camera InvertedLabel_7"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+LMG2L["Camera InvertedLabel_7"]["BackgroundTransparency"] = 1;
+LMG2L["Camera InvertedLabel_7"]["Size"] = UDim2.new(0.4, -20, 1, 0);
+LMG2L["Camera InvertedLabel_7"]["Text"] = [[Camera Inverted]];
+LMG2L["Camera InvertedLabel_7"]["AutomaticSize"] = Enum.AutomaticSize.Y;
+LMG2L["Camera InvertedLabel_7"]["Name"] = [[Title]];
+LMG2L["Camera InvertedLabel_7"]["Position"] = UDim2.new(0, 10, 0, 0);
+
+-- UIPadding for Title
+LMG2L["Camera InvertedUIPadding_8"] = Instance.new("UIPadding", LMG2L["Camera InvertedLabel_7"]);
+LMG2L["Camera InvertedUIPadding_8"]["PaddingTop"] = UDim.new(0, 10);
+LMG2L["Camera InvertedUIPadding_8"]["Name"] = [[Camera InvertedUIPadding]];
+LMG2L["Camera InvertedUIPadding_8"]["PaddingBottom"] = UDim.new(0, 10);
+
+-- Selector Container
+LMG2L["Selector_9"] = Instance.new("ImageButton", LMG2L["Camera InvertedFrame_5"]);
+LMG2L["Selector_9"]["AutoButtonColor"] = false;
+LMG2L["Selector_9"]["BackgroundTransparency"] = 1;
+LMG2L["Selector_9"]["ZIndex"] = 2;
+LMG2L["Selector_9"]["AnchorPoint"] = Vector2.new(1, 0.5);
+LMG2L["Selector_9"]["Size"] = UDim2.new(0.6, 0, 0, 50);
+LMG2L["Selector_9"]["Name"] = [[Selector]];
+LMG2L["Selector_9"]["Position"] = UDim2.new(1, 0, 0.5, 0);
+
+-- LeftButton
+LMG2L["LeftButton_a"] = Instance.new("ImageButton", LMG2L["Selector_9"]);
+LMG2L["LeftButton_a"]["BackgroundTransparency"] = 1;
+LMG2L["LeftButton_a"]["Selectable"] = false;
+LMG2L["LeftButton_a"]["ZIndex"] = 3;
+LMG2L["LeftButton_a"]["AnchorPoint"] = Vector2.new(0, 0.5);
+LMG2L["LeftButton_a"]["Size"] = UDim2.new(0, 32, 0, 50);
+LMG2L["LeftButton_a"]["Name"] = [[LeftButton]];
+LMG2L["LeftButton_a"]["Position"] = UDim2.new(0, 0, 0.5, 0);
+
+LMG2L["LeftButton_b"] = Instance.new("ImageLabel", LMG2L["LeftButton_a"]);
+LMG2L["LeftButton_b"]["ZIndex"] = 4;
+LMG2L["LeftButton_b"]["ImageColor3"] = Color3.fromRGB(205, 205, 205);
+LMG2L["LeftButton_b"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
+LMG2L["LeftButton_b"]["Image"] = [[rbxasset://textures/ui/Settings/Slider/Left.png]];
+LMG2L["LeftButton_b"]["Size"] = UDim2.new(0, 18, 0, 30);
+LMG2L["LeftButton_b"]["BackgroundTransparency"] = 1;
+LMG2L["LeftButton_b"]["Name"] = [[LeftButton]];
+LMG2L["LeftButton_b"]["Position"] = UDim2.new(0.5, 0, 0.5, 0);
+
+-- RightButton
+LMG2L["RightButton_c"] = Instance.new("ImageButton", LMG2L["Selector_9"]);
+LMG2L["RightButton_c"]["BackgroundTransparency"] = 1;
+LMG2L["RightButton_c"]["Selectable"] = false;
+LMG2L["RightButton_c"]["ZIndex"] = 3;
+LMG2L["RightButton_c"]["AnchorPoint"] = Vector2.new(1, 0.5);
+LMG2L["RightButton_c"]["Size"] = UDim2.new(0, 32, 0, 50);
+LMG2L["RightButton_c"]["Name"] = [[RightButton]];
+LMG2L["RightButton_c"]["Position"] = UDim2.new(1, 0, 0.5, 0);
+
+LMG2L["RightButton_d"] = Instance.new("ImageLabel", LMG2L["RightButton_c"]);
+LMG2L["RightButton_d"]["ZIndex"] = 4;
+LMG2L["RightButton_d"]["ImageColor3"] = Color3.fromRGB(205, 205, 205);
+LMG2L["RightButton_d"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
+LMG2L["RightButton_d"]["Image"] = [[rbxasset://textures/ui/Settings/Slider/Right.png]];
+LMG2L["RightButton_d"]["Size"] = UDim2.new(0, 18, 0, 30);
+LMG2L["RightButton_d"]["BackgroundTransparency"] = 1;
+LMG2L["RightButton_d"]["Name"] = [[RightButton]];
+LMG2L["RightButton_d"]["Position"] = UDim2.new(0.5, 0, 0.5, 0);
+
+-- AutoSelectButton
+LMG2L["AutoSelectButton_e"] = Instance.new("ImageButton", LMG2L["Selector_9"]);
+LMG2L["AutoSelectButton_e"]["BackgroundTransparency"] = 1;
+LMG2L["AutoSelectButton_e"]["Selectable"] = false;
+LMG2L["AutoSelectButton_e"]["ZIndex"] = 2;
+LMG2L["AutoSelectButton_e"]["Size"] = UDim2.new(1, -64, 1, 0);
+LMG2L["AutoSelectButton_e"]["Name"] = [[AutoSelectButton]];
+LMG2L["AutoSelectButton_e"]["Position"] = UDim2.new(0, 32, 0, 0);
+
+-- Selection1 (Off)
+LMG2L["Selection1_f"] = Instance.new("TextLabel", LMG2L["Selector_9"]);
+LMG2L["Selection1_f"]["TextWrapped"] = true;
+LMG2L["Selection1_f"]["ZIndex"] = 2;
+LMG2L["Selection1_f"]["BorderSizePixel"] = 0;
+LMG2L["Selection1_f"]["TextSize"] = 17;
+LMG2L["Selection1_f"]["FontFace"] = Font.new([[rbxasset://fonts/families/BuilderSans.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+LMG2L["Selection1_f"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+LMG2L["Selection1_f"]["BackgroundTransparency"] = 1;
+LMG2L["Selection1_f"]["Size"] = UDim2.new(1, -64, 1, 0);
+LMG2L["Selection1_f"]["Text"] = [[Off]];
+LMG2L["Selection1_f"]["Name"] = [[Selection1]];
+LMG2L["Selection1_f"]["Position"] = UDim2.new(0, 32, 0, 0);
+
+-- Selection2 (On)
+LMG2L["Selection2_10"] = Instance.new("TextLabel", LMG2L["Selector_9"]);
+LMG2L["Selection2_10"]["TextWrapped"] = true;
+LMG2L["Selection2_10"]["ZIndex"] = 2;
+LMG2L["Selection2_10"]["BorderSizePixel"] = 0;
+LMG2L["Selection2_10"]["TextSize"] = 17;
+LMG2L["Selection2_10"]["FontFace"] = Font.new([[rbxasset://fonts/families/BuilderSans.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+LMG2L["Selection2_10"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+LMG2L["Selection2_10"]["BackgroundTransparency"] = 1;
+LMG2L["Selection2_10"]["Size"] = UDim2.new(1, -64, 1, 0);
+LMG2L["Selection2_10"]["Visible"] = false;
+LMG2L["Selection2_10"]["Text"] = [[On]];
+LMG2L["Selection2_10"]["Name"] = [[Selection2]];
+LMG2L["Selection2_10"]["Position"] = UDim2.new(0, 32, 0, 0);
+
+
+-- ============================================================
+-- SISTEMA DE SLIDER (Graphics Quality)
+-- ============================================================
+
+-- Slider Container
+LMG2L["SliderFrame_11"] = Instance.new("ImageButton", LMG2L["Page_2"]);
+LMG2L["SliderFrame_11"]["Active"] = false;
+LMG2L["SliderFrame_11"]["BorderSizePixel"] = 0;
+LMG2L["SliderFrame_11"]["SliceCenter"] = Rect.new(2, 2, 18, 18);
+LMG2L["SliderFrame_11"]["ScaleType"] = Enum.ScaleType.Slice;
+LMG2L["SliderFrame_11"]["AutoButtonColor"] = false;
+LMG2L["SliderFrame_11"]["ImageTransparency"] = 1;
+LMG2L["SliderFrame_11"]["BackgroundTransparency"] = 1;
+LMG2L["SliderFrame_11"]["BackgroundColor3"] = Color3.fromRGB(36, 38, 40);
+LMG2L["SliderFrame_11"]["ImageColor3"] = Color3.fromRGB(36, 38, 40);
+LMG2L["SliderFrame_11"]["Selectable"] = false;
+LMG2L["SliderFrame_11"]["ZIndex"] = 2;
+LMG2L["SliderFrame_11"]["Image"] = [[rbxasset://textures/ui/VR/rectBackgroundWhite.png]];
+LMG2L["SliderFrame_11"]["Size"] = UDim2.new(1, 0, 0, 50);
+LMG2L["SliderFrame_11"]["LayoutOrder"] = 29;
+LMG2L["SliderFrame_11"]["Name"] = [[SliderFrame]];
+
+-- UICorner
+LMG2L["UICorner_12"] = Instance.new("UICorner", LMG2L["SliderFrame_11"]);
+
+-- Slider Inner Container
+LMG2L["SliderInner_13"] = Instance.new("ImageButton", LMG2L["SliderFrame_11"]);
+LMG2L["SliderInner_13"]["AutoButtonColor"] = false;
+LMG2L["SliderInner_13"]["BackgroundTransparency"] = 1;
+LMG2L["SliderInner_13"]["Selectable"] = false;
+LMG2L["SliderInner_13"]["ZIndex"] = 2;
+LMG2L["SliderInner_13"]["AnchorPoint"] = Vector2.new(1, 0.5);
+LMG2L["SliderInner_13"]["Size"] = UDim2.new(0.6, 0, 0, 50);
+LMG2L["SliderInner_13"]["Name"] = [[Slider]];
+LMG2L["SliderInner_13"]["Position"] = UDim2.new(1, 0, 0.5, 0);
+
+-- LeftButton
+LMG2L["SliderLeftButton_14"] = Instance.new("ImageButton", LMG2L["SliderInner_13"]);
+LMG2L["SliderLeftButton_14"]["BackgroundTransparency"] = 1;
+LMG2L["SliderLeftButton_14"]["Selectable"] = false;
+LMG2L["SliderLeftButton_14"]["AnchorPoint"] = Vector2.new(0, 0.5);
+LMG2L["SliderLeftButton_14"]["Size"] = UDim2.new(0, 32, 0, 50);
+LMG2L["SliderLeftButton_14"]["Name"] = [[LeftButton]];
+LMG2L["SliderLeftButton_14"]["Position"] = UDim2.new(0, 0, 0.5, 0);
+
+LMG2L["SliderLeftIcon_15"] = Instance.new("ImageLabel", LMG2L["SliderLeftButton_14"]);
+LMG2L["SliderLeftIcon_15"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
+LMG2L["SliderLeftIcon_15"]["Image"] = [[rbxasset://textures/ui/Settings/Slider/Less.png]];
+LMG2L["SliderLeftIcon_15"]["Size"] = UDim2.new(0, 30, 0, 30);
+LMG2L["SliderLeftIcon_15"]["BackgroundTransparency"] = 1;
+LMG2L["SliderLeftIcon_15"]["Name"] = [[LeftButton]];
+LMG2L["SliderLeftIcon_15"]["Position"] = UDim2.new(0.5, 0, 0.5, 0);
+
+-- RightButton
+LMG2L["SliderRightButton_16"] = Instance.new("ImageButton", LMG2L["SliderInner_13"]);
+LMG2L["SliderRightButton_16"]["BackgroundTransparency"] = 1;
+LMG2L["SliderRightButton_16"]["Selectable"] = false;
+LMG2L["SliderRightButton_16"]["AnchorPoint"] = Vector2.new(1, 0.5);
+LMG2L["SliderRightButton_16"]["Size"] = UDim2.new(0, 32, 0, 50);
+LMG2L["SliderRightButton_16"]["Name"] = [[RightButton]];
+LMG2L["SliderRightButton_16"]["Position"] = UDim2.new(1, 0, 0.5, 0);
+
+LMG2L["SliderRightIcon_17"] = Instance.new("ImageLabel", LMG2L["SliderRightButton_16"]);
+LMG2L["SliderRightIcon_17"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
+LMG2L["SliderRightIcon_17"]["Image"] = [[rbxasset://textures/ui/Settings/Slider/More.png]];
+LMG2L["SliderRightIcon_17"]["Size"] = UDim2.new(0, 30, 0, 30);
+LMG2L["SliderRightIcon_17"]["BackgroundTransparency"] = 1;
+LMG2L["SliderRightIcon_17"]["Name"] = [[RightButton]];
+LMG2L["SliderRightIcon_17"]["Position"] = UDim2.new(0.5, 0, 0.5, 0);
+
+-- StepsContainer
+LMG2L["StepsContainer_18"] = Instance.new("Frame", LMG2L["SliderInner_13"]);
+LMG2L["StepsContainer_18"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
+LMG2L["StepsContainer_18"]["Size"] = UDim2.new(1, -100, 1, 0);
+LMG2L["StepsContainer_18"]["Position"] = UDim2.new(0.5, 0, 0.5, 0);
+LMG2L["StepsContainer_18"]["Name"] = [[StepsContainer]];
+LMG2L["StepsContainer_18"]["BackgroundTransparency"] = 1;
+
+-- Criar Steps 1-10
+local stepNames = {"Step1", "Step2", "Step3", "Step4", "Step5", "Step6", "Step7", "Step8", "Step9", "Step10"}
+local stepPositions = {0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9}
+
+for i = 1, 10 do
+	local step = Instance.new("ImageButton", LMG2L["StepsContainer_18"])
+	step["Active"] = false
+	step["BorderSizePixel"] = 0
+	step["AutoButtonColor"] = false
+	step["ImageTransparency"] = 0.36
+	step["BackgroundColor3"] = Color3.fromRGB(58, 60, 62)
+	step["Selectable"] = false
+	step["AnchorPoint"] = Vector2.new(0, 0.5)
+	step["Size"] = UDim2.new(0.1, -4, 0, 24)
+	step["Name"] = stepNames[i]
+	step["Position"] = UDim2.new(stepPositions[i], 2, 0.5, 0)
+	
+	-- UICorner apenas no Step1 e Step10
+	if i == 1 or i == 10 then
+		local corner = Instance.new("UICorner", step)
+	end
+	
+	-- Filler nos Steps 1 e 10
+	if i == 1 then
+		local filler = Instance.new("Frame", step)
+		filler["BorderSizePixel"] = 0
+		filler["BackgroundColor3"] = Color3.fromRGB(58, 60, 62)
+		filler["Size"] = UDim2.new(0.25, 0, 1, 0)
+		filler["Position"] = UDim2.new(0.75, 0, 0, 0)
+		filler["Name"] = [[Filler]]
+	elseif i == 10 then
+		local filler = Instance.new("Frame", step)
+		filler["BorderSizePixel"] = 0
+		filler["BackgroundColor3"] = Color3.fromRGB(58, 60, 62)
+		filler["Size"] = UDim2.new(0.25, 0, 1, 0)
+		filler["Name"] = [[Filler]]
+	end
+	
+	LMG2L[stepNames[i]] = step
+end
+
+-- Title do Slider
+LMG2L["SliderTitle_19"] = Instance.new("TextLabel", LMG2L["SliderFrame_11"]);
+LMG2L["SliderTitle_19"]["TextWrapped"] = true;
+LMG2L["SliderTitle_19"]["TextSize"] = 17;
+LMG2L["SliderTitle_19"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+LMG2L["SliderTitle_19"]["FontFace"] = Font.new([[rbxasset://fonts/families/BuilderSans.json]], Enum.FontWeight.Medium, Enum.FontStyle.Normal);
+LMG2L["SliderTitle_19"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+LMG2L["SliderTitle_19"]["BackgroundTransparency"] = 1;
+LMG2L["SliderTitle_19"]["Size"] = UDim2.new(0.4, -20, 1, 0);
+LMG2L["SliderTitle_19"]["Text"] = [[Graphics Quality]];
+LMG2L["SliderTitle_19"]["AutomaticSize"] = Enum.AutomaticSize.Y;
+LMG2L["SliderTitle_19"]["Name"] = [[Title]];
+LMG2L["SliderTitle_19"]["Position"] = UDim2.new(0, 10, 0, 0);
+
+-- UIPadding for Slider Title
+LMG2L["SliderTitlePadding_20"] = Instance.new("UIPadding", LMG2L["SliderTitle_19"]);
+LMG2L["SliderTitlePadding_20"]["PaddingTop"] = UDim.new(0, 10);
+LMG2L["SliderTitlePadding_20"]["Name"] = [[Graphics QualityUIPadding]];
+LMG2L["SliderTitlePadding_20"]["PaddingBottom"] = UDim.new(0, 10);
+
+
+-- ============================================================
+-- SISTEMA DE BUTTON (ATUALIZADO)
+-- ============================================================
+
+-- Button Container
+LMG2L["ButtonFrame_21"] = Instance.new("ImageButton", LMG2L["Page_2"]);
+LMG2L["ButtonFrame_21"]["Active"] = false;
+LMG2L["ButtonFrame_21"]["BorderSizePixel"] = 0;
+LMG2L["ButtonFrame_21"]["SliceCenter"] = Rect.new(10, 10, 10, 10);
+LMG2L["ButtonFrame_21"]["ScaleType"] = Enum.ScaleType.Slice;
+LMG2L["ButtonFrame_21"]["AutoButtonColor"] = false;
+LMG2L["ButtonFrame_21"]["ImageTransparency"] = 1;
+LMG2L["ButtonFrame_21"]["BackgroundColor3"] = Color3.fromRGB(36, 38, 40);
+LMG2L["ButtonFrame_21"]["ImageColor3"] = Color3.fromRGB(36, 38, 40);
+LMG2L["ButtonFrame_21"]["Selectable"] = false;
+LMG2L["ButtonFrame_21"]["ZIndex"] = 2;
+LMG2L["ButtonFrame_21"]["Image"] = [[rbxasset://textures/ui/VR/rectBackgroundWhite.png]];
+LMG2L["ButtonFrame_21"]["AutomaticSize"] = Enum.AutomaticSize.Y;
+LMG2L["ButtonFrame_21"]["Size"] = UDim2.new(1, 0, 0, 50);
+LMG2L["ButtonFrame_21"]["LayoutOrder"] = 16;
+LMG2L["ButtonFrame_21"]["Name"] = [[Button]];
+
+-- UICorner
+LMG2L["UICorner_22"] = Instance.new("UICorner", LMG2L["ButtonFrame_21"]);
+
+-- Button Inner (clickable)
+LMG2L["ButtonInner_23"] = Instance.new("ImageButton", LMG2L["ButtonFrame_21"]);
+LMG2L["ButtonInner_23"]["Active"] = false;
+LMG2L["ButtonInner_23"]["AutoButtonColor"] = false;
+LMG2L["ButtonInner_23"]["BackgroundColor3"] = Color3.fromRGB(36, 38, 40);
+LMG2L["ButtonInner_23"]["ZIndex"] = 2;
+LMG2L["ButtonInner_23"]["AnchorPoint"] = Vector2.new(0, 0.5);
+LMG2L["ButtonInner_23"]["Size"] = UDim2.new(0.6, 0, 0, 40);
+LMG2L["ButtonInner_23"]["Name"] = [[Button]];
+LMG2L["ButtonInner_23"]["Position"] = UDim2.new(0.4, 0, 0.5, 0);
+
+-- UICorner
+LMG2L["ButtonInnerCorner_24"] = Instance.new("UICorner", LMG2L["ButtonInner_23"]);
+
+-- Border
+LMG2L["ButtonBorder_25"] = Instance.new("UIStroke", LMG2L["ButtonInner_23"]);
+LMG2L["ButtonBorder_25"]["Transparency"] = 0.3;
+LMG2L["ButtonBorder_25"]["Name"] = [[Border]];
+LMG2L["ButtonBorder_25"]["Color"] = Color3.fromRGB(255, 255, 255);
+
+-- Title
+LMG2L["ButtonTitle_26"] = Instance.new("TextLabel", LMG2L["ButtonInner_23"]);
+LMG2L["ButtonTitle_26"]["TextWrapped"] = true;
+LMG2L["ButtonTitle_26"]["ZIndex"] = 2;
+LMG2L["ButtonTitle_26"]["BorderSizePixel"] = 0;
+LMG2L["ButtonTitle_26"]["TextSize"] = 14;
+LMG2L["ButtonTitle_26"]["TextTransparency"] = 0.3;
+LMG2L["ButtonTitle_26"]["FontFace"] = Font.new([[rbxasset://fonts/families/BuilderSans.json]], Enum.FontWeight.Medium, Enum.FontStyle.Normal);
+LMG2L["ButtonTitle_26"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+LMG2L["ButtonTitle_26"]["BackgroundTransparency"] = 1;
+LMG2L["ButtonTitle_26"]["Size"] = UDim2.new(1, 0, 1, 0);
+LMG2L["ButtonTitle_26"]["BorderColor3"] = Color3.fromRGB(255, 255, 255);
+LMG2L["ButtonTitle_26"]["Text"] = [[Click]];
+LMG2L["ButtonTitle_26"]["Name"] = [[Title]];
+
+-- UITextSizeConstraint
+LMG2L["ButtonTextConstraint_27"] = Instance.new("UITextSizeConstraint", LMG2L["ButtonTitle_26"]);
+LMG2L["ButtonTextConstraint_27"]["MaxTextSize"] = 14;
+
+-- UIPadding
+LMG2L["ButtonUIPadding_28"] = Instance.new("UIPadding", LMG2L["ButtonInner_23"]);
+LMG2L["ButtonUIPadding_28"]["PaddingTop"] = UDim.new(0, 10);
+LMG2L["ButtonUIPadding_28"]["Name"] = [[Dar feedback de traduçãoUIPadding]];
+LMG2L["ButtonUIPadding_28"]["PaddingBottom"] = UDim.new(0, 10);
+
+-- Title do Container
+LMG2L["ButtonContainerTitle_29"] = Instance.new("TextLabel", LMG2L["ButtonFrame_21"]);
+LMG2L["ButtonContainerTitle_29"]["TextWrapped"] = true;
+LMG2L["ButtonContainerTitle_29"]["ZIndex"] = 2;
+LMG2L["ButtonContainerTitle_29"]["TextSize"] = 17;
+LMG2L["ButtonContainerTitle_29"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+LMG2L["ButtonContainerTitle_29"]["FontFace"] = Font.new([[rbxasset://fonts/families/BuilderSans.json]], Enum.FontWeight.Medium, Enum.FontStyle.Normal);
+LMG2L["ButtonContainerTitle_29"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+LMG2L["ButtonContainerTitle_29"]["BackgroundTransparency"] = 1;
+LMG2L["ButtonContainerTitle_29"]["Size"] = UDim2.new(0.4, -20, 1, 0);
+LMG2L["ButtonContainerTitle_29"]["Text"] = [[Button Teste]];
+LMG2L["ButtonContainerTitle_29"]["AutomaticSize"] = Enum.AutomaticSize.Y;
+LMG2L["ButtonContainerTitle_29"]["Name"] = [[Title]];
+LMG2L["ButtonContainerTitle_29"]["Position"] = UDim2.new(0, 10, 0, 0);
+
+-- UIPadding for Container Title
+LMG2L["ButtonContainerTitlePadding_30"] = Instance.new("UIPadding", LMG2L["ButtonContainerTitle_29"]);
+LMG2L["ButtonContainerTitlePadding_30"]["PaddingTop"] = UDim.new(0, 10);
+LMG2L["ButtonContainerTitlePadding_30"]["PaddingBottom"] = UDim.new(0, 10);
+
+
+-- ============================================================
+-- CRIAÇÃO DO DROPDOWN (DENTRO DA PAGE E DO CORE/ROBLOXGUI)
+-- ============================================================
+
+print("Criando Dropdown") -- Debug para verificar se o script chega aqui
+
+-- Dropdown Principal dentro da Page
+LMG2L["Dropdown_2"] = Instance.new("ImageButton", LMG2L["Page_2"]);
+LMG2L["Dropdown_2"]["Active"] = false;
+LMG2L["Dropdown_2"]["BorderSizePixel"] = 0;
+LMG2L["Dropdown_2"]["SliceCenter"] = Rect.new(2, 2, 18, 18);
+LMG2L["Dropdown_2"]["ScaleType"] = Enum.ScaleType.Slice;
+LMG2L["Dropdown_2"]["AutoButtonColor"] = false;
+LMG2L["Dropdown_2"]["ImageTransparency"] = 1;
+LMG2L["Dropdown_2"]["BackgroundTransparency"] = 1;
+LMG2L["Dropdown_2"]["BackgroundColor3"] = Color3.fromRGB(36, 38, 40);
+LMG2L["Dropdown_2"]["ImageColor3"] = Color3.fromRGB(36, 38, 40);
+LMG2L["Dropdown_2"]["Selectable"] = false;
+LMG2L["Dropdown_2"]["ZIndex"] = 2;
+LMG2L["Dropdown_2"]["Image"] = [[rbxasset://textures/ui/VR/rectBackgroundWhite.png]];
+LMG2L["Dropdown_2"]["Size"] = UDim2.new(1, 0, 0, 50);
+LMG2L["Dropdown_2"]["LayoutOrder"] = 15;
+LMG2L["Dropdown_2"]["Name"] = [[Dropdown]];
+
+LMG2L["UICorner_3"] = Instance.new("UICorner", LMG2L["Dropdown_2"]);
+
+LMG2L["Title_4"] = Instance.new("TextLabel", LMG2L["Dropdown_2"]);
+LMG2L["Title_4"]["TextWrapped"] = true;
+LMG2L["Title_4"]["ZIndex"] = 2;
+LMG2L["Title_4"]["TextSize"] = 17;
+LMG2L["Title_4"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+LMG2L["Title_4"]["FontFace"] = Font.new([[rbxasset://fonts/families/BuilderSans.json]], Enum.FontWeight.Medium, Enum.FontStyle.Normal);
+LMG2L["Title_4"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+LMG2L["Title_4"]["BackgroundTransparency"] = 1;
+LMG2L["Title_4"]["Size"] = UDim2.new(0.4, -20, 1, 0);
+LMG2L["Title_4"]["Text"] = [[Dropdown Teste]];
+LMG2L["Title_4"]["AutomaticSize"] = Enum.AutomaticSize.Y;
+LMG2L["Title_4"]["Name"] = [[Title]];
+LMG2L["Title_4"]["Position"] = UDim2.new(0, 10, 0, 0);
+
+LMG2L["Idioma da experiênciaUIPadding_5"] = Instance.new("UIPadding", LMG2L["Title_4"]);
+LMG2L["Idioma da experiênciaUIPadding_5"]["PaddingTop"] = UDim.new(0, 10);
+LMG2L["Idioma da experiênciaUIPadding_5"]["Name"] = [[Idioma da experiênciaUIPadding]];
+LMG2L["Idioma da experiênciaUIPadding_5"]["PaddingBottom"] = UDim.new(0, 10);
+
+-- DropdownFrameButton (dentro do Dropdown)
+LMG2L["DropdownFrameButton_6"] = Instance.new("ImageButton", LMG2L["Dropdown_2"]);
+LMG2L["DropdownFrameButton_6"]["AutoButtonColor"] = false;
+LMG2L["DropdownFrameButton_6"]["BackgroundColor3"] = Color3.fromRGB(57, 58, 60);
+LMG2L["DropdownFrameButton_6"]["ZIndex"] = 2;
+LMG2L["DropdownFrameButton_6"]["AnchorPoint"] = Vector2.new(1, 0.5);
+LMG2L["DropdownFrameButton_6"]["Size"] = UDim2.new(0.6, 0, 0, 40);
+LMG2L["DropdownFrameButton_6"]["Name"] = [[DropdownFrameButton]];
+LMG2L["DropdownFrameButton_6"]["Position"] = UDim2.new(1, 0, 0.5, 0);
+
+LMG2L["UICorner_7"] = Instance.new("UICorner", LMG2L["DropdownFrameButton_6"]);
+LMG2L["Border_8"] = Instance.new("UIStroke", LMG2L["DropdownFrameButton_6"]);
+LMG2L["Border_8"]["Transparency"] = 0.8;
+LMG2L["Border_8"]["Name"] = [[Border]];
+LMG2L["Border_8"]["Color"] = Color3.fromRGB(255, 255, 255);
+
+LMG2L["Enabled_9"] = Instance.new("BoolValue", LMG2L["DropdownFrameButton_6"]);
+LMG2L["Enabled_9"]["Name"] = [[Enabled]];
+LMG2L["Enabled_9"]["Value"] = true;
+
+LMG2L["DropdownSelectionText_a"] = Instance.new("TextLabel", LMG2L["DropdownFrameButton_6"]);
+LMG2L["DropdownSelectionText_a"]["TextWrapped"] = true;
+LMG2L["DropdownSelectionText_a"]["ZIndex"] = 2;
+LMG2L["DropdownSelectionText_a"]["BorderSizePixel"] = 0;
+LMG2L["DropdownSelectionText_a"]["TextSize"] = 17;
+LMG2L["DropdownSelectionText_a"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+LMG2L["DropdownSelectionText_a"]["FontFace"] = Font.new([[rbxasset://fonts/families/BuilderSans.json]], Enum.FontWeight.Medium, Enum.FontStyle.Normal);
+LMG2L["DropdownSelectionText_a"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+LMG2L["DropdownSelectionText_a"]["BackgroundTransparency"] = 1;
+LMG2L["DropdownSelectionText_a"]["Size"] = UDim2.new(1, -50, 1, 0);
+LMG2L["DropdownSelectionText_a"]["ClipsDescendants"] = true;
+LMG2L["DropdownSelectionText_a"]["Text"] = [[Teste]];
+LMG2L["DropdownSelectionText_a"]["Name"] = [[DropdownSelectionText]];
+LMG2L["DropdownSelectionText_a"]["Position"] = UDim2.new(0, 15, 0, 0);
+
+LMG2L["UITextSizeConstraint_b"] = Instance.new("UITextSizeConstraint", LMG2L["DropdownSelectionText_a"]);
+LMG2L["UITextSizeConstraint_b"]["MaxTextSize"] = 17;
+
+LMG2L["DropdownIcone_c"] = Instance.new("ImageLabel", LMG2L["DropdownFrameButton_6"]);
+LMG2L["DropdownIcone_c"]["ZIndex"] = 2;
+LMG2L["DropdownIcone_c"]["AnchorPoint"] = Vector2.new(1, 0.5);
+LMG2L["DropdownIcone_c"]["Image"] = [[rbxasset://textures/ui/Settings/DropDown/DropDown.png]];
+LMG2L["DropdownIcone_c"]["Size"] = UDim2.new(0, 15, 0, 10);
+LMG2L["DropdownIcone_c"]["BackgroundTransparency"] = 1;
+LMG2L["DropdownIcone_c"]["Name"] = [[DropdownIcone]];
+LMG2L["DropdownIcone_c"]["Position"] = UDim2.new(1, -12, 0.5, 0);
+
+-- DropdownFrame colocado no RobloxGui (inicialmente Visible = false)
+LMG2L["DropdownFrame_d"] = Instance.new("ImageButton", RobloxGui);
+LMG2L["DropdownFrame_d"]["BorderSizePixel"] = 0;
+LMG2L["DropdownFrame_d"]["AutoButtonColor"] = false;
+LMG2L["DropdownFrame_d"]["Visible"] = false;
+LMG2L["DropdownFrame_d"]["BackgroundTransparency"] = 0.2;
+LMG2L["DropdownFrame_d"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0);
+LMG2L["DropdownFrame_d"]["Selectable"] = false;
+LMG2L["DropdownFrame_d"]["ZIndex"] = 10;
+LMG2L["DropdownFrame_d"]["Size"] = UDim2.new(1, 0, 1, 58);
+LMG2L["DropdownFrame_d"]["Name"] = [[DropdownFrame]];
+LMG2L["DropdownFrame_d"]["Position"] = UDim2.new(0, 0, 0, -58);
+
+LMG2L["DropdownSelectionFrame_e"] = Instance.new("ImageLabel", LMG2L["DropdownFrame_d"]);
+LMG2L["DropdownSelectionFrame_e"]["ZIndex"] = 10;
+LMG2L["DropdownSelectionFrame_e"]["SliceCenter"] = Rect.new(8, 6, 46, 44);
+LMG2L["DropdownSelectionFrame_e"]["BackgroundColor3"] = Color3.fromRGB(58, 60, 62);
+LMG2L["DropdownSelectionFrame_e"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
+LMG2L["DropdownSelectionFrame_e"]["Size"] = UDim2.new(0, 400, 0.9, 0);
+LMG2L["DropdownSelectionFrame_e"]["Name"] = [[DropdownSelectionFrame]];
+LMG2L["DropdownSelectionFrame_e"]["Position"] = UDim2.new(0.5, 0, 0.5, 0);
+
+LMG2L["UICorner_f"] = Instance.new("UICorner", LMG2L["DropdownSelectionFrame_e"]);
+
+LMG2L["DropdownScrollingFrame_10"] = Instance.new("ScrollingFrame", LMG2L["DropdownSelectionFrame_e"]);
+LMG2L["DropdownScrollingFrame_10"]["ScrollingDirection"] = Enum.ScrollingDirection.Y;
+LMG2L["DropdownScrollingFrame_10"]["ZIndex"] = 10;
+LMG2L["DropdownScrollingFrame_10"]["BorderSizePixel"] = 0;
+LMG2L["DropdownScrollingFrame_10"]["CanvasSize"] = UDim2.new(1, -20, 0, 816);
+LMG2L["DropdownScrollingFrame_10"]["Name"] = [[DropdownScrollingFrame]];
+LMG2L["DropdownScrollingFrame_10"]["Size"] = UDim2.new(1, -20, 1, -25);
+LMG2L["DropdownScrollingFrame_10"]["Position"] = UDim2.new(0, 10, 0, 10);
+LMG2L["DropdownScrollingFrame_10"]["ScrollBarThickness"] = 1;
+LMG2L["DropdownScrollingFrame_10"]["BackgroundTransparency"] = 1;
+
+LMG2L["Selection1_11"] = Instance.new("TextButton", LMG2L["DropdownScrollingFrame_10"]);
+LMG2L["Selection1_11"]["BorderSizePixel"] = 0;
+LMG2L["Selection1_11"]["TextSize"] = 17;
+LMG2L["Selection1_11"]["AutoButtonColor"] = false;
+LMG2L["Selection1_11"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+LMG2L["Selection1_11"]["FontFace"] = Font.new([[rbxasset://fonts/families/BuilderSans.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+LMG2L["Selection1_11"]["ZIndex"] = 10;
+LMG2L["Selection1_11"]["BackgroundTransparency"] = 1;
+LMG2L["Selection1_11"]["Size"] = UDim2.new(1, -28, 0, 50);
+LMG2L["Selection1_11"]["Text"] = [[Opção 1]];
+LMG2L["Selection1_11"]["Name"] = [[Selection1]];
+LMG2L["Selection1_11"]["Position"] = UDim2.new(0, 14, 0, 0);
+
+
+-- ============================================================
+-- SCRIPT DE FUNCIONAMENTO DO DROPDOWN
+-- ============================================================
+
+local function setupDropdownScript()
+	local DropdownFrameButton = LMG2L["DropdownFrameButton_6"]
+	local DropdownFrame = LMG2L["DropdownFrame_d"]
+	local DropdownSelectionText = LMG2L["DropdownSelectionText_a"]
+	local ScrollingFrame = LMG2L["DropdownScrollingFrame_10"]
+
+	-- Abrir ou fechar ao clicar no botão principal do dropdown
+	DropdownFrameButton.MouseButton1Click:Connect(function()
+		DropdownFrame.Visible = not DropdownFrame.Visible
+	end)
+
+	-- Fechar se clicar no fundo do DropdownFrame (qualquer lugar ao lado)
+	DropdownFrame.MouseButton1Click:Connect(function()
+		DropdownFrame.Visible = false
+	end)
+
+	-- Sistema para atualizar o texto ao selecionar uma opção do ScrollingFrame
+	for _, child in ipairs(ScrollingFrame:GetChildren()) do
+		if child:IsA("TextButton") then
+			child.MouseButton1Click:Connect(function()
+				DropdownSelectionText.Text = child.Text
+				DropdownFrame.Visible = false
+				print("[DROPDOWN] Selecionado: " .. child.Text)
+			end)
+		end
+	end
+
+	-- Adicionar suporte dinâmico se novas opções forem inseridas no ScrollingFrame
+	ScrollingFrame.ChildAdded:Connect(function(newChild)
+		if newChild:IsA("TextButton") then
+			newChild.MouseButton1Click:Connect(function()
+				DropdownSelectionText.Text = newChild.Text
+				DropdownFrame.Visible = false
+				print("[DROPDOWN] Selecionado: " .. newChild.Text)
+			end)
+		end
+	end)
+
+	print("Sistema de Dropdown iniciado com sucesso!")
+end
+
+task.spawn(setupDropdownScript)
+
+
+-- ============================================================
+-- LOCALSCRIPT DO TOGGLE
+-- ============================================================
+
+local function setupToggleScript()
+	local Toggle = LMG2L["Camera InvertedFrame_5"]
+	local Selector = LMG2L["Selector_9"]
+	local RightButton = LMG2L["RightButton_c"]
+	local LeftButton = LMG2L["LeftButton_a"]
+	local Selection1 = LMG2L["Selection1_f"]
+	local Selection2 = LMG2L["Selection2_10"]
+	
+	local currentState = "Off"
+	Selection1.Text = currentState
+	Selection1.Visible = true
+	Selection2.Visible = false
+	
+	local function SetOn()
+		currentState = "On"
+		Selection1.Visible = false
+		Selection2.Visible = true
+		Selection2.Text = currentState
+		print("Toggle: ON")
+	end
+	
+	local function SetOff()
+		currentState = "Off"
+		Selection1.Visible = true
+		Selection2.Visible = false
+		Selection1.Text = currentState
+		print("Toggle: OFF")
+	end
+	
+	local function RightButtonClick()
+		if currentState == "Off" then
+			SetOn()
+		else
+			print("Já está ON")
+		end
+	end
+	
+	local function LeftButtonClick()
+		if currentState == "On" then
+			SetOff()
+		else
+			print("Já está OFF")
+		end
+	end
+	
+	local function AutoSelectClick()
+		if currentState == "Off" then
+			SetOn()
+		else
+			SetOff()
+		end
+	end
+	
+	RightButton.MouseButton1Click:Connect(RightButtonClick)
+	LeftButton.MouseButton1Click:Connect(LeftButtonClick)
+	LMG2L["AutoSelectButton_e"].MouseButton1Click:Connect(AutoSelectClick)
+	
+	print("Sistema de Toggle iniciado!")
+end
+
+
+-- ============================================================
+-- LOCALSCRIPT DO SLIDER (ATUALIZADO)
+-- ============================================================
+
+local function setupSliderScript()
+	local Slider = LMG2L["SliderInner_13"]
+	local LeftButton = LMG2L["SliderLeftButton_14"]
+	local RightButton = LMG2L["SliderRightButton_16"]
+	local StepsContainer = LMG2L["StepsContainer_18"]
+	
+	local ACTIVE_COLOR = Color3.fromRGB(255, 255, 255)
+	local INACTIVE_COLOR = Color3.fromRGB(57, 59, 61)
+	
+	local steps = {}
+	local fillers = {}
+	
+	for i = 1, 10 do
+		local step = StepsContainer:FindFirstChild("Step" .. i)
+		if step then
+			step.BackgroundColor3 = INACTIVE_COLOR
+			table.insert(steps, step)
+			
+			local filler = step:FindFirstChild("Filler")
+			if filler then
+				filler.BackgroundColor3 = INACTIVE_COLOR
+				fillers[i] = filler
+			end
+		end
+	end
+	
+	LeftButton.Visible = false
+	RightButton.Visible = true
+	
+	local function GetLastActiveStep()
+		for i = #steps, 1, -1 do
+			if steps[i].BackgroundColor3 == ACTIVE_COLOR then
+				return i
+			end
+		end
+		return 0
+	end
+	
+	local function UpdateButtonsVisibility()
+		local lastActive = GetLastActiveStep()
+		
+		if lastActive >= #steps then
+			RightButton.Visible = false
+		else
+			RightButton.Visible = true
+		end
+		
+		if lastActive <= 0 then
+			LeftButton.Visible = false
+		else
+			LeftButton.Visible = true
+		end
+	end
+	
+	local function ActivateStep(index)
+		if index >= 1 and index <= #steps then
+			steps[index].BackgroundColor3 = ACTIVE_COLOR
+			
+			if fillers[index] then
+				fillers[index].BackgroundColor3 = ACTIVE_COLOR
+			end
+		end
+	end
+	
+	local function DeactivateStep(index)
+		if index >= 1 and index <= #steps then
+			steps[index].BackgroundColor3 = INACTIVE_COLOR
+			
+			if fillers[index] then
+				fillers[index].BackgroundColor3 = INACTIVE_COLOR
+			end
+		end
+	end
+
+	-- Nova função principal para ajustar o slider diretamente
+	local function SetSlider(targetIndex)
+		targetIndex = math.clamp(targetIndex, 0, #steps)
+		local current = GetLastActiveStep()
+		
+		if targetIndex > current then
+			for i = current + 1, targetIndex do
+				ActivateStep(i)
+			end
+		elseif targetIndex < current then
+			for i = current, targetIndex + 1, -1 do
+				DeactivateStep(i)
+			end
+		end
+		UpdateButtonsVisibility()
+	end
+	
+	local function IncreaseSlider()
+		SetSlider(GetLastActiveStep() + 1)
+	end
+	
+	local function DecreaseSlider()
+		SetSlider(GetLastActiveStep() - 1)
+	end
+	
+	RightButton.MouseButton1Click:Connect(IncreaseSlider)
+	LeftButton.MouseButton1Click:Connect(DecreaseSlider)
+	
+	-- ==========================================
+	-- SISTEMA DE DRAG E CLIQUE NO SLIDER
+	-- ==========================================
+	local isDragging = false
+	
+	-- Atualiza o slider baseado na posição do Mouse / Dedo
+	local function UpdateFromInput(input)
+		local containerPos = StepsContainer.AbsolutePosition.X
+		local containerSize = StepsContainer.AbsoluteSize.X
+		local inputPos = input.Position.X
+		
+		local relativePos = inputPos - containerPos
+		local percentage = math.clamp(relativePos / containerSize, 0, 1)
+		
+		local targetStep = math.round(percentage * #steps)
+		SetSlider(targetStep)
+	end
+	
+	-- Inicia o clique no container principal
+	StepsContainer.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			isDragging = true
+			UpdateFromInput(input)
+		end
+	end)
+	
+	-- Inicia o clique diretamente em algum step específico
+	for i, step in ipairs(steps) do
+		step.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				isDragging = true
+				SetSlider(i)
+			end
+		end)
+	end
+	
+	-- Detecta o movimento (arrasto)
+	UserInputService.InputChanged:Connect(function(input)
+		if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			UpdateFromInput(input)
+		end
+	end)
+	
+	-- Finaliza o clique/arrasto
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			isDragging = false
+		end
+	end)
+	
+	print("Sistema de Slider interativo (Drag & Click) iniciado!")
+end
+
+
+-- ============================================================
+-- LOCALSCRIPT DO BUTTON (ATUALIZADO)
+-- ============================================================
+
+local function setupButtonScript()
+	local buttonContainer = LMG2L["ButtonFrame_21"]
+	local buttonInner = LMG2L["ButtonInner_23"]
+	local buttonTitle = LMG2L["ButtonTitle_26"]
+	local buttonBorder = LMG2L["ButtonBorder_25"]
+	
+	-- Cores
+	local DEFAULT_BG = Color3.fromRGB(36, 38, 40)
+	local HOVER_BG = Color3.fromRGB(46, 48, 50)
+	local PRESSED_BG = Color3.fromRGB(26, 28, 30)
+	local DEFAULT_BORDER = Color3.fromRGB(255, 255, 255)
+	
+	-- Estado inicial
+	buttonInner.BackgroundColor3 = DEFAULT_BG
+	buttonBorder.Color = DEFAULT_BORDER
+	buttonBorder.Transparency = 0.3
+	buttonTitle.TextTransparency = 0.3
+	
+	-- Efeito Hover
+	buttonInner.MouseEnter:Connect(function()
+		buttonInner.BackgroundColor3 = HOVER_BG
+		buttonTitle.TextTransparency = 0
+	end)
+	
+	buttonInner.MouseLeave:Connect(function()
+		buttonInner.BackgroundColor3 = DEFAULT_BG
+		buttonTitle.TextTransparency = 0.3
+	end)
+	
+	-- Efeito Click
+	buttonInner.MouseButton1Down:Connect(function()
+		buttonInner.BackgroundColor3 = PRESSED_BG
+		buttonBorder.Transparency = 0.5
+	end)
+	
+	buttonInner.MouseButton1Up:Connect(function()
+		buttonInner.BackgroundColor3 = HOVER_BG
+		buttonBorder.Transparency = 0.3
+	end)
+	
+	-- Ação do clique
+	buttonInner.MouseButton1Click:Connect(function()
+		print("Button clicked!")
+		print("Button Teste foi pressionado!")
+	end)
+	
+	print("Sistema de Button iniciado!")
+end
+
+
+-- ============================================================
+-- INICIAR SCRIPTS
+-- ============================================================
+
+task.spawn(setupToggleScript)
+task.spawn(setupSliderScript)
+task.spawn(setupButtonScript)
+
+
+-- ============================================================
+-- SISTEMA PRINCIPAL: SELEÇÃO DE ABAS + CONTROLE DE FRAMES
+-- ============================================================
+
+local function getPageForButton(button)
+	if not PageViewInnerFrame then return nil end
+	for _, child in ipairs(PageViewInnerFrame:GetChildren()) do
+		if child:IsA("Frame") and child.Name == button.Name then
+			return child
+		end
+	end
+	return nil
+end
+
+local function deselectButton(button)
+	local tabSelection = button:FindFirstChild("TabSelection")
+	local tabLabel = button:FindFirstChild("TabLabel")
+
+	if tabSelection then
+		tabSelection.Visible = false
+	end
+
+	if tabLabel then
+		local icon = tabLabel:FindFirstChild("Icon")
+		local title = tabLabel:FindFirstChild("Title")
+		if icon then icon.TextTransparency = 0.5 end
+		if title then title.TextTransparency = 0.5 end
+	end
+end
+
+local function selectButton(button)
+	local tabSelection = button:FindFirstChild("TabSelection")
+	local tabLabel = button:FindFirstChild("TabLabel")
+
+	if tabSelection then
+		tabSelection.Visible = true
+	end
+
+	if tabLabel then
+		local icon = tabLabel:FindFirstChild("Icon")
+		local title = tabLabel:FindFirstChild("Title")
+		if icon then icon.TextTransparency = 0 end
+		if title then title.TextTransparency = 0 end
+	end
+end
+
+local function hideAllPages()
+	if not PageViewInnerFrame then return end
+	for _, child in ipairs(PageViewInnerFrame:GetChildren()) do
+		if child:IsA("Frame") then
+			child.Visible = false
+		end
+	end
+end
+
+local function onTabClicked(clickedButton)
+	for _, child in ipairs(HubBarContainer:GetChildren()) do
+		if child:IsA("TextButton") then
+			if child == clickedButton then
+				selectButton(child)
+			else
+				deselectButton(child)
+			end
+		end
+	end
+
+	hideAllPages()
+
+	local correspondingPage = getPageForButton(clickedButton)
+	if correspondingPage then
+		correspondingPage.Visible = true
+		print("[SISTEMA] Mostrando frame: " .. correspondingPage.Name)
+	else
+		print("[AVISO] Nenhum frame encontrado para o botão: " .. clickedButton.Name)
+	end
+end
+
+for _, child in ipairs(HubBarContainer:GetChildren()) do
+	if child:IsA("TextButton") then
+		child.MouseButton1Click:Connect(function()
+			onTabClicked(child)
+		end)
+	end
+end
+
+HubBarContainer.ChildAdded:Connect(function(newChild)
+	if newChild:IsA("TextButton") then
+		newChild.MouseButton1Click:Connect(function()
+			onTabClicked(newChild)
+		end)
+	end
+end)
+
+
+-- ============================================================
+-- SISTEMA DO SETTINGS SHIELD
+-- ============================================================
+
+local function deselectAllButtons()
+	if HubBarContainer then
+		for _, child in ipairs(HubBarContainer:GetChildren()) do
+			if child:IsA("TextButton") then
+				deselectButton(child)
+			end
+		end
+	end
+end
+
+local function monitorSettingsShield()
+	local SettingsShield = findDescendant(CoreGui, "SettingsShield")
+	
+	if SettingsShield and SettingsShield:IsA("ImageButton") then
+		print("[SISTEMA] SettingsShield encontrado! Monitorando...")
+		
+		if SettingsShield.Visible == false then
+			deselectAllButtons()
+			hideAllPages()
+		end
+		
+		local connection
+		connection = SettingsShield:GetPropertyChangedSignal("Visible"):Connect(function()
+			if SettingsShield.Visible == false then
+				print("[SISTEMA] SettingsShield ficou invisível - Desselecionando todos")
+				deselectAllButtons()
+				hideAllPages()
+			end
+		end)
+		
+		SettingsShield.AncestryChanged:Connect(function(_, parent)
+			if not parent then
+				print("[SISTEMA] SettingsShield removido - Procurando novamente...")
+				connection:Disconnect()
+				task.wait(0.5)
+				monitorSettingsShield()
+			end
+		end)
+	else
+		print("[SISTEMA] SettingsShield não encontrado - Tentando em 1s...")
+		task.wait(1)
+		monitorSettingsShield()
+	end
+end
+
+monitorSettingsShield()
+
+CoreGui.DescendantAdded:Connect(function(descendant)
+	if descendant.Name == "SettingsShield" and descendant:IsA("ImageButton") then
+		print("[SISTEMA] SettingsShield detectado!")
+		monitorSettingsShield()
+	end
+end)
+
+
+-- ============================================================
+-- SISTEMA DE AJUSTE AUTOMÁTICO DO HUBBAR
+-- ============================================================
+
 local HubBar = nil
 local BASE_WIDTH = 800
 local WIDTH_PER_BUTTON = 100
 
 local function countButtons()
-    local count = 0
-    if HubBarContainer then
-        for _, child in ipairs(HubBarContainer:GetChildren()) do
-            if child:IsA("TextButton") then
-                count = count + 1
-            end
-        end
-    end
-    return count
+	local count = 0
+	if HubBarContainer then
+		for _, child in ipairs(HubBarContainer:GetChildren()) do
+			if child:IsA("TextButton") then
+				count = count + 1
+			end
+		end
+	end
+	return count
 end
 
 local function adjustHubBarWidth()
-    local buttonCount = countButtons()
-    if HubBar and HubBar:IsA("GuiObject") then
-        -- Se passar de 5 botões na barra, começa a reduzir proporcionalmente
-        if buttonCount > 5 then
-            local extraButtons = buttonCount - 5
-            local newWidth = BASE_WIDTH - (WIDTH_PER_BUTTON * extraButtons)
-            if newWidth < 300 then newWidth = 300 end -- Trava de segurança mínima
-            HubBar.Size = UDim2.new(0, newWidth, HubBar.Size.Y.Scale, HubBar.Size.Y.Offset)
-        else
-            HubBar.Size = UDim2.new(0, BASE_WIDTH, HubBar.Size.Y.Scale, HubBar.Size.Y.Offset)
-        end
-    end
+	local buttonCount = countButtons()
+	
+	if HubBar and HubBar:IsA("GuiObject") then
+		if buttonCount > 5 then
+			local extraButtons = buttonCount - 5
+			local newWidth = BASE_WIDTH - (WIDTH_PER_BUTTON * extraButtons)
+			if newWidth < 300 then newWidth = 300 end
+			
+			local currentSize = HubBar.Size
+			HubBar.Size = UDim2.new(0, newWidth, currentSize.Y.Scale, currentSize.Y.Offset)
+			print(string.format("[SISTEMA] HubBar: %d botões -> Largura: %d", buttonCount, newWidth))
+		else
+			local currentSize = HubBar.Size
+			HubBar.Size = UDim2.new(0, BASE_WIDTH, currentSize.Y.Scale, currentSize.Y.Offset)
+		end
+	end
 end
 
--- Loop persistente agressivo (Roblox recria o HubBar em tempo de execução)
-task.spawn(function()
-    while true do
-        task.wait(0.2)
-        if not HubBar or not HubBar.Parent then
-            HubBar = findDescendant(CoreGui, "HubBar")
-        end
-        if HubBar then
-            adjustHubBarWidth()
-        end
-    end
+local function setupHubBar()
+	HubBar = findDescendant(CoreGui, "HubBar")
+	
+	if HubBar and HubBar:IsA("ImageLabel") then
+		print("[SISTEMA] HubBar encontrado!")
+		adjustHubBarWidth()
+		
+		if HubBarContainer then
+			HubBarContainer.ChildAdded:Connect(function(child)
+				if child:IsA("TextButton") then
+					task.wait(0.1)
+					adjustHubBarWidth()
+				end
+			end)
+			
+			HubBarContainer.ChildRemoved:Connect(function(child)
+				if child:IsA("TextButton") then
+					task.wait(0.1)
+					adjustHubBarWidth()
+				end
+			end)
+		end
+		
+		task.spawn(function()
+			while true do
+				task.wait(2)
+				if HubBar and HubBar.Parent then
+					adjustHubBarWidth()
+				else
+					HubBar = nil
+					setupHubBar()
+					break
+				end
+			end
+		end)
+	else
+		task.wait(1)
+		setupHubBar()
+	end
+end
+
+setupHubBar()
+
+CoreGui.DescendantAdded:Connect(function(descendant)
+	if descendant.Name == "HubBar" and descendant:IsA("ImageLabel") and not HubBar then
+		print("[SISTEMA] HubBar detectado!")
+		setupHubBar()
+	end
 end)
 
--- Captura instantânea de recriação via CoreGui
-CoreGui.DescendantAdded:Connect(function(v)
-    if v.Name == "HubBar" and v:IsA("ImageLabel") then
-        HubBar = v
-        adjustHubBarWidth()
-    end
-end)
-
--- Conexões de contagem quando botões entram/saem
-if HubBarContainer then
-    HubBarContainer.ChildAdded:Connect(function(child)
-        if child:IsA("TextButton") then task.wait(0.1) adjustHubBarWidth() end
-    end)
-    HubBarContainer.ChildRemoved:Connect(function(child)
-        if child:IsA("TextButton") then task.wait(0.1) adjustHubBarWidth() end
-    end)
-end
-
--- ============================================================
--- SISTEMA 2: GERENCIAMENTO DE ABAS E ANTI-MULTI SELEÇÃO GLOBAL
--- ============================================================
-local CurrentSelectedTab = nil
-
-local function deselectButton(button)
-    if not button then return end
-    local tabSelection = button:FindFirstChild("TabSelection")
-    local tabLabel = button:FindFirstChild("TabLabel")
-    if tabSelection then tabSelection.Visible = false end
-    if tabLabel then
-        local icon = tabLabel:FindFirstChild("Icon")
-        local title = tabLabel:FindFirstChild("Title")
-        if icon then icon.TextTransparency = 0.5 end
-        if title then title.TextTransparency = 0.5 end
-    end
-end
-
-local function selectButton(button)
-    if not button then return end
-    local tabSelection = button:FindFirstChild("TabSelection")
-    local tabLabel = button:FindFirstChild("TabLabel")
-    if tabSelection then tabSelection.Visible = true end
-    if tabLabel then
-        local icon = tabLabel:FindFirstChild("Icon")
-        local title = tabLabel:FindFirstChild("Title")
-        if icon then icon.TextTransparency = 0 end
-        if title then title.TextTransparency = 0 end
-    end
-end
-
-local function hideAllPages()
-    if not PageViewInnerFrame then return end
-    for _, child in ipairs(PageViewInnerFrame:GetChildren()) do
-        if child:IsA("Frame") then child.Visible = false end
-    end
-end
-
-local function selectTab(tab)
-    if CurrentSelectedTab and CurrentSelectedTab ~= tab then
-        deselectButton(CurrentSelectedTab)
-    end
-
-    CurrentSelectedTab = tab
-    selectButton(tab)
-    hideAllPages()
-
-    if PageViewInnerFrame then
-        local page = PageViewInnerFrame:FindFirstChild(tab.Name)
-        if page then
-            page.Visible = true
-        end
-    end
-end
-
--- Escuta global de cliques (Varre botões da Library, Roblox e outros scripts)
-if HubBarContainer then
-    for _, child in ipairs(HubBarContainer:GetChildren()) do
-        if child:IsA("TextButton") then
-            child.MouseButton1Click:Connect(function()
-                selectTab(child)
-            end)
-        end
-    end
-
-    HubBarContainer.ChildAdded:Connect(function(child)
-        if child:IsA("TextButton") then
-            child.MouseButton1Click:Connect(function()
-                selectTab(child)
-            end)
-        end
-    end)
-end
-
--- ============================================================
--- SISTEMA 3: SINAL DE FECHAMENTO (SettingsShield)
--- ============================================================
-local function monitorSettingsShield()
-    local SettingsShield = findDescendant(CoreGui, "SettingsShield")
-    if SettingsShield and SettingsShield:IsA("ImageButton") then
-        if SettingsShield.Visible == false then
-            if CurrentSelectedTab then deselectButton(CurrentSelectedTab) end
-            hideAllPages()
-        end
-        SettingsShield:GetPropertyChangedSignal("Visible"):Connect(function()
-            if SettingsShield.Visible == false then
-                if CurrentSelectedTab then deselectButton(CurrentSelectedTab) end
-                hideAllPages()
-            end
-        end)
-    else
-        task.wait(1)
-        monitorSettingsShield()
-    end
-end
-task.spawn(monitorSettingsShield)
-
--- ============================================================
--- METODOS PRINCIPAIS: CRIAÇÃO DE ABAS
--- ============================================================
-function Library:CreateTab(tabName, iconName)
-    iconName = iconName or "gear"
-    
-    -- Criação do botão no HubBar com tamanhos ajustados para AutomaticSize.X
-    local TabButton = Instance.new("TextButton", HubBarContainer)
-    TabButton.Selectable = false
-    TabButton.ZIndex = 3
-    TabButton.BackgroundTransparency = 1
-    TabButton.AutomaticSize = Enum.AutomaticSize.X
-    TabButton.Size = UDim2.new(0, 3, 1, -2) -- Customização aplicada de tamanho base
-    TabButton.Text = ""
-    TabButton.Name = tabName
-
-    local TabSelection = Instance.new("ImageLabel", TabButton)
-    TabSelection.ZIndex = 3
-    TabSelection.BorderSizePixel = 0
-    TabSelection.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    TabSelection.Size = UDim2.new(1, -2, 0, 2)
-    TabSelection.Visible = false -- Inicia oculta
-    TabSelection.Name = "TabSelection"
-    TabSelection.Position = UDim2.new(0, 3, 1, -2)
-
-    local TabLabel = Instance.new("Frame", TabButton)
-    TabLabel.ZIndex = 3
-    TabLabel.BorderSizePixel = 0
-    TabLabel.Size = UDim2.new(1, 0, 1, 0)
-    TabLabel.Name = "TabLabel"
-    TabLabel.BackgroundTransparency = 1
-
-    local Layout = Instance.new("UIListLayout", TabLabel)
-    Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    Layout.Padding = UDim.new(0, 10)
-    Layout.VerticalAlignment = Enum.VerticalAlignment.Center
-    Layout.SortOrder = Enum.SortOrder.LayoutOrder
-    Layout.FillDirection = Enum.FillDirection.Horizontal
-
-    local Icon = Instance.new("TextLabel", TabLabel)
-    Icon.TextWrapped = true
-    Icon.ZIndex = 3
-    Icon.TextTransparency = 0.5 -- Transparência inicial desmarcada
-    Icon.TextScaled = true
-    Icon.FontFace = Font.new("rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-    Icon.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Icon.BackgroundTransparency = 1
-    Icon.Size = UDim2.new(0, 24, 0, 24)
-    Icon.Text = iconName
-    Icon.Name = "Icon"
-
-    Instance.new("UIAspectRatioConstraint", Icon)
-
-    local Title = Instance.new("TextLabel", TabLabel)
-    Title.ZIndex = 3
-    Title.TextSize = 19
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.TextTransparency = 0.5 -- Transparência inicial desmarcada
-    Title.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.BackgroundTransparency = 1
-    Title.Text = tabName
-    Title.AutomaticSize = Enum.AutomaticSize.XY
-    Title.Name = "Title"
-
-    -- Criação da página oculta por padrão no PageViewInnerFrame
-    local PageFrame = Instance.new("Frame", PageViewInnerFrame)
-    PageFrame.ZIndex = 5
-    PageFrame.AutomaticSize = Enum.AutomaticSize.Y
-    PageFrame.Size = UDim2.new(1, 0, 0, 1174)
-    PageFrame.Name = tabName
-    PageFrame.BackgroundTransparency = 1
-    PageFrame.SelectionGroup = true
-    PageFrame.Visible = false -- Nasce oculta
-
-    local UIPadding = Instance.new("UIPadding", PageFrame)
-    UIPadding.PaddingRight = UDim.new(0, 11)
-    UIPadding.PaddingLeft = UDim.new(0, 12)
-
-    local RowListLayout = Instance.new("UIListLayout", PageFrame)
-    RowListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    RowListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    RowListLayout.Name = "RowListLayout"
-
-    -- ============================================================
-    -- ELEMENTOS INTERNOS DA ABA (MÉTODOS)
-    -- ============================================================
-    local TabMethods = {}
-
-    -- Método: Criar Alternador (Toggle)
-    function TabMethods:AddToggle(toggleName, default, callback)
-        callback = callback or function() end
-        local state = default or false
-
-        local ToggleFrame = Instance.new("ImageButton", PageFrame)
-        ToggleFrame.BorderSizePixel = 0
-        ToggleFrame.SliceCenter = Rect.new(2, 2, 18, 18)
-        ToggleFrame.ScaleType = Enum.ScaleType.Slice
-        ToggleFrame.AutoButtonColor = false
-        ToggleFrame.ImageTransparency = 1
-        ToggleFrame.BackgroundTransparency = 1
-        ToggleFrame.BackgroundColor3 = Color3.fromRGB(36, 38, 40)
-        ToggleFrame.Selectable = false
-        ToggleFrame.ZIndex = 2
-        ToggleFrame.Image = "rbxasset://textures/ui/VR/rectBackgroundWhite.png"
-        ToggleFrame.Size = UDim2.new(1, 0, 0, 50)
-        ToggleFrame.Name = toggleName .. "Frame"
-
-        Instance.new("UICorner", ToggleFrame)
-
-        local T_Title = Instance.new("TextLabel", ToggleFrame)
-        T_Title.TextWrapped = true
-        T_Title.ZIndex = 2
-        T_Title.TextSize = 17
-        T_Title.TextXAlignment = Enum.TextXAlignment.Left
-        T_Title.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
-        T_Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-        T_Title.BackgroundTransparency = 1
-        T_Title.Size = UDim2.new(0.4, -20, 1, 0)
-        T_Title.Text = toggleName
-        T_Title.AutomaticSize = Enum.AutomaticSize.Y
-        T_Title.Name = "Title"
-        T_Title.Position = UDim2.new(0, 10, 0, 0)
-
-        local T_Padding = Instance.new("UIPadding", T_Title)
-        T_Padding.PaddingTop = UDim.new(0, 10)
-        T_Padding.PaddingBottom = UDim.new(0, 10)
-
-        local Selector = Instance.new("ImageButton", ToggleFrame)
-        Selector.AutoButtonColor = false
-        Selector.BackgroundTransparency = 1
-        Selector.ZIndex = 2
-        Selector.AnchorPoint = Vector2.new(1, 0.5)
-        Selector.Size = UDim2.new(0.6, 0, 0, 50)
-        Selector.Name = "Selector"
-        Selector.Position = UDim2.new(1, 0, 0.5, 0)
-
-        local LeftButton = Instance.new("ImageButton", Selector)
-        LeftButton.BackgroundTransparency = 1
-        LeftButton.Selectable = false
-        LeftButton.ZIndex = 3
-        LeftButton.AnchorPoint = Vector2.new(0, 0.5)
-        LeftButton.Size = UDim2.new(0, 32, 0, 50)
-        LeftButton.Position = UDim2.new(0, 0, 0.5, 0)
-
-        local LeftIcon = Instance.new("ImageLabel", LeftButton)
-        LeftIcon.ZIndex = 4
-        LeftIcon.ImageColor3 = Color3.fromRGB(205, 205, 205)
-        LeftIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-        LeftIcon.Image = "rbxasset://textures/ui/Settings/Slider/Left.png"
-        LeftIcon.Size = UDim2.new(0, 18, 0, 30)
-        LeftIcon.BackgroundTransparency = 1
-        LeftIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
-
-        local RightButton = Instance.new("ImageButton", Selector)
-        RightButton.BackgroundTransparency = 1
-        RightButton.Selectable = false
-        RightButton.ZIndex = 3
-        RightButton.AnchorPoint = Vector2.new(1, 0.5)
-        RightButton.Size = UDim2.new(0, 32, 0, 50)
-        RightButton.Position = UDim2.new(1, 0, 0.5, 0)
-
-        local RightIcon = Instance.new("ImageLabel", RightButton)
-        RightIcon.ZIndex = 4
-        RightIcon.ImageColor3 = Color3.fromRGB(205, 205, 205)
-        RightIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-        RightIcon.Image = "rbxasset://textures/ui/Settings/Slider/Right.png"
-        RightIcon.Size = UDim2.new(0, 18, 0, 30)
-        RightIcon.BackgroundTransparency = 1
-        RightIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
-
-        local AutoSelectButton = Instance.new("ImageButton", Selector)
-        AutoSelectButton.BackgroundTransparency = 1
-        AutoSelectButton.Selectable = false
-        AutoSelectButton.ZIndex = 2
-        AutoSelectButton.Size = UDim2.new(1, -64, 1, 0)
-        AutoSelectButton.Position = UDim2.new(0, 32, 0, 0)
-
-        local Selection1 = Instance.new("TextLabel", Selector)
-        Selection1.TextWrapped = true
-        Selection1.ZIndex = 2
-        Selection1.BorderSizePixel = 0
-        Selection1.TextSize = 17
-        Selection1.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-        Selection1.TextColor3 = Color3.fromRGB(255, 255, 255)
-        Selection1.BackgroundTransparency = 1
-        Selection1.Size = UDim2.new(1, -64, 1, 0)
-        Selection1.Text = "Off"
-        Selection1.Position = UDim2.new(0, 32, 0, 0)
-
-        local Selection2 = Instance.new("TextLabel", Selector)
-        Selection2.TextWrapped = true
-        Selection2.ZIndex = 2
-        Selection2.BorderSizePixel = 0
-        Selection2.TextSize = 17
-        Selection2.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-        Selection2.TextColor3 = Color3.fromRGB(255, 255, 255)
-        Selection2.BackgroundTransparency = 1
-        Selection2.Size = UDim2.new(1, -64, 1, 0)
-        Selection2.Text = "On"
-        Selection2.Visible = false
-        Selection2.Position = UDim2.new(0, 32, 0, 0)
-
-        local function updateToggle()
-            if state then
-                Selection1.Visible = false
-                Selection2.Visible = true
-            else
-                Selection1.Visible = true
-                Selection2.Visible = false
-            end
-            pcall(callback, state)
-        end
-
-        RightButton.MouseButton1Click:Connect(function()
-            if not state then state = true updateToggle() end
-        end)
-
-        LeftButton.MouseButton1Click:Connect(function()
-            if state then state = false updateToggle() end
-        end)
-
-        AutoSelectButton.MouseButton1Click:Connect(function()
-            state = not state
-            updateToggle()
-        end)
-
-        updateToggle()
-    end
-
-    -- Método: Criar Controle Deslizante (Slider de 10 Passos)
-    function TabMethods:AddSlider(sliderName, defaultStep, callback)
-        callback = callback or function() end
-        local currentStep = math.clamp(defaultStep or 0, 0, 10)
-
-        local SliderFrame = Instance.new("ImageButton", PageFrame)
-        SliderFrame.BorderSizePixel = 0
-        SliderFrame.SliceCenter = Rect.new(2, 2, 18, 18)
-        SliderFrame.ScaleType = Enum.ScaleType.Slice
-        SliderFrame.AutoButtonColor = false
-        SliderFrame.ImageTransparency = 1
-        SliderFrame.BackgroundTransparency = 1
-        SliderFrame.BackgroundColor3 = Color3.fromRGB(36, 38, 40)
-        SliderFrame.Selectable = false
-        SliderFrame.ZIndex = 2
-        SliderFrame.Image = "rbxasset://textures/ui/VR/rectBackgroundWhite.png"
-        SliderFrame.Size = UDim2.new(1, 0, 0, 50)
-        SliderFrame.Name = sliderName .. "Frame"
-
-        Instance.new("UICorner", SliderFrame)
-
-        local SliderInner = Instance.new("ImageButton", SliderFrame)
-        SliderInner.AutoButtonColor = false
-        SliderInner.BackgroundTransparency = 1
-        SliderInner.Selectable = false
-        SliderInner.ZIndex = 2
-        SliderInner.AnchorPoint = Vector2.new(1, 0.5)
-        SliderInner.Size = UDim2.new(0.6, 0, 0, 50)
-        SliderInner.Position = UDim2.new(1, 0, 0.5, 0)
-
-        local S_LeftButton = Instance.new("ImageButton", SliderInner)
-        S_LeftButton.BackgroundTransparency = 1
-        S_LeftButton.Selectable = false
-        S_LeftButton.AnchorPoint = Vector2.new(0, 0.5)
-        S_LeftButton.Size = UDim2.new(0, 32, 0, 50)
-        S_LeftButton.Position = UDim2.new(0, 0, 0.5, 0)
-
-        local S_LeftIcon = Instance.new("ImageLabel", S_LeftButton)
-        S_LeftIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-        S_LeftIcon.Image = "rbxasset://textures/ui/Settings/Slider/Less.png"
-        S_LeftIcon.Size = UDim2.new(0, 30, 0, 30)
-        S_LeftIcon.BackgroundTransparency = 1
-        S_LeftIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
-
-        local S_RightButton = Instance.new("ImageButton", SliderInner)
-        S_RightButton.BackgroundTransparency = 1
-        S_RightButton.Selectable = false
-        S_RightButton.AnchorPoint = Vector2.new(1, 0.5)
-        S_RightButton.Size = UDim2.new(0, 32, 0, 50)
-        S_RightButton.Position = UDim2.new(1, 0, 0.5, 0)
-
-        local S_RightIcon = Instance.new("ImageLabel", S_RightButton)
-        S_RightIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-        S_RightIcon.Image = "rbxasset://textures/ui/Settings/Slider/More.png"
-        S_RightIcon.Size = UDim2.new(0, 30, 0, 30)
-        S_RightIcon.BackgroundTransparency = 1
-        S_RightIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
-
-        local StepsContainer = Instance.new("Frame", SliderInner)
-        StepsContainer.AnchorPoint = Vector2.new(0.5, 0.5)
-        StepsContainer.Size = UDim2.new(1, -100, 1, 0)
-        StepsContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
-        StepsContainer.BackgroundTransparency = 1
-
-        local S_Title = Instance.new("TextLabel", SliderFrame)
-        S_Title.TextWrapped = true
-        S_Title.TextSize = 17
-        S_Title.TextXAlignment = Enum.TextXAlignment.Left
-        S_Title.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
-        S_Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-        S_Title.BackgroundTransparency = 1
-        S_Title.Size = UDim2.new(0.4, -20, 1, 0)
-        S_Title.Text = sliderName
-        S_Title.AutomaticSize = Enum.AutomaticSize.Y
-        S_Title.Position = UDim2.new(0, 10, 0, 0)
-
-        local S_Padding = Instance.new("UIPadding", S_Title)
-        S_Padding.PaddingTop = UDim.new(0, 10)
-        S_Padding.PaddingBottom = UDim.new(0, 10)
-
-        local ACTIVE_COLOR = Color3.fromRGB(255, 255, 255)
-        local INACTIVE_COLOR = Color3.fromRGB(57, 59, 61)
-        local steps = {}
-        local fillers = {}
-
-        local stepPositions = {0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9}
-
-        for i = 1, 10 do
-            local step = Instance.new("ImageButton", StepsContainer)
-            step.Active = false
-            step.BorderSizePixel = 0
-            step.AutoButtonColor = false
-            step.ImageTransparency = 0.36
-            step.BackgroundColor3 = INACTIVE_COLOR
-            step.Selectable = false
-            step.AnchorPoint = Vector2.new(0, 0.5)
-            step.Size = UDim2.new(0.1, -4, 0, 24)
-            step.Name = "Step" .. i
-            step.Position = UDim2.new(stepPositions[i], 2, 0.5, 0)
-
-            if i == 1 or i == 10 then
-                Instance.new("UICorner", step)
-            end
-
-            if i == 1 then
-                local filler = Instance.new("Frame", step)
-                filler.BorderSizePixel = 0
-                filler.BackgroundColor3 = INACTIVE_COLOR
-                filler.Size = UDim2.new(0.25, 0, 1, 0)
-                filler.Position = UDim2.new(0.75, 0, 0, 0)
-                filler.Name = "Filler"
-                fillers[i] = filler
-            elseif i == 10 then
-                local filler = Instance.new("Frame", step)
-                filler.BorderSizePixel = 0
-                filler.BackgroundColor3 = INACTIVE_COLOR
-                filler.Size = UDim2.new(0.25, 0, 1, 0)
-                filler.Name = "Filler"
-                fillers[i] = filler
-            end
-
-            table.insert(steps, step)
-        end
-
-        local function updateSliderVisual()
-            for i = 1, #steps do
-                if i <= currentStep then
-                    steps[i].BackgroundColor3 = ACTIVE_COLOR
-                    if fillers[i] then fillers[i].BackgroundColor3 = ACTIVE_COLOR end
-                else
-                    steps[i].BackgroundColor3 = INACTIVE_COLOR
-                    if fillers[i] then fillers[i].BackgroundColor3 = INACTIVE_COLOR end
-                end
-            end
-            
-            S_LeftButton.Visible = (currentStep > 0)
-            S_RightButton.Visible = (currentStep < 10)
-
-            pcall(callback, currentStep)
-        end
-
-        S_RightButton.MouseButton1Click:Connect(function()
-            if currentStep < 10 then
-                currentStep = currentStep + 1
-                updateSliderVisual()
-            end
-        end)
-
-        S_LeftButton.MouseButton1Click:Connect(function()
-            if currentStep > 0 then
-                currentStep = currentStep - 1
-                updateSliderVisual()
-            end
-        end)
-
-        updateSliderVisual()
-    end
-
-    return TabMethods
-end
-
-return Library
+return LMG2L["1"], require;
