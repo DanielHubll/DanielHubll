@@ -1,19 +1,19 @@
 --[[
-    d888b  db    db d888888b      .d888b.      db      db    db  .d8b.  
-   88' Y8b 88    88   88'        VP  8D      88      88    88 d8' `8b 
-   88      88    88    88            odD'      88      88    88 88ooo88 
-   88  ooo 88    88    88          .88'        88      88    88 88~~~88 
-   88. ~8~ 88b  d88   .88.        j88.         88booo. 88b  d88 88   88    @uniquadev
-    Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  UI LIBRARY
+ d888b  db    db d888888b      .d888b.      db      db    db  .d8b.  
+88' Y8b 88    88   `88'        VP  `8D      88      88    88 d8' `8b 
+88      88    88    88            odD'      88      88    88 88ooo88 
+88  ooo 88    88    88          .88'        88      88    88 88~~~88 
+88. ~8~ 88b  d88   .88.        j88.         88booo. 88b  d88 88   88    @uniquadev
+ Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  UI LIBRARY v2
 --]]
 
 local Library = {}
 
--- Serviços
+-- Serviços Principais
 local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
 
--- Função auxiliar para encontrar descendentes
+-- Função auxiliar para varredura profunda de elementos
 local function findDescendant(parent, name)
     for _, v in ipairs(parent:GetDescendants()) do
         if v.Name == name then
@@ -23,12 +23,12 @@ local function findDescendant(parent, name)
     return nil
 end
 
--- Buscar contêineres principais do CoreGui
+-- Contêineres nativos do Roblox do menu CoreGui
 local HubBarContainer = findDescendant(CoreGui, "HubBarContainer")
 local PageViewInnerFrame = findDescendant(CoreGui, "PageViewInnerFrame")
 
 -- ============================================================
--- SISTEMA BASE: REDIMENSIONAMENTO DO HUBBAR
+-- SISTEMA 1: REDIMENSIONAMENTO DINÂMICO DO HUBBAR
 -- ============================================================
 local HubBar = nil
 local BASE_WIDTH = 800
@@ -49,10 +49,11 @@ end
 local function adjustHubBarWidth()
     local buttonCount = countButtons()
     if HubBar and HubBar:IsA("GuiObject") then
+        -- Se passar de 5 botões na barra, começa a reduzir proporcionalmente
         if buttonCount > 5 then
             local extraButtons = buttonCount - 5
             local newWidth = BASE_WIDTH - (WIDTH_PER_BUTTON * extraButtons)
-            if newWidth < 300 then newWidth = 300 end
+            if newWidth < 300 then newWidth = 300 end -- Trava de segurança mínima
             HubBar.Size = UDim2.new(0, newWidth, HubBar.Size.Y.Scale, HubBar.Size.Y.Offset)
         else
             HubBar.Size = UDim2.new(0, BASE_WIDTH, HubBar.Size.Y.Scale, HubBar.Size.Y.Offset)
@@ -60,7 +61,7 @@ local function adjustHubBarWidth()
     end
 end
 
--- Loop persistente para caso o Roblox recrie o HubBar
+-- Loop persistente agressivo (Roblox recria o HubBar em tempo de execução)
 task.spawn(function()
     while true do
         task.wait(0.2)
@@ -73,7 +74,7 @@ task.spawn(function()
     end
 end)
 
--- Monitor extra para recriação rápida
+-- Captura instantânea de recriação via CoreGui
 CoreGui.DescendantAdded:Connect(function(v)
     if v.Name == "HubBar" and v:IsA("ImageLabel") then
         HubBar = v
@@ -81,6 +82,7 @@ CoreGui.DescendantAdded:Connect(function(v)
     end
 end)
 
+-- Conexões de contagem quando botões entram/saem
 if HubBarContainer then
     HubBarContainer.ChildAdded:Connect(function(child)
         if child:IsA("TextButton") then task.wait(0.1) adjustHubBarWidth() end
@@ -91,7 +93,7 @@ if HubBarContainer then
 end
 
 -- ============================================================
--- SISTEMA BASE: ANTI-MULTI SELEÇÃO E GERENCIAMENTO DE ABAS
+-- SISTEMA 2: GERENCIAMENTO DE ABAS E ANTI-MULTI SELEÇÃO GLOBAL
 -- ============================================================
 local CurrentSelectedTab = nil
 
@@ -145,7 +147,7 @@ local function selectTab(tab)
     end
 end
 
--- Captura botões já existentes ou adicionados por outros scripts/Roblox
+-- Escuta global de cliques (Varre botões da Library, Roblox e outros scripts)
 if HubBarContainer then
     for _, child in ipairs(HubBarContainer:GetChildren()) do
         if child:IsA("TextButton") then
@@ -165,7 +167,7 @@ if HubBarContainer then
 end
 
 -- ============================================================
--- SISTEMA BASE: MONITORAMENTO DO SETTINGSSHIELD
+-- SISTEMA 3: SINAL DE FECHAMENTO (SettingsShield)
 -- ============================================================
 local function monitorSettingsShield()
     local SettingsShield = findDescendant(CoreGui, "SettingsShield")
@@ -188,18 +190,18 @@ end
 task.spawn(monitorSettingsShield)
 
 -- ============================================================
--- CRIAÇÃO DA JANELA / ABAS
+-- METODOS PRINCIPAIS: CRIAÇÃO DE ABAS
 -- ============================================================
 function Library:CreateTab(tabName, iconName)
     iconName = iconName or "gear"
     
-    -- Criar botão na barra principal (com AutomaticSize e Offset fixo)
+    -- Criação do botão no HubBar com tamanhos ajustados para AutomaticSize.X
     local TabButton = Instance.new("TextButton", HubBarContainer)
     TabButton.Selectable = false
     TabButton.ZIndex = 3
     TabButton.BackgroundTransparency = 1
     TabButton.AutomaticSize = Enum.AutomaticSize.X
-    TabButton.Size = UDim2.fromOffset(1, 0)
+    TabButton.Size = UDim2.new(0, 3, 1, -2) -- Customização aplicada de tamanho base
     TabButton.Text = ""
     TabButton.Name = tabName
 
@@ -208,9 +210,9 @@ function Library:CreateTab(tabName, iconName)
     TabSelection.BorderSizePixel = 0
     TabSelection.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     TabSelection.Size = UDim2.new(1, -2, 0, 2)
-    TabSelection.Visible = false
+    TabSelection.Visible = false -- Inicia oculta
     TabSelection.Name = "TabSelection"
-    TabSelection.Position = UDim2.new(0, 3, 1, -2)
+    TabSelection.Position = UDim2.new(0, 0, 1, 0)
 
     local TabLabel = Instance.new("Frame", TabButton)
     TabLabel.ZIndex = 3
@@ -229,7 +231,7 @@ function Library:CreateTab(tabName, iconName)
     local Icon = Instance.new("TextLabel", TabLabel)
     Icon.TextWrapped = true
     Icon.ZIndex = 3
-    Icon.TextTransparency = 0.5
+    Icon.TextTransparency = 0.5 -- Transparência inicial desmarcada
     Icon.TextScaled = true
     Icon.FontFace = Font.new("rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
     Icon.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -244,7 +246,7 @@ function Library:CreateTab(tabName, iconName)
     Title.ZIndex = 3
     Title.TextSize = 19
     Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.TextTransparency = 0.5
+    Title.TextTransparency = 0.5 -- Transparência inicial desmarcada
     Title.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
     Title.BackgroundTransparency = 1
@@ -252,10 +254,7 @@ function Library:CreateTab(tabName, iconName)
     Title.AutomaticSize = Enum.AutomaticSize.XY
     Title.Name = "Title"
 
-    -- Nota: Não precisamos conectar o MouseButton1Click aqui novamente, 
-    -- pois o HubBarContainer.ChildAdded cuidará de passar essa nova aba para o selectTab.
-
-    -- Criar página correspondente
+    -- Criação da página oculta por padrão no PageViewInnerFrame
     local PageFrame = Instance.new("Frame", PageViewInnerFrame)
     PageFrame.ZIndex = 5
     PageFrame.AutomaticSize = Enum.AutomaticSize.Y
@@ -263,7 +262,7 @@ function Library:CreateTab(tabName, iconName)
     PageFrame.Name = tabName
     PageFrame.BackgroundTransparency = 1
     PageFrame.SelectionGroup = true
-    PageFrame.Visible = false
+    PageFrame.Visible = false -- Nasce oculta
 
     local UIPadding = Instance.new("UIPadding", PageFrame)
     UIPadding.PaddingRight = UDim.new(0, 11)
@@ -275,10 +274,11 @@ function Library:CreateTab(tabName, iconName)
     RowListLayout.Name = "RowListLayout"
 
     -- ============================================================
-    -- MÉTODOS DA ABA (Toggle & Slider)
+    -- ELEMENTOS INTERNOS DA ABA (MÉTODOS)
     -- ============================================================
     local TabMethods = {}
 
+    -- Método: Criar Alternador (Toggle)
     function TabMethods:AddToggle(toggleName, default, callback)
         callback = callback or function() end
         local state = default or false
@@ -419,9 +419,10 @@ function Library:CreateTab(tabName, iconName)
         updateToggle()
     end
 
+    -- Método: Criar Controle Deslizante (Slider de 10 Passos)
     function TabMethods:AddSlider(sliderName, defaultStep, callback)
         callback = callback or function() end
-        local currentStep = math.clamp(defaultStep or 1, 0, 10)
+        local currentStep = math.clamp(defaultStep or 0, 0, 10)
 
         local SliderFrame = Instance.new("ImageButton", PageFrame)
         SliderFrame.BorderSizePixel = 0
