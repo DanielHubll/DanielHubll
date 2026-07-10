@@ -1,1110 +1,487 @@
--- ═══════════════════════════════════════════════════════════════
---  VRCoreLib - UI Library para Roblox VR CoreGui
---  Uso: local VRCoreLib = loadstring(script)()
---  Autor: @uniquadev (adaptado)
--- ═══════════════════════════════════════════════════════════════
+--[=[
+d888b  db    db d888888b      .d888b.      db      db    db  .d8b.
+88' Y8b 88    88   88'        VP  8D      88      88    88 d8' `8b
+88      88    88    88            odD'      88      88    88 88ooo88
+88  ooo 88    88    88          .88'        88      88    88 88~~~88
+88. ~8~ 88b  d88   .88.        j88.         88booo. 88b  d88 88   88    @uniquadev
+Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  CONVERTER
 
-local VRCoreLib = {}
-VRCoreLib.__index = VRCoreLib
+designed using localmaze gui creator
+]=]
+
+local Library = {}
 
 -- Serviços
 local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
 
--- Estado interno
-local Library = {
-    Tabs = {},
-    HubBarContainer = nil,
-    PageViewInnerFrame = nil,
-    HubBar = nil,
-    SettingsShield = nil,
-    Initialized = false,
-    TabCount = 0,
-    BASE_WIDTH = 800,
-    WIDTH_PER_BUTTON = 100,
-}
+-- Variáveis do sistema
+local HubBarContainer = nil
+local PageViewInnerFrame = nil
+local HubBar = nil
+local SettingsShield = nil
+local tabs = {}
+local activeTab = nil
 
--- ═══════════════════════════════════════════════════════════════
---  UTILIDADES
--- ═══════════════════════════════════════════════════════════════
+-- Configurações
+local BASE_WIDTH = 800
+local WIDTH_PER_BUTTON = 100
+
+-- ============================================================
+-- FUNÇÕES UTILITÁRIAS
+-- ============================================================
 
 local function findDescendant(parent, name)
-    for _, v in ipairs(parent:GetDescendants()) do
-        if v.Name == name then
-            return v
-        end
-    end
-    return nil
+	for _, v in ipairs(parent:GetDescendants()) do
+		if v.Name == name then
+			return v
+		end
+	end
+	return nil
 end
 
-local function waitForDescendant(parent, name, timeout)
-    timeout = timeout or 10
-    local found = findDescendant(parent, name)
-    if found then return found end
-
-    local startTime = tick()
-    while tick() - startTime < timeout do
-        task.wait(0.5)
-        found = findDescendant(parent, name)
-        if found then return found end
-    end
-    return nil
+local function waitForElement(parent, name, timeout)
+	timeout = timeout or 10
+	local startTime = tick()
+	
+	while tick() - startTime < timeout do
+		local element = findDescendant(parent, name)
+		if element then
+			return element
+		end
+		task.wait(0.1)
+	end
+	
+	return nil
 end
 
--- ═══════════════════════════════════════════════════════════════
---  INICIALIZAÇÃO DA LIB
--- ═══════════════════════════════════════════════════════════════
+-- ============================================================
+-- SISTEMA DE INICIALIZAÇÃO
+-- ============================================================
 
-function VRCoreLib:Init()
-    if Library.Initialized then
-        print("[VRCoreLib] Já inicializado!")
-        return self
-    end
-
-    print("[VRCoreLib] Inicializando...")
-
-    -- Buscar elementos do CoreGui
-    Library.HubBarContainer = waitForDescendant(CoreGui, "HubBarContainer", 15)
-    Library.PageViewInnerFrame = waitForDescendant(CoreGui, "PageViewInnerFrame", 15)
-
-    if not Library.HubBarContainer then
-        warn("[VRCoreLib] ERRO: HubBarContainer não encontrado no CoreGui!")
-        return nil
-    end
-
-    if not Library.PageViewInnerFrame then
-        warn("[VRCoreLib] ERRO: PageViewInnerFrame não encontrado no CoreGui!")
-        return nil
-    end
-
-    Library.Initialized = true
-    print("[VRCoreLib] Inicializado com sucesso!")
-
-    -- Configurar sistema de seleção de abas
-    self:_SetupTabSystem()
-    -- Configurar monitoramento do SettingsShield
-    self:_SetupSettingsShieldMonitor()
-    -- Configurar ajuste automático do HubBar
-    self:_SetupHubBarAdjustment()
-
-    return self
+local function initializeSystem()
+	-- Aguardar elementos principais
+	HubBarContainer = waitForElement(CoreGui, "HubBarContainer", 15)
+	PageViewInnerFrame = waitForElement(CoreGui, "PageViewInnerFrame", 15)
+	
+	if not HubBarContainer or not PageViewInnerFrame then
+		warn("[Library] Não foi possível encontrar os elementos principais do CoreGui")
+		return false
+	end
+	
+	print("[Library] Sistema inicializado com sucesso!")
+	return true
 end
 
--- ═══════════════════════════════════════════════════════════════
---  SISTEMA DE ABAS
--- ═══════════════════════════════════════════════════════════════
+-- ============================================================
+-- SISTEMA DE HUBBAR
+-- ============================================================
+
+local function countButtons()
+	local count = 0
+	if HubBarContainer then
+		for _, child in ipairs(HubBarContainer:GetChildren()) do
+			if child:IsA("TextButton") then
+				count = count + 1
+			end
+		end
+	end
+	return count
+end
+
+local function adjustHubBarWidth()
+	if not HubBar then
+		HubBar = findDescendant(CoreGui, "HubBar")
+		if not HubBar or not HubBar:IsA("ImageLabel") then
+			return
+		end
+	end
+	
+	local buttonCount = countButtons()
+	
+	if buttonCount > 5 then
+		local extraButtons = buttonCount - 5
+		local newWidth = BASE_WIDTH - (WIDTH_PER_BUTTON * extraButtons)
+		if newWidth < 300 then newWidth = 300 end
+		
+		local currentSize = HubBar.Size
+		HubBar.Size = UDim2.new(0, newWidth, currentSize.Y.Scale, currentSize.Y.Offset)
+	else
+		local currentSize = HubBar.Size
+		HubBar.Size = UDim2.new(0, BASE_WIDTH, currentSize.Y.Scale, currentSize.Y.Offset)
+	end
+end
+
+-- ============================================================
+-- SISTEMA DE SELEÇÃO VISUAL
+-- ============================================================
 
 local function deselectButton(button)
-    local tabSelection = button:FindFirstChild("TabSelection")
-    local tabLabel = button:FindFirstChild("TabLabel")
-
-    if tabSelection then tabSelection.Visible = false end
-
-    if tabLabel then
-        local icon = tabLabel:FindFirstChild("Icon")
-        local title = tabLabel:FindFirstChild("Title")
-        if icon then icon.TextTransparency = 0.5 end
-        if title then title.TextTransparency = 0.5 end
-    end
+	local tabSelection = button:FindFirstChild("TabSelection")
+	local tabLabel = button:FindFirstChild("TabLabel")
+	
+	if tabSelection then
+		tabSelection.Visible = false
+	end
+	
+	if tabLabel then
+		local icon = tabLabel:FindFirstChild("Icon")
+		local title = tabLabel:FindFirstChild("Title")
+		if icon then icon.TextTransparency = 0.5 end
+		if title then title.TextTransparency = 0.5 end
+	end
 end
 
 local function selectButton(button)
-    local tabSelection = button:FindFirstChild("TabSelection")
-    local tabLabel = button:FindFirstChild("TabLabel")
+	local tabSelection = button:FindFirstChild("TabSelection")
+	local tabLabel = button:FindFirstChild("TabLabel")
+	
+	if tabSelection then
+		tabSelection.Visible = true
+	end
+	
+	if tabLabel then
+		local icon = tabLabel:FindFirstChild("Icon")
+		local title = tabLabel:FindFirstChild("Title")
+		if icon then icon.TextTransparency = 0 end
+		if title then title.TextTransparency = 0 end
+	end
+end
 
-    if tabSelection then tabSelection.Visible = true end
+-- ============================================================
+-- SISTEMA DE PÁGINAS
+-- ============================================================
 
-    if tabLabel then
-        local icon = tabLabel:FindFirstChild("Icon")
-        local title = tabLabel:FindFirstChild("Title")
-        if icon then icon.TextTransparency = 0 end
-        if title then title.TextTransparency = 0 end
-    end
+local function getPageForButton(button)
+	if not PageViewInnerFrame then return nil end
+	for _, child in ipairs(PageViewInnerFrame:GetChildren()) do
+		if child:IsA("Frame") and child.Name == button.Name then
+			return child
+		end
+	end
+	return nil
 end
 
 local function hideAllPages()
-    if not Library.PageViewInnerFrame then return end
-    for _, child in ipairs(Library.PageViewInnerFrame:GetChildren()) do
-        if child:IsA("Frame") then
-            child.Visible = false
-        end
-    end
+	if not PageViewInnerFrame then return end
+	for _, child in ipairs(PageViewInnerFrame:GetChildren()) do
+		if child:IsA("Frame") then
+			child.Visible = false
+		end
+	end
 end
 
-local function getPageForButton(button)
-    if not Library.PageViewInnerFrame then return nil end
-    for _, child in ipairs(Library.PageViewInnerFrame:GetChildren()) do
-        if child:IsA("Frame") and child.Name == button.Name then
-            return child
-        end
-    end
-    return nil
+local function showPage(page)
+	if not page then return end
+	hideAllPages()
+	page.Visible = true
 end
 
-function VRCoreLib:_OnTabClicked(clickedButton)
-    -- Controlar visual dos botões
-    for _, child in ipairs(Library.HubBarContainer:GetChildren()) do
-        if child:IsA("TextButton") then
-            if child == clickedButton then
-                selectButton(child)
-            else
-                deselectButton(child)
-            end
-        end
-    end
-
-    -- Controlar visibilidade dos frames
-    hideAllPages()
-
-    local correspondingPage = getPageForButton(clickedButton)
-    if correspondingPage then
-        correspondingPage.Visible = true
-    end
+local function onTabClicked(clickedButton)
+	-- Controlar visual dos botões
+	for _, child in ipairs(HubBarContainer:GetChildren()) do
+		if child:IsA("TextButton") then
+			if child == clickedButton then
+				selectButton(child)
+			else
+				deselectButton(child)
+			end
+		end
+	end
+	
+	-- Controlar visibilidade dos frames
+	local correspondingPage = getPageForButton(clickedButton)
+	if correspondingPage then
+		showPage(correspondingPage)
+		activeTab = clickedButton
+		print("[Library] Aba ativada: " .. clickedButton.Name)
+	else
+		warn("[Library] Página não encontrada para: " .. clickedButton.Name)
+	end
 end
 
-function VRCoreLib:_SetupTabSystem()
-    -- Conectar cliques em botões existentes
-    for _, child in ipairs(Library.HubBarContainer:GetChildren()) do
-        if child:IsA("TextButton") then
-            child.MouseButton1Click:Connect(function()
-                self:_OnTabClicked(child)
-            end)
-        end
-    end
+-- ============================================================
+-- SISTEMA DE SETTINGS SHIELD
+-- ============================================================
 
-    -- Monitorar novos botões
-    Library.HubBarContainer.ChildAdded:Connect(function(newChild)
-        if newChild:IsA("TextButton") then
-            newChild.MouseButton1Click:Connect(function()
-                self:_OnTabClicked(newChild)
-            end)
-        end
-    end)
+local function deselectAllButtons()
+	if HubBarContainer then
+		for _, child in ipairs(HubBarContainer:GetChildren()) do
+			if child:IsA("TextButton") then
+				deselectButton(child)
+			end
+		end
+	end
+	activeTab = nil
 end
 
--- ═══════════════════════════════════════════════════════════════
---  SETTINGS SHIELD MONITOR
--- ═══════════════════════════════════════════════════════════════
-
-function VRCoreLib:_SetupSettingsShieldMonitor()
-    local self = self
-
-    local function deselectAll()
-        if Library.HubBarContainer then
-            for _, child in ipairs(Library.HubBarContainer:GetChildren()) do
-                if child:IsA("TextButton") then
-                    deselectButton(child)
-                end
-            end
-        end
-        hideAllPages()
-    end
-
-    local function monitor()
-        local shield = waitForDescendant(CoreGui, "SettingsShield", 30)
-
-        if shield and shield:IsA("ImageButton") then
-            if shield.Visible == false then
-                deselectAll()
-            end
-
-            local conn
-            conn = shield:GetPropertyChangedSignal("Visible"):Connect(function()
-                if shield.Visible == false then
-                    deselectAll()
-                end
-            end)
-
-            shield.AncestryChanged:Connect(function(_, parent)
-                if not parent then
-                    conn:Disconnect()
-                    task.wait(0.5)
-                    monitor()
-                end
-            end)
-        end
-    end
-
-    task.spawn(monitor)
-
-    CoreGui.DescendantAdded:Connect(function(desc)
-        if desc.Name == "SettingsShield" and desc:IsA("ImageButton") then
-            monitor()
-        end
-    end)
+local function setupSettingsShieldMonitor()
+	SettingsShield = findDescendant(CoreGui, "SettingsShield")
+	
+	if SettingsShield and SettingsShield:IsA("ImageButton") then
+		print("[Library] SettingsShield encontrado! Monitorando...")
+		
+		if SettingsShield.Visible == false then
+			deselectAllButtons()
+			hideAllPages()
+		end
+		
+		local connection
+		connection = SettingsShield:GetPropertyChangedSignal("Visible"):Connect(function()
+			if SettingsShield.Visible == false then
+				print("[Library] SettingsShield fechado - Desselecionando todas as abas")
+				deselectAllButtons()
+				hideAllPages()
+			end
+		end)
+		
+		SettingsShield.AncestryChanged:Connect(function(_, parent)
+			if not parent then
+				print("[Library] SettingsShield removido - Procurando novamente...")
+				connection:Disconnect()
+				task.wait(0.5)
+				setupSettingsShieldMonitor()
+			end
+		end)
+	else
+		print("[Library] SettingsShield não encontrado - Tentando em 1s...")
+		task.wait(1)
+		setupSettingsShieldMonitor()
+	end
 end
 
--- ═══════════════════════════════════════════════════════════════
---  AJUSTE AUTOMÁTICO DO HUBBAR
--- ═══════════════════════════════════════════════════════════════
+-- ============================================================
+-- CRIAÇÃO DE BOTÃO NO HUBBAR
+-- ============================================================
 
-function VRCoreLib:_SetupHubBarAdjustment()
-    local function countButtons()
-        local count = 0
-        if Library.HubBarContainer then
-            for _, child in ipairs(Library.HubBarContainer:GetChildren()) do
-                if child:IsA("TextButton") then
-                    count = count + 1
-                end
-            end
-        end
-        return count
-    end
-
-    local function adjust()
-        local hubBar = findDescendant(CoreGui, "HubBar")
-        if not hubBar then return end
-
-        local buttonCount = countButtons()
-        if buttonCount > 5 then
-            local extra = buttonCount - 5
-            local newWidth = Library.BASE_WIDTH - (Library.WIDTH_PER_BUTTON * extra)
-            if newWidth < 300 then newWidth = 300 end
-            local cs = hubBar.Size
-            hubBar.Size = UDim2.new(0, newWidth, cs.Y.Scale, cs.Y.Offset)
-        else
-            local cs = hubBar.Size
-            hubBar.Size = UDim2.new(0, Library.BASE_WIDTH, cs.Y.Scale, cs.Y.Offset)
-        end
-    end
-
-    -- Ajuste inicial + monitoramento
-    task.spawn(function()
-        local hubBar = waitForDescendant(CoreGui, "HubBar", 15)
-        if hubBar then
-            adjust()
-
-            Library.HubBarContainer.ChildAdded:Connect(function(child)
-                if child:IsA("TextButton") then
-                    task.wait(0.1)
-                    adjust()
-                end
-            end)
-
-            Library.HubBarContainer.ChildRemoved:Connect(function(child)
-                if child:IsA("TextButton") then
-                    task.wait(0.1)
-                    adjust()
-                end
-            end)
-        end
-    end)
+local function createHubBarButton(name, icon)
+	local button = Instance.new("TextButton")
+	button.Name = name
+	button.Selectable = false
+	button.ZIndex = 3
+	button.BackgroundTransparency = 1
+	button.Size = UDim2.new(0.2, 0, 1, 0)
+	button.Text = ""
+	button.Parent = HubBarContainer
+	
+	-- TabSelection (indicador visual de seleção)
+	local tabSelection = Instance.new("ImageLabel")
+	tabSelection.Name = "TabSelection"
+	tabSelection.ZIndex = 3
+	tabSelection.BorderSizePixel = 0
+	tabSelection.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	tabSelection.Size = UDim2.new(1, -2, 0, 2)
+	tabSelection.Visible = false
+	tabSelection.Position = UDim2.new(0, 3, 1, -2)
+	tabSelection.Parent = button
+	
+	-- TabLabel (container do ícone e título)
+	local tabLabel = Instance.new("Frame")
+	tabLabel.Name = "TabLabel"
+	tabLabel.ZIndex = 3
+	tabLabel.BorderSizePixel = 0
+	tabLabel.Size = UDim2.new(1, 0, 1, 0)
+	tabLabel.BackgroundTransparency = 1
+	tabLabel.Parent = button
+	
+	-- Layout
+	local layout = Instance.new("UIListLayout")
+	layout.Name = "Layout"
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.Padding = UDim.new(0, 10)
+	layout.VerticalAlignment = Enum.VerticalAlignment.Center
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.FillDirection = Enum.FillDirection.Horizontal
+	layout.Parent = tabLabel
+	
+	-- Ícone
+	local iconLabel = Instance.new("TextLabel")
+	iconLabel.Name = "Icon"
+	iconLabel.TextWrapped = true
+	iconLabel.ZIndex = 3
+	iconLabel.TextTransparency = 0.5
+	iconLabel.TextScaled = true
+	iconLabel.FontFace = Font.new(
+		"rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json",
+		Enum.FontWeight.Regular,
+		Enum.FontStyle.Normal
+	)
+	iconLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	iconLabel.BackgroundTransparency = 1
+	iconLabel.Size = UDim2.new(0, 24, 0, 24)
+	iconLabel.Text = icon or "gear"
+	iconLabel.Position = UDim2.new(0, 10, 0.5, -18)
+	iconLabel.Parent = tabLabel
+	
+	local aspectRatio = Instance.new("UIAspectRatioConstraint")
+	aspectRatio.Name = "AspectRatioConstraint"
+	aspectRatio.Parent = iconLabel
+	
+	-- Título
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Name = "Title"
+	titleLabel.ZIndex = 3
+	titleLabel.TextSize = 19
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.TextTransparency = 0.5
+	titleLabel.FontFace = Font.new(
+		"rbxasset://fonts/families/BuilderSans.json",
+		Enum.FontWeight.Medium,
+		Enum.FontStyle.Normal
+	)
+	titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Text = name
+	titleLabel.AutomaticSize = Enum.AutomaticSize.XY
+	titleLabel.Position = UDim2.new(1.2, 5, 0, -2)
+	titleLabel.Parent = tabLabel
+	
+	-- Conectar clique
+	button.MouseButton1Click:Connect(function()
+		onTabClicked(button)
+	end)
+	
+	return button
 end
 
--- ═══════════════════════════════════════════════════════════════
---  TAB OBJECT (cada aba)
--- ═══════════════════════════════════════════════════════════════
+-- ============================================================
+-- CRIAÇÃO DE PÁGINA (FRAME)
+-- ============================================================
 
-local TabObject = {}
-TabObject.__index = TabObject
-
-function VRCoreLib:CreateTab(config)
-    -- config = { Name = "Settings", Icon = "gear" }
-    if type(config) == "string" then
-        config = { Name = config, Icon = "gear" }
-    end
-
-    assert(Library.Initialized, "[VRCoreLib] Chame :Init() antes de criar tabs!")
-    assert(config.Name, "[VRCoreLib] Tab precisa de um nome!")
-
-    Library.TabCount = Library.TabCount + 1
-    local tabName = config.Name
-    local tabIcon = config.Icon or "gear"
-    local uniqueName = tabName .. "_VRCoreTab_" .. Library.TabCount
-
-    -- ─── Criar o Botão no HubBar ───
-    local button = Instance.new("TextButton", Library.HubBarContainer)
-    button.Selectable = false
-    button.ZIndex = 3
-    button.BackgroundTransparency = 1
-    button.Size = UDim2.new(0.2, 0, 1, 0)
-    button.Text = ""
-    button.Name = uniqueName
-
-    local tabSelection = Instance.new("ImageLabel", button)
-    tabSelection.ZIndex = 3
-    tabSelection.BorderSizePixel = 0
-    tabSelection.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    tabSelection.Size = UDim2.new(1, -2, 0, 2)
-    tabSelection.Visible = false
-    tabSelection.Name = "TabSelection"
-    tabSelection.Position = UDim2.new(0, 3, 1, -2)
-
-    local tabLabel = Instance.new("Frame", button)
-    tabLabel.ZIndex = 3
-    tabLabel.BorderSizePixel = 0
-    tabLabel.Size = UDim2.new(1, 0, 1, 0)
-    tabLabel.Name = "TabLabel"
-    tabLabel.BackgroundTransparency = 1
-
-    local layout = Instance.new("UIListLayout", tabLabel)
-    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    layout.Padding = UDim.new(0, 10)
-    layout.VerticalAlignment = Enum.VerticalAlignment.Center
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Name = "Layout"
-    layout.FillDirection = Enum.FillDirection.Horizontal
-
-    local iconLabel = Instance.new("TextLabel", tabLabel)
-    iconLabel.TextWrapped = true
-    iconLabel.ZIndex = 3
-    iconLabel.TextTransparency = 0.5
-    iconLabel.TextScaled = true
-    iconLabel.FontFace = Font.new(
-        "rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json",
-        Enum.FontWeight.Regular, Enum.FontStyle.Normal
-    )
-    iconLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    iconLabel.BackgroundTransparency = 1
-    iconLabel.Size = UDim2.new(0, 24, 0, 24)
-    iconLabel.Text = tabIcon
-    iconLabel.Name = "Icon"
-
-    local aspectRatio = Instance.new("UIAspectRatioConstraint", iconLabel)
-
-    local titleLabel = Instance.new("TextLabel", tabLabel)
-    titleLabel.ZIndex = 3
-    titleLabel.TextSize = 19
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.TextTransparency = 0.5
-    titleLabel.FontFace = Font.new(
-        "rbxasset://fonts/families/BuilderSans.json",
-        Enum.FontWeight.Medium, Enum.FontStyle.Normal
-    )
-    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Text = tabName
-    titleLabel.AutomaticSize = Enum.AutomaticSize.XY
-    titleLabel.Name = "Title"
-
-    -- ─── Criar o Frame (Page) no PageViewInnerFrame ───
-    local page = Instance.new("Frame", Library.PageViewInnerFrame)
-    page.ZIndex = 5
-    page.AutomaticSize = Enum.AutomaticSize.Y
-    page.Size = UDim2.new(1, 0, 0, 0)
-    page.Position = UDim2.new(0, 0, 0, 0)
-    page.Name = uniqueName
-    page.BackgroundTransparency = 1
-    page.SelectionGroup = true
-    page.Visible = false
-
-    local pagePadding = Instance.new("UIPadding", page)
-    pagePadding.PaddingRight = UDim.new(0, 11)
-    pagePadding.PaddingLeft = UDim.new(0, 12)
-
-    local pageLayout = Instance.new("UIListLayout", page)
-    pageLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    pageLayout.Padding = UDim.new(0, 6)
-    pageLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    pageLayout.Name = "RowListLayout"
-
-    -- ─── Criar Tab Object ───
-    local tab = setmetatable({}, TabObject)
-    tab.Name = tabName
-    tab.Button = button
-    tab.Page = page
-    tab.ElementCount = 0
-
-    Library.Tabs[uniqueName] = tab
-
-    -- Conectar clique
-    button.MouseButton1Click:Connect(function()
-        VRCoreLib:_OnTabClicked(button)
-    end)
-
-    print(string.format("[VRCoreLib] Tab '%s' criada!", tabName))
-
-    return tab
+local function createPage(name)
+	local page = Instance.new("Frame")
+	page.Name = name
+	page.ZIndex = 5
+	page.AutomaticSize = Enum.AutomaticSize.Y
+	page.Size = UDim2.new(1, 0, 0, 1174)
+	page.Position = UDim2.new(0, 0, 0, 0)
+	page.BackgroundTransparency = 1
+	page.SelectionGroup = true
+	page.Visible = false
+	page.Parent = PageViewInnerFrame
+	
+	-- UIPadding
+	local padding = Instance.new("UIPadding")
+	padding.PaddingRight = UDim.new(0, 11)
+	padding.PaddingLeft = UDim.new(0, 12)
+	padding.Parent = page
+	
+	-- RowListLayout
+	local layout = Instance.new("UIListLayout")
+	layout.Name = "RowListLayout"
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = page
+	
+	return page
 end
 
--- ═══════════════════════════════════════════════════════════════
---  ELEMENTOS DENTRO DA TAB
--- ═══════════════════════════════════════════════════════════════
+-- ============================================================
+-- API PÚBLICA
+-- ============================================================
 
--- Helper para criar o container de um elemento (a "row" com fundo)
-local function createElementContainer(parent, layoutOrder, height)
-    height = height or 50
-
-    local container = Instance.new("ImageButton", parent)
-    container.Active = false
-    container.BorderSizePixel = 0
-    container.SliceCenter = Rect.new(2, 2, 18, 18)
-    container.ScaleType = Enum.ScaleType.Slice
-    container.AutoButtonColor = false
-    container.ImageTransparency = 1
-    container.BackgroundTransparency = 1
-    container.BackgroundColor3 = Color3.fromRGB(36, 38, 40)
-    container.ImageColor3 = Color3.fromRGB(36, 38, 40)
-    container.Selectable = false
-    container.ZIndex = 2
-    container.Image = "rbxasset://textures/ui/VR/rectBackgroundWhite.png"
-    container.Size = UDim2.new(0, 200, 0, height)
-    container.LayoutOrder = layoutOrder
-    container.Name = "Element_" .. layoutOrder
-
-    local corner = Instance.new("UICorner", container)
-
-    return container
+function Library:CreateTab(config)
+	config = config or {}
+	local tabName = config.Name or "Tab"
+	local tabIcon = config.Icon or "gear"
+	
+	-- Criar botão no HubBar
+	local button = createHubBarButton(tabName, tabIcon)
+	
+	-- Criar página correspondente
+	local page = createPage(tabName)
+	
+	-- Criar objeto Tab
+	local Tab = {
+		Name = tabName,
+		Icon = tabIcon,
+		Button = button,
+		Page = page,
+		-- Placeholders para componentes futuros
+		Toggle = nil,
+		Button = nil,
+		Slider = nil,
+		Textbox = nil,
+		Dropdown = nil,
+		ColorPicker = nil,
+		Keybind = nil,
+		Label = nil,
+		Paragraph = nil,
+		Section = nil
+	}
+	
+	-- Adicionar à lista de tabs
+	table.insert(tabs, Tab)
+	
+	-- Se for a primeira tab, selecionar automaticamente
+	if #tabs == 1 then
+		onTabClicked(button)
+	end
+	
+	-- Ajustar largura do HubBar
+	task.wait(0.1)
+	adjustHubBarWidth()
+	
+	print(string.format("[Library] Tab criada: %s (Ícone: %s)", tabName, tabIcon))
+	
+	return Tab
 end
 
--- Helper para criar label de título do elemento
-local function createElementLabel(parent, text)
-    local label = Instance.new("TextLabel", parent)
-    label.TextWrapped = true
-    label.ZIndex = 2
-    label.TextSize = 17
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.FontFace = Font.new(
-        "rbxasset://fonts/families/BuilderSans.json",
-        Enum.FontWeight.Medium, Enum.FontStyle.Normal
-    )
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.BackgroundTransparency = 1
-    label.Size = UDim2.new(0.4, -20, 1, 0)
-    label.Text = text
-    label.AutomaticSize = Enum.AutomaticSize.Y
-    label.Name = "Label"
-    label.Position = UDim2.new(0, 10, 0, 0)
-
-    local padding = Instance.new("UIPadding", label)
-    padding.PaddingTop = UDim.new(0, 10)
-    padding.PaddingBottom = UDim.new(0, 10)
-
-    return label
+function Library:GetTabs()
+	return tabs
 end
 
--- ═══════════════════════════════════════════════════════════════
---  CREATE TOGGLE (Selector tipo On/Off)
--- ═══════════════════════════════════════════════════════════════
-
-function TabObject:CreateToggle(config)
-    -- config = { Name = "Camera Inverted", Default = false, Callback = function(v) end }
-    if type(config) == "string" then
-        config = { Name = config, Default = false, Callback = function() end }
-    end
-
-    self.ElementCount = self.ElementCount + 1
-    local order = self.ElementCount * 10
-
-    local container = createElementContainer(self.Page, order, 50)
-    container.Name = config.Name or "Toggle_" .. order
-
-    local label = createElementLabel(container, config.Name or "Toggle")
-
-    -- Selector Frame
-    local selector = Instance.new("ImageButton", container)
-    selector.AutoButtonColor = false
-    selector.BackgroundTransparency = 1
-    selector.ZIndex = 2
-    selector.AnchorPoint = Vector2.new(1, 0.5)
-    selector.Size = UDim2.new(0.6, 0, 0, 50)
-    selector.Name = "Selector"
-    selector.Position = UDim2.new(1, 0, 0.5, 0)
-
-    -- Left Button
-    local leftBtn = Instance.new("ImageButton", selector)
-    leftBtn.BackgroundTransparency = 1
-    leftBtn.Selectable = false
-    leftBtn.ZIndex = 3
-    leftBtn.AnchorPoint = Vector2.new(0, 0.5)
-    leftBtn.Size = UDim2.new(0, 32, 0, 50)
-    leftBtn.Name = "LeftButton"
-    leftBtn.Position = UDim2.new(0, 0, 0.5, 0)
-
-    local leftIcon = Instance.new("ImageLabel", leftBtn)
-    leftIcon.ZIndex = 4
-    leftIcon.ImageColor3 = Color3.fromRGB(205, 205, 205)
-    leftIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-    leftIcon.Image = "rbxasset://textures/ui/Settings/Slider/Left.png"
-    leftIcon.Size = UDim2.new(0, 18, 0, 30)
-    leftIcon.BackgroundTransparency = 1
-    leftIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
-
-    -- Right Button
-    local rightBtn = Instance.new("ImageButton", selector)
-    rightBtn.BackgroundTransparency = 1
-    rightBtn.Selectable = false
-    rightBtn.ZIndex = 3
-    rightBtn.AnchorPoint = Vector2.new(1, 0.5)
-    rightBtn.Size = UDim2.new(0, 32, 0, 50)
-    rightBtn.Name = "RightButton"
-    rightBtn.Position = UDim2.new(1, 0, 0.5, 0)
-
-    local rightIcon = Instance.new("ImageLabel", rightBtn)
-    rightIcon.ZIndex = 4
-    rightIcon.ImageColor3 = Color3.fromRGB(205, 205, 205)
-    rightIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-    rightIcon.Image = "rbxasset://textures/ui/Settings/Slider/Right.png"
-    rightIcon.Size = UDim2.new(0, 18, 0, 30)
-    rightIcon.BackgroundTransparency = 1
-    rightIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
-
-    -- AutoSelectButton (middle click area)
-    local autoBtn = Instance.new("ImageButton", selector)
-    autoBtn.BackgroundTransparency = 1
-    autoBtn.Selectable = false
-    autoBtn.ZIndex = 2
-    autoBtn.Size = UDim2.new(1, -64, 1, 0)
-    autoBtn.Name = "AutoSelectButton"
-    autoBtn.Position = UDim2.new(0, 32, 0, 0)
-
-    -- Selection Labels
-    local sel1 = Instance.new("TextLabel", selector)
-    sel1.TextWrapped = true
-    sel1.ZIndex = 2
-    sel1.BorderSizePixel = 0
-    sel1.TextSize = 17
-    sel1.FontFace = Font.new(
-        "rbxasset://fonts/families/BuilderSans.json",
-        Enum.FontWeight.Regular, Enum.FontStyle.Normal
-    )
-    sel1.TextColor3 = Color3.fromRGB(255, 255, 255)
-    sel1.BackgroundTransparency = 1
-    sel1.Size = UDim2.new(1, -64, 1, 0)
-    sel1.Text = "Off"
-    sel1.Name = "Selection1"
-    sel1.Position = UDim2.new(0, 32, 0, 0)
-
-    local sel2 = Instance.new("TextLabel", selector)
-    sel2.TextWrapped = true
-    sel2.ZIndex = 2
-    sel2.BorderSizePixel = 0
-    sel2.TextSize = 17
-    sel2.FontFace = Font.new(
-        "rbxasset://fonts/families/BuilderSans.json",
-        Enum.FontWeight.Regular, Enum.FontStyle.Normal
-    )
-    sel2.TextColor3 = Color3.fromRGB(255, 255, 255)
-    sel2.BackgroundTransparency = 1
-    sel2.Size = UDim2.new(1, -64, 1, 0)
-    sel2.Text = "On"
-    sel2.Name = "Selection2"
-    sel2.Position = UDim2.new(0, 96, 0, 0)
-
-    -- Estado
-    local state = config.Default or false
-    local callback = config.Callback or function() end
-
-    local function updateVisual()
-        if state then
-            sel1.TextTransparency = 1
-            sel2.TextTransparency = 0
-        else
-            sel1.TextTransparency = 0
-            sel2.TextTransparency = 1
-        end
-    end
-
-    updateVisual()
-
-    -- Click no meio (toggle)
-    autoBtn.MouseButton1Click:Connect(function()
-        state = not state
-        updateVisual()
-        callback(state)
-    end)
-
-    -- Left = Off
-    leftBtn.MouseButton1Click:Connect(function()
-        state = false
-        updateVisual()
-        callback(state)
-    end)
-
-    -- Right = On
-    rightBtn.MouseButton1Click:Connect(function()
-        state = true
-        updateVisual()
-        callback(state)
-    end)
-
-    -- Retornar API do toggle
-    local toggleApi = {
-        Element = container,
-        Set = function(self, value)
-            state = value
-            updateVisual()
-            callback(state)
-        end,
-        Get = function(self)
-            return state
-        end,
-        SetCallback = function(self, newCallback)
-            callback = newCallback
-        end,
-        Destroy = function(self)
-            container:Destroy()
-        end,
-    }
-
-    return toggleApi
+function Library:GetActiveTab()
+	return activeTab
 end
 
--- ═══════════════════════════════════════════════════════════════
---  CREATE BUTTON (botão de ação simples)
--- ═══════════════════════════════════════════════════════════════
-
-function TabObject:CreateButton(config)
-    -- config = { Name = "Execute", Callback = function() end }
-    if type(config) == "string" then
-        config = { Name = config, Callback = function() end }
-    end
-
-    self.ElementCount = self.ElementCount + 1
-    local order = self.ElementCount * 10
-
-    local container = createElementContainer(self.Page, order, 50)
-    container.Name = config.Name or "Button_" .. order
-
-    local label = createElementLabel(container, config.Name or "Button")
-
-    -- Botão de ação à direita
-    local actionBtn = Instance.new("TextButton", container)
-    actionBtn.ZIndex = 3
-    actionBtn.BorderSizePixel = 0
-    actionBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-    actionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    actionBtn.TextSize = 15
-    actionBtn.FontFace = Font.new(
-        "rbxasset://fonts/families/BuilderSans.json",
-        Enum.FontWeight.Bold, Enum.FontStyle.Normal
-    )
-    actionBtn.Text = "Execute"
-    actionBtn.AnchorPoint = Vector2.new(1, 0.5)
-    actionBtn.Size = UDim2.new(0.4, -20, 0, 36)
-    actionBtn.Position = UDim2.new(1, -10, 0.5, 0)
-    actionBtn.Name = "ActionButton"
-    actionBtn.AutoButtonColor = true
-
-    local btnCorner = Instance.new("UICorner", actionBtn)
-
-    local callback = config.Callback or function() end
-
-    actionBtn.MouseButton1Click:Connect(function()
-        callback()
-    end)
-
-    local buttonApi = {
-        Element = container,
-        Fire = function(self)
-            callback()
-        end,
-        SetCallback = function(self, newCallback)
-            callback = newCallback
-        end,
-        SetText = function(self, text)
-            label.Text = text
-        end,
-        Destroy = function(self)
-            container:Destroy()
-        end,
-    }
-
-    return buttonApi
-end
-
--- ═══════════════════════════════════════════════════════════════
---  CREATE LABEL (texto simples)
--- ═══════════════════════════════════════════════════════════════
-
-function TabObject:CreateLabel(config)
-    -- config = { Text = "Hello World" } ou string direta
-    if type(config) == "string" then
-        config = { Text = config }
-    end
-
-    self.ElementCount = self.ElementCount + 1
-    local order = self.ElementCount * 10
-
-    local container = createElementContainer(self.Page, order, 40)
-    container.Name = "Label_" .. order
-
-    local label = Instance.new("TextLabel", container)
-    label.TextWrapped = true
-    label.ZIndex = 2
-    label.TextSize = 16
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.FontFace = Font.new(
-        "rbxasset://fonts/families/BuilderSans.json",
-        Enum.FontWeight.Regular, Enum.FontStyle.Normal
-    )
-    label.TextColor3 = Color3.fromRGB(200, 200, 200)
-    label.BackgroundTransparency = 1
-    label.Size = UDim2.new(1, -20, 1, 0)
-    label.Text = config.Text or "Label"
-    label.Name = "Text"
-    label.Position = UDim2.new(0, 10, 0, 0)
-
-    local padding = Instance.new("UIPadding", label)
-    padding.PaddingTop = UDim.new(0, 8)
-    padding.PaddingBottom = UDim.new(0, 8)
-
-    local labelApi = {
-        Element = container,
-        SetText = function(self, text)
-            label.Text = text
-        end,
-        Destroy = function(self)
-            container:Destroy()
-        end,
-    }
-
-    return labelApi
-end
-
--- ═══════════════════════════════════════════════════════════════
---  CREATE SECTION (separador com título)
--- ═══════════════════════════════════════════════════════════════
-
-function TabObject:CreateSection(config)
-    if type(config) == "string" then
-        config = { Name = config }
-    end
-
-    self.ElementCount = self.ElementCount + 1
-    local order = self.ElementCount * 10
-
-    local section = Instance.new("Frame", self.Page)
-    section.BackgroundTransparency = 1
-    section.Size = UDim2.new(1, 0, 0, 30)
-    section.LayoutOrder = order
-    section.Name = "Section_" .. (config.Name or order)
-
-    local sectionLabel = Instance.new("TextLabel", section)
-    sectionLabel.TextWrapped = false
-    sectionLabel.ZIndex = 2
-    sectionLabel.TextSize = 14
-    sectionLabel.TextXAlignment = Enum.TextXAlignment.Left
-    sectionLabel.FontFace = Font.new(
-        "rbxasset://fonts/families/BuilderSans.json",
-        Enum.FontWeight.Bold, Enum.FontStyle.Normal
-    )
-    sectionLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-    sectionLabel.TextTransparency = 0.3
-    sectionLabel.BackgroundTransparency = 1
-    sectionLabel.Size = UDim2.new(1, 0, 1, 0)
-    sectionLabel.Text = config.Name or "Section"
-    sectionLabel.Name = "SectionLabel"
-    sectionLabel.Position = UDim2.new(0, 5, 0, 0)
-
-    local line = Instance.new("Frame", section)
-    line.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-    line.BorderSizePixel = 0
-    line.Size = UDim2.new(1, 0, 0, 1)
-    line.Position = UDim2.new(0, 0, 1, 0)
-    line.Name = "Divider"
-
-    local sectionApi = {
-        Element = section,
-        SetText = function(self, text)
-            sectionLabel.Text = text
-        end,
-        Destroy = function(self)
-            section:Destroy()
-        end,
-    }
-
-    return sectionApi
-end
-
--- ═══════════════════════════════════════════════════════════════
---  CREATE SLIDER
--- ═══════════════════════════════════════════════════════════════
-
-function TabObject:CreateSlider(config)
-    -- config = { Name = "Volume", Min = 0, Max = 100, Default = 50, Callback = function(v) end }
-    if type(config) == "string" then
-        config = { Name = config, Min = 0, Max = 100, Default = 50, Callback = function() end }
-    end
-
-    self.ElementCount = self.ElementCount + 1
-    local order = self.ElementCount * 10
-
-    local container = createElementContainer(self.Page, order, 55)
-    container.Name = config.Name or "Slider_" .. order
-
-    local label = createElementLabel(container, config.Name or "Slider")
-
-    -- Valor display
-    local valueLabel = Instance.new("TextLabel", container)
-    valueLabel.ZIndex = 3
-    valueLabel.TextSize = 15
-    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
-    valueLabel.FontFace = Font.new(
-        "rbxasset://fonts/families/BuilderSans.json",
-        Enum.FontWeight.Bold, Enum.FontStyle.Normal
-    )
-    valueLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
-    valueLabel.BackgroundTransparency = 1
-    valueLabel.Size = UDim2.new(0.3, -20, 0, 20)
-    valueLabel.Text = tostring(config.Default or 50)
-    valueLabel.Name = "ValueLabel"
-    valueLabel.Position = UDim2.new(0.7, 0, 0, 5)
-
-    -- Barra do slider
-    local sliderBar = Instance.new("Frame", container)
-    sliderBar.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    sliderBar.BorderSizePixel = 0
-    sliderBar.Size = UDim2.new(0.55, -20, 0, 6)
-    sliderBar.Position = UDim2.new(0.4, 10, 0.7, 0)
-    sliderBar.Name = "SliderBar"
-    sliderBar.ZIndex = 2
-
-    local barCorner = Instance.new("UICorner", sliderBar)
-
-    -- Fill do slider
-    local sliderFill = Instance.new("Frame", sliderBar)
-    sliderFill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-    sliderFill.BorderSizePixel = 0
-    sliderFill.Size = UDim2.new(0.5, 0, 1, 0)
-    sliderFill.Name = "Fill"
-    sliderFill.ZIndex = 3
-
-    local fillCorner = Instance.new("UICorner", sliderFill)
-
-    -- Estado
-    local min = config.Min or 0
-    local max = config.Max or 100
-    local current = config.Default or 50
-    local callback = config.Callback or function() end
-
-    local function updateSlider(value)
-        current = math.clamp(value, min, max)
-        local pct = (current - min) / (max - min)
-        sliderFill.Size = UDim2.new(pct, 0, 1, 0)
-        valueLabel.Text = tostring(math.floor(current))
-    end
-
-    updateSlider(current)
-
-    -- Botões de incremento/decremento
-    local leftBtn = Instance.new("TextButton", container)
-    leftBtn.Text = "◄"
-    leftBtn.TextSize = 16
-    leftBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    leftBtn.BackgroundTransparency = 1
-    leftBtn.Size = UDim2.new(0, 30, 0, 30)
-    leftBtn.Position = UDim2.new(0.35, -5, 0.55, 0)
-    leftBtn.ZIndex = 4
-    leftBtn.Name = "Decrement"
-
-    local rightBtn = Instance.new("TextButton", container)
-    rightBtn.Text = "►"
-    rightBtn.TextSize = 16
-    rightBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    rightBtn.BackgroundTransparency = 1
-    rightBtn.Size = UDim2.new(0, 30, 0, 30)
-    rightBtn.Position = UDim2.new(0.95, -5, 0.55, 0)
-    rightBtn.ZIndex = 4
-    rightBtn.Name = "Increment"
-
-    local step = (max - min) / 20  -- 5% por clique
-
-    leftBtn.MouseButton1Click:Connect(function()
-        updateSlider(current - step)
-        callback(current)
-    end)
-
-    rightBtn.MouseButton1Click:Connect(function()
-        updateSlider(current + step)
-        callback(current)
-    end)
-
-    local sliderApi = {
-        Element = container,
-        Set = function(self, value)
-            updateSlider(value)
-            callback(current)
-        end,
-        Get = function(self)
-            return current
-        end,
-        SetCallback = function(self, newCallback)
-            callback = newCallback
-        end,
-        Destroy = function(self)
-            container:Destroy()
-        end,
-    }
-
-    return sliderApi
-end
-
--- ═══════════════════════════════════════════════════════════════
---  CREATE DROPDOWN (Selector com múltiplas opções)
--- ═══════════════════════════════════════════════════════════════
-
-function TabObject:CreateDropdown(config)
-    -- config = { Name = "Mode", Options = {"Option1", "Option2"}, Default = 1, Callback = function(opt) end }
-    if type(config) == "string" then
-        config = { Name = config, Options = {"None"}, Default = 1, Callback = function() end }
-    end
-
-    self.ElementCount = self.ElementCount + 1
-    local order = self.ElementCount * 10
-
-    local container = createElementContainer(self.Page, order, 50)
-    container.Name = config.Name or "Dropdown_" .. order
-
-    local label = createElementLabel(container, config.Name or "Dropdown")
-
-    -- Selector
-    local selector = Instance.new("ImageButton", container)
-    selector.AutoButtonColor = false
-    selector.BackgroundTransparency = 1
-    selector.ZIndex = 2
-    selector.AnchorPoint = Vector2.new(1, 0.5)
-    selector.Size = UDim2.new(0.6, 0, 0, 50)
-    selector.Name = "Selector"
-    selector.Position = UDim2.new(1, 0, 0.5, 0)
-
-    local leftBtn = Instance.new("ImageButton", selector)
-    leftBtn.BackgroundTransparency = 1
-    leftBtn.Selectable = false
-    leftBtn.ZIndex = 3
-    leftBtn.AnchorPoint = Vector2.new(0, 0.5)
-    leftBtn.Size = UDim2.new(0, 32, 0, 50)
-    leftBtn.Position = UDim2.new(0, 0, 0.5, 0)
-
-    local leftIcon = Instance.new("ImageLabel", leftBtn)
-    leftIcon.ZIndex = 4
-    leftIcon.ImageColor3 = Color3.fromRGB(205, 205, 205)
-    leftIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-    leftIcon.Image = "rbxasset://textures/ui/Settings/Slider/Left.png"
-    leftIcon.Size = UDim2.new(0, 18, 0, 30)
-    leftIcon.BackgroundTransparency = 1
-    leftIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
-
-    local rightBtn = Instance.new("ImageButton", selector)
-    rightBtn.BackgroundTransparency = 1
-    rightBtn.Selectable = false
-    rightBtn.ZIndex = 3
-    rightBtn.AnchorPoint = Vector2.new(1, 0.5)
-    rightBtn.Size = UDim2.new(0, 32, 0, 50)
-    rightBtn.Position = UDim2.new(1, 0, 0.5, 0)
-
-    local rightIcon = Instance.new("ImageLabel", rightBtn)
-    rightIcon.ZIndex = 4
-    rightIcon.ImageColor3 = Color3.fromRGB(205, 205, 205)
-    rightIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-    rightIcon.Image = "rbxasset://textures/ui/Settings/Slider/Right.png"
-    rightIcon.Size = UDim2.new(0, 18, 0, 30)
-    rightIcon.BackgroundTransparency = 1
-    rightIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
-
-    -- Option display
-    local optionLabel = Instance.new("TextLabel", selector)
-    optionLabel.TextWrapped = true
-    optionLabel.ZIndex = 2
-    optionLabel.BorderSizePixel = 0
-    optionLabel.TextSize = 17
-    optionLabel.FontFace = Font.new(
-        "rbxasset://fonts/families/BuilderSans.json",
-        Enum.FontWeight.Regular, Enum.FontStyle.Normal
-    )
-    optionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    optionLabel.BackgroundTransparency = 1
-    optionLabel.Size = UDim2.new(1, -64, 1, 0)
-    optionLabel.Position = UDim2.new(0, 32, 0, 0)
-    optionLabel.Name = "OptionLabel"
-
-    -- Estado
-    local options = config.Options or {"None"}
-    local currentIndex = config.Default or 1
-    local callback = config.Callback or function() end
-
-    local function updateDisplay()
-        if currentIndex < 1 then currentIndex = #options end
-        if currentIndex > #options then currentIndex = 1 end
-        optionLabel.Text = options[currentIndex] or "None"
-    end
-
-    updateDisplay()
-
-    leftBtn.MouseButton1Click:Connect(function()
-        currentIndex = currentIndex - 1
-        if currentIndex < 1 then currentIndex = #options end
-        updateDisplay()
-        callback(options[currentIndex], currentIndex)
-    end)
-
-    rightBtn.MouseButton1Click:Connect(function()
-        currentIndex = currentIndex + 1
-        if currentIndex > #options then currentIndex = 1 end
-        updateDisplay()
-        callback(options[currentIndex], currentIndex)
-    end)
-
-    local dropdownApi = {
-        Element = container,
-        Set = function(self, index)
-            currentIndex = index
-            updateDisplay()
-            callback(options[currentIndex], currentIndex)
-        end,
-        Get = function(self)
-            return options[currentIndex], currentIndex
-        end,
-        SetOptions = function(self, newOptions)
-            options = newOptions
-            currentIndex = 1
-            updateDisplay()
-        end,
-        SetCallback = function(self, newCallback)
-            callback = newCallback
-        end,
-        Destroy = function(self)
-            container:Destroy()
-        end,
-    }
-
-    return dropdownApi
-end
-
--- ═══════════════════════════════════════════════════════════════
---  MÉTODOS GLOBAIS DA LIB
--- ═══════════════════════════════════════════════════════════════
-
-function VRCoreLib:Destroy()
-    for _, tab in pairs(Library.Tabs) do
-        if tab.Button then tab.Button:Destroy() end
-        if tab.Page then tab.Page:Destroy() end
-    end
-    Library.Tabs = {}
-    Library.TabCount = 0
-    print("[VRCoreLib] Destruído!")
-end
-
-function VRCoreLib:GetTab(name)
-    for key, tab in pairs(Library.Tabs) do
-        if tab.Name == name then
-            return tab
-        end
-    end
-    return nil
-end
-
-function VRCoreLib:SelectTab(name)
-    for key, tab in pairs(Library.Tabs) do
-        if tab.Name == name then
-            self:_OnTabClicked(tab.Button)
-            return true
-        end
-    end
-    return false
-end
-
-function VRCoreLib:GetVersion()
-    return "VRCoreLib v1.0.0"
-end
-
--- ═══════════════════════════════════════════════════════════════
---  RETORNO DA LIBRARY (para loadstring)
--- ═══════════════════════════════════════════════════════════════
-
-return setmetatable(VRCoreLib, {
-    __call = function(self)
-        return self:Init()
-    end
-})
+-- ============================================================
+-- INICIALIZAÇÃO AUTOMÁTICA
+-- ============================================================
+
+local systemReady = false
+
+task.spawn(function()
+	systemReady = initializeSystem()
+	
+	if systemReady then
+		-- Configurar monitoramento do SettingsShield
+		setupSettingsShieldMonitor()
+		
+		-- Configurar ajuste automático do HubBar
+		HubBarContainer.ChildAdded:Connect(function(child)
+			if child:IsA("TextButton") then
+				task.wait(0.1)
+				adjustHubBarWidth()
+			end
+		end)
+		
+		HubBarContainer.ChildRemoved:Connect(function(child)
+			if child:IsA("TextButton") then
+				task.wait(0.1)
+				adjustHubBarWidth()
+			end
+		end)
+		
+		-- Monitorar adição de novos elementos
+		CoreGui.DescendantAdded:Connect(function(descendant)
+			if descendant.Name == "SettingsShield" and descendant:IsA("ImageButton") then
+				setupSettingsShieldMonitor()
+			elseif descendant.Name == "HubBar" and descendant:IsA("ImageLabel") then
+				HubBar = descendant
+				adjustHubBarWidth()
+			end
+		end)
+		
+		print("[Library] Pronta para uso!")
+	else
+		warn("[Library] Falha na inicialização. Tente novamente mais tarde.")
+	end
+end)
+
+-- ============================================================
+-- RETORNO
+-- ============================================================
+
+return Library
