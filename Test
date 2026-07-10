@@ -1,11 +1,11 @@
---[=[
-d888b  db    db d888888b      .d888b.      db      db    db  .d8b.  
-88' Y8b 88    88   88'        VP  8D      88      88    88 d8' `8b 
-88      88    88    88            odD'      88      88    88 88ooo88 
-88  ooo 88    88    88          .88'        88      88    88 88~~~88 
-88. ~8~ 88b  d88   .88.        j88.         88booo. 88b  d88 88   88    @uniquadev
-Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  UI LIBRARY
---]=]
+--[[
+    d888b  db    db d888888b      .d888b.      db      db    db  .d8b.  
+   88' Y8b 88    88   88'        VP  8D      88      88    88 d8' `8b 
+   88      88    88    88            odD'      88      88    88 88ooo88 
+   88  ooo 88    88    88          .88'        88      88    88 88~~~88 
+   88. ~8~ 88b  d88   .88.        j88.         88booo. 88b  d88 88   88    @uniquadev
+    Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  UI LIBRARY
+--]]
 
 local Library = {}
 
@@ -23,12 +23,12 @@ local function findDescendant(parent, name)
     return nil
 end
 
--- Buscar contêineres principais do CoreGui do Roblox
+-- Buscar contêineres principais do CoreGui
 local HubBarContainer = findDescendant(CoreGui, "HubBarContainer")
 local PageViewInnerFrame = findDescendant(CoreGui, "PageViewInnerFrame")
 
 -- ============================================================
--- SISTEMA DE REDIMENSIONAMENTO DO HUBBAR
+-- SISTEMA BASE: REDIMENSIONAMENTO DO HUBBAR
 -- ============================================================
 local HubBar = nil
 local BASE_WIDTH = 800
@@ -47,12 +47,8 @@ local function countButtons()
 end
 
 local function adjustHubBarWidth()
-    if not HubBar or not HubBar.Parent then
-        HubBar = findDescendant(CoreGui, "HubBar")
-    end
-    
+    local buttonCount = countButtons()
     if HubBar and HubBar:IsA("GuiObject") then
-        local buttonCount = countButtons()
         if buttonCount > 5 then
             local extraButtons = buttonCount - 5
             local newWidth = BASE_WIDTH - (WIDTH_PER_BUTTON * extraButtons)
@@ -64,49 +60,20 @@ local function adjustHubBarWidth()
     end
 end
 
--- Setup inicial do HubBar
-local function setupHubBar()
-    HubBar = findDescendant(CoreGui, "HubBar")
-    if HubBar and HubBar:IsA("ImageLabel") then
-        adjustHubBarWidth()
-        
-        if HubBarContainer then
-            HubBarContainer.ChildAdded:Connect(function(child)
-                if child:IsA("TextButton") then
-                    task.wait(0.1)
-                    adjustHubBarWidth()
-                end
-            end)
-            HubBarContainer.ChildRemoved:Connect(function(child)
-                if child:IsA("TextButton") then
-                    task.wait(0.1)
-                    adjustHubBarWidth()
-                end
-            end)
-        end
-    else
-        task.wait(1)
-        setupHubBar()
-    end
-end
-task.spawn(setupHubBar)
-
--- Loop constante para verificar recriação do HubBar
+-- Loop persistente para caso o Roblox recrie o HubBar
 task.spawn(function()
     while true do
         task.wait(0.2)
-        
         if not HubBar or not HubBar.Parent then
             HubBar = findDescendant(CoreGui, "HubBar")
         end
-        
         if HubBar then
             adjustHubBarWidth()
         end
     end
 end)
 
--- Detectar quando o Roblox recria o HubBar
+-- Monitor extra para recriação rápida
 CoreGui.DescendantAdded:Connect(function(v)
     if v.Name == "HubBar" and v:IsA("ImageLabel") then
         HubBar = v
@@ -114,8 +81,17 @@ CoreGui.DescendantAdded:Connect(function(v)
     end
 end)
 
+if HubBarContainer then
+    HubBarContainer.ChildAdded:Connect(function(child)
+        if child:IsA("TextButton") then task.wait(0.1) adjustHubBarWidth() end
+    end)
+    HubBarContainer.ChildRemoved:Connect(function(child)
+        if child:IsA("TextButton") then task.wait(0.1) adjustHubBarWidth() end
+    end)
+end
+
 -- ============================================================
--- SISTEMA ANTI MULTI-SELEÇÃO (MONITORAMENTO GLOBAL)
+-- SISTEMA BASE: ANTI-MULTI SELEÇÃO E GERENCIAMENTO DE ABAS
 -- ============================================================
 local CurrentSelectedTab = nil
 
@@ -152,17 +128,15 @@ local function hideAllPages()
     end
 end
 
--- Função global de seleção de aba (funciona para QUALQUER botão)
 local function selectTab(tab)
     if CurrentSelectedTab and CurrentSelectedTab ~= tab then
         deselectButton(CurrentSelectedTab)
     end
-    
+
     CurrentSelectedTab = tab
-    
     selectButton(tab)
     hideAllPages()
-    
+
     if PageViewInnerFrame then
         local page = PageViewInnerFrame:FindFirstChild(tab.Name)
         if page then
@@ -171,7 +145,7 @@ local function selectTab(tab)
     end
 end
 
--- Monitorar TODOS os botões EXISTENTES no HubBarContainer
+-- Captura botões já existentes ou adicionados por outros scripts/Roblox
 if HubBarContainer then
     for _, child in ipairs(HubBarContainer:GetChildren()) do
         if child:IsA("TextButton") then
@@ -180,37 +154,29 @@ if HubBarContainer then
             end)
         end
     end
+
+    HubBarContainer.ChildAdded:Connect(function(child)
+        if child:IsA("TextButton") then
+            child.MouseButton1Click:Connect(function()
+                selectTab(child)
+            end)
+        end
+    end)
 end
 
--- Monitorar NOVOS botões adicionados ao HubBarContainer
-HubBarContainer.ChildAdded:Connect(function(child)
-    if child:IsA("TextButton") then
-        child.MouseButton1Click:Connect(function()
-            selectTab(child)
-        end)
-    end
-end)
-
 -- ============================================================
--- MONITORAMENTO DO SETTINGS SHIELD
+-- SISTEMA BASE: MONITORAMENTO DO SETTINGSSHIELD
 -- ============================================================
 local function monitorSettingsShield()
     local SettingsShield = findDescendant(CoreGui, "SettingsShield")
     if SettingsShield and SettingsShield:IsA("ImageButton") then
         if SettingsShield.Visible == false then
-            if CurrentSelectedTab then
-                deselectButton(CurrentSelectedTab)
-                CurrentSelectedTab = nil
-            end
+            if CurrentSelectedTab then deselectButton(CurrentSelectedTab) end
             hideAllPages()
         end
-        
         SettingsShield:GetPropertyChangedSignal("Visible"):Connect(function()
             if SettingsShield.Visible == false then
-                if CurrentSelectedTab then
-                    deselectButton(CurrentSelectedTab)
-                    CurrentSelectedTab = nil
-                end
+                if CurrentSelectedTab then deselectButton(CurrentSelectedTab) end
                 hideAllPages()
             end
         end)
@@ -227,7 +193,7 @@ task.spawn(monitorSettingsShield)
 function Library:CreateTab(tabName, iconName)
     iconName = iconName or "gear"
     
-    -- Criar botão na barra principal (usando AutomaticSize)
+    -- Criar botão na barra principal (com AutomaticSize e Offset fixo)
     local TabButton = Instance.new("TextButton", HubBarContainer)
     TabButton.Selectable = false
     TabButton.ZIndex = 3
@@ -272,7 +238,7 @@ function Library:CreateTab(tabName, iconName)
     Icon.Text = iconName
     Icon.Name = "Icon"
 
-    local Aspect = Instance.new("UIAspectRatioConstraint", Icon)
+    Instance.new("UIAspectRatioConstraint", Icon)
 
     local Title = Instance.new("TextLabel", TabLabel)
     Title.ZIndex = 3
@@ -286,10 +252,8 @@ function Library:CreateTab(tabName, iconName)
     Title.AutomaticSize = Enum.AutomaticSize.XY
     Title.Name = "Title"
 
-    -- Conectar ao sistema global de seleção
-    TabButton.MouseButton1Click:Connect(function()
-        selectTab(TabButton)
-    end)
+    -- Nota: Não precisamos conectar o MouseButton1Click aqui novamente, 
+    -- pois o HubBarContainer.ChildAdded cuidará de passar essa nova aba para o selectTab.
 
     -- Criar página correspondente
     local PageFrame = Instance.new("Frame", PageViewInnerFrame)
@@ -311,13 +275,10 @@ function Library:CreateTab(tabName, iconName)
     RowListLayout.Name = "RowListLayout"
 
     -- ============================================================
-    -- MÉTODOS DA ABA
+    -- MÉTODOS DA ABA (Toggle & Slider)
     -- ============================================================
     local TabMethods = {}
 
-    -- ============================================================
-    -- COMPONENTE: TOGGLE
-    -- ============================================================
     function TabMethods:AddToggle(toggleName, default, callback)
         callback = callback or function() end
         local state = default or false
@@ -431,7 +392,6 @@ function Library:CreateTab(tabName, iconName)
         Selection2.Visible = false
         Selection2.Position = UDim2.new(0, 32, 0, 0)
 
-        -- Lógica de Atualização Visual
         local function updateToggle()
             if state then
                 Selection1.Visible = false
@@ -456,23 +416,12 @@ function Library:CreateTab(tabName, iconName)
             updateToggle()
         end)
 
-        -- Iniciar com valor padrão
         updateToggle()
-        
-        return {
-            SetValue = function(value)
-                state = value
-                updateToggle()
-            end
-        }
     end
 
-    -- ============================================================
-    -- COMPONENTE: SLIDER (0 a 10 Passos Fixos)
-    -- ============================================================
     function TabMethods:AddSlider(sliderName, defaultStep, callback)
         callback = callback or function() end
-        local currentStep = math.clamp(defaultStep or 0, 0, 10)
+        local currentStep = math.clamp(defaultStep or 1, 0, 10)
 
         local SliderFrame = Instance.new("ImageButton", PageFrame)
         SliderFrame.BorderSizePixel = 0
@@ -549,7 +498,6 @@ function Library:CreateTab(tabName, iconName)
         S_Padding.PaddingTop = UDim.new(0, 10)
         S_Padding.PaddingBottom = UDim.new(0, 10)
 
-        -- Criar as 10 barras de progresso (Steps)
         local ACTIVE_COLOR = Color3.fromRGB(255, 255, 255)
         local INACTIVE_COLOR = Color3.fromRGB(57, 59, 61)
         local steps = {}
@@ -594,7 +542,6 @@ function Library:CreateTab(tabName, iconName)
             table.insert(steps, step)
         end
 
-        -- Atualização do Slider
         local function updateSliderVisual()
             for i = 1, #steps do
                 if i <= currentStep then
@@ -606,7 +553,6 @@ function Library:CreateTab(tabName, iconName)
                 end
             end
             
-            -- Gerenciador de visibilidade dos botões
             S_LeftButton.Visible = (currentStep > 0)
             S_RightButton.Visible = (currentStep < 10)
 
@@ -628,13 +574,6 @@ function Library:CreateTab(tabName, iconName)
         end)
 
         updateSliderVisual()
-        
-        return {
-            SetValue = function(value)
-                currentStep = math.clamp(value, 0, 10)
-                updateSliderVisual()
-            end
-        }
     end
 
     return TabMethods
