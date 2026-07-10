@@ -199,7 +199,7 @@ function Library:CreateTab(tabName, iconName)
     TabButton.ZIndex = 3
     TabButton.BackgroundTransparency = 1
     TabButton.AutomaticSize = Enum.AutomaticSize.X
-    TabButton.Size = UDim2.fromOffset(0, 50)
+    TabButton.Size = UDim2.fromOffset(1, 0)
     TabButton.Text = ""
     TabButton.Name = tabName
 
