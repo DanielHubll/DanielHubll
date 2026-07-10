@@ -27,7 +27,6 @@ local activeTab = nil
 -- Configurações
 local BASE_WIDTH = 800
 local WIDTH_REDUCTION_PER_BUTTON = 100  -- Reduz 100px por botão
-local MIN_WIDTH = 300  -- Largura mínima
 
 -- Sistema de debounce
 local lastAdjustTime = 0
@@ -102,11 +101,6 @@ end
 local function calculateOptimalWidth(buttonCount)
 	-- Largura base é 800px, subtrai 100px para cada botão
 	local newWidth = BASE_WIDTH - (buttonCount * WIDTH_REDUCTION_PER_BUTTON)
-	
-	-- Garante que não fica menor que o mínimo
-	if newWidth < MIN_WIDTH then
-		newWidth = MIN_WIDTH
-	end
 	
 	return newWidth
 end
