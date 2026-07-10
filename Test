@@ -77,7 +77,7 @@ local function countButtons()
 	return count
 end
 
--- ✅ FIX 2: largura proporcional ao nº de botões, sem partir sempre de 800
+-- ✅ Até 5 botões mantém 800 (padrão), acima começa a encolher
 local function adjustHubBarWidth()
 	if not (HubBar and HubBar:IsA("GuiObject")) then return end
 
@@ -85,7 +85,7 @@ local function adjustHubBarWidth()
 	local newWidth
 
 	if buttonCount <= IDEAL_BUTTONS then
-		newWidth = WIDTH_PER_BUTTON * math.max(buttonCount, 1)
+		newWidth = BASE_WIDTH
 	else
 		newWidth = math.max(MIN_WIDTH, BASE_WIDTH - (WIDTH_PER_BUTTON * (buttonCount - IDEAL_BUTTONS)))
 	end
@@ -101,15 +101,12 @@ local function setupHubBar()
 	if HubBar and HubBar:IsA("ImageLabel") then
 		print("[LuminaUI] HubBar encontrado!")
 
-		-- ✅ FIX 3: esconde durante o ajuste para evitar deformação visual
+		-- ✅ Esconde durante o ajuste para evitar deformação visual
 		HubBar.Visible = false
-
-		-- ✅ FIX 1: força largura mínima antes de calcular o valor real
 		HubBar.Size = UDim2.new(0, 1, HubBar.Size.Y.Scale, HubBar.Size.Y.Offset)
 		adjustHubBarWidth()
-
-		task.wait() -- aguarda 1 frame
-		HubBar.Visible = true -- mostra já com o tamanho correto
+		task.wait()
+		HubBar.Visible = true
 
 		HubBarContainer.ChildAdded:Connect(function(child)
 			if child:IsA("TextButton") then
@@ -951,7 +948,7 @@ function Tab:AddDropdown(config)
 	end)
 
 	local dropdownObj = {}
-	function dropdownObj:Set(opt) 
+	function dropdownObj:Set(opt)
 		if table.find(Options, opt) then
 			value = opt
 			CurrentLabel.Text = opt
