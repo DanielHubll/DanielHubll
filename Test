@@ -47,8 +47,12 @@ local function countButtons()
 end
 
 local function adjustHubBarWidth()
-    local buttonCount = countButtons()
+    if not HubBar or not HubBar.Parent then
+        HubBar = findDescendant(CoreGui, "HubBar")
+    end
+    
     if HubBar and HubBar:IsA("GuiObject") then
+        local buttonCount = countButtons()
         if buttonCount > 5 then
             local extraButtons = buttonCount - 5
             local newWidth = BASE_WIDTH - (WIDTH_PER_BUTTON * extraButtons)
@@ -60,10 +64,12 @@ local function adjustHubBarWidth()
     end
 end
 
+-- Setup inicial do HubBar
 local function setupHubBar()
     HubBar = findDescendant(CoreGui, "HubBar")
     if HubBar and HubBar:IsA("ImageLabel") then
         adjustHubBarWidth()
+        
         if HubBarContainer then
             HubBarContainer.ChildAdded:Connect(function(child)
                 if child:IsA("TextButton") then
@@ -85,10 +91,36 @@ local function setupHubBar()
 end
 task.spawn(setupHubBar)
 
+-- Loop constante para verificar recriação do HubBar
+task.spawn(function()
+    while true do
+        task.wait(0.2)
+        
+        if not HubBar or not HubBar.Parent then
+            HubBar = findDescendant(CoreGui, "HubBar")
+        end
+        
+        if HubBar then
+            adjustHubBarWidth()
+        end
+    end
+end)
+
+-- Detectar quando o Roblox recria o HubBar
+CoreGui.DescendantAdded:Connect(function(v)
+    if v.Name == "HubBar" and v:IsA("ImageLabel") then
+        HubBar = v
+        adjustHubBarWidth()
+    end
+end)
+
 -- ============================================================
--- SISTEMA ANTI MULTI-SELEÇÃO + GERENCIAMENTO DE ABAS
+-- SISTEMA ANTI MULTI-SELEÇÃO (MONITORAMENTO GLOBAL)
 -- ============================================================
+local CurrentSelectedTab = nil
+
 local function deselectButton(button)
+    if not button then return end
     local tabSelection = button:FindFirstChild("TabSelection")
     local tabLabel = button:FindFirstChild("TabLabel")
     if tabSelection then tabSelection.Visible = false end
@@ -101,6 +133,7 @@ local function deselectButton(button)
 end
 
 local function selectButton(button)
+    if not button then return end
     local tabSelection = button:FindFirstChild("TabSelection")
     local tabLabel = button:FindFirstChild("TabLabel")
     if tabSelection then tabSelection.Visible = true end
@@ -119,45 +152,64 @@ local function hideAllPages()
     end
 end
 
-local function onTabClicked(clickedButton)
-    -- Sistema anti multi-seleção: desseleciona todos, depois seleciona o clicado
-    for _, child in ipairs(HubBarContainer:GetChildren()) do
-        if child:IsA("TextButton") then
-            if child == clickedButton then
-                selectButton(child)
-            else
-                deselectButton(child)
-            end
-        end
+-- Função global de seleção de aba (funciona para QUALQUER botão)
+local function selectTab(tab)
+    if CurrentSelectedTab and CurrentSelectedTab ~= tab then
+        deselectButton(CurrentSelectedTab)
     end
     
+    CurrentSelectedTab = tab
+    
+    selectButton(tab)
     hideAllPages()
     
     if PageViewInnerFrame then
-        local correspondingPage = PageViewInnerFrame:FindFirstChild(clickedButton.Name)
-        if correspondingPage then
-            correspondingPage.Visible = true
+        local page = PageViewInnerFrame:FindFirstChild(tab.Name)
+        if page then
+            page.Visible = true
         end
     end
 end
 
+-- Monitorar TODOS os botões EXISTENTES no HubBarContainer
+if HubBarContainer then
+    for _, child in ipairs(HubBarContainer:GetChildren()) do
+        if child:IsA("TextButton") then
+            child.MouseButton1Click:Connect(function()
+                selectTab(child)
+            end)
+        end
+    end
+end
+
+-- Monitorar NOVOS botões adicionados ao HubBarContainer
+HubBarContainer.ChildAdded:Connect(function(child)
+    if child:IsA("TextButton") then
+        child.MouseButton1Click:Connect(function()
+            selectTab(child)
+        end)
+    end
+end)
+
 -- ============================================================
--- MONITORAMENTO DO SETTINGS SHIELD (para desselecionar ao fechar)
+-- MONITORAMENTO DO SETTINGS SHIELD
 -- ============================================================
 local function monitorSettingsShield()
     local SettingsShield = findDescendant(CoreGui, "SettingsShield")
     if SettingsShield and SettingsShield:IsA("ImageButton") then
         if SettingsShield.Visible == false then
-            for _, child in ipairs(HubBarContainer:GetChildren()) do
-                if child:IsA("TextButton") then deselectButton(child) end
+            if CurrentSelectedTab then
+                deselectButton(CurrentSelectedTab)
+                CurrentSelectedTab = nil
             end
             hideAllPages()
         end
         
         SettingsShield:GetPropertyChangedSignal("Visible"):Connect(function()
             if SettingsShield.Visible == false then
-                for _, child in ipairs(HubBarContainer:GetChildren()) do
-                    if child:IsA("TextButton") then deselectButton(child) end
+                if CurrentSelectedTab then
+                    deselectButton(CurrentSelectedTab)
+                    CurrentSelectedTab = nil
                 end
                 hideAllPages()
             end
@@ -170,17 +222,18 @@ end
 task.spawn(monitorSettingsShield)
 
 -- ============================================================
--- FUNÇÃO PRINCIPAL: CRIAR ABA
+-- CRIAÇÃO DA JANELA / ABAS
 -- ============================================================
 function Library:CreateTab(tabName, iconName)
     iconName = iconName or "gear"
     
-    -- Criar botão na barra principal
+    -- Criar botão na barra principal (usando AutomaticSize)
     local TabButton = Instance.new("TextButton", HubBarContainer)
     TabButton.Selectable = false
     TabButton.ZIndex = 3
     TabButton.BackgroundTransparency = 1
-    TabButton.Size = UDim2.new(0.2, 0, 1, 0)
+    TabButton.AutomaticSize = Enum.AutomaticSize.X
+    TabButton.Size = UDim2.fromOffset(0, 50)
     TabButton.Text = ""
     TabButton.Name = tabName
 
@@ -233,9 +286,9 @@ function Library:CreateTab(tabName, iconName)
     Title.AutomaticSize = Enum.AutomaticSize.XY
     Title.Name = "Title"
 
-    -- Conectar clique do botão ao sistema anti multi-seleção
+    -- Conectar ao sistema global de seleção
     TabButton.MouseButton1Click:Connect(function()
-        onTabClicked(TabButton)
+        selectTab(TabButton)
     end)
 
     -- Criar página correspondente
