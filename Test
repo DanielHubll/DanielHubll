@@ -12,8 +12,12 @@ local Library = loadstring(game:HttpGet("SUA_URL"))()
 local Tab = Library:CreateTab({ Name = "Settings", Icon = "gear" })
 Tab:AddSection("Player")
 Tab:AddToggle({...})
-Tab:AddSeparator()
+Tab:AddMultiToggle({...})
+Tab:AddSlider({...})
 Tab:AddButton({...})
+Tab:AddDropdown({...})
+Tab:AddMultiDropdown({...})
+Tab:AddSeparator()
 ]=]
 
 local Library = {}
@@ -24,6 +28,7 @@ Library._tabsByName = {}
 -- ================= SERVIÇOS =================
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
 -- ================= UTIL =================
 local function findDescendant(parent, name)
@@ -384,7 +389,7 @@ function Library:CreateTab(config)
 	Page.Name = Name
 	Page.BackgroundTransparency = 1
 	Page.SelectionGroup = true
-	Page.Visible = false -- começa desselecionada/oculta por padrão
+	Page.Visible = false
 	Page.Parent = PageViewInnerFrame
 
 	local PagePadding = Instance.new("UIPadding")
@@ -430,7 +435,7 @@ local function nextOrder(tabObj)
 end
 
 -- ============================================================
--- HELPER: CRIA UM CONTAINER PADRÃO (usado por Toggle/Slider/Dropdown)
+-- HELPER: CRIA UM CONTAINER PADRÃO
 -- ============================================================
 
 local function createBaseContainer(parent, title, order)
@@ -706,6 +711,151 @@ function Tab:AddToggle(config)
 end
 
 -- ============================================================
+-- TAB:ADDMULTITOGGLE (Toggle com múltiplas opções)
+-- ============================================================
+
+function Tab:AddMultiToggle(config)
+	config = config or {}
+	local Name = config.Name or "MultiToggle"
+	local Options = config.Options or {"Option 1", "Option 2", "Option 3"}
+	local Default = config.Default or Options[1]
+	local Callback = config.Callback or function() end
+
+	local Frame = createBaseContainer(self.Page, Name, nextOrder(self))
+
+	local Selector = Instance.new("ImageButton")
+	Selector.AutoButtonColor = false
+	Selector.BackgroundTransparency = 1
+	Selector.ZIndex = 2
+	Selector.AnchorPoint = Vector2.new(1, 0.5)
+	Selector.Size = UDim2.new(0.6, 0, 0, 50)
+	Selector.Name = "Selector"
+	Selector.Position = UDim2.new(1, 0, 0.5, 0)
+	Selector.Parent = Frame
+
+	local LeftButton = Instance.new("ImageButton")
+	LeftButton.BackgroundTransparency = 1
+	LeftButton.Selectable = false
+	LeftButton.ZIndex = 3
+	LeftButton.AnchorPoint = Vector2.new(0, 0.5)
+	LeftButton.Size = UDim2.new(0, 32, 0, 50)
+	LeftButton.Name = "LeftButton"
+	LeftButton.Position = UDim2.new(0, 0, 0.5, 0)
+	LeftButton.Parent = Selector
+
+	local LeftIcon = Instance.new("ImageLabel")
+	LeftIcon.ZIndex = 4
+	LeftIcon.ImageColor3 = Color3.fromRGB(205, 205, 205)
+	LeftIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+	LeftIcon.Image = "rbxasset://textures/ui/Settings/Slider/Left.png"
+	LeftIcon.Size = UDim2.new(0, 18, 0, 30)
+	LeftIcon.BackgroundTransparency = 1
+	LeftIcon.Name = "LeftButton"
+	LeftIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+	LeftIcon.Parent = LeftButton
+
+	local RightButton = Instance.new("ImageButton")
+	RightButton.BackgroundTransparency = 1
+	RightButton.Selectable = false
+	RightButton.ZIndex = 3
+	RightButton.AnchorPoint = Vector2.new(1, 0.5)
+	RightButton.Size = UDim2.new(0, 32, 0, 50)
+	RightButton.Name = "RightButton"
+	RightButton.Position = UDim2.new(1, 0, 0.5, 0)
+	RightButton.Parent = Selector
+
+	local RightIcon = Instance.new("ImageLabel")
+	RightIcon.ZIndex = 4
+	RightIcon.ImageColor3 = Color3.fromRGB(205, 205, 205)
+	RightIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+	RightIcon.Image = "rbxasset://textures/ui/Settings/Slider/Right.png"
+	RightIcon.Size = UDim2.new(0, 18, 0, 30)
+	RightIcon.BackgroundTransparency = 1
+	RightIcon.Name = "RightButton"
+	RightIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+	RightIcon.Parent = RightButton
+
+	local CurrentSelection = Instance.new("TextLabel")
+	CurrentSelection.TextWrapped = true
+	CurrentSelection.ZIndex = 2
+	CurrentSelection.BorderSizePixel = 0
+	CurrentSelection.TextSize = 17
+	CurrentSelection.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+	CurrentSelection.TextColor3 = Color3.fromRGB(255, 255, 255)
+	CurrentSelection.BackgroundTransparency = 1
+	CurrentSelection.Size = UDim2.new(1, -64, 1, 0)
+	CurrentSelection.Text = Default
+	CurrentSelection.Name = "CurrentSelection"
+	CurrentSelection.Position = UDim2.new(0, 32, 0, 0)
+	CurrentSelection.Parent = Selector
+
+	local currentIndex = 1
+	for i, option in ipairs(Options) do
+		if option == Default then
+			currentIndex = i
+			break
+		end
+	end
+
+	local function updateSelection()
+		CurrentSelection.Text = Options[currentIndex]
+		Callback(Options[currentIndex], currentIndex)
+	end
+
+	local function nextOption()
+		currentIndex = currentIndex + 1
+		if currentIndex > #Options then
+			currentIndex = 1
+		end
+		updateSelection()
+	end
+
+	local function previousOption()
+		currentIndex = currentIndex - 1
+		if currentIndex < 1 then
+			currentIndex = #Options
+		end
+		updateSelection()
+	end
+
+	RightButton.MouseButton1Click:Connect(nextOption)
+	LeftButton.MouseButton1Click:Connect(previousOption)
+
+	local CenterButton = Instance.new("ImageButton")
+	CenterButton.BackgroundTransparency = 1
+	CenterButton.Selectable = false
+	CenterButton.ZIndex = 2
+	CenterButton.Size = UDim2.new(1, -64, 1, 0)
+	CenterButton.Name = "CenterButton"
+	CenterButton.Position = UDim2.new(0, 32, 0, 0)
+	CenterButton.Parent = Selector
+	CenterButton.MouseButton1Click:Connect(nextOption)
+
+	Callback(Options[currentIndex], currentIndex)
+
+	return {
+		Frame = Frame,
+		Set = function(_, value)
+			for i, option in ipairs(Options) do
+				if option == value then
+					currentIndex = i
+					updateSelection()
+					break
+				end
+			end
+		end,
+		Get = function() return Options[currentIndex] end,
+		GetIndex = function() return currentIndex end,
+		SetIndex = function(_, index)
+			if index >= 1 and index <= #Options then
+				currentIndex = index
+				updateSelection()
+			end
+		end,
+	}
+end
+
+-- ============================================================
 -- TAB:ADDSLIDER
 -- ============================================================
 
@@ -857,7 +1007,6 @@ function Tab:AddSlider(config)
 		end
 	end
 
-	-- Define valor inicial (Default) sem disparar callback extra
 	local defaultIndex = math.round(((Default - Min) / math.max(Max - Min, 1)) * STEP_COUNT)
 	setSlider(defaultIndex, true)
 
@@ -1102,7 +1251,6 @@ function Tab:AddDropdown(config)
 	DropdownIcon.Position = UDim2.new(1, -12, 0.5, 0)
 	DropdownIcon.Parent = DropdownFrameButton
 
-	-- Painel flutuante (fica no RobloxGui para ficar por cima de tudo)
 	local DropdownFrame = Instance.new("ImageButton")
 	DropdownFrame.BorderSizePixel = 0
 	DropdownFrame.AutoButtonColor = false
@@ -1200,6 +1348,256 @@ function Tab:AddDropdown(config)
 			for i, optionText in ipairs(newOptions) do
 				createOptionButton(optionText, i)
 			end
+		end,
+	}
+end
+
+-- ============================================================
+-- TAB:ADDMULTIDROPDOWN (Dropdown com multi-seleção)
+-- ============================================================
+
+function Tab:AddMultiDropdown(config)
+	config = config or {}
+	local Name = config.Name or "MultiDropdown"
+	local Options = config.Options or {}
+	local Default = config.Default or {}
+	local Callback = config.Callback or function() end
+
+	local Frame = createBaseContainer(self.Page, Name, nextOrder(self))
+
+	local DropdownFrameButton = Instance.new("ImageButton")
+	DropdownFrameButton.AutoButtonColor = false
+	DropdownFrameButton.BackgroundColor3 = Color3.fromRGB(57, 58, 60)
+	DropdownFrameButton.ZIndex = 2
+	DropdownFrameButton.AnchorPoint = Vector2.new(1, 0.5)
+	DropdownFrameButton.Size = UDim2.new(0.6, 0, 0, 40)
+	DropdownFrameButton.Name = "DropdownFrameButton"
+	DropdownFrameButton.Position = UDim2.new(1, 0, 0.5, 0)
+	DropdownFrameButton.Parent = Frame
+
+	local DDCorner = Instance.new("UICorner")
+	DDCorner.Parent = DropdownFrameButton
+
+	local Border = Instance.new("UIStroke")
+	Border.Transparency = 0.8
+	Border.Name = "Border"
+	Border.Color = Color3.fromRGB(255, 255, 255)
+	Border.Parent = DropdownFrameButton
+
+	local SelectionText = Instance.new("TextLabel")
+	SelectionText.TextWrapped = true
+	SelectionText.ZIndex = 2
+	SelectionText.BorderSizePixel = 0
+	SelectionText.TextSize = 17
+	SelectionText.TextXAlignment = Enum.TextXAlignment.Left
+	SelectionText.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+	SelectionText.TextColor3 = Color3.fromRGB(255, 255, 255)
+	SelectionText.BackgroundTransparency = 1
+	SelectionText.Size = UDim2.new(1, -50, 1, 0)
+	SelectionText.ClipsDescendants = true
+	SelectionText.Text = "Select..."
+	SelectionText.Name = "DropdownSelectionText"
+	SelectionText.Position = UDim2.new(0, 15, 0, 0)
+	SelectionText.Parent = DropdownFrameButton
+
+	local TextConstraint = Instance.new("UITextSizeConstraint")
+	TextConstraint.MaxTextSize = 17
+	TextConstraint.Parent = SelectionText
+
+	local DropdownIcon = Instance.new("ImageLabel")
+	DropdownIcon.ZIndex = 2
+	DropdownIcon.AnchorPoint = Vector2.new(1, 0.5)
+	DropdownIcon.Image = "rbxasset://textures/ui/Settings/DropDown/DropDown.png"
+	DropdownIcon.Size = UDim2.new(0, 15, 0, 10)
+	DropdownIcon.BackgroundTransparency = 1
+	DropdownIcon.Name = "DropdownIcone"
+	DropdownIcon.Position = UDim2.new(1, -12, 0.5, 0)
+	DropdownIcon.Parent = DropdownFrameButton
+
+	local DropdownFrame = Instance.new("ImageButton")
+	DropdownFrame.BorderSizePixel = 0
+	DropdownFrame.AutoButtonColor = false
+	DropdownFrame.Visible = false
+	DropdownFrame.BackgroundTransparency = 0.2
+	DropdownFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	DropdownFrame.Selectable = false
+	DropdownFrame.ZIndex = 10
+	DropdownFrame.Size = UDim2.new(1, 0, 1, 58)
+	DropdownFrame.Name = "MultiDropdownFrame_" .. Name
+	DropdownFrame.Position = UDim2.new(0, 0, 0, -58)
+	DropdownFrame.Parent = RobloxGui
+
+	local SelectionFrame = Instance.new("ImageLabel")
+	SelectionFrame.ZIndex = 10
+	SelectionFrame.SliceCenter = Rect.new(8, 6, 46, 44)
+	SelectionFrame.BackgroundColor3 = Color3.fromRGB(58, 60, 62)
+	SelectionFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	SelectionFrame.Size = UDim2.new(0, 400, 0.9, 0)
+	SelectionFrame.Name = "DropdownSelectionFrame"
+	SelectionFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+	SelectionFrame.Parent = DropdownFrame
+
+	local SFCorner = Instance.new("UICorner")
+	SFCorner.Parent = SelectionFrame
+
+	local ConfirmButton = Instance.new("TextButton")
+	ConfirmButton.ZIndex = 10
+	ConfirmButton.BorderSizePixel = 0
+	ConfirmButton.TextSize = 17
+	ConfirmButton.Text = "Confirm"
+	ConfirmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ConfirmButton.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+	ConfirmButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+	ConfirmButton.Size = UDim2.new(1, -20, 0, 40)
+	ConfirmButton.Position = UDim2.new(0, 10, 1, -50)
+	ConfirmButton.Name = "ConfirmButton"
+	ConfirmButton.Parent = SelectionFrame
+
+	local ConfirmCorner = Instance.new("UICorner")
+	ConfirmCorner.Parent = ConfirmButton
+
+	local ScrollingFrame = Instance.new("ScrollingFrame")
+	ScrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+	ScrollingFrame.ZIndex = 10
+	ScrollingFrame.BorderSizePixel = 0
+	ScrollingFrame.Name = "DropdownScrollingFrame"
+	ScrollingFrame.Size = UDim2.new(1, -20, 1, -75)
+	ScrollingFrame.Position = UDim2.new(0, 10, 0, 10)
+	ScrollingFrame.ScrollBarThickness = 1
+	ScrollingFrame.BackgroundTransparency = 1
+	ScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+	ScrollingFrame.Parent = SelectionFrame
+
+	local ScrollLayout = Instance.new("UIListLayout")
+	ScrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	ScrollLayout.Parent = ScrollingFrame
+
+	local selectedOptions = {}
+	local optionButtons = {}
+
+	for _, defaultOption in ipairs(Default) do
+		selectedOptions[defaultOption] = true
+	end
+
+	local function updateDisplay()
+		local selected = {}
+		for option, isSelected in pairs(selectedOptions) do
+			if isSelected then
+				table.insert(selected, option)
+			end
+		end
+		
+		if #selected == 0 then
+			SelectionText.Text = "Select..."
+		elseif #selected == 1 then
+			SelectionText.Text = selected[1]
+		else
+			SelectionText.Text = #selected .. " selected"
+		end
+		
+		for _, button in pairs(optionButtons) do
+			if selectedOptions[button.Text] then
+				button.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+				button.TextColor3 = Color3.fromRGB(255, 255, 255)
+			else
+				button.BackgroundColor3 = Color3.fromRGB(80, 82, 84)
+				button.TextColor3 = Color3.fromRGB(200, 200, 200)
+			end
+		end
+	end
+
+	local function toggleOption(optionText)
+		selectedOptions[optionText] = not selectedOptions[optionText]
+		updateDisplay()
+	end
+
+	local function getSelectedArray()
+		local selected = {}
+		for option, isSelected in pairs(selectedOptions) do
+			if isSelected then
+				table.insert(selected, option)
+			end
+		end
+		return selected
+	end
+
+	local function createOptionButton(optionText, order)
+		local Option = Instance.new("TextButton")
+		Option.BorderSizePixel = 0
+		Option.TextSize = 17
+		Option.AutoButtonColor = false
+		Option.TextColor3 = Color3.fromRGB(200, 200, 200)
+		Option.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+		Option.ZIndex = 10
+		Option.BackgroundColor3 = Color3.fromRGB(80, 82, 84)
+		Option.Size = UDim2.new(1, -28, 0, 50)
+		Option.Text = optionText
+		Option.Name = "Selection_" .. order
+		Option.LayoutOrder = order
+		Option.Parent = ScrollingFrame
+
+		local OptCorner = Instance.new("UICorner")
+		OptCorner.Parent = Option
+
+		local Padding = Instance.new("UIPadding")
+		Padding.PaddingLeft = UDim.new(0, 10)
+		Padding.Parent = Option
+
+		Option.MouseButton1Click:Connect(function()
+			toggleOption(optionText)
+		end)
+
+		optionButtons[optionText] = Option
+		return Option
+	end
+
+	for i, optionText in ipairs(Options) do
+		createOptionButton(optionText, i)
+	end
+
+	DropdownFrameButton.MouseButton1Click:Connect(function()
+		DropdownFrame.Visible = not DropdownFrame.Visible
+	end)
+
+	ConfirmButton.MouseButton1Click:Connect(function()
+		DropdownFrame.Visible = false
+		local selected = getSelectedArray()
+		Callback(selected)
+	end)
+
+	DropdownFrame.MouseButton1Click:Connect(function()
+		DropdownFrame.Visible = false
+	end)
+
+	updateDisplay()
+
+	return {
+		Frame = Frame,
+		Get = function() return getSelectedArray() end,
+		Set = function(_, optionsTable)
+			for option in pairs(selectedOptions) do
+				selectedOptions[option] = false
+			end
+			for _, option in ipairs(optionsTable) do
+				selectedOptions[option] = true
+			end
+			updateDisplay()
+		end,
+		ToggleOption = function(_, option)
+			toggleOption(option)
+		end,
+		Clear = function()
+			for option in pairs(selectedOptions) do
+				selectedOptions[option] = false
+			end
+			updateDisplay()
+		end,
+		SelectAll = function()
+			for _, option in ipairs(Options) do
+				selectedOptions[option] = true
+			end
+			updateDisplay()
 		end,
 	}
 end
