@@ -59,73 +59,137 @@ end
 -- ============================================================
 
 local HubBar = nil
+local SettingsShield = nil
 local BASE_WIDTH = 800
 local WIDTH_PER_BUTTON = 100
+local isShieldVisible = false
 
 local function countButtons()
-local count = 0
-for _, child in ipairs(HubBarContainer:GetChildren()) do
-if child:IsA("TextButton") then
-count = count + 1
-end
-end
-return count
+    local count = 0
+    for _, child in ipairs(HubBarContainer:GetChildren()) do
+        if child:IsA("TextButton") then
+            count = count + 1
+        end
+    end
+    return count
 end
 
 local function adjustHubBarWidth()
-if not (HubBar and HubBar:IsA("GuiObject")) then return end
-local buttonCount = countButtons()
-local newWidth = BASE_WIDTH
-if buttonCount > 5 then
-newWidth = math.max(300, BASE_WIDTH - (WIDTH_PER_BUTTON * (buttonCount - 5)))
+    if not (HubBar and HubBar:IsA("GuiObject")) then return end
+    
+    local buttonCount = countButtons()
+    local newWidth = BASE_WIDTH
+    
+    -- Ajusta baseado nos botões
+    if buttonCount > 5 then
+        newWidth = math.max(300, BASE_WIDTH - (WIDTH_PER_BUTTON * (buttonCount - 5)))
+    end
+    
+    -- Ajusta baseado no SettingsShield
+    if isShieldVisible then
+        newWidth = newWidth + 100  -- Adiciona espaço extra quando o shield está visível
+        -- Ou você pode definir uma largura específica:
+        -- newWidth = 600  -- Exemplo de largura fixa quando shield está visível
+    end
+    
+    local currentSize = HubBar.Size
+    HubBar.Size = UDim2.new(0, newWidth, currentSize.Y.Scale, currentSize.Y.Offset)
 end
-local currentSize = HubBar.Size
-HubBar.Size = UDim2.new(0, newWidth, currentSize.Y.Scale, currentSize.Y.Offset)
+
+local function setupSettingsShieldDetection()
+    SettingsShield = CoreGui:FindFirstChild("SettingsShield", true)
+    
+    if SettingsShield and SettingsShield:IsA("ImageLabel") then
+        -- Detecta quando o SettingsShield muda de visibilidade
+        SettingsShield:GetPropertyChangedSignal("Visible"):Connect(function()
+            isShieldVisible = SettingsShield.Visible
+            if HubBar then
+                adjustHubBarWidth()
+            end
+        end)
+        
+        -- Define o estado inicial
+        isShieldVisible = SettingsShield.Visible
+    end
 end
 
 local function setupHubBar()
-HubBar = findDescendant(CoreGui, "HubBar")
-
-if HubBar and HubBar:IsA("ImageLabel") then  
-	adjustHubBarWidth()  
-
-	HubBarContainer.ChildAdded:Connect(function(child)  
-		if child:IsA("TextButton") then  
-			task.wait(0.1)  
-			adjustHubBarWidth()  
-		end  
-	end)  
-
-	HubBarContainer.ChildRemoved:Connect(function(child)  
-		if child:IsA("TextButton") then  
-			task.wait(0.1)  
-			adjustHubBarWidth()  
-		end  
-	end)  
-
-	task.spawn(function()  
-		while true do  
-			task.wait(2)  
-			if HubBar and HubBar.Parent then  
-				adjustHubBarWidth()  
-			else  
-				HubBar = nil  
-				setupHubBar()  
-				break  
-			end  
-		end  
-	end)  
-else  
-	task.delay(1, setupHubBar)  
+    HubBar = CoreGui:FindFirstChild("HubBar", true)
+    
+    if HubBar and HubBar:IsA("ImageLabel") then
+        setupSettingsShieldDetection()  -- Configura detecção do shield
+        adjustHubBarWidth()
+        
+        HubBarContainer.ChildAdded:Connect(function(child)
+            if child:IsA("TextButton") then
+                task.wait(0.1)
+                adjustHubBarWidth()
+            end
+        end)
+        
+        HubBarContainer.ChildRemoved:Connect(function(child)
+            if child:IsA("TextButton") then
+                task.wait(0.1)
+                adjustHubBarWidth()
+            end
+        end)
+        
+        task.spawn(function()
+            while true do
+                task.wait(2)
+                if HubBar and HubBar.Parent then
+                    adjustHubBarWidth()
+                else
+                    HubBar = nil
+                    SettingsShield = nil
+                    setupHubBar()
+                    break
+                end
+            end
+        end)
+    else
+        task.delay(1, setupHubBar)
+    end
 end
 
-end
+-- Procura pelo SettingsShield e HubBar
+task.spawn(function()
+    while not SettingsShield do
+        SettingsShield = CoreGui:FindFirstChild("SettingsShield", true)
+        if not SettingsShield then
+            task.wait(1)
+        end
+    end
+    
+    if SettingsShield and SettingsShield:IsA("ImageLabel") then
+        setupSettingsShieldDetection()
+    end
+end)
+
 setupHubBar()
 
+-- Monitora novos descendentes
 CoreGui.DescendantAdded:Connect(function(descendant)
-if descendant.Name == "HubBar" and descendant:IsA("ImageLabel") and not HubBar then
-setupHubBar()
-end
+    if descendant.Name == "HubBar" and descendant:IsA("ImageLabel") and not HubBar then
+        setupHubBar()
+    elseif descendant.Name == "SettingsShield" and descendant:IsA("ImageLabel") and not SettingsShield then
+        SettingsShield = descendant
+        setupSettingsShieldDetection()
+        if HubBar then
+            adjustHubBarWidth()
+        end
+    end
+end)
+
+-- Também monitora quando o SettingsShield é removido
+CoreGui.DescendantRemoving:Connect(function(descendant)
+    if descendant == SettingsShield then
+        SettingsShield = nil
+        isShieldVisible = false
+        if HubBar then
+            adjustHubBarWidth()
+        end
+    end
 end)
 
 -- ============================================================
