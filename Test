@@ -1456,7 +1456,8 @@ function Tab:AddColorPicker(config)
 		HueCursor.ZIndex = 13
 		HueCursor.AnchorPoint = Vector2.new(0.5, 0.5)
 		HueCursor.Size = UDim2.new(0, 8, 1, 6)
-		HueCursor.Position = UDim2.new(1 - h, 0, 0.5, 0)
+		-- CORRIGIDO: Cursor agora usa 'h' diretamente em vez de '1 - h'
+		HueCursor.Position = UDim2.new(h, 0, 0.5, 0)
 		HueCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		HueCursor.BorderSizePixel = 0
 		HueCursor.Parent = HueFrame
@@ -1488,10 +1489,15 @@ function Tab:AddColorPicker(config)
 		local draggingMap = false
 		local draggingHue = false
 		
+		-- CORRIGIDO: Adicionada atualização do cursor do Hue e do mapa para manter tudo sincronizado
 		local function updateColorVisuals()
 			currentColor = Color3.fromHSV(h, s, v)
-			PreviewColor.BackgroundColor3 = currentColor
+			
 			MapFrame.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+			PreviewColor.BackgroundColor3 = currentColor
+			
+			MapCursor.Position = UDim2.new(s, 0, 1 - v, 0)
+			HueCursor.Position = UDim2.new(h, 0, 0.5, 0)
 		end
 		
 		local function UpdateMapInput(input)
@@ -1501,16 +1507,19 @@ function Tab:AddColorPicker(config)
 			local y = math.clamp((input.Position.Y - pos.Y) / size.Y, 0, 1)
 			s = x
 			v = 1 - y
-			MapCursor.Position = UDim2.new(x, 0, y, 0)
 			updateColorVisuals()
 		end
 		
+		-- CORRIGIDO: Função UpdateHueInput inteira substituída conforme instrução
 		local function UpdateHueInput(input)
 			local pos = HueFrame.AbsolutePosition
 			local size = HueFrame.AbsoluteSize
+			
 			local x = math.clamp((input.Position.X - pos.X) / size.X, 0, 1)
-			h = 1 - x
+			
+			h = x
 			HueCursor.Position = UDim2.new(x, 0, 0.5, 0)
+			
 			updateColorVisuals()
 		end
 		
