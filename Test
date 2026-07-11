@@ -480,7 +480,7 @@ function Tab:AddSeparator()
 end
 
 -- ============================================================
--- TAB:ADDTEXTBOX (INTEGRADO!)
+-- TAB:ADDTEXTBOX
 -- ============================================================
 
 function Tab:AddTextBox(config)
@@ -591,7 +591,7 @@ function Tab:AddTextBox(config)
 end
 
 -- ============================================================
--- TAB:ADDTOGGLE (SUPORTE A MÚLTIPLAS OPÇÕES)
+-- TAB:ADDTOGGLE
 -- ============================================================
 
 function Tab:AddToggle(config)
@@ -721,7 +721,7 @@ function Tab:AddToggle(config)
 end
 
 -- ============================================================
--- TAB:ADDSLIDER (MELHORADO)
+-- TAB:ADDSLIDER
 -- ============================================================
 
 function Tab:AddSlider(config)
@@ -927,6 +927,10 @@ function Tab:AddSlider(config)
 	}
 end
 
+-- ============================================================
+-- TAB:ADDBUTTON
+-- ============================================================
+
 function Tab:AddButton(config)
 	config = config or {}
 	local Name = config.Name or "Button"
@@ -1031,7 +1035,7 @@ function Tab:AddButton(config)
 end
 
 -- ============================================================
--- TAB:ADDDROPDOWN
+-- TAB:ADDDROPDOWN (COM DESTAQUE DE FUNDO)
 -- ============================================================
 
 function Tab:AddDropdown(config)
@@ -1122,46 +1126,106 @@ function Tab:AddDropdown(config)
 	Instance.new("UIListLayout").Parent = ScrollingFrame
 
 	local currentValue = Default
+	
+	-- TABELA PARA ARMAZENAR BOTÕES
+	local optionButtons = {}
 
+	-- FUNÇÃO PARA ATUALIZAR VISUAL DA SELEÇÃO
+	local function updateSelectionVisual()
+		for optionText, button in pairs(optionButtons) do
+			if optionText == currentValue then
+				button.BackgroundTransparency = 0.7
+			else
+				button.BackgroundTransparency = 1
+			end
+		end
+	end
+
+	-- FUNÇÃO DE SELEÇÃO
 	local function selectOption(text)
 		currentValue = text
 		SelectionText.Text = text
+		updateSelectionVisual()
 		DropdownFrame.Visible = false
 		Callback(text)
 	end
 
+	-- FUNÇÃO PARA CRIAR BOTÃO DE OPÇÃO
 	local function createOptionButton(optionText, order)
 		local Option = Instance.new("TextButton")
 		Option.BorderSizePixel = 0
-		Option.TextSize = 17
 		Option.AutoButtonColor = false
-		Option.TextColor3 = Color3.fromRGB(255, 255, 255)
-		Option.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-		Option.ZIndex = 10
+		Option.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		Option.BackgroundTransparency = 1
+		Option.TextColor3 = Color3.fromRGB(255, 255, 255)
+		Option.TextSize = 17
+		Option.FontFace = Font.new(
+			"rbxasset://fonts/families/BuilderSans.json",
+			Enum.FontWeight.Regular,
+			Enum.FontStyle.Normal
+		)
+		Option.ZIndex = 10
 		Option.Size = UDim2.new(1, -28, 0, 50)
 		Option.Text = optionText
 		Option.LayoutOrder = order
-		Option.Parent = ScrollingFrame
 
-		Option.MouseButton1Click:Connect(function() selectOption(optionText) end)
+		Instance.new("UICorner", Option)
+
+		Option.Parent = ScrollingFrame
+		optionButtons[optionText] = Option
+
+		Option.MouseButton1Click:Connect(function()
+			selectOption(optionText)
+		end)
+
 		return Option
 	end
 
-	for i, optionText in ipairs(Options) do createOptionButton(optionText, i) end
+	-- CRIAR TODAS AS OPÇÕES
+	for i, optionText in ipairs(Options) do
+		createOptionButton(optionText, i)
+	end
 
-	DropdownFrameButton.MouseButton1Click:Connect(function() DropdownFrame.Visible = not DropdownFrame.Visible end)
-	DropdownFrame.MouseButton1Click:Connect(function() DropdownFrame.Visible = false end)
+	-- APLICAR VISUAL INICIAL
+	updateSelectionVisual()
+
+	DropdownFrameButton.MouseButton1Click:Connect(function() 
+		DropdownFrame.Visible = not DropdownFrame.Visible 
+	end)
+	
+	DropdownFrame.MouseButton1Click:Connect(function() 
+		DropdownFrame.Visible = false 
+	end)
 
 	return {
 		Frame = Frame,
-		Set = function(_, value) selectOption(value) end,
-		Get = function() return currentValue end,
+		Set = function(_, value) 
+			selectOption(value) 
+		end,
+		Get = function() 
+			return currentValue 
+		end,
 		Refresh = function(_, newOptions)
+			-- LIMPAR TABELA
+			optionButtons = {}
+
+			-- DESTRUIR BOTÕES ANTIGOS
 			for _, child in ipairs(ScrollingFrame:GetChildren()) do
-				if child:IsA("TextButton") then child:Destroy() end
+				if child:IsA("TextButton") then
+					child:Destroy()
+				end
 			end
-			for i, optionText in ipairs(newOptions) do createOptionButton(optionText, i) end
+
+			-- ATUALIZAR OPÇÕES
+			Options = newOptions
+
+			-- RECRIAR BOTÕES
+			for i, optionText in ipairs(newOptions) do
+				createOptionButton(optionText, i)
+			end
+
+			-- ATUALIZAR VISUAL
+			updateSelectionVisual()
 		end,
 	}
 end
@@ -1315,11 +1379,19 @@ function Tab:AddMultiDropdown(config)
 		return Option
 	end
 
-	for i, optionText in ipairs(Options) do createMultiOptionButton(optionText, i) end
+	for i, optionText in ipairs(Options) do 
+		createMultiOptionButton(optionText, i) 
+	end
+	
 	updateMainText()
 
-	DropdownFrameButton.MouseButton1Click:Connect(function() DropdownFrame.Visible = not DropdownFrame.Visible end)
-	DropdownFrame.MouseButton1Click:Connect(function() DropdownFrame.Visible = false end)
+	DropdownFrameButton.MouseButton1Click:Connect(function() 
+		DropdownFrame.Visible = not DropdownFrame.Visible 
+	end)
+	
+	DropdownFrame.MouseButton1Click:Connect(function() 
+		DropdownFrame.Visible = false 
+	end)
 
 	return {
 		Frame = Frame,
@@ -1334,7 +1406,7 @@ function Tab:AddMultiDropdown(config)
 end
 
 -- ============================================================
--- TAB:ADDCOLORPICKER (NOVO!)
+-- TAB:ADDCOLORPICKER
 -- ============================================================
 
 function Tab:AddColorPicker(config)
@@ -1346,26 +1418,26 @@ function Tab:AddColorPicker(config)
 	local Frame = createBaseContainer(self.Page, Name, nextOrder(self))
 	
 	local ColorButton = Instance.new("ImageButton")
-ColorButton.AutoButtonColor = false
-ColorButton.BackgroundColor3 = Default
-ColorButton.ZIndex = 2
-ColorButton.AnchorPoint = Vector2.new(1, 0.5)
-ColorButton.Size = UDim2.new(0, 40, 0, 40)
-ColorButton.Position = UDim2.new(1, -10, 0.5, 0)
-ColorButton.Parent = Frame
+	ColorButton.AutoButtonColor = false
+	ColorButton.BackgroundColor3 = Default
+	ColorButton.ZIndex = 2
+	ColorButton.AnchorPoint = Vector2.new(1, 0.5)
+	ColorButton.Size = UDim2.new(0, 40, 0, 40)
+	ColorButton.Position = UDim2.new(1, -10, 0.5, 0)
+	ColorButton.Parent = Frame
 
-Instance.new("UICorner").Parent = ColorButton
+	Instance.new("UICorner").Parent = ColorButton
 
--- Ícone de pincel dentro do ColorButton
-local BrushIcon = Instance.new("ImageLabel")
-BrushIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-BrushIcon.Size = UDim2.new(0.8, 0, 0.8, 0)
-BrushIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
-BrushIcon.BackgroundTransparency = 1
-BrushIcon.Image = "rbxassetid://105966009412456" -- Ícone de pincel
-BrushIcon.ImageTransparency = 0.3
-BrushIcon.ZIndex = 3
-BrushIcon.Parent = ColorButton
+	-- Ícone de pincel dentro do ColorButton
+	local BrushIcon = Instance.new("ImageLabel")
+	BrushIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+	BrushIcon.Size = UDim2.new(0.8, 0, 0.8, 0)
+	BrushIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+	BrushIcon.BackgroundTransparency = 1
+	BrushIcon.Image = "rbxassetid://105966009412456" -- Ícone de pincel
+	BrushIcon.ImageTransparency = 0.3
+	BrushIcon.ZIndex = 3
+	BrushIcon.Parent = ColorButton
 	
 	local currentColor = Default
 	local h, s, v = Default:ToHSV()
@@ -1467,7 +1539,6 @@ BrushIcon.Parent = ColorButton
 		HueCursor.ZIndex = 13
 		HueCursor.AnchorPoint = Vector2.new(0.5, 0.5)
 		HueCursor.Size = UDim2.new(0, 8, 1, 6)
-		-- CORRIGIDO: Cursor agora usa 'h' diretamente em vez de '1 - h'
 		HueCursor.Position = UDim2.new(h, 0, 0.5, 0)
 		HueCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		HueCursor.BorderSizePixel = 0
@@ -1500,7 +1571,6 @@ BrushIcon.Parent = ColorButton
 		local draggingMap = false
 		local draggingHue = false
 		
-		-- CORRIGIDO: Adicionada atualização do cursor do Hue e do mapa para manter tudo sincronizado
 		local function updateColorVisuals()
 			currentColor = Color3.fromHSV(h, s, v)
 			
@@ -1521,7 +1591,6 @@ BrushIcon.Parent = ColorButton
 			updateColorVisuals()
 		end
 		
-		-- CORRIGIDO: Função UpdateHueInput inteira substituída conforme instrução
 		local function UpdateHueInput(input)
 			local pos = HueFrame.AbsolutePosition
 			local size = HueFrame.AbsoluteSize
