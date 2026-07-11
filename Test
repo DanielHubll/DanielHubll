@@ -55,129 +55,128 @@ return setmetatable({}, Library)
 end
 
 -- ============================================================
--- HUBBAR FIXO + BOTÕES CENTRALIZADOS
+-- SISTEMA DE AJUSTE AUTOMÁTICO DO HUBBAR (COM TRANSIÇÃO SUAVE)
 -- ============================================================
 
+local TweenService = game:GetService("TweenService")
+
 local HubBar = nil
+local HubBarContainer = nil -- você precisa definir isso (o container dos botões)
+local CoreGui = game:GetService("CoreGui")
+
 local BASE_WIDTH = 800
+local WIDTH_PER_BUTTON = 100
 
-local function getListLayout()
-	for _, obj in ipairs(HubBarContainer:GetChildren()) do
-		if obj:IsA("UIListLayout") then
-			return obj
-		end
-	end
+-- Configuração da animação suave
+local TWEEN_INFO = TweenInfo.new(
+    0.35,                           -- duração (segundos)
+    Enum.EasingStyle.Quad,          -- estilo suave
+    Enum.EasingDirection.InOut      -- desacelera no início e fim
+)
 
-	local Layout = Instance.new("UIListLayout")
-	Layout.FillDirection = Enum.FillDirection.Horizontal
-	Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	Layout.VerticalAlignment = Enum.VerticalAlignment.Center
-	Layout.SortOrder = Enum.SortOrder.LayoutOrder
-	Layout.Padding = UDim.new(0, 8)
-	Layout.Parent = HubBarContainer
+local currentTween = nil -- pra guardar e cancelar a animação anterior
 
-	return Layout
+-- ============================================================
+-- FUNÇÕES
+-- ============================================================
+
+local function findDescendant(parent, name)
+    for _, desc in ipairs(parent:GetDescendants()) do
+        if desc.Name == name then
+            return desc
+        end
+    end
+    return nil
 end
 
 local function countButtons()
-	local count = 0
-
-	for _, child in ipairs(HubBarContainer:GetChildren()) do
-		if child:IsA("TextButton") then
-			count += 1
-		end
-	end
-
-	return count
+    if not HubBarContainer then return 0 end
+    local count = 0
+    for _, child in ipairs(HubBarContainer:GetChildren()) do
+        if child:IsA("TextButton") or child:IsA("ImageButton") then
+            count = count + 1
+        end
+    end
+    return count
 end
 
-local function adjustButtons()
-	if not HubBar then
-		return
-	end
+local function adjustHubBarWidth()
+    if not (HubBar and HubBar:IsA("GuiObject")) then return end
 
-	-- HubBar nunca muda de tamanho
-	HubBar.Size = UDim2.new(0, BASE_WIDTH, HubBar.Size.Y.Scale, HubBar.Size.Y.Offset)
+    local buttonCount = countButtons()
+    local newWidth = BASE_WIDTH
 
-	local Layout = getListLayout()
+    if buttonCount > 5 then
+        newWidth = math.max(300, BASE_WIDTH - (WIDTH_PER_BUTTON * (buttonCount - 5)))
+    end
 
-	local Buttons = {}
+    local currentSize = HubBar.Size
+    local targetSize = UDim2.new(0, newWidth, currentSize.Y.Scale, currentSize.Y.Offset)
 
-	for _, child in ipairs(HubBarContainer:GetChildren()) do
-		if child:IsA("TextButton") then
-			table.insert(Buttons, child)
-		end
-	end
+    -- Cancela animação anterior se ainda estiver rodando
+    if currentTween then
+        currentTween:Cancel()
+        currentTween = nil
+    end
 
-	local Count = #Buttons
-
-	-- Espaçamento automático
-	if Count <= 5 then
-		Layout.Padding = UDim.new(0, 8)
-	elseif Count <= 7 then
-		Layout.Padding = UDim.new(0, 5)
-	else
-		Layout.Padding = UDim.new(0, 2)
-	end
-
-	-- Ajusta largura dos botões quando tiver muitas abas
-	local ButtonWidth = 100
-
-	if Count > 6 then
-		ButtonWidth = math.max(65, math.floor((BASE_WIDTH - ((Count - 1) * Layout.Padding.Offset)) / Count))
-	end
-
-	for _, Button in ipairs(Buttons) do
-		Button.Size = UDim2.new(0, ButtonWidth, Button.Size.Y.Scale, Button.Size.Y.Offset)
-	end
+    -- Cria e toca a animação suave
+    currentTween = TweenService:Create(HubBar, TWEEN_INFO, { Size = targetSize })
+    currentTween:Play()
 end
 
 local function setupHubBar()
-	HubBar = findDescendant(CoreGui, "HubBar")
+    HubBar = findDescendant(CoreGui, "HubBar")
+    HubBarContainer = findDescendant(CoreGui, "HubBarContainer") -- ajuste o nome se for diferente
 
-	if not (HubBar and HubBar:IsA("ImageLabel")) then
-		task.delay(1, setupHubBar)
-		return
-	end
+    if HubBar and HubBar:IsA("ImageLabel") then
+        adjustHubBarWidth()
 
-	getListLayout()
-	adjustButtons()
+        -- Observa quando adiciona botão
+        if HubBarContainer then
+            HubBarContainer.ChildAdded:Connect(function(child)
+                if child:IsA("TextButton") or child:IsA("ImageButton") then
+                    task.wait(0.05) -- espera menor = resposta mais rápida
+                    adjustHubBarWidth()
+                end
+            end)
 
-	HubBarContainer.ChildAdded:Connect(function(child)
-		if child:IsA("TextButton") then
-			task.wait()
-			adjustButtons()
-		end
-	end)
+            HubBarContainer.ChildRemoved:Connect(function(child)
+                if child:IsA("TextButton") or child:IsA("ImageButton") then
+                    task.wait(0.05)
+                    adjustHubBarWidth()
+                end
+            end)
+        end
 
-	HubBarContainer.ChildRemoved:Connect(function(child)
-		if child:IsA("TextButton") then
-			task.wait()
-			adjustButtons()
-		end
-	end)
+        -- Loop de verificação
+        task.spawn(function()
+            while true do
+                task.wait(2)
+                if HubBar and HubBar.Parent then
+                    adjustHubBarWidth()
+                else
+                    HubBar = nil
+                    HubBarContainer = nil
+                    setupHubBar()
+                    break
+                end
+            end
+        end)
 
-	task.spawn(function()
-		while HubBar and HubBar.Parent do
-			task.wait(2)
-			adjustButtons()
-		end
-
-		HubBar = nil
-		setupHubBar()
-	end)
+    else
+        task.delay(1, setupHubBar)
+    end
 end
 
 setupHubBar()
 
+-- Observa se o HubBar for recriado
 CoreGui.DescendantAdded:Connect(function(descendant)
-	if descendant.Name == "HubBar"
-		and descendant:IsA("ImageLabel")
-		and not HubBar then
-
-		setupHubBar()
-	end
+    if descendant.Name == "HubBar" and descendant:IsA("ImageLabel") and not HubBar then
+        setupHubBar()
+    end
 end)
+
 -- ============================================================
 -- SISTEMA DE SELEÇÃO / DESSELEÇÃO DE ABAS
 -- ============================================================
