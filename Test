@@ -479,7 +479,7 @@ function Tab:AddSeparator()
 end
 
 -- ============================================================
--- TAB:ADDTOGGLE (AGORA SUPORTA MÚLTIPLAS OPÇÕES)
+-- TAB:ADDTOGGLE
 -- ============================================================
 
 function Tab:AddToggle(config)
@@ -489,7 +489,6 @@ function Tab:AddToggle(config)
 	local Default = config.Default
 	local Callback = config.Callback or function() end
 
-	-- Tratamento para manter a compatibilidade com antigos (Default = true/false)
 	if Default == true then Default = "On" elseif Default == false then Default = "Off" end
 	if not Default then Default = Options[1] end
 
@@ -591,7 +590,7 @@ function Tab:AddToggle(config)
 		updateVisual()
 	end)
 
-	updateVisual(true) -- Configura inicial sem dar trigger duplicado
+	updateVisual(true)
 	if config.Default ~= nil then updateVisual(false) end
 
 	return {
@@ -610,11 +609,10 @@ function Tab:AddToggle(config)
 end
 
 -- ============================================================
--- TAB:ADDSLIDER & BUTTON (MANTEVE O PADRÃO)
+-- TAB:ADDSLIDER
 -- ============================================================
 
 function Tab:AddSlider(config)
-	-- ... [Seu código original de Slider permanece idêntico aqui] ...
 	config = config or {}
 	local Name = config.Name or "Slider"
 	local Min = config.Min or 0
@@ -799,6 +797,10 @@ function Tab:AddSlider(config)
 		Get = function() return currentValue end,
 	}
 end
+
+-- ============================================================
+-- TAB:ADDBUTTON
+-- ============================================================
 
 function Tab:AddButton(config)
 	config = config or {}
@@ -1042,14 +1044,14 @@ function Tab:AddDropdown(config)
 end
 
 -- ============================================================
--- TAB:ADDMULTIDROPDOWN (NOVO!)
+-- TAB:ADDMULTIDROPDOWN
 -- ============================================================
 
 function Tab:AddMultiDropdown(config)
 	config = config or {}
 	local Name = config.Name or "Multi Dropdown"
 	local Options = config.Options or {}
-	local Default = config.Default or {} -- Agora é uma tabela! Ex: {"Item1", "Item2"}
+	local Default = config.Default or {}
 	local Callback = config.Callback or function() end
 
 	local Frame = createBaseContainer(self.Page, Name, nextOrder(self))
@@ -1163,7 +1165,6 @@ function Tab:AddMultiDropdown(config)
 		Option.LayoutOrder = order
 		Option.Parent = ScrollingFrame
 
-		-- Destaca se já estiver selecionado no Default
 		if selectedOptions[optionText] then
 			Option.TextColor3 = Color3.fromRGB(0, 200, 255)
 		else
@@ -1181,7 +1182,6 @@ function Tab:AddMultiDropdown(config)
 			
 			updateMainText()
 			
-			-- Retorna um array limpo apenas com as selecionadas
 			local activeList = {}
 			for _, opt in ipairs(Options) do
 				if selectedOptions[opt] then table.insert(activeList, opt) end
@@ -1196,8 +1196,6 @@ function Tab:AddMultiDropdown(config)
 	updateMainText()
 
 	DropdownFrameButton.MouseButton1Click:Connect(function() DropdownFrame.Visible = not DropdownFrame.Visible end)
-	
-	-- Fecha apenas se clicar fora do quadro (fundo)
 	DropdownFrame.MouseButton1Click:Connect(function() DropdownFrame.Visible = false end)
 
 	return {
@@ -1208,6 +1206,75 @@ function Tab:AddMultiDropdown(config)
 				if selectedOptions[opt] then table.insert(activeList, opt) end
 			end
 			return activeList
+		end
+	}
+end
+
+-- ============================================================
+-- TAB:ADDTEXTBOX
+-- ============================================================
+
+function Tab:AddTextBox(config)
+	config = config or {}
+	local Name = config.Name or "TextBox"
+	local Default = config.Default or ""
+	local Placeholder = config.Placeholder or "..."
+	local ClearTextOnFocus = config.ClearTextOnFocus or false
+	local Callback = config.Callback or function() end
+
+	local Frame = createBaseContainer(self.Page, Name, nextOrder(self))
+
+	local InputBackground = Instance.new("Frame")
+	InputBackground.BackgroundColor3 = Color3.fromRGB(26, 28, 30)
+	InputBackground.AnchorPoint = Vector2.new(1, 0.5)
+	InputBackground.Size = UDim2.new(0, 150, 0, 30)
+	InputBackground.Position = UDim2.new(1, -10, 0.5, 0)
+	InputBackground.BorderSizePixel = 0
+	InputBackground.Parent = Frame
+
+	local UICorner = Instance.new("UICorner")
+	UICorner.CornerRadius = UDim.new(0, 6)
+	UICorner.Parent = InputBackground
+
+	local Border = Instance.new("UIStroke")
+	Border.Transparency = 0.4
+	Border.Color = Color3.fromRGB(0, 200, 255) 
+	Border.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	Border.Parent = InputBackground
+
+	local TextBoxElement = Instance.new("TextBox")
+	TextBoxElement.BackgroundTransparency = 1
+	TextBoxElement.Size = UDim2.new(1, -16, 1, 0)
+	TextBoxElement.Position = UDim2.new(0, 8, 0, 0)
+	TextBoxElement.Font = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+	TextBoxElement.TextSize = 14
+	TextBoxElement.TextColor3 = Color3.fromRGB(255, 255, 255)
+	TextBoxElement.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+	TextBoxElement.PlaceholderText = Placeholder
+	TextBoxElement.Text = Default
+	TextBoxElement.ClearTextOnFocus = ClearTextOnFocus
+	TextBoxElement.TextXAlignment = Enum.TextXAlignment.Left
+	TextBoxElement.Parent = InputBackground
+
+	TextBoxElement.Focused:Connect(function()
+		Border.Transparency = 0
+		Border.Color = Color3.fromRGB(170, 0, 255) 
+	end)
+
+	TextBoxElement.FocusLost:Connect(function(enterPressed)
+		Border.Transparency = 0.4
+		Border.Color = Color3.fromRGB(0, 200, 255)
+		Callback(TextBoxElement.Text)
+	end)
+
+	return {
+		Frame = Frame,
+		Get = function()
+			return TextBoxElement.Text
+		end,
+		Set = function(_, value)
+			TextBoxElement.Text = tostring(value)
+			Callback(TextBoxElement.Text)
 		end
 	}
 end
