@@ -514,7 +514,7 @@ function Tab:AddSection(text)
 		Enum.FontWeight.Bold,
 		Enum.FontStyle.Normal
 	)
-	Title.TextSize = 18
+	Title.TextSize = 25
 	Title.Parent = Container
 
 	return Section
