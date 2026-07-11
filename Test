@@ -1340,7 +1340,7 @@ end
 function Tab:AddColorPicker(config)
 	config = config or {}
 	local Name = config.Name or "Color Picker"
-	local Default = config.Default or Color3.fromRGB(255, 255, 255)
+	local Default = config.Default or Color3.fromRGB(200, 200, 200)
 	local Callback = config.Callback or function() end
 
 	local Frame = createBaseContainer(self.Page, Name, nextOrder(self))
@@ -1359,7 +1359,7 @@ Instance.new("UICorner").Parent = ColorButton
 -- Ícone de pincel dentro do ColorButton
 local BrushIcon = Instance.new("ImageLabel")
 BrushIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-BrushIcon.Size = UDim2.new(0, 1, 0, 1)
+BrushIcon.Size = UDim2.new(0.8, 0, 0.8, 0)
 BrushIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 BrushIcon.BackgroundTransparency = 1
 BrushIcon.Image = "rbxassetid://105966009412456" -- Ícone de pincel
