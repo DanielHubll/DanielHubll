@@ -55,126 +55,77 @@ return setmetatable({}, Library)
 end
 
 -- ============================================================
--- SISTEMA DE AJUSTE AUTOMÁTICO DO HUBBAR (COM TRANSIÇÃO SUAVE)
+-- SISTEMA DE AJUSTE AUTOMÁTICO DO HUBBAR
 -- ============================================================
 
-local TweenService = game:GetService("TweenService")
-
 local HubBar = nil
-local HubBarContainer = nil -- você precisa definir isso (o container dos botões)
-local CoreGui = game:GetService("CoreGui")
-
 local BASE_WIDTH = 800
 local WIDTH_PER_BUTTON = 100
 
--- Configuração da animação suave
-local TWEEN_INFO = TweenInfo.new(
-    0.35,                           -- duração (segundos)
-    Enum.EasingStyle.Quad,          -- estilo suave
-    Enum.EasingDirection.InOut      -- desacelera no início e fim
-)
-
-local currentTween = nil -- pra guardar e cancelar a animação anterior
-
--- ============================================================
--- FUNÇÕES
--- ============================================================
-
-local function findDescendant(parent, name)
-    for _, desc in ipairs(parent:GetDescendants()) do
-        if desc.Name == name then
-            return desc
-        end
-    end
-    return nil
-end
-
 local function countButtons()
-    if not HubBarContainer then return 0 end
-    local count = 0
-    for _, child in ipairs(HubBarContainer:GetChildren()) do
-        if child:IsA("TextButton") or child:IsA("ImageButton") then
-            count = count + 1
-        end
-    end
-    return count
+local count = 0
+for _, child in ipairs(HubBarContainer:GetChildren()) do
+if child:IsA("TextButton") then
+count = count + 1
+end
+end
+return count
 end
 
 local function adjustHubBarWidth()
-    if not (HubBar and HubBar:IsA("GuiObject")) then return end
-
-    local buttonCount = countButtons()
-    local newWidth = BASE_WIDTH
-
-    if buttonCount > 5 then
-        newWidth = math.max(300, BASE_WIDTH - (WIDTH_PER_BUTTON * (buttonCount - 5)))
-    end
-
-    local currentSize = HubBar.Size
-    local targetSize = UDim2.new(0, newWidth, currentSize.Y.Scale, currentSize.Y.Offset)
-
-    -- Cancela animação anterior se ainda estiver rodando
-    if currentTween then
-        currentTween:Cancel()
-        currentTween = nil
-    end
-
-    -- Cria e toca a animação suave
-    currentTween = TweenService:Create(HubBar, TWEEN_INFO, { Size = targetSize })
-    currentTween:Play()
+if not (HubBar and HubBar:IsA("GuiObject")) then return end
+local buttonCount = countButtons()
+local newWidth = BASE_WIDTH
+if buttonCount > 5 then
+newWidth = math.max(300, BASE_WIDTH - (WIDTH_PER_BUTTON * (buttonCount - 5)))
+end
+local currentSize = HubBar.Size
+HubBar.Size = UDim2.new(0, newWidth, currentSize.Y.Scale, currentSize.Y.Offset)
 end
 
 local function setupHubBar()
-    HubBar = findDescendant(CoreGui, "HubBar")
-    HubBarContainer = findDescendant(CoreGui, "HubBarContainer") -- ajuste o nome se for diferente
+HubBar = findDescendant(CoreGui, "HubBar")
 
-    if HubBar and HubBar:IsA("ImageLabel") then
-        adjustHubBarWidth()
+if HubBar and HubBar:IsA("ImageLabel") then  
+	adjustHubBarWidth()  
 
-        -- Observa quando adiciona botão
-        if HubBarContainer then
-            HubBarContainer.ChildAdded:Connect(function(child)
-                if child:IsA("TextButton") or child:IsA("ImageButton") then
-                    task.wait(0.05) -- espera menor = resposta mais rápida
-                    adjustHubBarWidth()
-                end
-            end)
+	HubBarContainer.ChildAdded:Connect(function(child)  
+		if child:IsA("TextButton") then  
+			task.wait(0.1)  
+			adjustHubBarWidth()  
+		end  
+	end)  
 
-            HubBarContainer.ChildRemoved:Connect(function(child)
-                if child:IsA("TextButton") or child:IsA("ImageButton") then
-                    task.wait(0.05)
-                    adjustHubBarWidth()
-                end
-            end)
-        end
+	HubBarContainer.ChildRemoved:Connect(function(child)  
+		if child:IsA("TextButton") then  
+			task.wait(0.1)  
+			adjustHubBarWidth()  
+		end  
+	end)  
 
-        -- Loop de verificação
-        task.spawn(function()
-            while true do
-                task.wait(2)
-                if HubBar and HubBar.Parent then
-                    adjustHubBarWidth()
-                else
-                    HubBar = nil
-                    HubBarContainer = nil
-                    setupHubBar()
-                    break
-                end
-            end
-        end)
-
-    else
-        task.delay(1, setupHubBar)
-    end
+	task.spawn(function()  
+		while true do  
+			task.wait(2)  
+			if HubBar and HubBar.Parent then  
+				adjustHubBarWidth()  
+			else  
+				HubBar = nil  
+				setupHubBar()  
+				break  
+			end  
+		end  
+	end)  
+else  
+	task.delay(1, setupHubBar)  
 end
 
+end
 setupHubBar()
 
--- Observa se o HubBar for recriado
 CoreGui.DescendantAdded:Connect(function(descendant)
-    if descendant.Name == "HubBar" and descendant:IsA("ImageLabel") and not HubBar then
-        setupHubBar()
-    end
+if descendant.Name == "HubBar" and descendant:IsA("ImageLabel") and not HubBar then
+setupHubBar()
+end
 end)
 
 -- ============================================================
