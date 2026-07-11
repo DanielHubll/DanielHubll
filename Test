@@ -1346,15 +1346,26 @@ function Tab:AddColorPicker(config)
 	local Frame = createBaseContainer(self.Page, Name, nextOrder(self))
 	
 	local ColorButton = Instance.new("ImageButton")
-	ColorButton.AutoButtonColor = false
-	ColorButton.BackgroundColor3 = Default
-	ColorButton.ZIndex = 2
-	ColorButton.AnchorPoint = Vector2.new(1, 0.5)
-	ColorButton.Size = UDim2.new(0, 40, 0, 40)
-	ColorButton.Position = UDim2.new(1, -10, 0.5, 0)
-	ColorButton.Parent = Frame
-	
-	Instance.new("UICorner").Parent = ColorButton
+ColorButton.AutoButtonColor = false
+ColorButton.BackgroundColor3 = Default
+ColorButton.ZIndex = 2
+ColorButton.AnchorPoint = Vector2.new(1, 0.5)
+ColorButton.Size = UDim2.new(0, 40, 0, 40)
+ColorButton.Position = UDim2.new(1, -10, 0.5, 0)
+ColorButton.Parent = Frame
+
+Instance.new("UICorner").Parent = ColorButton
+
+-- Ícone de pincel dentro do ColorButton
+local BrushIcon = Instance.new("ImageLabel")
+BrushIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+BrushIcon.Size = UDim2.new(0, 1, 0, 1)
+BrushIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+BrushIcon.BackgroundTransparency = 1
+BrushIcon.Image = "rbxassetid://105966009412456" -- Ícone de pincel
+BrushIcon.ImageTransparency = 0.3
+BrushIcon.ZIndex = 3
+BrushIcon.Parent = ColorButton
 	
 	local currentColor = Default
 	local h, s, v = Default:ToHSV()
