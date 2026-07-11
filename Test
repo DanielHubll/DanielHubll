@@ -873,8 +873,216 @@ function Tab:AddSlider(config)
 	RightButton.MouseButton1Click:Connect(function() setSlider(getLastActiveStep() + 1) end)
 	LeftButton.MouseButton1Click:Connect(function() setSlider(getLastActiveStep() - 1) end)
 
-	local isDragging = false
+function Tab:AddSlider(config)
+	config = config or {}
+	local Name = config.Name or "Slider"
+	local Min = config.Min or 0
+	local Max = config.Max or 100
+	local Default = config.Default or Min
+	local Callback = config.Callback or function() end
 
+	-- Container principal (igual ao Slider_2 da referência)
+	local Frame = Instance.new("ImageButton")
+	Frame.Active = false
+	Frame.BorderSizePixel = 0
+	Frame.SliceCenter = Rect.new(2, 2, 18, 18)
+	Frame.ScaleType = Enum.ScaleType.Slice
+	Frame.AutoButtonColor = false
+	Frame.ImageTransparency = 1
+	Frame.BackgroundTransparency = 1
+	Frame.BackgroundColor3 = Color3.fromRGB(36, 38, 40)
+	Frame.ImageColor3 = Color3.fromRGB(36, 38, 40)
+	Frame.Selectable = false
+	Frame.ZIndex = 2
+	Frame.Image = "rbxasset://textures/ui/VR/rectBackgroundWhite.png"
+	Frame.Size = UDim2.new(1, 0, 0, 50)
+	Frame.LayoutOrder = nextOrder(self)
+	Frame.Name = Name
+	Frame.Parent = self.Page
+	
+	-- UICorner do container
+	Instance.new("UICorner", Frame)
+	
+	-- Slider interno (igual ao Slider_4 da referência)
+	local SliderInner = Instance.new("ImageButton")
+	SliderInner.AutoButtonColor = false
+	SliderInner.BackgroundTransparency = 1
+	SliderInner.Selectable = false
+	SliderInner.ZIndex = 2
+	SliderInner.AnchorPoint = Vector2.new(1, 0.5)
+	SliderInner.Size = UDim2.new(0.6, 0, 0, 50)
+	SliderInner.Name = "Slider"
+	SliderInner.Position = UDim2.new(1, 0, 0.5, 0)
+	SliderInner.Parent = Frame
+	
+	-- LeftButton (igual ao LeftButton_5 da referência)
+	local LeftButton = Instance.new("ImageButton")
+	LeftButton.BackgroundTransparency = 1
+	LeftButton.Selectable = false
+	LeftButton.AnchorPoint = Vector2.new(0, 0.5)
+	LeftButton.Size = UDim2.new(0, 32, 0, 50)
+	LeftButton.Name = "LeftButton"
+	LeftButton.Position = UDim2.new(0, 0, 0.5, 0)
+	LeftButton.Parent = SliderInner
+	
+	-- Ícone do LeftButton (igual ao LeftButton_6)
+	local LeftIcon = Instance.new("ImageLabel")
+	LeftIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+	LeftIcon.Image = "rbxasset://textures/ui/Settings/Slider/Less.png"
+	LeftIcon.Size = UDim2.new(0, 30, 0, 30)
+	LeftIcon.BackgroundTransparency = 1
+	LeftIcon.Name = "LeftButton"
+	LeftIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+	LeftIcon.Parent = LeftButton
+	
+	-- RightButton (igual ao RightButton_7 da referência)
+	local RightButton = Instance.new("ImageButton")
+	RightButton.BackgroundTransparency = 1
+	RightButton.Selectable = false
+	RightButton.AnchorPoint = Vector2.new(1, 0.5)
+	RightButton.Size = UDim2.new(0, 32, 0, 50)
+	RightButton.Name = "RightButton"
+	RightButton.Position = UDim2.new(1, 0, 0.5, 0)
+	RightButton.Parent = SliderInner
+	
+	-- Ícone do RightButton (igual ao RightButton_8)
+	local RightIcon = Instance.new("ImageLabel")
+	RightIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+	RightIcon.Image = "rbxasset://textures/ui/Settings/Slider/More.png"
+	RightIcon.Size = UDim2.new(0, 30, 0, 30)
+	RightIcon.BackgroundTransparency = 1
+	RightIcon.Name = "RightButton"
+	RightIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+	RightIcon.Parent = RightButton
+	
+	-- StepsContainer (igual ao StepsContainer_9)
+	local StepsContainer = Instance.new("Frame")
+	StepsContainer.AnchorPoint = Vector2.new(0.5, 0.5)
+	StepsContainer.Size = UDim2.new(1, -100, 1, 0)
+	StepsContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+	StepsContainer.Name = "StepsContainer"
+	StepsContainer.BackgroundTransparency = 1
+	StepsContainer.Parent = SliderInner
+	
+	-- Configuração dos steps
+	local STEP_COUNT = 10
+	local ACTIVE_COLOR = Color3.fromRGB(255, 255, 255)
+	local INACTIVE_COLOR = Color3.fromRGB(58, 60, 62)
+	
+	local steps = {}
+	local fillers = {}
+	
+	for i = 1, STEP_COUNT do
+		local step = Instance.new("ImageButton")
+		step.Active = false
+		step.BorderSizePixel = 0
+		step.AutoButtonColor = false
+		step.ImageTransparency = 0.36
+		step.BackgroundColor3 = INACTIVE_COLOR
+		step.Selectable = false
+		step.AnchorPoint = Vector2.new(0, 0.5)
+		step.Size = UDim2.new(0.1, -4, 0, 24)
+		step.Name = "Step" .. i
+		step.Position = UDim2.new((i - 1) * 0.1, 2, 0.5, 0)
+		step.Parent = StepsContainer
+		
+		steps[i] = step
+		
+		-- Apenas Step1 e Step10 têm UICorner e Filler
+		if i == 1 or i == STEP_COUNT then
+			Instance.new("UICorner", step)
+			
+			local filler = Instance.new("Frame")
+			filler.BorderSizePixel = 0
+			filler.BackgroundColor3 = INACTIVE_COLOR
+			filler.Size = UDim2.new(0.25, 0, 1, 0)
+			filler.Name = "Filler"
+			filler.Parent = step
+			
+			if i == 1 then
+				filler.Position = UDim2.new(0.75, 0, 0, 0)
+			else
+				filler.Position = UDim2.new(0, 0, 0, 0)
+			end
+			
+			fillers[i] = filler
+		end
+	end
+	
+	-- Funções auxiliares
+	local function getLastActiveStep()
+		for i = #steps, 1, -1 do
+			if steps[i].BackgroundColor3 == ACTIVE_COLOR then
+				return i
+			end
+		end
+		return 0
+	end
+	
+	local function updateButtonsVisibility()
+		local lastActive = getLastActiveStep()
+		RightButton.Visible = lastActive < #steps
+		LeftButton.Visible = lastActive > 0
+	end
+	
+	local function activateStep(index)
+		if index >= 1 and index <= #steps then
+			steps[index].BackgroundColor3 = ACTIVE_COLOR
+			if fillers[index] then
+				fillers[index].BackgroundColor3 = ACTIVE_COLOR
+			end
+		end
+	end
+	
+	local function deactivateStep(index)
+		if index >= 1 and index <= #steps then
+			steps[index].BackgroundColor3 = INACTIVE_COLOR
+			if fillers[index] then
+				fillers[index].BackgroundColor3 = INACTIVE_COLOR
+			end
+		end
+	end
+	
+	local currentValue = Default
+	
+	local function setSlider(targetIndex, skipCallback)
+		targetIndex = math.clamp(targetIndex, 0, #steps)
+		local current = getLastActiveStep()
+		
+		if targetIndex > current then
+			for i = current + 1, targetIndex do
+				activateStep(i)
+			end
+		elseif targetIndex < current then
+			for i = current, targetIndex + 1, -1 do
+				deactivateStep(i)
+			end
+		end
+		
+		updateButtonsVisibility()
+		
+		currentValue = math.floor(Min + ((targetIndex / STEP_COUNT) * (Max - Min)))
+		if not skipCallback then
+			Callback(currentValue)
+		end
+	end
+	
+	-- Configurar valor inicial
+	local defaultIndex = math.round(((Default - Min) / math.max(Max - Min, 1)) * STEP_COUNT)
+	setSlider(defaultIndex, true)
+	
+	-- Eventos dos botões
+	RightButton.MouseButton1Click:Connect(function()
+		setSlider(getLastActiveStep() + 1)
+	end)
+	
+	LeftButton.MouseButton1Click:Connect(function()
+		setSlider(getLastActiveStep() - 1)
+	end)
+	
+	-- Arrastar
+	local isDragging = false
+	
 	local function updateFromInput(input)
 		local containerPos = StepsContainer.AbsolutePosition.X
 		local containerSize = StepsContainer.AbsoluteSize.X
@@ -882,14 +1090,14 @@ function Tab:AddSlider(config)
 		local percentage = math.clamp((inputPos - containerPos) / containerSize, 0, 1)
 		setSlider(math.round(percentage * STEP_COUNT))
 	end
-
+	
 	StepsContainer.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			isDragging = true
 			updateFromInput(input)
 		end
 	end)
-
+	
 	for i, step in ipairs(steps) do
 		step.InputBegan:Connect(function(input)
 			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -898,26 +1106,49 @@ function Tab:AddSlider(config)
 			end
 		end)
 	end
-
+	
 	UserInputService.InputChanged:Connect(function(input)
 		if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 			updateFromInput(input)
 		end
 	end)
-
+	
 	UserInputService.InputEnded:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			isDragging = false
 		end
 	end)
-
+	
+	-- Title (igual ao Title_18 da referência)
+	local Title = Instance.new("TextLabel")
+	Title.TextWrapped = true
+	Title.TextSize = 17
+	Title.TextXAlignment = Enum.TextXAlignment.Left
+	Title.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+	Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Title.BackgroundTransparency = 1
+	Title.Size = UDim2.new(0.4, -20, 1, 0)
+	Title.Text = Name
+	Title.AutomaticSize = Enum.AutomaticSize.Y
+	Title.Name = "Title"
+	Title.Position = UDim2.new(0, 10, 0, 0)
+	Title.Parent = Frame
+	
+	-- Title Padding
+	local TitlePadding = Instance.new("UIPadding")
+	TitlePadding.PaddingTop = UDim.new(0, 10)
+	TitlePadding.PaddingBottom = UDim.new(0, 10)
+	TitlePadding.Parent = Title
+	
 	return {
 		Frame = Frame,
 		Set = function(_, value)
 			local index = math.round(((value - Min) / math.max(Max - Min, 1)) * STEP_COUNT)
 			setSlider(index)
 		end,
-		Get = function() return currentValue end,
+		Get = function()
+			return currentValue
+		end,
 	}
 end
 
