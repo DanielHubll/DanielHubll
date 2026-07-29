@@ -1,3 +1,4 @@
+
 -- FFh4x UI Library (Atualizado)
 -- Sistema de Mains dinâmicos + Auto-height + Sem efeito elástico
 
@@ -261,6 +262,8 @@ function Library:CreateWindow(options)
                 -- Auto-height: ajusta altura do Main baseado no conteúdo
                 layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
                     local contentHeight = layout.AbsoluteContentSize.Y + 20 -- padding top + bottom
+                    main.CanvasSize = UDim2.new(0, 0, 0, contentHeight) -- BUG FIX: Atualiza o CanvasSize para permitir scroll interno
+                    
                     local newHeight = math.min(contentHeight, 350)
                     if main.Size.Y.Offset ~= newHeight then
                         main.Size = UDim2.new(0, 204, 0, newHeight)
@@ -669,7 +672,8 @@ function Library:CreateWindow(options)
             end
 
             DropdownFrame.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                -- BUG FIX: Adicionado suporte para Touch no Mobile
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                     Toggle()
                 end
             end)
