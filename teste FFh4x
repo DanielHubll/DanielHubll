@@ -752,7 +752,7 @@ function Library:CreateWindow(options)
             HueSatImg.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
             HueSatImg.Position = UDim2.new(0, 10, 0, 5)
             HueSatImg.Size = UDim2.new(0, 150, 0, 120)
-            HueSatImg.Image = "rbxassetid://4155801252" -- Rainbow Square
+            HueSatImg.Image = "rbxassetid://73194550500215" -- Rainbow Square
             local SCorner = Instance.new("UICorner"); SCorner.Parent = HueSatImg
 
             local SCursor = Instance.new("Frame")
