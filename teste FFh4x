@@ -675,18 +675,21 @@ function Library:CreateWindow(options)
             local Side = secOptions.Side or "Main1"
 
             local SectionFrame = Instance.new("Frame")
+            SectionFrame.Name = "Section"
             SectionFrame.BackgroundTransparency = 1
-            SectionFrame.Size = UDim2.new(0, 204, 0, 25)
+            SectionFrame.Size = UDim2.new(0, 204, 0, 34)
             SectionFrame.Parent = (Side == "Main2" and Main2 or Main1)
             
-            local Label = Instance.new("TextLabel")
-            Label.Parent = SectionFrame
-            Label.BackgroundTransparency = 1
-            Label.Size = UDim2.new(1, 0, 1, 0)
-            Label.Text = "—— " .. Text .. " ——"
-            Label.TextColor3 = Library.Theme.DarkText
-            Label.TextSize = 12
-            Label.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
+            local Title = Instance.new("TextLabel")
+            Title.Name = "Title"
+            Title.Parent = SectionFrame
+            Title.BackgroundTransparency = 1
+            Title.Size = UDim2.new(1, 0, 1, 0)
+            Title.Text = Text
+            Title.TextColor3 = Library.Theme.Accent
+            Title.TextSize = 15
+            Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
+            Title.TextWrapped = true
         end
 
         function Tab:AddSeparator(Side)
