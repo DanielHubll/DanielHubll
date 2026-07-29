@@ -1,6 +1,5 @@
-
 -- FFh4x UI Library (Atualizado)
--- Sistema de Mains dinâmicos + Auto-height + Sem efeito elástico
+-- Sistema de Mains dinâmicos + Auto-height + Sem efeito elástico + Bloqueio de Slider
 
 local Library = {
     Flags = {},
@@ -15,6 +14,8 @@ local Library = {
     Connections = {},
     Tabs = {},
     CurrentTab = nil,
+    -- NOVA FLAG GLOBAL para controle de slider
+    IsDraggingSlider = false 
 }
 
 local TweenService = game:GetService("TweenService")
@@ -32,11 +33,17 @@ local function MakeDraggable(topbarobject, object)
     local startPos = nil
 
     local function update(input)
+        -- BLOQUEIO: Se um slider estiver ativo, não move a janela
+        if Library.IsDraggingSlider then return end 
+        
         local delta = input.Position - dragStart
         object.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 
     topbarobject.InputBegan:Connect(function(input)
+        -- BLOQUEIO: Se um slider estiver ativo, não inicia o arrasto da janela
+        if Library.IsDraggingSlider then return end
+        
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
@@ -583,8 +590,7 @@ function Library:CreateWindow(options)
 
             local dragging = false
             local function Update(input)
-                local inputPosition = input.Position
-                local pos = math.clamp((inputPosition.X - SliderMain.AbsolutePosition.X) / SliderMain.AbsoluteSize.X, 0, 1)
+                local pos = math.clamp((input.Position.X - SliderMain.AbsolutePosition.X) / SliderMain.AbsoluteSize.X, 0, 1)
                 local val = math.floor(Min + (Max - Min) * pos)
 
                 Info.Text = tostring(val) .. Suffix
@@ -598,13 +604,22 @@ function Library:CreateWindow(options)
             SliderMain.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                     dragging = true
+                    -- BLOQUEIA O MOVIMENTO DA JANELA E O SCROLL
+                    Library.IsDraggingSlider = true
+                    -- Desabilita o scroll manualmente (opcional, mas ajuda em mobile)
+                    targetMain.ScrollingEnabled = false
+                    self.ContentFrame.ScrollingEnabled = false
                     Update(input)
                 end
             end)
 
             UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and dragging then
                     dragging = false
+                    -- LIBERA O MOVIMENTO E O SCROLL
+                    Library.IsDraggingSlider = false
+                    targetMain.ScrollingEnabled = true
+                    self.ContentFrame.ScrollingEnabled = true
                 end
             end)
 
