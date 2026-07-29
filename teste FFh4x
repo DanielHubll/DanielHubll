@@ -1,5 +1,5 @@
--- FFh4x UI Library
--- Created based on user specifications
+-- FFh4x UI Library Updated
+-- Optimized ScrollingFrames and Dynamic Main System
 
 local Library = {
     Flags = {},
@@ -132,6 +132,7 @@ function Library:CreateWindow(options)
     TabsScrolling.ScrollBarThickness = 0
     TabsScrolling.Visible = false
     TabsScrolling.CanvasSize = UDim2.new(0, 0, 0, 0)
+    TabsScrolling.ElasticBehavior = Enum.ElasticBehavior.Never -- REMOVE ELASTIC
 
     local TabsScrollListLayout = Instance.new("UIListLayout")
     TabsScrollListLayout.Parent = TabsScrolling
@@ -186,70 +187,76 @@ function Library:CreateWindow(options)
             TabButton.Parent = TabsContainer
         end
 
-        local Page = Instance.new("Frame")
+        local Page = Instance.new("ScrollingFrame") -- Page is now scrollable to fit multiple Mains
         Page.Name = TabName .. "_Page"
         Page.Parent = Container
         Page.BackgroundTransparency = 1
         Page.Size = UDim2.new(1, 0, 1, 0)
         Page.Visible = false
+        Page.ScrollBarThickness = 0
+        Page.CanvasSize = UDim2.new(0, 0, 0, 0)
+        Page.ElasticBehavior = Enum.ElasticBehavior.Never -- REMOVE ELASTIC
 
-        local Main1 = Instance.new("ScrollingFrame")
-        Main1.Name = "Main1"
-        Main1.Parent = Page
-        Main1.BackgroundColor3 = Library.Theme.Section
-        Main1.BorderSizePixel = 0
-        Main1.Position = UDim2.new(0, 2, 0, 0)
-        Main1.Size = UDim2.new(0, 204, 0, 350)
-        Main1.ScrollBarThickness = 2
-        Main1.ScrollBarImageColor3 = Library.Theme.Accent
-        Main1.CanvasSize = UDim2.new(0, 0, 0, 0)
+        local PageLayout = Instance.new("UIGridLayout")
+        PageLayout.Parent = Page
+        PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        PageLayout.CellPadding = UDim2.new(0, 10, 0, 10)
+        PageLayout.CellSize = UDim2.new(0, 204, 0, 350) -- Default size for each Main
         
-        local Main1Corner = Instance.new("UICorner")
-        Main1Corner.Parent = Main1
-
-        local Main1Layout = Instance.new("UIListLayout")
-        Main1Layout.Parent = Main1
-        Main1Layout.SortOrder = Enum.SortOrder.LayoutOrder
-        Main1Layout.Padding = UDim.new(0, 8)
-        Main1Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-        local Main1Padding = Instance.new("UIPadding")
-        Main1Padding.Parent = Main1
-        Main1Padding.PaddingTop = UDim.new(0, 10)
-
-        local Main2 = Instance.new("ScrollingFrame")
-        Main2.Name = "Main2"
-        Main2.Parent = Page
-        Main2.BackgroundColor3 = Library.Theme.Section
-        Main2.BorderSizePixel = 0
-        Main2.Position = UDim2.new(0, 216, 0, 0)
-        Main2.Size = UDim2.new(0, 204, 0, 350)
-        Main2.ScrollBarThickness = 2
-        Main2.ScrollBarImageColor3 = Library.Theme.Accent
-        Main2.CanvasSize = UDim2.new(0, 0, 0, 0)
-
-        local Main2Corner = Instance.new("UICorner")
-        Main2Corner.Parent = Main2
-
-        local Main2Layout = Instance.new("UIListLayout")
-        Main2Layout.Parent = Main2
-        Main2Layout.SortOrder = Enum.SortOrder.LayoutOrder
-        Main2Layout.Padding = UDim.new(0, 8)
-        Main2Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-        local Main2Padding = Instance.new("UIPadding")
-        Main2Padding.Parent = Main2
-        Main2Padding.PaddingTop = UDim.new(0, 10)
-
-        -- Auto update canvas size
-        Main1Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            Main1.CanvasSize = UDim2.new(0, 0, 0, Main1Layout.AbsoluteContentSize.Y + 20)
-        end)
-        Main2Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            Main2.CanvasSize = UDim2.new(0, 0, 0, Main2Layout.AbsoluteContentSize.Y + 20)
+        PageLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            Page.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 20)
         end)
 
-        local Tab = {}
+        local Tab = {
+            Mains = {}
+        }
+
+        function Tab:GetOrCreateMain(side)
+            if side == "Both" then
+                -- Special case for Both: We use Main1 but expand it
+                -- Note: UIGridLayout makes this tricky, but for simplicity we'll just use Main1
+                side = "Main1"
+            end
+            
+            if Tab.Mains[side] then
+                return Tab.Mains[side]
+            end
+
+            local Main = Instance.new("ScrollingFrame")
+            Main.Name = side
+            Main.Parent = Page
+            Main.BackgroundColor3 = Library.Theme.Section
+            Main.BorderSizePixel = 0
+            Main.Size = UDim2.new(0, 204, 0, 350)
+            Main.ScrollBarThickness = 2
+            Main.ScrollBarImageColor3 = Library.Theme.Accent
+            Main.CanvasSize = UDim2.new(0, 0, 0, 0)
+            Main.ElasticBehavior = Enum.ElasticBehavior.Never -- REMOVE ELASTIC
+            
+            -- Layout order based on number in name (Main1 -> 1, Main2 -> 2)
+            local order = tonumber(side:match("%d+")) or 99
+            Main.LayoutOrder = order
+
+            local MainCorner = Instance.new("UICorner")
+            MainCorner.Parent = Main
+
+            local MainLayout = Instance.new("UIListLayout")
+            MainLayout.Parent = Main
+            MainLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            MainLayout.Padding = UDim.new(0, 8)
+            MainLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+            local MainPadding = Instance.new("UIPadding")
+            MainPadding.Parent = Main
+            MainPadding.PaddingTop = UDim.new(0, 10)
+
+            MainLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                Main.CanvasSize = UDim2.new(0, 0, 0, MainLayout.AbsoluteContentSize.Y + 20)
+            end)
+
+            Tab.Mains[side] = Main
+            return Main
+        end
 
         function Tab:Select()
             for _, v in pairs(Container:GetChildren()) do
@@ -282,11 +289,14 @@ function Library:CreateWindow(options)
             local Text = btnOptions.Text or "Button"
             local Side = btnOptions.Side or "Main1"
             local Callback = btnOptions.Callback or function() end
+            
+            local TargetMain = Tab:GetOrCreateMain(Side)
 
             local ButtonFrame = Instance.new("Frame")
             ButtonFrame.Name = "Button_" .. Text
             ButtonFrame.BackgroundTransparency = 1
             ButtonFrame.Size = UDim2.new(0, 184, 0, 36)
+            ButtonFrame.Parent = TargetMain
 
             local TextButton = Instance.new("TextButton")
             TextButton.Parent = ButtonFrame
@@ -300,19 +310,12 @@ function Library:CreateWindow(options)
             local Corner = Instance.new("UICorner")
             Corner.Parent = TextButton
 
-            if Side == "Both" then
-                ButtonFrame.Size = UDim2.new(0, 410, 0, 36)
-                ButtonFrame.Parent = Main1
-                Main1.Size = UDim2.new(0, 410, 0, 350)
-                Main2.Visible = false
-            elseif Side == "Main2" then
-                ButtonFrame.Parent = Main2
-            else
-                ButtonFrame.Parent = Main1
+            if btnOptions.Side == "Both" then
+                TargetMain.Size = UDim2.new(0, 418, 0, 350)
+                ButtonFrame.Size = UDim2.new(0, 390, 0, 36)
             end
 
             TextButton.MouseButton1Click:Connect(function()
-                -- Ripple effect simulation
                 local Ripple = Instance.new("Frame")
                 Ripple.Parent = TextButton
                 Ripple.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -338,11 +341,14 @@ function Library:CreateWindow(options)
             local Default = tglOptions.Default or false
             local Callback = tglOptions.Callback or function() end
             local Flag = tglOptions.Flag or Text
+            
+            local TargetMain = Tab:GetOrCreateMain(Side)
 
             local ToggleFrame = Instance.new("Frame")
             ToggleFrame.Name = "Toggle_" .. Text
             ToggleFrame.BackgroundTransparency = 1
             ToggleFrame.Size = UDim2.new(0, 194, 0, 34)
+            ToggleFrame.Parent = TargetMain
 
             local ToggleBtn = Instance.new("ImageButton")
             ToggleBtn.Name = "ToggleBnt"
@@ -386,36 +392,31 @@ function Library:CreateWindow(options)
             end)
 
             Update()
-            
-            if Side == "Main2" then
-                ToggleFrame.Parent = Main2
-            else
-                ToggleFrame.Parent = Main1
-            end
         end
 
         function Tab:AddLabel(lblOptions)
             local Text = lblOptions.Text or "Label"
             local Side = lblOptions.Side or "Main1"
+            local TargetMain = Tab:GetOrCreateMain(Side)
 
             local LabelFrame = Instance.new("Frame")
+            LabelFrame.Name = "Label_" .. Text
             LabelFrame.BackgroundTransparency = 1
-            LabelFrame.Size = UDim2.new(0, 204, 0, 34)
-            
+            LabelFrame.Size = UDim2.new(0, 184, 0, 20)
+            LabelFrame.Parent = TargetMain
+
             local Label = Instance.new("TextLabel")
             Label.Parent = LabelFrame
             Label.BackgroundTransparency = 1
             Label.Size = UDim2.new(1, 0, 1, 0)
             Label.Text = Text
-            Label.TextColor3 = Library.Theme.Accent
-            Label.TextSize = 15
+            Label.TextColor3 = Library.Theme.SecondaryText
+            Label.TextSize = 14
             Label.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
-
-            if Side == "Main2" then
-                LabelFrame.Parent = Main2
-            else
-                LabelFrame.Parent = Main1
-            end
+            
+            return {
+                SetText = function(newText) Label.Text = newText end
+            }
         end
 
         function Tab:AddSlider(sldOptions)
@@ -427,65 +428,59 @@ function Library:CreateWindow(options)
             local Side = sldOptions.Side or "Main1"
             local Callback = sldOptions.Callback or function() end
             local Flag = sldOptions.Flag or Text
+            
+            local TargetMain = Tab:GetOrCreateMain(Side)
 
             local SliderFrame = Instance.new("Frame")
             SliderFrame.Name = "Slider_" .. Text
             SliderFrame.BackgroundTransparency = 1
-            SliderFrame.Size = UDim2.new(0, 194, 0, 76)
-            SliderFrame.Parent = (Side == "Main2" and Main2 or Main1)
+            SliderFrame.Size = UDim2.new(0, 194, 0, 45)
+            SliderFrame.Parent = TargetMain
 
             local Title = Instance.new("TextLabel")
-            Title.Name = "Title"
             Title.Parent = SliderFrame
             Title.BackgroundTransparency = 1
-            Title.Size = UDim2.new(0, 108, 0, 34)
+            Title.Position = UDim2.new(0, 10, 0, 0)
+            Title.Size = UDim2.new(0, 100, 0, 20)
             Title.Text = Text
             Title.TextColor3 = Library.Theme.Text
-            Title.TextSize = 20
+            Title.TextSize = 14
             Title.TextXAlignment = Enum.TextXAlignment.Left
-            Title.TextScaled = true
             Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
 
             local Info = Instance.new("TextLabel")
-            Info.Name = "Info"
             Info.Parent = SliderFrame
-            Info.BackgroundColor3 = Library.Theme.Accent
-            Info.Position = UDim2.new(0, 120, 0, 4)
-            Info.Size = UDim2.new(0, 70, 0, 26)
+            Info.BackgroundTransparency = 1
+            Info.Position = UDim2.new(1, -60, 0, 0)
+            Info.Size = UDim2.new(0, 50, 0, 20)
             Info.Text = tostring(Default) .. Suffix
-            Info.TextColor3 = Color3.fromRGB(255, 249, 249)
-            Info.TextSize = 14
-            Info.TextScaled = true
+            Info.TextColor3 = Library.Theme.SecondaryText
+            Info.TextSize = 13
+            Info.TextXAlignment = Enum.TextXAlignment.Right
             Info.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
-            
-            local ICorner = Instance.new("UICorner")
-            ICorner.CornerRadius = UDim.new(0, 9)
-            ICorner.Parent = Info
 
             local SliderMain = Instance.new("Frame")
-            SliderMain.Name = "SliderMain"
             SliderMain.Parent = SliderFrame
             SliderMain.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
-            SliderMain.Position = UDim2.new(0.065, 0, 0, 52)
-            SliderMain.Size = UDim2.new(0, 166, 0, 4)
+            SliderMain.Position = UDim2.new(0, 10, 0, 25)
+            SliderMain.Size = UDim2.new(1, -20, 0, 6)
             
-            local SMCorner = Instance.new("UICorner")
-            SMCorner.Parent = SliderMain
+            local SCorner = Instance.new("UICorner")
+            SCorner.CornerRadius = UDim.new(1, 0)
+            SCorner.Parent = SliderMain
 
             local SliderBar = Instance.new("Frame")
-            SliderBar.Name = "SliderBar"
             SliderBar.Parent = SliderMain
             SliderBar.BackgroundColor3 = Library.Theme.Accent
-            SliderBar.BorderSizePixel = 0
             SliderBar.Size = UDim2.new((Default - Min) / (Max - Min), 0, 1, 0)
-
-            local SBCorner = Instance.new("UICorner")
-            SBCorner.Parent = SliderBar
+            
+            local BCorner = Instance.new("UICorner")
+            BCorner.CornerRadius = UDim.new(1, 0)
+            BCorner.Parent = SliderBar
 
             local Cursor = Instance.new("Frame")
-            Cursor.Name = "Cursor"
             Cursor.Parent = SliderMain
-            Cursor.BackgroundColor3 = Library.Theme.Accent
+            Cursor.BackgroundColor3 = Library.Theme.Text
             Cursor.Position = UDim2.new((Default - Min) / (Max - Min), -9, 0, -7)
             Cursor.Size = UDim2.new(0, 18, 0, 18)
             
@@ -494,9 +489,9 @@ function Library:CreateWindow(options)
             CCorner.Parent = Cursor
 
             local dragging = false
+
             local function Update(input)
-                local inputPosition = input.Position
-                local pos = math.clamp((inputPosition.X - SliderMain.AbsolutePosition.X) / SliderMain.AbsoluteSize.X, 0, 1)
+                local pos = math.clamp((input.Position.X - SliderMain.AbsolutePosition.X) / SliderMain.AbsoluteSize.X, 0, 1)
                 local val = math.floor(Min + (Max - Min) * pos)
                 
                 Info.Text = tostring(val) .. Suffix
@@ -535,13 +530,15 @@ function Library:CreateWindow(options)
             local Side = drpOptions.Side or "Main1"
             local Callback = drpOptions.Callback or function() end
             local Flag = drpOptions.Flag or Text
+            
+            local TargetMain = Tab:GetOrCreateMain(Side)
 
             local DropdownFrame = Instance.new("Frame")
             DropdownFrame.Name = "Dropdown_" .. Text
             DropdownFrame.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
             DropdownFrame.Size = UDim2.new(0, 194, 0, 34)
             DropdownFrame.ClipsDescendants = true
-            DropdownFrame.Parent = (Side == "Main2" and Main2 or Main1)
+            DropdownFrame.Parent = TargetMain
             
             local DCorner = Instance.new("UICorner")
             DCorner.Parent = DropdownFrame
@@ -562,7 +559,7 @@ function Library:CreateWindow(options)
             Arrow.BackgroundTransparency = 1
             Arrow.Position = UDim2.new(1, -30, 0, 7)
             Arrow.Size = UDim2.new(0, 20, 0, 20)
-            Arrow.Image = "rbxassetid://6034818372" -- Down arrow
+            Arrow.Image = "rbxassetid://6034818372"
 
             local ListFrame = Instance.new("Frame")
             ListFrame.Parent = DropdownFrame
@@ -613,12 +610,14 @@ function Library:CreateWindow(options)
             local Side = txtOptions.Side or "Main1"
             local Callback = txtOptions.Callback or function() end
             local Flag = txtOptions.Flag or Text
+            
+            local TargetMain = Tab:GetOrCreateMain(Side)
 
             local TextboxFrame = Instance.new("Frame")
             TextboxFrame.Name = "Textbox_" .. Text
             TextboxFrame.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
             TextboxFrame.Size = UDim2.new(0, 194, 0, 50)
-            TextboxFrame.Parent = (Side == "Main2" and Main2 or Main1)
+            TextboxFrame.Parent = TargetMain
             
             local TCorner = Instance.new("UICorner")
             TCorner.Parent = TextboxFrame
@@ -656,11 +655,12 @@ function Library:CreateWindow(options)
             local Title = prgOptions.Title or "Paragraph"
             local Content = prgOptions.Content or ""
             local Side = prgOptions.Side or "Main1"
+            local TargetMain = Tab:GetOrCreateMain(Side)
 
             local ParagraphFrame = Instance.new("Frame")
             ParagraphFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
             ParagraphFrame.Size = UDim2.new(0, 194, 0, 60)
-            ParagraphFrame.Parent = (Side == "Main2" and Main2 or Main1)
+            ParagraphFrame.Parent = TargetMain
             
             local PCorner = Instance.new("UICorner")
             PCorner.Parent = ParagraphFrame
@@ -689,7 +689,6 @@ function Library:CreateWindow(options)
             ContentLabel.TextWrapped = true
             ContentLabel.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
             
-            -- Auto height
             ContentLabel:GetPropertyChangedSignal("TextBounds"):Connect(function()
                 ParagraphFrame.Size = UDim2.new(0, 194, 0, ContentLabel.TextBounds.Y + 35)
                 ContentLabel.Size = UDim2.new(1, -20, 0, ContentLabel.TextBounds.Y)
@@ -699,12 +698,13 @@ function Library:CreateWindow(options)
         function Tab:AddSection(secOptions)
             local Text = secOptions.Text or "Section"
             local Side = secOptions.Side or "Main1"
+            local TargetMain = Tab:GetOrCreateMain(Side)
 
             local SectionFrame = Instance.new("Frame")
             SectionFrame.Name = "Section"
             SectionFrame.BackgroundTransparency = 1
             SectionFrame.Size = UDim2.new(0, 204, 0, 34)
-            SectionFrame.Parent = (Side == "Main2" and Main2 or Main1)
+            SectionFrame.Parent = TargetMain
             
             local Title = Instance.new("TextLabel")
             Title.Name = "Title"
@@ -719,11 +719,12 @@ function Library:CreateWindow(options)
         end
 
         function Tab:AddSeparator(Side)
+            local TargetMain = Tab:GetOrCreateMain(Side or "Main1")
             local Sep = Instance.new("Frame")
             Sep.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
             Sep.BorderSizePixel = 0
             Sep.Size = UDim2.new(0, 180, 0, 1)
-            Sep.Parent = (Side == "Main2" and Main2 or Main1)
+            Sep.Parent = TargetMain
         end
 
         return Tab
