@@ -423,6 +423,7 @@ function Library:CreateWindow(options)
             local Min = sldOptions.Min or 0
             local Max = sldOptions.Max or 100
             local Default = sldOptions.Default or Min
+            local Suffix = sldOptions.Suffix or ""
             local Side = sldOptions.Side or "Main1"
             local Callback = sldOptions.Callback or function() end
             local Flag = sldOptions.Flag or Text
@@ -430,61 +431,82 @@ function Library:CreateWindow(options)
             local SliderFrame = Instance.new("Frame")
             SliderFrame.Name = "Slider_" .. Text
             SliderFrame.BackgroundTransparency = 1
-            SliderFrame.Size = UDim2.new(0, 194, 0, 50)
+            SliderFrame.Size = UDim2.new(0, 194, 0, 76)
             SliderFrame.Parent = (Side == "Main2" and Main2 or Main1)
 
             local Title = Instance.new("TextLabel")
+            Title.Name = "Title"
             Title.Parent = SliderFrame
             Title.BackgroundTransparency = 1
-            Title.Size = UDim2.new(1, -40, 0, 20)
+            Title.Size = UDim2.new(0, 108, 0, 34)
             Title.Text = Text
             Title.TextColor3 = Library.Theme.Text
-            Title.TextSize = 14
+            Title.TextSize = 20
             Title.TextXAlignment = Enum.TextXAlignment.Left
+            Title.TextScaled = true
             Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
 
-            local ValueLabel = Instance.new("TextLabel")
-            ValueLabel.Parent = SliderFrame
-            ValueLabel.BackgroundTransparency = 1
-            ValueLabel.Position = UDim2.new(1, -40, 0, 0)
-            ValueLabel.Size = UDim2.new(0, 40, 0, 20)
-            ValueLabel.Text = tostring(Default)
-            ValueLabel.TextColor3 = Library.Theme.Accent
-            ValueLabel.TextSize = 14
-            ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
-            ValueLabel.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
-
-            local SliderBack = Instance.new("Frame")
-            SliderBack.Parent = SliderFrame
-            SliderBack.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
-            SliderBack.Position = UDim2.new(0, 0, 0, 30)
-            SliderBack.Size = UDim2.new(1, 0, 0, 6)
+            local Info = Instance.new("TextLabel")
+            Info.Name = "Info"
+            Info.Parent = SliderFrame
+            Info.BackgroundColor3 = Library.Theme.Accent
+            Info.Position = UDim2.new(0, 120, 0, 4)
+            Info.Size = UDim2.new(0, 70, 0, 26)
+            Info.Text = tostring(Default) .. Suffix
+            Info.TextColor3 = Color3.fromRGB(255, 249, 249)
+            Info.TextSize = 14
+            Info.TextScaled = true
+            Info.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
             
-            local SBCorner = Instance.new("UICorner")
-            SBCorner.Parent = SliderBack
+            local ICorner = Instance.new("UICorner")
+            ICorner.CornerRadius = UDim.new(0, 9)
+            ICorner.Parent = Info
 
-            local SliderFill = Instance.new("Frame")
-            SliderFill.Parent = SliderBack
-            SliderFill.BackgroundColor3 = Library.Theme.Accent
-            SliderFill.Size = UDim2.new((Default - Min) / (Max - Min), 0, 1, 0)
+            local SliderMain = Instance.new("Frame")
+            SliderMain.Name = "SliderMain"
+            SliderMain.Parent = SliderFrame
+            SliderMain.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
+            SliderMain.Position = UDim2.new(0, 0, 0, 52)
+            SliderMain.Size = UDim2.new(0, 190, 0, 4)
             
-            local SFCorner = Instance.new("UICorner")
-            SFCorner.Parent = SliderFill
+            local SMCorner = Instance.new("UICorner")
+            SMCorner.Parent = SliderMain
 
-            local function Move(input)
-                local pos = math.clamp((input.Position.X - SliderBack.AbsolutePosition.X) / SliderBack.AbsoluteSize.X, 0, 1)
+            local SliderBar = Instance.new("Frame")
+            SliderBar.Name = "SliderBar"
+            SliderBar.Parent = SliderMain
+            SliderBar.BackgroundColor3 = Library.Theme.Accent
+            SliderBar.BorderSizePixel = 0
+            SliderBar.Size = UDim2.new((Default - Min) / (Max - Min), 0, 1, 0)
+
+            local Cursor = Instance.new("Frame")
+            Cursor.Name = "Cursor"
+            Cursor.Parent = SliderMain
+            Cursor.BackgroundColor3 = Library.Theme.Accent
+            Cursor.Position = UDim2.new((Default - Min) / (Max - Min), -9, 0, -7)
+            Cursor.Size = UDim2.new(0, 18, 0, 18)
+            
+            local CCorner = Instance.new("UICorner")
+            CCorner.CornerRadius = UDim.new(1, 0)
+            CCorner.Parent = Cursor
+
+            local dragging = false
+            local function Update(input)
+                local pos = math.clamp((input.Position.X - SliderMain.AbsolutePosition.X) / SliderMain.AbsoluteSize.X, 0, 1)
                 local val = math.floor(Min + (Max - Min) * pos)
-                ValueLabel.Text = tostring(val)
-                SliderFill.Size = UDim2.new(pos, 0, 1, 0)
+                
+                Info.Text = tostring(val) .. Suffix
+                SliderBar.Size = UDim2.new(pos, 0, 1, 0)
+                Cursor.Position = UDim2.new(pos, -9, 0, -7)
+                
                 Library.Flags[Flag] = val
                 Callback(val)
             end
 
-            local dragging = false
-            SliderBack.InputBegan:Connect(function(input)
+            SliderMain.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     dragging = true
-                    Move(input)
+                    Update(input)
                 end
             end)
 
@@ -496,7 +518,7 @@ function Library:CreateWindow(options)
 
             UserInputService.InputChanged:Connect(function(input)
                 if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                    Move(input)
+                    Update(input)
                 end
             end)
             
