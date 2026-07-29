@@ -466,8 +466,8 @@ function Library:CreateWindow(options)
             SliderMain.Name = "SliderMain"
             SliderMain.Parent = SliderFrame
             SliderMain.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
-            SliderMain.Position = UDim2.new(0.05, 0, 0, 52)
-            SliderMain.Size = UDim2.new(0, 170, 0, 4)
+            SliderMain.Position = UDim2.new(0.065, 0, 0, 52)
+            SliderMain.Size = UDim2.new(0, 166, 0, 4)
             
             local SMCorner = Instance.new("UICorner")
             SMCorner.Parent = SliderMain
@@ -478,6 +478,9 @@ function Library:CreateWindow(options)
             SliderBar.BackgroundColor3 = Library.Theme.Accent
             SliderBar.BorderSizePixel = 0
             SliderBar.Size = UDim2.new((Default - Min) / (Max - Min), 0, 1, 0)
+
+            local SBCorner = Instance.new("UICorner")
+            SBCorner.Parent = SliderBar
 
             local Cursor = Instance.new("Frame")
             Cursor.Name = "Cursor"
