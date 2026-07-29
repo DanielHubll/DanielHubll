@@ -466,8 +466,8 @@ function Library:CreateWindow(options)
             SliderMain.Name = "SliderMain"
             SliderMain.Parent = SliderFrame
             SliderMain.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
-            SliderMain.Position = UDim2.new(0, 0, 0, 52)
-            SliderMain.Size = UDim2.new(0, 190, 0, 4)
+            SliderMain.Position = UDim2.new(0.05, 0, 0, 52)
+            SliderMain.Size = UDim2.new(0, 170, 0, 4)
             
             local SMCorner = Instance.new("UICorner")
             SMCorner.Parent = SliderMain
