@@ -841,161 +841,169 @@ function Library:CreateWindow(options)
         end
 
         function Tab:AddColorPicker(cpOptions)
-            local Text = cpOptions.Text or "Color Picker"
-            local Default = cpOptions.Default or Color3.fromRGB(255, 0, 0)
-            local Side = cpOptions.Side or "Main1"
-            local Callback = cpOptions.Callback or function() end
-            local Flag = cpOptions.Flag or Text
+    local Text = cpOptions.Text or "Color Picker"
+    local Default = cpOptions.Default or Color3.fromRGB(255, 0, 0)
+    local Side = cpOptions.Side or "Main1"
+    local Callback = cpOptions.Callback or function() end
+    local Flag = cpOptions.Flag or Text
 
-            local targetMain = self:GetMain(Side)
+    local targetMain = self:GetMain(Side)
 
-            local ColorPickerFrame = Instance.new("Frame")
-            ColorPickerFrame.Name = "ColorPicker_" .. Text
-            ColorPickerFrame.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
-            ColorPickerFrame.Size = UDim2.new(0, 194, 0, 34)
-            ColorPickerFrame.ClipsDescendants = true
-            ColorPickerFrame.Parent = targetMain
+    local ColorPickerFrame = Instance.new("Frame")
+    ColorPickerFrame.Name = "ColorPicker_" .. Text
+    ColorPickerFrame.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
+    ColorPickerFrame.Size = UDim2.new(0, 194, 0, 34)
+    ColorPickerFrame.ClipsDescendants = true
+    ColorPickerFrame.Parent = targetMain
 
-            local CPCorner = Instance.new("UICorner")
-            CPCorner.Parent = ColorPickerFrame
+    local CPCorner = Instance.new("UICorner")
+    CPCorner.Parent = ColorPickerFrame
 
-            local Title = Instance.new("TextLabel")
-            Title.Parent = ColorPickerFrame
-            Title.BackgroundTransparency = 1
-            Title.Position = UDim2.new(0, 10, 0, 0)
-            Title.Size = UDim2.new(1, -60, 0, 34)
-            Title.Text = Text
-            Title.TextColor3 = Library.Theme.Text
-            Title.TextSize = 14
-            Title.TextXAlignment = Enum.TextXAlignment.Left
-            Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
+    local Title = Instance.new("TextLabel")
+    Title.Parent = ColorPickerFrame
+    Title.BackgroundTransparency = 1
+    Title.Position = UDim2.new(0, 10, 0, 0)
+    Title.Size = UDim2.new(1, -60, 0, 34)
+    Title.Text = Text
+    Title.TextColor3 = Library.Theme.Text
+    Title.TextSize = 14
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
 
-            local ColorDisplay = Instance.new("Frame")
-            ColorDisplay.Parent = ColorPickerFrame
-            ColorDisplay.BackgroundColor3 = Default
-            ColorDisplay.Position = UDim2.new(1, -35, 0, 7)
-            ColorDisplay.Size = UDim2.new(0, 20, 0, 20)
+    local ColorDisplay = Instance.new("Frame")
+    ColorDisplay.Parent = ColorPickerFrame
+    ColorDisplay.BackgroundColor3 = Default
+    ColorDisplay.Position = UDim2.new(1, -35, 0, 7)
+    ColorDisplay.Size = UDim2.new(0, 20, 0, 20)
 
-            local CDCorner = Instance.new("UICorner")
-            CDCorner.CornerRadius = UDim.new(0, 4)
-            CDCorner.Parent = ColorDisplay
+    local CDCorner = Instance.new("UICorner")
+    CDCorner.CornerRadius = UDim.new(0, 4)
+    CDCorner.Parent = ColorDisplay
 
-            local PickerContainer = Instance.new("Frame")
-            PickerContainer.Parent = ColorPickerFrame
-            PickerContainer.BackgroundTransparency = 1
-            PickerContainer.Position = UDim2.new(0, 0, 0, 34)
-            PickerContainer.Size = UDim2.new(1, 0, 0, 150)
+    local PickerContainer = Instance.new("Frame")
+    PickerContainer.Parent = ColorPickerFrame
+    PickerContainer.BackgroundTransparency = 1
+    PickerContainer.Position = UDim2.new(0, 0, 0, 34)
+    PickerContainer.Size = UDim2.new(1, 0, 0, 150)
 
-            local SaturationImg = Instance.new("ImageLabel")
-            SaturationImg.Name = "Saturation"
-            SaturationImg.Parent = PickerContainer
-            SaturationImg.BackgroundColor3 = Default
-            SaturationImg.Position = UDim2.new(0, 10, 0, 5)
-            SaturationImg.Size = UDim2.new(0, 150, 0, 120)
-            SaturationImg.Image = "rbxassetid://4155801252"
+    -- Bloco Grande: Saturação e Valor (Claridade)
+    local SaturationImg = Instance.new("ImageLabel")
+    SaturationImg.Name = "Saturation"
+    SaturationImg.Parent = PickerContainer
+    -- CORREÇÃO: Fundo deve ser o HUE puro, não a cor Default
+    SaturationImg.BackgroundColor3 = Color3.fromHSV(H, 1, 1) 
+    SaturationImg.Position = UDim2.new(0, 10, 0, 5)
+    SaturationImg.Size = UDim2.new(0, 150, 0, 120)
+    SaturationImg.Image = "rbxassetid://4155801252"
 
-            local SCorner = Instance.new("UICorner")
-            SCorner.Parent = SaturationImg
+    local SCorner = Instance.new("UICorner")
+    SCorner.Parent = SaturationImg
 
-            local SCursor = Instance.new("Frame")
-            SCursor.Name = "Cursor"
-            SCursor.Parent = SaturationImg
-            SCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            SCursor.Size = UDim2.new(0, 6, 0, 6)
-            SCursor.ZIndex = 2
+    local SCursor = Instance.new("Frame")
+    SCursor.Name = "Cursor"
+    SCursor.Parent = SaturationImg
+    SCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    SCursor.Size = UDim2.new(0, 6, 0, 6)
+    SCursor.ZIndex = 2
 
-            local SCCorner = Instance.new("UICorner")
-            SCCorner.CornerRadius = UDim.new(1, 0)
-            SCCorner.Parent = SCursor
+    local SCCorner = Instance.new("UICorner")
+    SCCorner.CornerRadius = UDim.new(1, 0)
+    SCCorner.Parent = SCursor
 
-            local HueImg = Instance.new("ImageLabel")
-            HueImg.Name = "Hue"
-            HueImg.Parent = PickerContainer
-            HueImg.Position = UDim2.new(0, 170, 0, 5)
-            HueImg.Size = UDim2.new(0, 15, 0, 120)
-            HueImg.Image = "rbxassetid://3641079629"
+    -- Barra Lateral: Matiz (Hue)
+    local HueImg = Instance.new("ImageLabel")
+    HueImg.Name = "Hue"
+    HueImg.Parent = PickerContainer
+    HueImg.Position = UDim2.new(0, 170, 0, 5)
+    HueImg.Size = UDim2.new(0, 15, 0, 120)
+    HueImg.Image = "rbxassetid://3641079629"
 
-            local HCorner = Instance.new("UICorner")
-            HCorner.Parent = HueImg
+    local HCorner = Instance.new("UICorner")
+    HCorner.Parent = HueImg
 
-            local HCursor = Instance.new("Frame")
-            HCursor.Name = "Cursor"
-            HCursor.Parent = HueImg
-            HCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            HCursor.Size = UDim2.new(1, 0, 0, 2)
-            HCursor.ZIndex = 2
+    local HCursor = Instance.new("Frame")
+    HCursor.Name = "Cursor"
+    HCursor.Parent = HueImg
+    HCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    HCursor.Size = UDim2.new(1, 0, 0, 2)
+    HCursor.ZIndex = 2
 
-            local H, S, V = Default:ToHSV()
-            local Opened = false
+    local H, S, V = Default:ToHSV()
+    local Opened = false
 
-            local function UpdateColor()
-                local color = Color3.fromHSV(H, S, V)
-                ColorDisplay.BackgroundColor3 = color
-                SaturationImg.BackgroundColor3 = Color3.fromHSV(H, 1, 1)
-                Library.Flags[Flag] = color
-                Callback(color)
-            end
+    local function UpdateColor()
+        local color = Color3.fromHSV(H, S, V)
+        ColorDisplay.BackgroundColor3 = color
+        -- CORREÇÃO: Atualiza o fundo do bloco grande com o HUE PURO
+        SaturationImg.BackgroundColor3 = Color3.fromHSV(H, 1, 1)
+        Library.Flags[Flag] = color
+        Callback(color)
+    end
 
-            local function Toggle()
-                Opened = not Opened
-                local targetSize = Opened and UDim2.new(0, 194, 0, 184) or UDim2.new(0, 194, 0, 34)
-                Library:Tween(ColorPickerFrame, {Size = targetSize})
-            end
+    local function Toggle()
+        Opened = not Opened
+        local targetSize = Opened and UDim2.new(0, 194, 0, 184) or UDim2.new(0, 194, 0, 34)
+        Library:Tween(ColorPickerFrame, {Size = targetSize})
+    end
 
-            ColorDisplay.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    Toggle()
-                end
-            end)
+    ColorDisplay.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            Toggle()
+        end
+    end)
 
-            Title.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    Toggle()
-                end
-            end)
+    Title.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            Toggle()
+        end
+    end)
 
-            local HueDragging = false
-            HueImg.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    HueDragging = true
-                end
-            end)
+    -- Controles de Arrasto
+    local HueDragging = false
+    local SatDragging = false
 
-            local SatDragging = false
-            SaturationImg.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    SatDragging = true
-                end
-            end)
+    HueImg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            HueDragging = true
+        end
+    end)
 
-            UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    HueDragging = false
-                    SatDragging = false
-                end
-            end)
+    SaturationImg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            SatDragging = true
+        end
+    end)
 
-            UserInputService.InputChanged:Connect(function(input)
-                if HueDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                    local y = math.clamp((input.Position.Y - HueImg.AbsolutePosition.Y) / HueImg.AbsoluteSize.Y, 0, 1)
-                    H = 1 - y
-                    HCursor.Position = UDim2.new(0, 0, y, -1)
-                    UpdateColor()
-                elseif SatDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                    local x = math.clamp((input.Position.X - SaturationImg.AbsolutePosition.X) / SaturationImg.AbsoluteSize.X, 0, 1)
-                    local y = math.clamp((input.Position.Y - SaturationImg.AbsolutePosition.Y) / SaturationImg.AbsoluteSize.Y, 0, 1)
-                    S = x
-                    V = 1 - y
-                    SCursor.Position = UDim2.new(x, -3, y, -3)
-                    UpdateColor()
-                end
-            end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            HueDragging = false
+            SatDragging = false
+        end
+    end)
 
-            -- Inicializar cursores
-            HCursor.Position = UDim2.new(0, 0, 1 - H, -1)
-            SCursor.Position = UDim2.new(S, -3, 1 - V, -3)
+    UserInputService.InputChanged:Connect(function(input)
+        if HueDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local y = math.clamp((input.Position.Y - HueImg.AbsolutePosition.Y) / HueImg.AbsoluteSize.Y, 0, 1)
+            H = 1 - y
+            HCursor.Position = UDim2.new(0, 0, y, -1)
+            UpdateColor()
+        elseif SatDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local x = math.clamp((input.Position.X - SaturationImg.AbsolutePosition.X) / SaturationImg.AbsoluteSize.X, 0, 1)
+            local y = math.clamp((input.Position.Y - SaturationImg.AbsolutePosition.Y) / SaturationImg.AbsoluteSize.Y, 0, 1)
+            S = x
+            V = 1 - y
+            SCursor.Position = UDim2.new(x, -3, y, -3)
             UpdateColor()
         end
+    end)
+
+    -- Inicializar cursores
+    HCursor.Position = UDim2.new(0, 0, 1 - H, -1)
+    SCursor.Position = UDim2.new(S, -3, 1 - V, -3)
+    
+    -- Força a primeira atualização visual para garantir que tudo está certo
+    UpdateColor()
+end
 
         function Tab:AddMultiColorPicker(mcpOptions)
             local Text = mcpOptions.Text or "Multi Color Picker"
