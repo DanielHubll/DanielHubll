@@ -2,6 +2,7 @@
 -- Sistema de Mains dinâmicos + Auto-height + Sem efeito elástico + Bloqueio de Slider
 -- Correção: ColorPicker com Barra de Escuridão (Value) e Bloco de Cores (Hue/Sat)
 -- BLOQUEIO DE SCROLL ADICIONADO PARA COLORPICKERS
+-- ARRASTAR PELA LOGO + BLOQUEIO DE INPUT MOBILE/PC
 
 local Library = {
     Flags = {},
@@ -17,7 +18,8 @@ local Library = {
     Tabs = {},
     CurrentTab = nil,
     IsDraggingSlider = false,
-    IsDraggingColorPicker = false -- NOVA FLAG
+    IsDraggingColorPicker = false,
+    IsDraggingWindow = false -- NOVA FLAG
 }
 
 local TweenService = game:GetService("TweenService")
@@ -28,7 +30,7 @@ local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
 -- Utility Functions
-local function MakeDraggable(topbarobject, object)
+local function MakeDraggable(dragObject, mainObject)
     local dragging = nil
     local dragInput = nil
     local dragStart = nil
@@ -37,25 +39,27 @@ local function MakeDraggable(topbarobject, object)
     local function update(input)
         if Library.IsDraggingSlider or Library.IsDraggingColorPicker then return end 
         local delta = input.Position - dragStart
-        object.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        mainObject.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 
-    topbarobject.InputBegan:Connect(function(input)
+    dragObject.InputBegan:Connect(function(input)
         if Library.IsDraggingSlider or Library.IsDraggingColorPicker then return end
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
+            Library.IsDraggingWindow = true -- BLOQUEIA INPUTS
             dragStart = input.Position
-            startPos = object.Position
+            startPos = mainObject.Position
 
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
+                    Library.IsDraggingWindow = false -- DESBLOQUEIA INPUTS
                 end
             end)
         end
     end)
 
-    topbarobject.InputChanged:Connect(function(input)
+    dragObject.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
         end
@@ -64,6 +68,14 @@ local function MakeDraggable(topbarobject, object)
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             update(input)
+        end
+    end)
+    
+    -- InputEnded global para garantir desbloqueio
+    UserInputService.InputEnded:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+            dragging = false
+            Library.IsDraggingWindow = false
         end
     end)
 end
@@ -116,6 +128,10 @@ function Library:CreateWindow(options)
     Logo.Position = UDim2.new(0, 6, 0, 4)
     Logo.Size = UDim2.new(0, 100, 0, 100)
     Logo.Image = "rbxassetid://114459453255031"
+    Logo.Active = true -- Permite input na Logo
+
+    -- FAZ A LOGO ARRASTAR O PAINEL INTEIRO
+    MakeDraggable(Logo, Painel)
 
     local TabsContainer = Instance.new("Frame")
     TabsContainer.Name = "Tabs"
@@ -151,8 +167,6 @@ function Library:CreateWindow(options)
     Container.BackgroundTransparency = 1
     Container.Position = UDim2.new(0, 120, 0, 10)
     Container.Size = UDim2.new(0, 420, 0, 350)
-
-    MakeDraggable(Painel, Painel)
 
     local Visible = true
     UserInputService.InputBegan:Connect(function(input, gpe)
@@ -351,6 +365,7 @@ function Library:CreateWindow(options)
             ButtonFrame.Parent = targetMain
 
             TextButton.MouseButton1Click:Connect(function()
+                if Library.IsDraggingWindow then return end -- NÃO EXECUTA SE TIVER ARRASTANDO
                 local Ripple = Instance.new("Frame")
                 Ripple.Parent = TextButton
                 Ripple.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -361,6 +376,11 @@ function Library:CreateWindow(options)
                 RCorn.CornerRadius = UDim.new(1, 0)
                 RCorn.Parent = Ripple
                 Library:Tween(Ripple, {Size = UDim2.new(0, 200, 0, 200), Position = UDim2.new(0.5, -100, 0.5, -100), BackgroundTransparency = 1}, function() Ripple:Destroy() end)
+                Callback()
+            end)
+            
+            TextButton.TouchTap:Connect(function()
+                if Library.IsDraggingWindow then return end -- NÃO EXECUTA SE TIVER ARRASTANDO
                 Callback()
             end)
         end
@@ -410,7 +430,14 @@ function Library:CreateWindow(options)
                 Callback(Enabled)
             end
 
-            ToggleBtn.MouseButton1Click:Connect(function() Enabled = not Enabled; Update() end)
+            local function ToggleAction()
+                if Library.IsDraggingWindow then return end
+                Enabled = not Enabled
+                Update()
+            end
+            
+            ToggleBtn.MouseButton1Click:Connect(ToggleAction)
+            ToggleBtn.TouchTap:Connect(ToggleAction)
             Update()
             ToggleFrame.Parent = targetMain
         end
@@ -495,6 +522,7 @@ function Library:CreateWindow(options)
 
             local dragging = false
             local function Update(input)
+                if Library.IsDraggingWindow then return end
                 local pos = math.clamp((input.Position.X - SliderMain.AbsolutePosition.X) / SliderMain.AbsoluteSize.X, 0, 1)
                 local val = math.floor(Min + (Max - Min) * pos)
                 Info.Text = tostring(val) .. Suffix
@@ -505,6 +533,7 @@ function Library:CreateWindow(options)
             end
 
             SliderMain.InputBegan:Connect(function(input)
+                if Library.IsDraggingWindow then return end
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                     dragging = true
                     Library.IsDraggingSlider = true
@@ -573,6 +602,7 @@ function Library:CreateWindow(options)
 
             local Opened = false
             local function Toggle()
+                if Library.IsDraggingWindow then return end
                 Opened = not Opened
                 local targetSize = Opened and UDim2.new(0, 194, 0, 34 + (#List * 30)) or UDim2.new(0, 194, 0, 34)
                 Library:Tween(DropdownFrame, {Size = targetSize})
@@ -580,6 +610,7 @@ function Library:CreateWindow(options)
             end
 
             DropdownFrame.InputBegan:Connect(function(input)
+                if Library.IsDraggingWindow then return end
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then Toggle() end
             end)
 
@@ -594,6 +625,14 @@ function Library:CreateWindow(options)
                 Item.TextSize = 13
                 Item.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
                 Item.MouseButton1Click:Connect(function()
+                    if Library.IsDraggingWindow then return end
+                    Title.Text = Text .. ": " .. tostring(v)
+                    Library.Flags[Flag] = v
+                    Callback(v)
+                    Toggle()
+                end)
+                Item.TouchTap:Connect(function()
+                    if Library.IsDraggingWindow then return end
                     Title.Text = Text .. ": " .. tostring(v)
                     Library.Flags[Flag] = v
                     Callback(v)
@@ -638,7 +677,10 @@ function Library:CreateWindow(options)
             Input.TextSize = 14
             Input.TextXAlignment = Enum.TextXAlignment.Left
             Input.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
-            Input.FocusLost:Connect(function(enter) Library.Flags[Flag] = Input.Text; Callback(Input.Text, enter) end)
+            Input.FocusLost:Connect(function(enter) 
+                Library.Flags[Flag] = Input.Text
+                Callback(Input.Text, enter) 
+            end)
         end
 
         function Tab:AddParagraph(prgOptions)
@@ -796,17 +838,26 @@ function Library:CreateWindow(options)
             end
 
             local function Toggle()
+                if Library.IsDraggingWindow then return end
                 Opened = not Opened
                 Library:Tween(ColorPickerFrame, {Size = Opened and UDim2.new(0, 194, 0, 184) or UDim2.new(0, 194, 0, 34)})
             end
 
-            ColorDisplay.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then Toggle() end end)
-            Title.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then Toggle() end end)
+            ColorDisplay.InputBegan:Connect(function(input) 
+                if Library.IsDraggingWindow then return end
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then Toggle() end 
+            end)
+            
+            Title.InputBegan:Connect(function(input) 
+                if Library.IsDraggingWindow then return end
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then Toggle() end 
+            end)
 
             local VDragging, HSDragging = false, false
             
             -- BLOQUEIA O SCROLL QUANDO COMEÇA A ARRASTAR
             ValueBar.InputBegan:Connect(function(input) 
+                if Library.IsDraggingWindow then return end
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
                     VDragging = true
                     Library.IsDraggingColorPicker = true
@@ -816,6 +867,7 @@ function Library:CreateWindow(options)
             end)
             
             HueSatImg.InputBegan:Connect(function(input) 
+                if Library.IsDraggingWindow then return end
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
                     HSDragging = true
                     Library.IsDraggingColorPicker = true
@@ -901,12 +953,14 @@ function Library:CreateWindow(options)
 
             local Opened = false
             local function Toggle()
+                if Library.IsDraggingWindow then return end
                 Opened = not Opened
                 Library:Tween(MultiCPFrame, {Size = Opened and UDim2.new(0, 194, 0, 34 + (#Colors * 34)) or UDim2.new(0, 194, 0, 34)})
                 Library:Tween(Arrow, {Rotation = Opened and 180 or 0})
             end
 
             MultiCPFrame.InputBegan:Connect(function(input)
+                if Library.IsDraggingWindow then return end
                 if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and input.Position.Y - MultiCPFrame.AbsolutePosition.Y < 34 then Toggle() end
             end)
 
@@ -944,6 +998,7 @@ function Library:CreateWindow(options)
                 local IDCorner = Instance.new("UICorner"); IDCorner.CornerRadius = UDim.new(0, 4); IDCorner.Parent = ItemDisplay
 
                 ItemDisplay.InputBegan:Connect(function(input)
+                    if Library.IsDraggingWindow then return end
                     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                         -- BLOQUEIA O SCROLL AO ABRIR O PICKER INDIVIDUAL
                         Library.IsDraggingColorPicker = true
