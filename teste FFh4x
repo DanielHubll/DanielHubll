@@ -686,7 +686,7 @@ function Library:CreateWindow(options)
             local targetMain = self:GetMain(Side)
             local SectionFrame = Instance.new("Frame")
             SectionFrame.BackgroundTransparency = 1
-            SectionFrame.Size = UDim2.new(0, 204, 0, 10)
+            SectionFrame.Size = UDim2.new(0, 204, 0, 15)
             SectionFrame.Parent = targetMain
             local Title = Instance.new("TextLabel")
             Title.Parent = SectionFrame
