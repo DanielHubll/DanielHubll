@@ -23,6 +23,18 @@ local Library = {
     IsDraggingWindow = false
 }
 
+local ScrollingFramesCache = {}
+local function UpdateScrollingFramesCache(parent)
+    ScrollingFramesCache = {}
+    if not parent then return end
+    for _, obj in ipairs(parent:GetDescendants()) do
+        if obj:IsA("ScrollingFrame") then
+            table.insert(ScrollingFramesCache, obj)
+        end
+    end
+end
+
+
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
@@ -30,10 +42,10 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
--- Função auxiliar para bloquear/desbloquear scroll de todos os ScrollingFrames
-local function SetAllScrollingEnabled(parent, enabled)
-    for _, obj in ipairs(parent:GetDescendants()) do
-        if obj:IsA("ScrollingFrame") then
+-- Função auxiliar para bloquear/desbloquear scroll de todos os ScrollingFrames (Otimizada)
+local function SetAllScrollingEnabled(enabled)
+    for _, obj in ipairs(ScrollingFramesCache) do
+        if obj and obj.Parent then
             obj.ScrollingEnabled = enabled
         end
     end
@@ -102,6 +114,7 @@ function Library:CreateWindow(options)
     ScreenGui.Name = "FFh4xGui_" .. HttpService:GenerateGUID(false)
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.Parent = RunService:IsStudio() and game.Players.LocalPlayer.PlayerGui or game:GetService("CoreGui")
+    UpdateScrollingFramesCache(ScreenGui)
 
     local Painel = Instance.new("Frame")
     Painel.Name = "Painel"
@@ -287,6 +300,7 @@ function Library:CreateWindow(options)
 
                 self.Mains[sideName] = main
                 self:UpdateLayout()
+                UpdateScrollingFramesCache(main.Parent.Parent.Parent.Parent)
             end
 
             if self.Mains[sideName].Visible == false then
@@ -764,7 +778,7 @@ function Library:CreateWindow(options)
         end
 
         -- ========== COLOR PICKER FIX PARA MOBILE (NÃO FECHA AO ARRASTAR) ==========
-        function Tab:AddColorPicker(cpOptions)
+                function Tab:AddColorPicker(cpOptions)
             local Text = cpOptions.Text or "Color Picker"
             local Default = cpOptions.Default or Color3.fromRGB(255, 0, 0)
             local Side = cpOptions.Side or "Main1"
@@ -803,7 +817,6 @@ function Library:CreateWindow(options)
             PickerContainer.Position = UDim2.new(0, 0, 0, 34)
             PickerContainer.Size = UDim2.new(1, 0, 0, 150)
 
-            -- Bloco do Meio (Hue/Saturation)
             local HueSatImg = Instance.new("ImageLabel")
             HueSatImg.Name = "HueSat"
             HueSatImg.Parent = PickerContainer
@@ -820,7 +833,6 @@ function Library:CreateWindow(options)
             SCursor.ZIndex = 2
             local SCCorner = Instance.new("UICorner"); SCCorner.CornerRadius = UDim.new(1, 0); SCCorner.Parent = SCursor
 
-            -- Barrinha de Escuridade (Value)
             local ValueBar = Instance.new("Frame")
             ValueBar.Name = "ValueBar"
             ValueBar.Parent = PickerContainer
@@ -830,7 +842,6 @@ function Library:CreateWindow(options)
             
             local VGradient = Instance.new("UIGradient")
             VGradient.Rotation = 90
-            VGradient.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 0, 0))
             VGradient.Parent = ValueBar
 
             local VCursor = Instance.new("Frame")
@@ -841,11 +852,15 @@ function Library:CreateWindow(options)
 
             local H, S, V = Default:ToHSV()
             local Opened = false
+            local lastH, lastS = -1, -1
 
-            local function UpdateColor()
+            local function UpdateColor(force)
                 local color = Color3.fromHSV(H, S, V)
                 ColorDisplay.BackgroundColor3 = color
-                VGradient.Color = ColorSequence.new(Color3.fromHSV(H, S, 1), Color3.fromRGB(0, 0, 0))
+                if force or math.abs(H - lastH) > 0.005 or math.abs(S - lastS) > 0.005 then
+                    VGradient.Color = ColorSequence.new(Color3.fromHSV(H, S, 1), Color3.fromRGB(0, 0, 0))
+                    lastH, lastS = H, S
+                end
                 Library.Flags[Flag] = color
                 Callback(color)
             end
@@ -872,8 +887,7 @@ function Library:CreateWindow(options)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
                     VDragging = true
                     Library.IsDraggingColorPicker = true
-                    -- BLOQUEIA TODOS OS SCROLLS
-                    SetAllScrollingEnabled(ScreenGui, false)
+                    SetAllScrollingEnabled(false)
                 end 
             end)
             
@@ -882,19 +896,16 @@ function Library:CreateWindow(options)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
                     HSDragging = true
                     Library.IsDraggingColorPicker = true
-                    -- BLOQUEIA TODOS OS SCROLLS
-                    SetAllScrollingEnabled(ScreenGui, false)
+                    SetAllScrollingEnabled(false)
                 end 
             end)
 
             UserInputService.InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
                     if VDragging or HSDragging then
-                        VDragging = false
-                        HSDragging = false
+                        VDragging, HSDragging = false, false
                         Library.IsDraggingColorPicker = false
-                        -- DESBLOQUEIA TODOS OS SCROLLS
-                        SetAllScrollingEnabled(ScreenGui, true)
+                        SetAllScrollingEnabled(true)
                     end
                 end
             end)
@@ -904,15 +915,20 @@ function Library:CreateWindow(options)
                     local y = math.clamp((input.Position.Y - ValueBar.AbsolutePosition.Y) / ValueBar.AbsoluteSize.Y, 0, 1)
                     V = 1 - y
                     VCursor.Position = UDim2.new(0, 0, y, -1)
-                    UpdateColor()
+                    UpdateColor(false)
                 elseif HSDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                     local x = math.clamp((input.Position.X - HueSatImg.AbsolutePosition.X) / HueSatImg.AbsoluteSize.X, 0, 1)
                     local y = math.clamp((input.Position.Y - HueSatImg.AbsolutePosition.Y) / HueSatImg.AbsoluteSize.Y, 0, 1)
-                    H = x
-                    S = 1 - y
+                    H, S = x, 1 - y
                     SCursor.Position = UDim2.new(x, -3, y, -3)
-                    UpdateColor()
+                    UpdateColor(false)
                 end
+            end)
+
+            VCursor.Position = UDim2.new(0, 0, 1 - V, -1)
+            SCursor.Position = UDim2.new(H, -3, 1 - S, -3)
+            UpdateColor(true)
+        end
             end)
 
             VCursor.Position = UDim2.new(0, 0, 1 - V, -1)
@@ -921,7 +937,7 @@ function Library:CreateWindow(options)
         end
 
         -- ========== MULTI COLOR PICKER FIX PARA MOBILE (COM BLOQUEIO DE SCROLL) ==========
-        function Tab:AddMultiColorPicker(mcpOptions)
+                function Tab:AddMultiColorPicker(mcpOptions)
             local Text = mcpOptions.Text or "Multi Color Picker"
             local Colors = mcpOptions.Colors or {}
             local Side = mcpOptions.Side or "Main1"
@@ -1015,11 +1031,10 @@ function Library:CreateWindow(options)
                     if Library.IsDraggingWindow then return end
                     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                         Library.IsDraggingColorPicker = true
-                        -- BLOQUEIA TODOS OS SCROLLS
-                        SetAllScrollingEnabled(ScreenGui, false)
+                        SetAllScrollingEnabled(false)
                         
                         local PickerWindow = Instance.new("Frame")
-                        PickerWindow.Parent = ScreenGui
+                        PickerWindow.Parent = targetMain.Parent.Parent.Parent.Parent -- ScreenGui
                         PickerWindow.BackgroundColor3 = Library.Theme.Main
                         PickerWindow.Position = UDim2.new(0.5, -97, 0.5, -75)
                         PickerWindow.Size = UDim2.new(0, 194, 0, 150)
@@ -1046,7 +1061,6 @@ function Library:CreateWindow(options)
                         PWValue.ZIndex = 11
                         local PWVGradient = Instance.new("UIGradient")
                         PWVGradient.Rotation = 90
-                        PWVGradient.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 0, 0))
                         PWVGradient.Parent = PWValue
                         local PWVCursor = Instance.new("Frame")
                         PWVCursor.Parent = PWValue
@@ -1055,75 +1069,69 @@ function Library:CreateWindow(options)
                         PWVCursor.ZIndex = 12
 
                         local pH, pS, pV = SelectedColors[cFlag]:ToHSV()
-                        local function UpdatePW()
+                        local lastPH, lastPS = -1, -1
+
+                        local function UpdatePW(force)
                             local color = Color3.fromHSV(pH, pS, pV)
                             ItemDisplay.BackgroundColor3 = color
-                            PWVGradient.Color = ColorSequence.new(Color3.fromHSV(pH, pS, 1), Color3.fromRGB(0, 0, 0))
+                            if force or math.abs(pH - lastPH) > 0.005 or math.abs(pS - lastPS) > 0.005 then
+                                PWVGradient.Color = ColorSequence.new(Color3.fromHSV(pH, pS, 1), Color3.fromRGB(0, 0, 0))
+                                lastPH, lastPS = pH, pS
+                            end
                             SelectedColors[cFlag] = color
                             Callback(SelectedColors)
                         end
 
                         local pHVDrag, pHSatDrag = false, false
-                        
-                        -- BLOQUEIA SCROLL AO INTERAGIR COM O PICKER
                         PWValue.InputBegan:Connect(function(pInp) 
                             if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
                                 pHVDrag = true
-                                SetAllScrollingEnabled(ScreenGui, false)
+                                SetAllScrollingEnabled(false)
                             end 
                         end)
-                        
                         PWHueSat.InputBegan:Connect(function(pInp) 
                             if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
                                 pHSatDrag = true
-                                SetAllScrollingEnabled(ScreenGui, false)
+                                SetAllScrollingEnabled(false)
                             end 
                         end)
 
-                        local conn1, conn2
-                        conn1 = UserInputService.InputEnded:Connect(function(pInp)
-                            if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
-                                pHVDrag = false
-                                pHSatDrag = false
-                                SetAllScrollingEnabled(ScreenGui, true)
-                            end
-                        end)
+                        local connections = {}
+                        local function ClosePicker()
+                            for _, c in ipairs(connections) do c:Disconnect() end
+                            PickerWindow:Destroy()
+                            Library.IsDraggingColorPicker = false
+                            SetAllScrollingEnabled(true)
+                        end
 
-                        conn2 = UserInputService.InputChanged:Connect(function(pInp)
+                        table.insert(connections, UserInputService.InputEnded:Connect(function(pInp)
+                            if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
+                                pHVDrag, pHSatDrag = false, false
+                            end
+                        end))
+
+                        table.insert(connections, UserInputService.InputChanged:Connect(function(pInp)
                             if pHVDrag then
                                 local y = math.clamp((pInp.Position.Y - PWValue.AbsolutePosition.Y) / PWValue.AbsoluteSize.Y, 0, 1)
                                 pV = 1 - y
                                 PWVCursor.Position = UDim2.new(0, 0, y, -1)
-                                UpdatePW()
+                                UpdatePW(false)
                             elseif pHSatDrag then
                                 local x = math.clamp((pInp.Position.X - PWHueSat.AbsolutePosition.X) / PWHueSat.AbsoluteSize.X, 0, 1)
                                 local y = math.clamp((pInp.Position.Y - PWHueSat.AbsolutePosition.Y) / PWHueSat.AbsoluteSize.Y, 0, 1)
-                                pH = x
-                                pS = 1 - y
+                                pH, pS = x, 1 - y
                                 PWSCursor.Position = UDim2.new(x, -2, y, -2)
-                                UpdatePW()
+                                UpdatePW(false)
                             end
-                        end)
+                        end))
 
                         local Close = Instance.new("TextButton")
-                        Close.Parent = PickerWindow
-                        Close.Text = "X"
-                        Close.TextColor3 = Color3.fromRGB(255, 0, 0)
-                        Close.Size = UDim2.new(0, 20, 0, 20)
-                        Close.Position = UDim2.new(1, -20, 0, 0)
-                        Close.BackgroundTransparency = 1
-                        Close.ZIndex = 13
-                        Close.MouseButton1Click:Connect(function() 
-                            PickerWindow:Destroy()
-                            conn1:Disconnect()
-                            conn2:Disconnect()
-                            Library.IsDraggingColorPicker = false
-                            SetAllScrollingEnabled(ScreenGui, true)
-                        end)
+                        Close.Parent = PickerWindow; Close.Text = "X"; Close.TextColor3 = Color3.new(1,0,0); Close.Size = UDim2.new(0,20,0,20); Close.Position = UDim2.new(1,-20,0,0); Close.BackgroundTransparency = 1; Close.ZIndex = 15
+                        Close.Activated:Connect(ClosePicker)
 
                         PWVCursor.Position = UDim2.new(0, 0, 1 - pV, -1)
                         PWSCursor.Position = UDim2.new(pH, -2, 1 - pS, -2)
-                        UpdatePW()
+                        UpdatePW(true)
                     end
                 end)
             end
