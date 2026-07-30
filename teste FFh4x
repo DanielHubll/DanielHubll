@@ -1,9 +1,9 @@
--- FFh4x UI Library (Corrigido)
+-- FFh4x UI Library (Corrigido Mobile)
 -- Sistema de Mains dinâmicos + Auto-height + Sem efeito elástico + Bloqueio de Slider
 -- Correção: ColorPicker com Barra de Escuridão (Value) e Bloco de Cores (Hue/Sat)
 -- BLOQUEIO DE SCROLL ADICIONADO PARA COLORPICKERS
 -- ARRASTAR PELA LOGO + BLOQUEIO DE INPUT MOBILE/PC
--- TOGGLE COM CLIQUE SIMPLES NO MOBILE + COLORPICKER NÃO FECHA AO ARRASTAR
+-- FIX: Toggle e ColorPicker corrigidos para Mobile (Clique simples e Drag estável)
 
 local Library = {
     Flags = {},
@@ -20,7 +20,7 @@ local Library = {
     CurrentTab = nil,
     IsDraggingSlider = false,
     IsDraggingColorPicker = false,
-    IsDraggingWindow = false
+    IsDraggingWindow = false -- NOVA FLAG
 }
 
 local TweenService = game:GetService("TweenService")
@@ -47,15 +47,14 @@ local function MakeDraggable(dragObject, mainObject)
         if Library.IsDraggingSlider or Library.IsDraggingColorPicker then return end
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
-            Library.IsDraggingWindow = true
+            Library.IsDraggingWindow = true -- BLOQUEIA INPUTS
             dragStart = input.Position
             startPos = mainObject.Position
 
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
-                    task.wait(0.1) -- Pequeno delay para evitar clique acidental
-                    Library.IsDraggingWindow = false
+                    Library.IsDraggingWindow = false -- DESBLOQUEIA INPUTS
                 end
             end)
         end
@@ -73,10 +72,10 @@ local function MakeDraggable(dragObject, mainObject)
         end
     end)
     
+    -- InputEnded global para garantir desbloqueio
     UserInputService.InputEnded:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
             dragging = false
-            task.wait(0.1)
             Library.IsDraggingWindow = false
         end
     end)
@@ -130,8 +129,9 @@ function Library:CreateWindow(options)
     Logo.Position = UDim2.new(0, 6, 0, 4)
     Logo.Size = UDim2.new(0, 100, 0, 100)
     Logo.Image = "rbxassetid://114459453255031"
-    Logo.Active = true
+    Logo.Active = true -- Permite input na Logo
 
+    -- FAZ A LOGO ARRASTAR O PAINEL INTEIRO
     MakeDraggable(Logo, Painel)
 
     local TabsContainer = Instance.new("Frame")
@@ -333,14 +333,7 @@ function Library:CreateWindow(options)
             Library:Tween(TabButton, {BackgroundColor3 = Library.Theme.Accent})
         end
 
-        TabButton.MouseButton1Click:Connect(function() 
-            if Library.IsDraggingWindow then return end
-            Tab:Select() 
-        end)
-        TabButton.TouchTap:Connect(function()
-            if Library.IsDraggingWindow then return end
-            Tab:Select()
-        end)
+        TabButton.MouseButton1Click:Connect(function() Tab:Select() end)
         if Window.Count == 1 then Tab:Select() end
 
         -- ========== COMPONENTES ==========
@@ -372,103 +365,24 @@ function Library:CreateWindow(options)
             if Side == "Both" then ButtonFrame.Size = UDim2.new(0, 390, 0, 36) end
             ButtonFrame.Parent = targetMain
 
-            local function ClickAction()
-                if Library.IsDraggingWindow then return end
+            TextButton.MouseButton1Click:Connect(function()
+                if Library.IsDraggingWindow then return end -- NÃO EXECUTA SE TIVER ARRASTANDO
                 local Ripple = Instance.new("Frame")
                 Ripple.Parent = TextButton
                 Ripple.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                Ripple.BackgroundTransparency = 0.6
+                Ripple.BackgroundTransparency = 0.8
                 Ripple.Position = UDim2.new(0.5, 0, 0.5, 0)
                 Ripple.Size = UDim2.new(0, 0, 0, 0)
-                local RCorn = Instance.new("UICorner")
-                RCorn.CornerRadius = UDim.new(1, 0)
-                RCorn.Parent = Ripple
+                local RCorner = Instance.new("UICorner"); RCorner.CornerRadius = UDim.new(1, 0); RCorner.Parent = Ripple
                 Library:Tween(Ripple, {Size = UDim2.new(0, 200, 0, 200), Position = UDim2.new(0.5, -100, 0.5, -100), BackgroundTransparency = 1}, function() Ripple:Destroy() end)
                 Callback()
-            end
-
-            TextButton.MouseButton1Click:Connect(ClickAction)
-            TextButton.TouchTap:Connect(ClickAction)
-        end
-
-        function Tab:AddToggle(tglOptions)
-            local Text = tglOptions.Text or "Toggle"
-            local Side = tglOptions.Side or "Main1"
-            local Default = tglOptions.Default or false
-            local Callback = tglOptions.Callback or function() end
-            local Flag = tglOptions.Flag or Text
-            local targetMain = self:GetMain(Side)
-
-            local ToggleFrame = Instance.new("Frame")
-            ToggleFrame.BackgroundTransparency = 1
-            ToggleFrame.Size = UDim2.new(0, 194, 0, 34)
-
-            local ToggleBtn = Instance.new("ImageButton")
-            ToggleBtn.Parent = ToggleFrame
-            ToggleBtn.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
-            ToggleBtn.Size = UDim2.new(0, 34, 0, 34)
-            local TCorner = Instance.new("UICorner")
-            TCorner.Parent = ToggleBtn
-
-            local Title = Instance.new("TextLabel")
-            Title.Parent = ToggleFrame
-            Title.BackgroundTransparency = 1
-            Title.Position = UDim2.new(0, 46, 0, 0)
-            Title.Size = UDim2.new(0, 136, 0, 36)
-            Title.Text = Text
-            Title.TextColor3 = Library.Theme.Text
-            Title.TextSize = 16
-            Title.TextXAlignment = Enum.TextXAlignment.Left
-            Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
-
-            local Enabled = Default
-            Library.Flags[Flag] = Enabled
-
-            local function Update()
-                if Enabled then
-                    Library:Tween(ToggleBtn, {BackgroundColor3 = Library.Theme.Accent})
-                    ToggleBtn.Image = "rbxassetid://130396712201457"
-                else
-                    Library:Tween(ToggleBtn, {BackgroundColor3 = Color3.fromRGB(36, 36, 36)})
-                    ToggleBtn.Image = ""
-                end
-                Library.Flags[Flag] = Enabled
-                Callback(Enabled)
-            end
-
-            local function ToggleAction()
-                if Library.IsDraggingWindow then return end
-                Enabled = not Enabled
-                Update()
-            end
-            
-            ToggleBtn.MouseButton1Click:Connect(ToggleAction)
-            ToggleBtn.TouchTap:Connect(ToggleAction) -- CLIQUE SIMPLES NO MOBILE
-            Update()
-            ToggleFrame.Parent = targetMain
-        end
-
-        function Tab:AddLabel(lblOptions)
-            local Text = lblOptions.Text or "Label"
-            local Side = lblOptions.Side or "Main1"
-            local targetMain = self:GetMain(Side)
-            local LabelFrame = Instance.new("Frame")
-            LabelFrame.BackgroundTransparency = 1
-            LabelFrame.Size = UDim2.new(0, 204, 0, 34)
-            local Label = Instance.new("TextLabel")
-            Label.Parent = LabelFrame
-            Label.BackgroundTransparency = 1
-            Label.Size = UDim2.new(1, 0, 1, 0)
-            Label.Text = Text
-            Label.TextColor3 = Library.Theme.Accent
-            Label.TextSize = 15
-            Label.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
-            LabelFrame.Parent = targetMain
+            end)
         end
 
         function Tab:AddSlider(sldOptions)
             local Text = sldOptions.Text or "Slider"
-            local Min, Max = sldOptions.Min or 0, sldOptions.Max or 100
+            local Min = sldOptions.Min or 0
+            local Max = sldOptions.Max or 100
             local Default = sldOptions.Default or Min
             local Suffix = sldOptions.Suffix or ""
             local Side = sldOptions.Side or "Main1"
@@ -477,33 +391,33 @@ function Library:CreateWindow(options)
             local targetMain = self:GetMain(Side)
 
             local SliderFrame = Instance.new("Frame")
+            SliderFrame.Name = "Slider_" .. Text
+            SliderFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
             SliderFrame.BackgroundTransparency = 1
-            SliderFrame.Size = UDim2.new(0, 194, 0, 76)
+            SliderFrame.Size = UDim2.new(0, 184, 0, 70)
             SliderFrame.Parent = targetMain
 
             local Title = Instance.new("TextLabel")
             Title.Parent = SliderFrame
             Title.BackgroundTransparency = 1
-            Title.Size = UDim2.new(0, 108, 0, 34)
+            Title.Position = UDim2.new(0, 10, 0, 10)
+            Title.Size = UDim2.new(0, 100, 0, 20)
             Title.Text = Text
             Title.TextColor3 = Library.Theme.Text
-            Title.TextSize = 20
+            Title.TextSize = 14
             Title.TextXAlignment = Enum.TextXAlignment.Left
-            Title.TextScaled = true
             Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
 
             local Info = Instance.new("TextLabel")
             Info.Parent = SliderFrame
-            Info.BackgroundColor3 = Library.Theme.Accent
-            Info.Position = UDim2.new(0, 120, 0, 4)
-            Info.Size = UDim2.new(0, 70, 0, 26)
+            Info.BackgroundTransparency = 1
+            Info.Position = UDim2.new(1, -60, 0, 10)
+            Info.Size = UDim2.new(0, 50, 0, 20)
             Info.Text = tostring(Default) .. Suffix
-            Info.TextColor3 = Color3.fromRGB(255, 249, 249)
+            Info.TextColor3 = Library.Theme.Accent
             Info.TextSize = 14
-            Info.TextScaled = true
+            Info.TextXAlignment = Enum.TextXAlignment.Right
             Info.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
-            local ICorner = Instance.new("UICorner")
-            ICorner.CornerRadius = UDim.new(0, 9); ICorner.Parent = Info
 
             local SliderMain = Instance.new("Frame")
             SliderMain.Parent = SliderFrame
@@ -630,17 +544,20 @@ function Library:CreateWindow(options)
                 Item.TextColor3 = Library.Theme.SecondaryText
                 Item.TextSize = 13
                 Item.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
-                
-                local function SelectItem()
+                Item.MouseButton1Click:Connect(function()
                     if Library.IsDraggingWindow then return end
                     Title.Text = Text .. ": " .. tostring(v)
                     Library.Flags[Flag] = v
                     Callback(v)
                     Toggle()
-                end
-                
-                Item.MouseButton1Click:Connect(SelectItem)
-                Item.TouchTap:Connect(SelectItem)
+                end)
+                Item.TouchTap:Connect(function()
+                    if Library.IsDraggingWindow then return end
+                    Title.Text = Text .. ": " .. tostring(v)
+                    Library.Flags[Flag] = v
+                    Callback(v)
+                    Toggle()
+                end)
             end
         end
 
@@ -752,7 +669,94 @@ function Library:CreateWindow(options)
             Sep.Parent = targetMain
         end
 
-        -- ========== COLOR PICKER FIX (NÃO FECHA AO ARRASTAR NO MOBILE) ==========
+        -- ========== TOGGLE FIX PARA MOBILE (CLIQUE SIMPLES) ==========
+        function Tab:AddToggle(tglOptions)
+            local Text = tglOptions.Text or "Toggle"
+            local Side = tglOptions.Side or "Main1"
+            local Default = tglOptions.Default or false
+            local Callback = tglOptions.Callback or function() end
+            local Flag = tglOptions.Flag or Text
+            local targetMain = self:GetMain(Side)
+
+            local ToggleFrame = Instance.new("Frame")
+            ToggleFrame.BackgroundTransparency = 1
+            ToggleFrame.Size = UDim2.new(0, 194, 0, 34)
+
+            local ToggleBtn = Instance.new("ImageButton")
+            ToggleBtn.Parent = ToggleFrame
+            ToggleBtn.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
+            ToggleBtn.Size = UDim2.new(0, 34, 0, 34)
+            local TCorner = Instance.new("UICorner")
+            TCorner.Parent = ToggleBtn
+
+            local Title = Instance.new("TextLabel")
+            Title.Parent = ToggleFrame
+            Title.BackgroundTransparency = 1
+            Title.Position = UDim2.new(0, 46, 0, 0)
+            Title.Size = UDim2.new(0, 136, 0, 36)
+            Title.Text = Text
+            Title.TextColor3 = Library.Theme.Text
+            Title.TextSize = 16
+            Title.TextXAlignment = Enum.TextXAlignment.Left
+            Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
+
+            local Enabled = Default
+            Library.Flags[Flag] = Enabled
+
+            local function Update()
+                if Enabled then
+                    Library:Tween(ToggleBtn, {BackgroundColor3 = Library.Theme.Accent})
+                    ToggleBtn.Image = "rbxassetid://130396712201457"
+                else
+                    Library:Tween(ToggleBtn, {BackgroundColor3 = Color3.fromRGB(36, 36, 36)})
+                    ToggleBtn.Image = ""
+                end
+                Library.Flags[Flag] = Enabled
+                Callback(Enabled)
+            end
+
+            local function ToggleAction()
+                if Library.IsDraggingWindow then return end
+                Enabled = not Enabled
+                Update()
+            end
+            
+            -- FIX: Usa Activated para clique instantâneo e adiciona área de clique no frame todo
+            local InvisibleButton = Instance.new("TextButton")
+            InvisibleButton.Name = "ClickArea"
+            InvisibleButton.Parent = ToggleFrame
+            InvisibleButton.BackgroundTransparency = 1
+            InvisibleButton.Size = UDim2.new(1, 0, 1, 0)
+            InvisibleButton.Text = ""
+            InvisibleButton.ZIndex = 5
+            
+            InvisibleButton.Activated:Connect(ToggleAction)
+            ToggleBtn.Activated:Connect(ToggleAction)
+
+            Update()
+            ToggleFrame.Parent = targetMain
+        end
+
+        function Tab:AddLabel(lblOptions)
+            local Text = lblOptions.Text or "Label"
+            local Side = lblOptions.Side or "Main1"
+            local targetMain = self:GetMain(Side)
+            local LabelFrame = Instance.new("Frame")
+            LabelFrame.BackgroundTransparency = 1
+            LabelFrame.Size = UDim2.new(0, 194, 0, 20)
+            LabelFrame.Parent = targetMain
+            local Title = Instance.new("TextLabel")
+            Title.Parent = LabelFrame
+            Title.BackgroundTransparency = 1
+            Title.Size = UDim2.new(1, 0, 1, 0)
+            Title.Text = Text
+            Title.TextColor3 = Library.Theme.Text
+            Title.TextSize = 14
+            Title.TextXAlignment = Enum.TextXAlignment.Left
+            Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
+        end
+
+        -- ========== COLOR PICKER FIX PARA MOBILE (NÃO FECHA AO ARRASTAR) ==========
         function Tab:AddColorPicker(cpOptions)
             local Text = cpOptions.Text or "Color Picker"
             local Default = cpOptions.Default or Color3.fromRGB(255, 0, 0)
@@ -799,7 +803,7 @@ function Library:CreateWindow(options)
             HueSatImg.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
             HueSatImg.Position = UDim2.new(0, 10, 0, 5)
             HueSatImg.Size = UDim2.new(0, 150, 0, 120)
-            HueSatImg.Image = "rbxassetid://73194550500215"
+            HueSatImg.Image = "rbxassetid://73194550500215" -- Rainbow Square
             local SCorner = Instance.new("UICorner"); SCorner.Parent = HueSatImg
 
             local SCursor = Instance.new("Frame")
@@ -840,29 +844,23 @@ function Library:CreateWindow(options)
             end
 
             local function Toggle()
-                if Library.IsDraggingWindow then return end
+                if Library.IsDraggingWindow or Library.IsDraggingColorPicker then return end
                 Opened = not Opened
                 Library:Tween(ColorPickerFrame, {Size = Opened and UDim2.new(0, 194, 0, 184) or UDim2.new(0, 194, 0, 34)})
             end
 
-            -- ABRE/FECHA COM TOQUE NO DISPLAY OU TÍTULO
-            ColorDisplay.InputBegan:Connect(function(input) 
-                if Library.IsDraggingWindow then return end
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
-                    Toggle() 
-                end 
-            end)
-            
-            Title.InputBegan:Connect(function(input) 
-                if Library.IsDraggingWindow then return end
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
-                    Toggle() 
-                end 
-            end)
+            -- FIX: Usa um botão invisível no header para evitar que o InputBegan feche o picker ao arrastar
+            local HeaderButton = Instance.new("TextButton")
+            HeaderButton.Name = "HeaderButton"
+            HeaderButton.Parent = ColorPickerFrame
+            HeaderButton.BackgroundTransparency = 1
+            HeaderButton.Size = UDim2.new(1, 0, 0, 34)
+            HeaderButton.Text = ""
+            HeaderButton.ZIndex = 5
+            HeaderButton.Activated:Connect(Toggle)
 
             local VDragging, HSDragging = false, false
             
-            -- BLOQUEIA SCROLL E IMPEDE FECHAR AO ARRASTAR
             ValueBar.InputBegan:Connect(function(input) 
                 if Library.IsDraggingWindow then return end
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
@@ -883,7 +881,6 @@ function Library:CreateWindow(options)
                 end 
             end)
 
-            -- SÓ DESBLOQUEIA QUANDO SOLTA, NÃO FECHA
             UserInputService.InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
                     if VDragging or HSDragging then
@@ -917,7 +914,7 @@ function Library:CreateWindow(options)
             UpdateColor()
         end
 
-        -- ========== MULTI COLOR PICKER FIX (NÃO FECHA AO ARRASTAR NO MOBILE) ==========
+        -- ========== MULTI COLOR PICKER FIX PARA MOBILE ==========
         function Tab:AddMultiColorPicker(mcpOptions)
             local Text = mcpOptions.Text or "Multi Color Picker"
             local Colors = mcpOptions.Colors or {}
@@ -960,19 +957,21 @@ function Library:CreateWindow(options)
 
             local Opened = false
             local function Toggle()
-                if Library.IsDraggingWindow then return end
+                if Library.IsDraggingWindow or Library.IsDraggingColorPicker then return end
                 Opened = not Opened
                 Library:Tween(MultiCPFrame, {Size = Opened and UDim2.new(0, 194, 0, 34 + (#Colors * 34)) or UDim2.new(0, 194, 0, 34)})
                 Library:Tween(Arrow, {Rotation = Opened and 180 or 0})
             end
 
-            -- ABRE/FECHA COM TOQUE
-            MultiCPFrame.InputBegan:Connect(function(input)
-                if Library.IsDraggingWindow then return end
-                if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then 
-                    Toggle()
-                end
-            end)
+            -- FIX: HeaderButton dedicado para evitar conflitos de drag
+            local HeaderButton = Instance.new("TextButton")
+            HeaderButton.Name = "HeaderButton"
+            HeaderButton.Parent = MultiCPFrame
+            HeaderButton.BackgroundTransparency = 1
+            HeaderButton.Size = UDim2.new(1, 0, 0, 34)
+            HeaderButton.Text = ""
+            HeaderButton.ZIndex = 5
+            HeaderButton.Activated:Connect(Toggle)
 
             local SelectedColors = {}
             Library.Flags[Flag] = SelectedColors
@@ -1007,126 +1006,114 @@ function Library:CreateWindow(options)
                 ItemDisplay.Size = UDim2.new(0, 20, 0, 20)
                 local IDCorner = Instance.new("UICorner"); IDCorner.CornerRadius = UDim.new(0, 4); IDCorner.Parent = ItemDisplay
 
-                -- ABRE O PICKER INDIVIDUAL COM TOQUE
-                local function OpenIndividualPicker()
-                    if Library.IsDraggingWindow then return end
-                    
-                    -- BLOQUEIA O SCROLL AO ABRIR
-                    Library.IsDraggingColorPicker = true
-                    targetMain.ScrollingEnabled = false
-                    self.ContentFrame.ScrollingEnabled = false
-                    
-                    local PickerWindow = Instance.new("Frame")
-                    PickerWindow.Parent = ScreenGui
-                    PickerWindow.BackgroundColor3 = Library.Theme.Main
-                    PickerWindow.Position = UDim2.new(0.5, -97, 0.5, -75)
-                    PickerWindow.Size = UDim2.new(0, 194, 0, 150)
-                    PickerWindow.ZIndex = 10
-                    local PWCorner = Instance.new("UICorner"); PWCorner.Parent = PickerWindow
-
-                    local PWHueSat = Instance.new("ImageLabel")
-                    PWHueSat.Parent = PickerWindow
-                    PWHueSat.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                    PWHueSat.Position = UDim2.new(0, 10, 0, 10)
-                    PWHueSat.Size = UDim2.new(0, 140, 0, 130)
-                    PWHueSat.Image = "rbxassetid://4155801252"
-                    PWHueSat.ZIndex = 11
-                    local PWSCursor = Instance.new("Frame")
-                    PWSCursor.Parent = PWHueSat
-                    PWSCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                    PWSCursor.Size = UDim2.new(0, 4, 0, 4)
-                    PWSCursor.ZIndex = 12
-
-                    local PWValue = Instance.new("Frame")
-                    PWValue.Parent = PickerWindow
-                    PWValue.Position = UDim2.new(0, 160, 0, 10)
-                    PWValue.Size = UDim2.new(0, 15, 0, 130)
-                    PWValue.ZIndex = 11
-                    local PWVGradient = Instance.new("UIGradient")
-                    PWVGradient.Rotation = 90
-                    PWVGradient.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 0, 0))
-                    PWVGradient.Parent = PWValue
-                    local PWVCursor = Instance.new("Frame")
-                    PWVCursor.Parent = PWValue
-                    PWVCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                    PWVCursor.Size = UDim2.new(1, 0, 0, 2)
-                    PWVCursor.ZIndex = 12
-
-                    local pH, pS, pV = SelectedColors[cFlag]:ToHSV()
-                    local function UpdatePW()
-                        local color = Color3.fromHSV(pH, pS, pV)
-                        ItemDisplay.BackgroundColor3 = color
-                        PWVGradient.Color = ColorSequence.new(Color3.fromHSV(pH, pS, 1), Color3.fromRGB(0, 0, 0))
-                        SelectedColors[cFlag] = color
-                        Callback(SelectedColors)
-                    end
-
-                    local pHVDrag, pHSatDrag = false, false
-                    PWValue.InputBegan:Connect(function(pInp) 
-                        if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
-                            pHVDrag = true 
-                        end 
-                    end)
-                    PWHueSat.InputBegan:Connect(function(pInp) 
-                        if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
-                            pHSatDrag = true 
-                        end 
-                    end)
-
-                    local conn1, conn2
-                    conn1 = UserInputService.InputEnded:Connect(function(pInp)
-                        if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
-                            pHVDrag = false
-                            pHSatDrag = false 
-                        end
-                    end)
-
-                    conn2 = UserInputService.InputChanged:Connect(function(pInp)
-                        if pHVDrag then
-                            local y = math.clamp((pInp.Position.Y - PWValue.AbsolutePosition.Y) / PWValue.AbsoluteSize.Y, 0, 1)
-                            pV = 1 - y
-                            PWVCursor.Position = UDim2.new(0, 0, y, -1)
-                            UpdatePW()
-                        elseif pHSatDrag then
-                            local x = math.clamp((pInp.Position.X - PWHueSat.AbsolutePosition.X) / PWHueSat.AbsoluteSize.X, 0, 1)
-                            local y = math.clamp((pInp.Position.Y - PWHueSat.AbsolutePosition.Y) / PWHueSat.AbsoluteSize.Y, 0, 1)
-                            pH = x
-                            pS = 1 - y
-                            PWSCursor.Position = UDim2.new(x, -2, y, -2)
-                            UpdatePW()
-                        end
-                    end)
-
-                    -- BOTÃO FECHAR
-                    local Close = Instance.new("TextButton")
-                    Close.Parent = PickerWindow
-                    Close.Text = "X"
-                    Close.TextColor3 = Color3.fromRGB(255, 0, 0)
-                    Close.Size = UDim2.new(0, 20, 0, 20)
-                    Close.Position = UDim2.new(1, -20, 0, 0)
-                    Close.BackgroundTransparency = 1
-                    Close.ZIndex = 13
-                    
-                    local function ClosePicker()
-                        PickerWindow:Destroy()
-                        conn1:Disconnect()
-                        conn2:Disconnect()
-                        Library.IsDraggingColorPicker = false
-                        targetMain.ScrollingEnabled = true
-                        self.ContentFrame.ScrollingEnabled = true
-                    end
-                    
-                    Close.MouseButton1Click:Connect(ClosePicker)
-                    Close.TouchTap:Connect(ClosePicker)
-
-                    PWVCursor.Position = UDim2.new(0, 0, 1 - pV, -1)
-                    PWSCursor.Position = UDim2.new(pH, -2, 1 - pS, -2)
-                    UpdatePW()
-                end
-
                 ItemDisplay.InputBegan:Connect(function(input)
+                    if Library.IsDraggingWindow then return end
                     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                        OpenIndividualPicker()
+                        Library.IsDraggingColorPicker = true
+                        targetMain.ScrollingEnabled = false
+                        self.ContentFrame.ScrollingEnabled = false
+                        
+                        local PickerWindow = Instance.new("Frame")
+                        PickerWindow.Parent = ScreenGui
+                        PickerWindow.BackgroundColor3 = Library.Theme.Main
+                        PickerWindow.Position = UDim2.new(0.5, -97, 0.5, -75)
+                        PickerWindow.Size = UDim2.new(0, 194, 0, 150)
+                        PickerWindow.ZIndex = 10
+                        local PWCorner = Instance.new("UICorner"); PWCorner.Parent = PickerWindow
+
+                        local PWHueSat = Instance.new("ImageLabel")
+                        PWHueSat.Parent = PickerWindow
+                        PWHueSat.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        PWHueSat.Position = UDim2.new(0, 10, 0, 10)
+                        PWHueSat.Size = UDim2.new(0, 140, 0, 130)
+                        PWHueSat.Image = "rbxassetid://4155801252"
+                        PWHueSat.ZIndex = 11
+                        local PWSCursor = Instance.new("Frame")
+                        PWSCursor.Parent = PWHueSat
+                        PWSCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        PWSCursor.Size = UDim2.new(0, 4, 0, 4)
+                        PWSCursor.ZIndex = 12
+
+                        local PWValue = Instance.new("Frame")
+                        PWValue.Parent = PickerWindow
+                        PWValue.Position = UDim2.new(0, 160, 0, 10)
+                        PWValue.Size = UDim2.new(0, 15, 0, 130)
+                        PWValue.ZIndex = 11
+                        local PWVGradient = Instance.new("UIGradient")
+                        PWVGradient.Rotation = 90
+                        PWVGradient.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 0, 0))
+                        PWVGradient.Parent = PWValue
+                        local PWVCursor = Instance.new("Frame")
+                        PWVCursor.Parent = PWValue
+                        PWVCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        PWVCursor.Size = UDim2.new(1, 0, 0, 2)
+                        PWVCursor.ZIndex = 12
+
+                        local pH, pS, pV = SelectedColors[cFlag]:ToHSV()
+                        local function UpdatePW()
+                            local color = Color3.fromHSV(pH, pS, pV)
+                            ItemDisplay.BackgroundColor3 = color
+                            PWVGradient.Color = ColorSequence.new(Color3.fromHSV(pH, pS, 1), Color3.fromRGB(0, 0, 0))
+                            SelectedColors[cFlag] = color
+                            Callback(SelectedColors)
+                        end
+
+                        local pHVDrag, pHSatDrag = false, false
+                        PWValue.InputBegan:Connect(function(pInp) 
+                            if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
+                                pHVDrag = true 
+                            end 
+                        end)
+                        PWHueSat.InputBegan:Connect(function(pInp) 
+                            if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
+                                pHSatDrag = true 
+                            end 
+                        end)
+
+                        local conn1, conn2
+                        conn1 = UserInputService.InputEnded:Connect(function(pInp)
+                            if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
+                                pHVDrag = false
+                                pHSatDrag = false 
+                            end
+                        end)
+
+                        conn2 = UserInputService.InputChanged:Connect(function(pInp)
+                            if pHVDrag then
+                                local y = math.clamp((pInp.Position.Y - PWValue.AbsolutePosition.Y) / PWValue.AbsoluteSize.Y, 0, 1)
+                                pV = 1 - y
+                                PWVCursor.Position = UDim2.new(0, 0, y, -1)
+                                UpdatePW()
+                            elseif pHSatDrag then
+                                local x = math.clamp((pInp.Position.X - PWHueSat.AbsolutePosition.X) / PWHueSat.AbsoluteSize.X, 0, 1)
+                                local y = math.clamp((pInp.Position.Y - PWHueSat.AbsolutePosition.Y) / PWHueSat.AbsoluteSize.Y, 0, 1)
+                                pH = x
+                                pS = 1 - y
+                                PWSCursor.Position = UDim2.new(x, -2, y, -2)
+                                UpdatePW()
+                            end
+                        end)
+
+                        local Close = Instance.new("TextButton")
+                        Close.Parent = PickerWindow
+                        Close.Text = "X"
+                        Close.TextColor3 = Color3.fromRGB(255, 0, 0)
+                        Close.Size = UDim2.new(0, 20, 0, 20)
+                        Close.Position = UDim2.new(1, -20, 0, 0)
+                        Close.BackgroundTransparency = 1
+                        Close.ZIndex = 13
+                        Close.MouseButton1Click:Connect(function() 
+                            PickerWindow:Destroy()
+                            conn1:Disconnect()
+                            conn2:Disconnect()
+                            Library.IsDraggingColorPicker = false
+                            targetMain.ScrollingEnabled = true
+                            self.ContentFrame.ScrollingEnabled = true
+                        end)
+
+                        PWVCursor.Position = UDim2.new(0, 0, 1 - pV, -1)
+                        PWSCursor.Position = UDim2.new(pH, -2, 1 - pS, -2)
+                        UpdatePW()
                     end
                 end)
             end
