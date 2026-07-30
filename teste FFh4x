@@ -1172,18 +1172,20 @@ function Library:CreateWindow(options)
                         PWHueSat.Size = UDim2.new(0, 140, 0, 130)
                         PWHueSat.Image = "rbxassetid://73194550500215"
                         PWHueSat.ZIndex = 11
+                        local SCorner = Instance.new("UICorner"); SCorner.Parent = PWHueSat
+                        
                         local PWSCursor = Instance.new("Frame")
                         PWSCursor.Parent = PWHueSat
                         PWSCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                         PWSCursor.Size = UDim2.new(0, 6, 0, 6)
                         PWSCursor.ZIndex = 12
-                        local SCorner = Instance.new("UICorner"); SCorner.Parent = PWSCursor
 
                         local PWValue = Instance.new("Frame")
                         PWValue.Parent = PickerWindow
                         PWValue.Position = UDim2.new(0, 160, 0, 10)
                         PWValue.Size = UDim2.new(0, 15, 0, 130)
                         PWValue.ZIndex = 11
+                        local SCorner = Instance.new("UICorner"); SCorner.Parent = PWValue
                         local PWVGradient = Instance.new("UIGradient")
                         PWVGradient.Rotation = 90
                         PWVGradient.Parent = PWValue
