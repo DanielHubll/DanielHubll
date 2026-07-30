@@ -1,6 +1,7 @@
 -- FFh4x UI Library (Corrigido)
 -- Sistema de Mains dinâmicos + Auto-height + Sem efeito elástico + Bloqueio de Slider
 -- Correção: ColorPicker com Barra de Escuridão (Value) e Bloco de Cores (Hue/Sat)
+-- BLOQUEIO DE SCROLL ADICIONADO PARA COLORPICKERS
 
 local Library = {
     Flags = {},
@@ -15,7 +16,8 @@ local Library = {
     Connections = {},
     Tabs = {},
     CurrentTab = nil,
-    IsDraggingSlider = false 
+    IsDraggingSlider = false,
+    IsDraggingColorPicker = false -- NOVA FLAG
 }
 
 local TweenService = game:GetService("TweenService")
@@ -33,13 +35,13 @@ local function MakeDraggable(topbarobject, object)
     local startPos = nil
 
     local function update(input)
-        if Library.IsDraggingSlider then return end 
+        if Library.IsDraggingSlider or Library.IsDraggingColorPicker then return end 
         local delta = input.Position - dragStart
         object.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 
     topbarobject.InputBegan:Connect(function(input)
-        if Library.IsDraggingSlider then return end
+        if Library.IsDraggingSlider or Library.IsDraggingColorPicker then return end
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
@@ -705,7 +707,7 @@ function Library:CreateWindow(options)
             Sep.Parent = targetMain
         end
 
-        -- ========== COLOR PICKER FIX ==========
+        -- ========== COLOR PICKER FIX COM BLOQUEIO DE SCROLL ==========
         function Tab:AddColorPicker(cpOptions)
             local Text = cpOptions.Text or "Color Picker"
             local Default = cpOptions.Default or Color3.fromRGB(255, 0, 0)
@@ -802,11 +804,37 @@ function Library:CreateWindow(options)
             Title.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then Toggle() end end)
 
             local VDragging, HSDragging = false, false
-            ValueBar.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then VDragging = true end end)
-            HueSatImg.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then HSDragging = true end end)
+            
+            -- BLOQUEIA O SCROLL QUANDO COMEÇA A ARRASTAR
+            ValueBar.InputBegan:Connect(function(input) 
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
+                    VDragging = true
+                    Library.IsDraggingColorPicker = true
+                    targetMain.ScrollingEnabled = false
+                    self.ContentFrame.ScrollingEnabled = false
+                end 
+            end)
+            
+            HueSatImg.InputBegan:Connect(function(input) 
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
+                    HSDragging = true
+                    Library.IsDraggingColorPicker = true
+                    targetMain.ScrollingEnabled = false
+                    self.ContentFrame.ScrollingEnabled = false
+                end 
+            end)
 
+            -- DESBLOQUEIA O SCROLL QUANDO SOLTA
             UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then VDragging = false; HSDragging = false end
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
+                    if VDragging or HSDragging then
+                        VDragging = false
+                        HSDragging = false
+                        Library.IsDraggingColorPicker = false
+                        targetMain.ScrollingEnabled = true
+                        self.ContentFrame.ScrollingEnabled = true
+                    end
+                end
             end)
 
             UserInputService.InputChanged:Connect(function(input)
@@ -830,7 +858,7 @@ function Library:CreateWindow(options)
             UpdateColor()
         end
 
-        -- ========== MULTI COLOR PICKER FIX ==========
+        -- ========== MULTI COLOR PICKER FIX COM BLOQUEIO DE SCROLL ==========
         function Tab:AddMultiColorPicker(mcpOptions)
             local Text = mcpOptions.Text or "Multi Color Picker"
             local Colors = mcpOptions.Colors or {}
@@ -917,6 +945,11 @@ function Library:CreateWindow(options)
 
                 ItemDisplay.InputBegan:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        -- BLOQUEIA O SCROLL AO ABRIR O PICKER INDIVIDUAL
+                        Library.IsDraggingColorPicker = true
+                        targetMain.ScrollingEnabled = false
+                        self.ContentFrame.ScrollingEnabled = false
+                        
                         local PickerWindow = Instance.new("Frame")
                         PickerWindow.Parent = ScreenGui
                         PickerWindow.BackgroundColor3 = Library.Theme.Main
@@ -963,12 +996,23 @@ function Library:CreateWindow(options)
                         end
 
                         local pHVDrag, pHSatDrag = false, false
-                        PWValue.InputBegan:Connect(function(pInp) if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then pHVDrag = true end end)
-                        PWHueSat.InputBegan:Connect(function(pInp) if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then pHSatDrag = true end end)
+                        PWValue.InputBegan:Connect(function(pInp) 
+                            if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
+                                pHVDrag = true 
+                            end 
+                        end)
+                        PWHueSat.InputBegan:Connect(function(pInp) 
+                            if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
+                                pHSatDrag = true 
+                            end 
+                        end)
 
                         local conn1, conn2
                         conn1 = UserInputService.InputEnded:Connect(function(pInp)
-                            if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then pHVDrag = false; pHSatDrag = false end
+                            if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
+                                pHVDrag = false
+                                pHSatDrag = false 
+                            end
                         end)
 
                         conn2 = UserInputService.InputChanged:Connect(function(pInp)
@@ -989,9 +1033,21 @@ function Library:CreateWindow(options)
 
                         local Close = Instance.new("TextButton")
                         Close.Parent = PickerWindow
-                        Close.Text = "X"; Close.TextColor3 = Color3.fromRGB(255, 0, 0); Close.Size = UDim2.new(0, 20, 0, 20); Close.Position = UDim2.new(1, -20, 0, 0)
-                        Close.BackgroundTransparency = 1; Close.ZIndex = 13
-                        Close.MouseButton1Click:Connect(function() PickerWindow:Destroy(); conn1:Disconnect(); conn2:Disconnect() end)
+                        Close.Text = "X"
+                        Close.TextColor3 = Color3.fromRGB(255, 0, 0)
+                        Close.Size = UDim2.new(0, 20, 0, 20)
+                        Close.Position = UDim2.new(1, -20, 0, 0)
+                        Close.BackgroundTransparency = 1
+                        Close.ZIndex = 13
+                        Close.MouseButton1Click:Connect(function() 
+                            PickerWindow:Destroy()
+                            conn1:Disconnect()
+                            conn2:Disconnect()
+                            -- DESBLOQUEIA O SCROLL AO FECHAR
+                            Library.IsDraggingColorPicker = false
+                            targetMain.ScrollingEnabled = true
+                            self.ContentFrame.ScrollingEnabled = true
+                        end)
 
                         PWVCursor.Position = UDim2.new(0, 0, 1 - pV, -1)
                         PWSCursor.Position = UDim2.new(pH, -2, 1 - pS, -2)
