@@ -1179,10 +1179,7 @@ function Library:CreateWindow(options)
                         PWSCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                         PWSCursor.Size = UDim2.new(0, 6, 0, 6)
                         PWSCursor.ZIndex = 12
-                        
-                        local PWSCursorCorner = Instance.new("UICorner")
-                        PWACursorCorner.CornerRadius = UDim.new(0, 4)
-                        PWSCursorCorner.Parent = PWSCursor
+                        local SCorner = Instance.new("UICorner"); SCorner.Parent = PWSCursor
 
                         local PWValue = Instance.new("Frame")
                         PWValue.Parent = PickerWindow
