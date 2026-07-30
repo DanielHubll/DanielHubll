@@ -427,6 +427,7 @@ function Library:CreateWindow(options)
             Title.Text = Text
             Title.TextColor3 = Library.Theme.Text
             Title.TextSize = 14
+            Title.TextScaled = true
             Title.TextXAlignment = Enum.TextXAlignment.Left
             Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
 
