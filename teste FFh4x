@@ -1,4 +1,4 @@
--- FFh4x UI Library (Modificado para Auto-Tab e Auto-Close)
+-- FFh4x UI Library (Corrigido Mobile - Performance Otimizada)
 -- Sistema de Mains dinâmicos + Auto-height + Sem efeito elástico + Bloqueio de Slider
 -- OITIMIZAÇÕES: Single InputChanged, Callback throttling, Reuso de objetos, Cache de ScrollFrames
 
@@ -378,18 +378,147 @@ function Library:CreateWindow(options)
             TextButton.Size = UDim2.new(1, 0, 1, 0)
             TextButton.Text = Text
             TextButton.TextColor3 = Library.Theme.Text
-            TextButton.TextSize = 14
+            TextButton.TextSize = 15
             TextButton.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
 
-            local BCorner = Instance.new("UICorner")
-            BCorner.Parent = TextButton
+            local Corner = Instance.new("UICorner")
+            Corner.Parent = TextButton
+
+            if Side == "Both" then ButtonFrame.Size = UDim2.new(0, 390, 0, 36) end
+            ButtonFrame.Parent = targetMain
 
             TextButton.MouseButton1Click:Connect(function()
                 if Library.IsDraggingWindow then return end
-                task.spawn(function() Callback() end)
+                local Ripple = Instance.new("Frame")
+                Ripple.Parent = TextButton
+                Ripple.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                Ripple.BackgroundTransparency = 0.8
+                Ripple.Position = UDim2.new(0.5, 0, 0.5, 0)
+                Ripple.Size = UDim2.new(0, 0, 0, 0)
+                local RCorner = Instance.new("UICorner"); RCorner.CornerRadius = UDim.new(1, 0); RCorner.Parent = Ripple
+                Library:Tween(Ripple, {Size = UDim2.new(0, 200, 0, 200), Position = UDim2.new(0.5, -100, 0.5, -100), BackgroundTransparency = 1}, function() Ripple:Destroy() end)
+                task.spawn(Callback) -- Callback assíncrono para não travar UI
+            end)
+        end
+
+        function Tab:AddSlider(sldOptions)
+            local Text = sldOptions.Text or "Slider"
+            local Min = sldOptions.Min or 0
+            local Max = sldOptions.Max or 100
+            local Default = sldOptions.Default or Min
+            local Suffix = sldOptions.Suffix or ""
+            local Side = sldOptions.Side or "Main1"
+            local Callback = sldOptions.Callback or function() end
+            local Flag = sldOptions.Flag or Text
+            local targetMain = self:GetMain(Side)
+
+            local SliderFrame = Instance.new("Frame")
+            SliderFrame.Name = "Slider_" .. Text
+            SliderFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            SliderFrame.BackgroundTransparency = 1
+            SliderFrame.Size = UDim2.new(0, 184, 0, 70)
+            SliderFrame.Parent = targetMain
+
+            local Title = Instance.new("TextLabel")
+            Title.Parent = SliderFrame
+            Title.BackgroundTransparency = 1
+            Title.Position = UDim2.new(0, 10, 0, 10)
+            Title.Size = UDim2.new(0, 100, 0, 20)
+            Title.Text = Text
+            Title.TextColor3 = Library.Theme.Text
+            Title.TextSize = 14
+            Title.TextScaled = true
+            Title.TextXAlignment = Enum.TextXAlignment.Left
+            Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
+
+            local Info = Instance.new("TextLabel")
+            Info.Parent = SliderFrame
+            Info.BackgroundTransparency = 1
+            Info.Position = UDim2.new(1, -60, 0, 10)
+            Info.Size = UDim2.new(0, 50, 0, 20)
+            Info.Text = tostring(Default) .. Suffix
+            Info.TextColor3 = Library.Theme.Accent
+            Info.TextSize = 14
+            Info.TextScaled = true
+            Info.TextXAlignment = Enum.TextXAlignment.Right
+            Info.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
+
+            local SliderMain = Instance.new("Frame")
+            SliderMain.Parent = SliderFrame
+            SliderMain.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
+            SliderMain.Position = UDim2.new(0.065, 0, 0, 52)
+            SliderMain.Size = UDim2.new(0, 166, 0, 4)
+            local SMCorner = Instance.new("UICorner"); SMCorner.Parent = SliderMain
+
+            local SliderBar = Instance.new("Frame")
+            SliderBar.Parent = SliderMain
+            SliderBar.BackgroundColor3 = Library.Theme.Accent
+            SliderBar.Size = UDim2.new((Default - Min) / (Max - Min), 0, 1, 0)
+            local SBCorner = Instance.new("UICorner"); SBCorner.Parent = SliderBar
+
+            local Cursor = Instance.new("Frame")
+            Cursor.Parent = SliderMain
+            Cursor.BackgroundColor3 = Library.Theme.Accent
+            Cursor.Position = UDim2.new((Default - Min) / (Max - Min), -9, 0, -7)
+            Cursor.Size = UDim2.new(0, 18, 0, 18)
+            local CCorner = Instance.new("UICorner")
+            CCorner.CornerRadius = UDim.new(1, 0); CCorner.Parent = Cursor
+
+            local dragging = false
+            local LastValue = Default
+            local LastUpdate = 0
+
+            local function Update(input)
+                if Library.IsDraggingWindow then return end
+                
+                -- Throttle para 60 FPS
+                local now = tick()
+                if now - LastUpdate < 1/60 then return end
+                LastUpdate = now
+                
+                local pos = math.clamp((input.Position.X - SliderMain.AbsolutePosition.X) / SliderMain.AbsoluteSize.X, 0, 1)
+                local val = math.floor(Min + (Max - Min) * pos)
+                
+                -- Só atualiza se o valor mudou
+                if val == LastValue then return end
+                LastValue = val
+                
+                Info.Text = tostring(val) .. Suffix
+                SliderBar.Size = UDim2.new(pos, 0, 1, 0)
+                Cursor.Position = UDim2.new(pos, -9, 0, -7)
+                Library.Flags[Flag] = val
+                
+                -- Callback assíncrono
+                task.spawn(function()
+                    Callback(val)
+                end)
+            end
+
+            SliderMain.InputBegan:Connect(function(input)
+                if Library.IsDraggingWindow then return end
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = true
+                    Library.IsDraggingSlider = true
+                    SetAllScrollingEnabledFast(false)
+                    Update(input)
+                end
             end)
 
-            ButtonFrame.Parent = targetMain
+            UserInputService.InputEnded:Connect(function(input)
+                if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and dragging then
+                    dragging = false
+                    Library.IsDraggingSlider = false
+                    SetAllScrollingEnabledFast(true)
+                end
+            end)
+
+            RegisterInputConnection(function(input)
+                if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                    Update(input)
+                end
+            end)
+            
+            Library.Flags[Flag] = Default
         end
 
         function Tab:AddDropdown(drpOptions)
@@ -398,7 +527,6 @@ function Library:CreateWindow(options)
             local Side = drpOptions.Side or "Main1"
             local Callback = drpOptions.Callback or function() end
             local Flag = drpOptions.Flag or Text
-            local TabToOpen = drpOptions.TabToOpen -- NOVA OPÇÃO: Tab para abrir ao expandir
             local targetMain = self:GetMain(Side)
 
             local DropdownFrame = Instance.new("Frame")
@@ -434,23 +562,12 @@ function Library:CreateWindow(options)
             local ListLayout = Instance.new("UIListLayout"); ListLayout.Parent = ListFrame
 
             local Opened = false
-            
-            -- Função unificada para definir estado
-            local function SetState(state)
-                Opened = state
+            local function Toggle()
+                if Library.IsDraggingWindow then return end
+                Opened = not Opened
                 local targetSize = Opened and UDim2.new(0, 194, 0, 34 + (#List * 30)) or UDim2.new(0, 194, 0, 34)
                 Library:Tween(DropdownFrame, {Size = targetSize})
                 Library:Tween(Arrow, {Rotation = Opened and 180 or 0})
-                
-                -- Se abrir e houver uma tab configurada, seleciona ela
-                if Opened and TabToOpen then
-                    TabToOpen:Select()
-                end
-            end
-
-            local function Toggle()
-                if Library.IsDraggingWindow then return end
-                SetState(not Opened)
             end
 
             DropdownFrame.InputBegan:Connect(function(input)
@@ -468,17 +585,20 @@ function Library:CreateWindow(options)
                 Item.TextColor3 = Library.Theme.SecondaryText
                 Item.TextSize = 13
                 Item.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
-                
-                local function OnSelect()
+                Item.MouseButton1Click:Connect(function()
                     if Library.IsDraggingWindow then return end
                     Title.Text = Text .. ": " .. tostring(v)
                     Library.Flags[Flag] = v
                     task.spawn(function() Callback(v) end)
-                    SetState(false) -- FECHA AUTOMATICAMENTE AO SELECIONAR
-                end
-
-                Item.MouseButton1Click:Connect(OnSelect)
-                Item.TouchTap:Connect(OnSelect)
+                    Toggle()
+                end)
+                Item.TouchTap:Connect(function()
+                    if Library.IsDraggingWindow then return end
+                    Title.Text = Text .. ": " .. tostring(v)
+                    Library.Flags[Flag] = v
+                    task.spawn(function() Callback(v) end)
+                    Toggle()
+                end)
             end
         end
 
@@ -675,6 +795,7 @@ function Library:CreateWindow(options)
             Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
         end
 
+        -- ========== COLOR PICKER OTIMIZADO ==========
         function Tab:AddColorPicker(cpOptions)
             local Text = cpOptions.Text or "Color Picker"
             local Default = cpOptions.Default or Color3.fromRGB(255, 0, 0)
@@ -704,111 +825,393 @@ function Library:CreateWindow(options)
             local ColorDisplay = Instance.new("Frame")
             ColorDisplay.Parent = ColorPickerFrame
             ColorDisplay.BackgroundColor3 = Default
-            ColorDisplay.Position = UDim2.new(1, -30, 0, 7)
+            ColorDisplay.Position = UDim2.new(1, -35, 0, 7)
             ColorDisplay.Size = UDim2.new(0, 20, 0, 20)
             local CDCorner = Instance.new("UICorner"); CDCorner.CornerRadius = UDim.new(0, 4); CDCorner.Parent = ColorDisplay
 
-            ColorDisplay.InputBegan:Connect(function(input)
+            local PickerContainer = Instance.new("Frame")
+            PickerContainer.Parent = ColorPickerFrame
+            PickerContainer.BackgroundTransparency = 1
+            PickerContainer.Position = UDim2.new(0, 0, 0, 34)
+            PickerContainer.Size = UDim2.new(1, 0, 0, 150)
+
+            local HueSatImg = Instance.new("ImageLabel")
+            HueSatImg.Name = "HueSat"
+            HueSatImg.Parent = PickerContainer
+            HueSatImg.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            HueSatImg.Position = UDim2.new(0, 10, 0, 5)
+            HueSatImg.Size = UDim2.new(0, 150, 0, 120)
+            HueSatImg.Image = "rbxassetid://73194550500215"
+            local SCorner = Instance.new("UICorner"); SCorner.Parent = HueSatImg
+
+            local SCursor = Instance.new("Frame")
+            SCursor.Parent = HueSatImg
+            SCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            SCursor.Size = UDim2.new(0, 6, 0, 6)
+            SCursor.ZIndex = 2
+            local SCCorner = Instance.new("UICorner"); SCCorner.CornerRadius = UDim.new(1, 0); SCCorner.Parent = SCursor
+
+            local ValueBar = Instance.new("Frame")
+            ValueBar.Name = "ValueBar"
+            ValueBar.Parent = PickerContainer
+            ValueBar.Position = UDim2.new(0, 170, 0, 5)
+            ValueBar.Size = UDim2.new(0, 15, 0, 120)
+            local VCorner = Instance.new("UICorner"); VCorner.Parent = ValueBar
+            
+            local VGradient = Instance.new("UIGradient")
+            VGradient.Rotation = 90
+            VGradient.Parent = ValueBar
+
+            local VCursor = Instance.new("Frame")
+            VCursor.Parent = ValueBar
+            VCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            VCursor.Size = UDim2.new(1, 0, 0, 2)
+            VCursor.ZIndex = 2
+
+            local H, S, V = Default:ToHSV()
+            local Opened = false
+            local LastColor = nil
+            local LastH = H
+            local LastS = S
+            local LastUpdate = 0
+
+            local function UpdateColor()
+                -- Throttle para 60 FPS
+                local now = tick()
+                if now - LastUpdate < 1/60 then return end
+                LastUpdate = now
+                
+                local color = Color3.fromHSV(H, S, V)
+                
+                -- Só atualiza se a cor mudou
+                if color == LastColor then return end
+                LastColor = color
+                
+                ColorDisplay.BackgroundColor3 = color
+                
+                -- Só recria ColorSequence se H ou S mudaram
+                if H ~= LastH or S ~= LastS then
+                    LastH = H
+                    LastS = S
+                    VGradient.Color = ColorSequence.new(Color3.fromHSV(H, S, 1), Color3.new())
+                end
+                
+                Library.Flags[Flag] = color
+                
+                -- Callback assíncrono para não travar o drag
+                task.spawn(function()
+                    Callback(color)
+                end)
+            end
+
+            local function Toggle()
+                if Library.IsDraggingWindow or Library.IsDraggingColorPicker then return end
+                Opened = not Opened
+                Library:Tween(ColorPickerFrame, {Size = Opened and UDim2.new(0, 194, 0, 184) or UDim2.new(0, 194, 0, 34)})
+            end
+
+            local HeaderButton = Instance.new("TextButton")
+            HeaderButton.Name = "HeaderButton"
+            HeaderButton.Parent = ColorPickerFrame
+            HeaderButton.BackgroundTransparency = 1
+            HeaderButton.Size = UDim2.new(1, 0, 0, 34)
+            HeaderButton.Text = ""
+            HeaderButton.ZIndex = 5
+            HeaderButton.Activated:Connect(Toggle)
+
+            local VDragging, HSDragging = false, false
+            
+            ValueBar.InputBegan:Connect(function(input) 
                 if Library.IsDraggingWindow then return end
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
+                    VDragging = true
                     Library.IsDraggingColorPicker = true
                     SetAllScrollingEnabledFast(false)
-                    
-                    local PickerWindow = Instance.new("Frame")
-                    PickerWindow.Parent = ScreenGui
-                    PickerWindow.BackgroundColor3 = Library.Theme.Main
-                    PickerWindow.Position = UDim2.new(0.5, -97, 0.5, -75)
-                    PickerWindow.Size = UDim2.new(0, 194, 0, 150)
-                    PickerWindow.ZIndex = 10
-                    local PWCorner = Instance.new("UICorner"); PWCorner.Parent = PickerWindow
+                end 
+            end)
+            
+            HueSatImg.InputBegan:Connect(function(input) 
+                if Library.IsDraggingWindow then return end
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
+                    HSDragging = true
+                    Library.IsDraggingColorPicker = true
+                    SetAllScrollingEnabledFast(false)
+                end 
+            end)
 
-                    local PWHueSat = Instance.new("ImageLabel")
-                    PWHueSat.Parent = PickerWindow
-                    PWHueSat.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                    PWHueSat.Position = UDim2.new(0, 10, 0, 10)
-                    PWHueSat.Size = UDim2.new(0, 140, 0, 130)
-                    PWHueSat.Image = "rbxassetid://73194550500215"
-                    PWHueSat.ZIndex = 11
-                    local PWSCursor = Instance.new("Frame")
-                    PWSCursor.Parent = PWHueSat
-                    PWSCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                    PWSCursor.Size = UDim2.new(0, 6, 0, 6)
-                    PWSCursor.ZIndex = 12
-                    local SCorner = Instance.new("UICorner"); SCorner.Parent = PWSCursor
-
-                    local PWValue = Instance.new("Frame")
-                    PWValue.Parent = PickerWindow
-                    PWValue.Position = UDim2.new(0, 160, 0, 10)
-                    PWValue.Size = UDim2.new(0, 15, 0, 130)
-                    PWValue.ZIndex = 11
-                    local PWVGradient = Instance.new("UIGradient")
-                    PWVGradient.Rotation = 90
-                    PWVGradient.Parent = PWValue
-                    local PWVCursor = Instance.new("Frame")
-                    PWVCursor.Parent = PWValue
-                    PWVCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                    PWVCursor.Size = UDim2.new(1, 0, 0, 2)
-                    PWVCursor.ZIndex = 12
-
-                    local pH, pS, pV = Default:ToHSV()
-                    local function UpdatePW()
-                        local color = Color3.fromHSV(pH, pS, pV)
-                        ColorDisplay.BackgroundColor3 = color
-                        PWVGradient.Color = ColorSequence.new(Color3.fromHSV(pH, pS, 1), Color3.new())
-                        Library.Flags[Flag] = color
-                        task.spawn(function() Callback(color) end)
-                    end
-
-                    local pHVDrag, pHSatDrag = false, false
-                    PWValue.InputBegan:Connect(function(pInp) if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then pHVDrag = true end end)
-                    PWHueSat.InputBegan:Connect(function(pInp) if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then pHSatDrag = true end end)
-                    
-                    local inputEndedConn
-                    inputEndedConn = UserInputService.InputEnded:Connect(function(pInp)
-                        if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
-                            pHVDrag = false
-                            pHSatDrag = false
-                        end
-                    end)
-
-                    local inputChangedConn
-                    inputChangedConn = RegisterInputConnection(function(pInp)
-                        if pHVDrag then
-                            local y = math.clamp((pInp.Position.Y - PWValue.AbsolutePosition.Y) / PWValue.AbsoluteSize.Y, 0, 1)
-                            pV = 1 - y
-                            PWVCursor.Position = UDim2.new(0, 0, y, -1)
-                            UpdatePW()
-                        elseif pHSatDrag then
-                            local x = math.clamp((pInp.Position.X - PWHueSat.AbsolutePosition.X) / PWHueSat.AbsoluteSize.X, 0, 1)
-                            local y = math.clamp((pInp.Position.Y - PWHueSat.AbsolutePosition.Y) / PWHueSat.AbsoluteSize.Y, 0, 1)
-                            pH = x
-                            pS = 1 - y
-                            PWSCursor.Position = UDim2.new(x, -2, y, -2)
-                            UpdatePW()
-                        end
-                    end)
-
-                    local Close = Instance.new("TextButton")
-                    Close.Parent = PickerWindow
-                    Close.Text = "X"
-                    Close.TextColor3 = Color3.fromRGB(255, 0, 0)
-                    Close.Size = UDim2.new(0, 20, 0, 20)
-                    Close.Position = UDim2.new(1, -20, 0, 0)
-                    Close.BackgroundTransparency = 1
-                    Close.ZIndex = 13
-                    Close.MouseButton1Click:Connect(function() 
-                        PickerWindow:Destroy()
-                        inputEndedConn:Disconnect()
-                        inputChangedConn:Disconnect()
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
+                    if VDragging or HSDragging then
+                        VDragging = false
+                        HSDragging = false
                         Library.IsDraggingColorPicker = false
                         SetAllScrollingEnabledFast(true)
-                    end)
-
-                    PWVCursor.Position = UDim2.new(0, 0, 1 - pV, -1)
-                    PWSCursor.Position = UDim2.new(pH, -2, 1 - pS, -2)
-                    UpdatePW()
+                    end
                 end
             end)
+
+            -- Conexão UNIFICADA para ColorPicker
+            RegisterInputConnection(function(input)
+                if VDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                    local y = math.clamp((input.Position.Y - ValueBar.AbsolutePosition.Y) / ValueBar.AbsoluteSize.Y, 0, 1)
+                    if math.abs(V - (1 - y)) > 0.001 then -- Só atualiza se houve mudança significativa
+                        V = 1 - y
+                        VCursor.Position = UDim2.new(0, 0, y, -1)
+                        UpdateColor()
+                    end
+                elseif HSDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                    local x = math.clamp((input.Position.X - HueSatImg.AbsolutePosition.X) / HueSatImg.AbsoluteSize.X, 0, 1)
+                    local y = math.clamp((input.Position.Y - HueSatImg.AbsolutePosition.Y) / HueSatImg.AbsoluteSize.Y, 0, 1)
+                    if math.abs(H - x) > 0.001 or math.abs(S - (1 - y)) > 0.001 then
+                        H = x
+                        S = 1 - y
+                        SCursor.Position = UDim2.new(x, -3, y, -3)
+                        UpdateColor()
+                    end
+                end
+            end)
+
+            VCursor.Position = UDim2.new(0, 0, 1 - V, -1)
+            SCursor.Position = UDim2.new(H, -3, 1 - S, -3)
+            UpdateColor()
+        end
+
+        -- ========== MULTI COLOR PICKER OTIMIZADO ==========
+        function Tab:AddMultiColorPicker(mcpOptions)
+            local Text = mcpOptions.Text or "Multi Color Picker"
+            local Colors = mcpOptions.Colors or {}
+            local Side = mcpOptions.Side or "Main1"
+            local Callback = mcpOptions.Callback or function() end
+            local Flag = mcpOptions.Flag or Text
+            local targetMain = self:GetMain(Side)
+
+            local MultiCPFrame = Instance.new("Frame")
+            MultiCPFrame.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
+            MultiCPFrame.Size = UDim2.new(0, 194, 0, 34)
+            MultiCPFrame.ClipsDescendants = true
+            MultiCPFrame.Parent = targetMain
+            local MCPCorner = Instance.new("UICorner"); MCPCorner.Parent = MultiCPFrame
+
+            local Title = Instance.new("TextLabel")
+            Title.Parent = MultiCPFrame
+            Title.BackgroundTransparency = 1
+            Title.Position = UDim2.new(0, 10, 0, 0)
+            Title.Size = UDim2.new(1, -40, 0, 34)
+            Title.Text = Text
+            Title.TextColor3 = Library.Theme.Text
+            Title.TextSize = 14
+            Title.TextXAlignment = Enum.TextXAlignment.Left
+            Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
+
+            local Arrow = Instance.new("ImageLabel")
+            Arrow.Parent = MultiCPFrame
+            Arrow.BackgroundTransparency = 1
+            Arrow.Position = UDim2.new(1, -30, 0, 7)
+            Arrow.Size = UDim2.new(0, 20, 0, 20)
+            Arrow.Image = "rbxassetid://6034818372"
+            local SCorner = Instance.new("UICorner"); SCorner.Parent = Arrow
+
+            local ListFrame = Instance.new("Frame")
+            ListFrame.Parent = MultiCPFrame
+            ListFrame.BackgroundTransparency = 1
+            ListFrame.Position = UDim2.new(0, 0, 0, 34)
+            ListFrame.Size = UDim2.new(1, 0, 0, #Colors * 34)
+            local ListLayout = Instance.new("UIListLayout"); ListLayout.Parent = ListFrame
+
+            local Opened = false
+            local function Toggle()
+                if Library.IsDraggingWindow or Library.IsDraggingColorPicker then return end
+                Opened = not Opened
+                Library:Tween(MultiCPFrame, {Size = Opened and UDim2.new(0, 194, 0, 34 + (#Colors * 34)) or UDim2.new(0, 194, 0, 34)})
+                Library:Tween(Arrow, {Rotation = Opened and 180 or 0})
+            end
+
+            local HeaderButton = Instance.new("TextButton")
+            HeaderButton.Name = "HeaderButton"
+            HeaderButton.Parent = MultiCPFrame
+            HeaderButton.BackgroundTransparency = 1
+            HeaderButton.Size = UDim2.new(1, 0, 0, 34)
+            HeaderButton.Text = ""
+            HeaderButton.ZIndex = 5
+            HeaderButton.Activated:Connect(Toggle)
+
+            local SelectedColors = {}
+            Library.Flags[Flag] = SelectedColors
+            
+            -- Conexões reutilizáveis (criadas apenas UMA vez)
+            local pickerEndedConn = nil
+            local pickerChangedConn = nil
+
+            for i, colorData in ipairs(Colors) do
+                local cText = colorData.Text or "Color " .. i
+                local cDefault = colorData.Default or Color3.fromRGB(255, 255, 255)
+                local cFlag = colorData.Flag or cText
+                SelectedColors[cFlag] = cDefault
+
+                local ItemFrame = Instance.new("Frame")
+                ItemFrame.Parent = ListFrame
+                ItemFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+                ItemFrame.BorderSizePixel = 0
+                ItemFrame.Size = UDim2.new(1, 0, 0, 34)
+
+                local ItemTitle = Instance.new("TextLabel")
+                ItemTitle.Parent = ItemFrame
+                ItemTitle.BackgroundTransparency = 1
+                ItemTitle.Position = UDim2.new(0, 10, 0, 0)
+                ItemTitle.Size = UDim2.new(1, -40, 0, 34)
+                ItemTitle.Text = cText
+                ItemTitle.TextColor3 = Library.Theme.SecondaryText
+                ItemTitle.TextSize = 13
+                ItemTitle.TextXAlignment = Enum.TextXAlignment.Left
+                ItemTitle.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
+
+                local ItemDisplay = Instance.new("Frame")
+                ItemDisplay.Parent = ItemFrame
+                ItemDisplay.BackgroundColor3 = cDefault
+                ItemDisplay.Position = UDim2.new(1, -30, 0, 7)
+                ItemDisplay.Size = UDim2.new(0, 20, 0, 20)
+                local IDCorner = Instance.new("UICorner"); IDCorner.CornerRadius = UDim.new(0, 4); IDCorner.Parent = ItemDisplay
+
+                ItemDisplay.InputBegan:Connect(function(input)
+                    if Library.IsDraggingWindow then return end
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        Library.IsDraggingColorPicker = true
+                        SetAllScrollingEnabledFast(false)
+                        
+                        -- Desconecta conexões anteriores se existirem
+                        if pickerEndedConn then pickerEndedConn:Disconnect() end
+                        if pickerChangedConn then pickerChangedConn:Disconnect() end
+                        
+                        local PickerWindow = Instance.new("Frame")
+                        PickerWindow.Parent = ScreenGui
+                        PickerWindow.BackgroundColor3 = Library.Theme.Main
+                        PickerWindow.Position = UDim2.new(0.5, -97, 0.5, -75)
+                        PickerWindow.Size = UDim2.new(0, 194, 0, 150)
+                        PickerWindow.ZIndex = 10
+                        local PWCorner = Instance.new("UICorner"); PWCorner.Parent = PickerWindow
+
+                        local PWHueSat = Instance.new("ImageLabel")
+                        PWHueSat.Parent = PickerWindow
+                        PWHueSat.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        PWHueSat.Position = UDim2.new(0, 10, 0, 10)
+                        PWHueSat.Size = UDim2.new(0, 140, 0, 130)
+                        PWHueSat.Image = "rbxassetid://73194550500215"
+                        PWHueSat.ZIndex = 11
+                        local PWSCursor = Instance.new("Frame")
+                        PWSCursor.Parent = PWHueSat
+                        PWSCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        PWSCursor.Size = UDim2.new(0, 6, 0, 6)
+                        PWSCursor.ZIndex = 12
+                        local SCorner = Instance.new("UICorner"); SCorner.Parent = PWSCursor
+
+                        local PWValue = Instance.new("Frame")
+                        PWValue.Parent = PickerWindow
+                        PWValue.Position = UDim2.new(0, 160, 0, 10)
+                        PWValue.Size = UDim2.new(0, 15, 0, 130)
+                        PWValue.ZIndex = 11
+                        local PWVGradient = Instance.new("UIGradient")
+                        PWVGradient.Rotation = 90
+                        PWVGradient.Parent = PWValue
+                        local PWVCursor = Instance.new("Frame")
+                        PWVCursor.Parent = PWValue
+                        PWVCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        PWVCursor.Size = UDim2.new(1, 0, 0, 2)
+                        PWVCursor.ZIndex = 12
+
+                        local pH, pS, pV = SelectedColors[cFlag]:ToHSV()
+                        local pLastColor = nil
+                        local pLastH = pH
+                        local pLastS = pS
+                        local pLastUpdate = 0
+                        
+                        local function UpdatePW()
+                            local now = tick()
+                            if now - pLastUpdate < 1/60 then return end
+                            pLastUpdate = now
+                            
+                            local color = Color3.fromHSV(pH, pS, pV)
+                            if color == pLastColor then return end
+                            pLastColor = color
+                            
+                            ItemDisplay.BackgroundColor3 = color
+                            
+                            if pH ~= pLastH or pS ~= pLastS then
+                                pLastH = pH
+                                pLastS = pS
+                                PWVGradient.Color = ColorSequence.new(Color3.fromHSV(pH, pS, 1), Color3.new())
+                            end
+                            
+                            SelectedColors[cFlag] = color
+                            task.spawn(function() Callback(SelectedColors) end)
+                        end
+
+                        local pHVDrag, pHSatDrag = false, false
+                        
+                        PWValue.InputBegan:Connect(function(pInp) 
+                            if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
+                                pHVDrag = true
+                                SetAllScrollingEnabledFast(false)
+                            end 
+                        end)
+                        
+                        PWHueSat.InputBegan:Connect(function(pInp) 
+                            if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
+                                pHSatDrag = true
+                                SetAllScrollingEnabledFast(false)
+                            end 
+                        end)
+
+                        -- Reutiliza conexões
+                        pickerEndedConn = UserInputService.InputEnded:Connect(function(pInp)
+                            if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
+                                pHVDrag = false
+                                pHSatDrag = false
+                                SetAllScrollingEnabledFast(true)
+                            end
+                        end)
+
+                        pickerChangedConn = RegisterInputConnection(function(pInp)
+                            if pHVDrag then
+                                local y = math.clamp((pInp.Position.Y - PWValue.AbsolutePosition.Y) / PWValue.AbsoluteSize.Y, 0, 1)
+                                if math.abs(pV - (1 - y)) > 0.001 then
+                                    pV = 1 - y
+                                    PWVCursor.Position = UDim2.new(0, 0, y, -1)
+                                    UpdatePW()
+                                end
+                            elseif pHSatDrag then
+                                local x = math.clamp((pInp.Position.X - PWHueSat.AbsolutePosition.X) / PWHueSat.AbsoluteSize.X, 0, 1)
+                                local y = math.clamp((pInp.Position.Y - PWHueSat.AbsolutePosition.Y) / PWHueSat.AbsoluteSize.Y, 0, 1)
+                                if math.abs(pH - x) > 0.001 or math.abs(pS - (1 - y)) > 0.001 then
+                                    pH = x
+                                    pS = 1 - y
+                                    PWSCursor.Position = UDim2.new(x, -2, y, -2)
+                                    UpdatePW()
+                                end
+                            end
+                        end)
+
+                        local Close = Instance.new("TextButton")
+                        Close.Parent = PickerWindow
+                        Close.Text = "X"
+                        Close.TextColor3 = Color3.fromRGB(255, 0, 0)
+                        Close.Size = UDim2.new(0, 20, 0, 20)
+                        Close.Position = UDim2.new(1, -20, 0, 0)
+                        Close.BackgroundTransparency = 1
+                        Close.ZIndex = 13
+                        Close.MouseButton1Click:Connect(function() 
+                            PickerWindow:Destroy()
+                            if pickerEndedConn then pickerEndedConn:Disconnect() end
+                            if pickerChangedConn then pickerChangedConn:Disconnect() end
+                            Library.IsDraggingColorPicker = false
+                            SetAllScrollingEnabledFast(true)
+                        end)
+
+                        PWVCursor.Position = UDim2.new(0, 0, 1 - pV, -1)
+                        PWSCursor.Position = UDim2.new(pH, -2, 1 - pS, -2)
+                        UpdatePW()
+                    end
+                end)
+            end
         end
 
         return Tab
