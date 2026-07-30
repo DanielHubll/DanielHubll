@@ -438,6 +438,7 @@ function Library:CreateWindow(options)
             Info.Text = tostring(Default) .. Suffix
             Info.TextColor3 = Library.Theme.Accent
             Info.TextSize = 14
+            Info.TextScaled = true
             Info.TextXAlignment = Enum.TextXAlignment.Right
             Info.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
 
@@ -685,7 +686,7 @@ function Library:CreateWindow(options)
             local targetMain = self:GetMain(Side)
             local SectionFrame = Instance.new("Frame")
             SectionFrame.BackgroundTransparency = 1
-            SectionFrame.Size = UDim2.new(0, 204, 0, 34)
+            SectionFrame.Size = UDim2.new(0, 204, 0, 10)
             SectionFrame.Parent = targetMain
             local Title = Instance.new("TextLabel")
             Title.Parent = SectionFrame
