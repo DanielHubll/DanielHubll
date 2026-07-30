@@ -930,8 +930,18 @@ function Library:CreateWindow(options)
             local VCursor = Instance.new("Frame")
             VCursor.Parent = ValueBar
             VCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            VCursor.Size = UDim2.new(1, 0, 0, 2)
+            VCursor.BackgroundTransparency = 1
+            VCursor.Size = UDim2.new(1, 0, 0, 3)
             VCursor.ZIndex = 2
+
+            local VCursorCorner = Instance.new("UICorner")
+            VCursorCorner.CornerRadius = UDim.new(0, 4)
+            VCursorCorner.Parent = VCursor
+
+            local VCursorStroke = Instance.new("UIStroke")
+            VCursorStroke.Parent = VCursor
+            VCursorStroke.Color = Color3.fromRGB(255, 255, 255)
+            VCursorStroke.Thickness = 1
 
             local H, S, V = Default:ToHSV()
             local Opened = false
@@ -1180,8 +1190,18 @@ function Library:CreateWindow(options)
                         local PWVCursor = Instance.new("Frame")
                         PWVCursor.Parent = PWValue
                         PWVCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        PWVCursor.Size = UDim2.new(1, 0, 0, 2)
+                        PWVCursor.BackgroundTransparency = 1
+                        PWVCursor.Size = UDim2.new(1, 0, 0, 3)
                         PWVCursor.ZIndex = 12
+
+                        local PWVCursorCorner = Instance.new("UICorner")
+                        PWVCursorCorner.CornerRadius = UDim.new(0, 4)
+                        PWVCursorCorner.Parent = PWVCursor
+
+                        local PWVCursorStroke = Instance.new("UIStroke")
+                        PWVCursorStroke.Parent = PWVCursor
+                        PWVCursorStroke.Color = Color3.fromRGB(255, 255, 255)
+                        PWVCursorStroke.Thickness = 1
 
                         local pH, pS, pV = SelectedColors[cFlag]:ToHSV()
                         local pLastColor = nil
