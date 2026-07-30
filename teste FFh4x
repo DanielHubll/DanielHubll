@@ -1,6 +1,7 @@
 -- FFh4x UI Library (Corrigido Mobile - Performance Otimizada)
 -- Sistema de Mains dinâmicos + Auto-height + Sem efeito elástico + Bloqueio de Slider
 -- OITIMIZAÇÕES: Single InputChanged, Callback throttling, Reuso de objetos, Cache de ScrollFrames
+-- NOVO: Dropdown fecha ao selecionar opção, mudar de tab ou clicar fora
 
 local Library = {
     Flags = {},
@@ -18,6 +19,7 @@ local Library = {
     IsDraggingSlider = false,
     IsDraggingColorPicker = false,
     IsDraggingWindow = false,
+    CurrentDropdown = nil, -- Dropdown atualmente aberto
     ScrollFrames = {} -- Cache de ScrollingFrames para performance
 }
 
@@ -48,6 +50,28 @@ end
 -- Registrar ScrollingFrame no cache
 local function RegisterScrollingFrame(scroll)
     table.insert(Library.ScrollFrames, scroll)
+end
+
+-- Fechar dropdown atual (função global)
+local function CloseCurrentDropdown()
+    if Library.CurrentDropdown then
+        local dropdown = Library.CurrentDropdown
+        local arrow = dropdown:FindFirstChild("Arrow")
+        local listFrame = dropdown:FindFirstChild("ListFrame")
+        
+        if arrow then
+            Library:Tween(dropdown, {Size = UDim2.new(0, 194, 0, 34)})
+            Library:Tween(arrow, {Rotation = 0})
+        end
+        
+        -- Restaura o tamanho original
+        local itemCount = 0
+        if listFrame then
+            itemCount = #listFrame:GetChildren()
+        end
+        
+        Library.CurrentDropdown = nil
+    end
 end
 
 -- Utility Functions
@@ -196,10 +220,34 @@ function Library:CreateWindow(options)
         end
     end)
 
+    -- Listener global para fechar dropdown ao clicar fora
+    UserInputService.InputBegan:Connect(function(input, gpe)
+        if gpe then return end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if Library.CurrentDropdown then
+                local mousePos = UserInputService:GetMouseLocation()
+                local dropdown = Library.CurrentDropdown
+                
+                if dropdown and dropdown.Parent then
+                    local dropdownPos = dropdown.AbsolutePosition
+                    local dropdownSize = dropdown.AbsoluteSize
+                    
+                    -- Verifica se o clique foi fora do dropdown
+                    if mousePos.X < dropdownPos.X or mousePos.X > dropdownPos.X + dropdownSize.X or
+                       mousePos.Y < dropdownPos.Y or mousePos.Y > dropdownPos.Y + dropdownSize.Y then
+                        CloseCurrentDropdown()
+                    end
+                else
+                    CloseCurrentDropdown()
+                end
+            end
+        end
+    end)
+
     local Window = {
         Tabs = {},
         Count = 0,
-        ScreenGui = ScreenGui -- Armazenar referência para uso nos pickers
+        ScreenGui = ScreenGui
     }
 
     function Window:CreateTab(tabOptions)
@@ -348,6 +396,9 @@ function Library:CreateWindow(options)
         end
 
         function Tab:Select()
+            -- Fecha dropdown antes de mudar de tab
+            CloseCurrentDropdown()
+            
             for _, v in pairs(Container:GetChildren()) do if v:IsA("Frame") or v:IsA("ScrollingFrame") then v.Visible = false end end
             for _, v in pairs(TabsContainer:GetChildren()) do if v:IsA("ImageButton") then Library:Tween(v, {BackgroundColor3 = Color3.fromRGB(36, 36, 36)}) end end
             for _, v in pairs(TabsScrolling:GetChildren()) do if v:IsA("ImageButton") then Library:Tween(v, {BackgroundColor3 = Color3.fromRGB(36, 36, 36)}) end end
@@ -355,7 +406,12 @@ function Library:CreateWindow(options)
             Library:Tween(TabButton, {BackgroundColor3 = Library.Theme.Accent})
         end
 
-        TabButton.MouseButton1Click:Connect(function() Tab:Select() end)
+        TabButton.MouseButton1Click:Connect(function() 
+            -- Fecha dropdown ao clicar na tab
+            CloseCurrentDropdown()
+            Tab:Select() 
+        end)
+        
         if Window.Count == 1 then Tab:Select() end
 
         -- ========== COMPONENTES ==========
@@ -397,7 +453,7 @@ function Library:CreateWindow(options)
                 Ripple.Size = UDim2.new(0, 0, 0, 0)
                 local RCorner = Instance.new("UICorner"); RCorner.CornerRadius = UDim.new(1, 0); RCorner.Parent = Ripple
                 Library:Tween(Ripple, {Size = UDim2.new(0, 200, 0, 200), Position = UDim2.new(0.5, -100, 0.5, -100), BackgroundTransparency = 1}, function() Ripple:Destroy() end)
-                task.spawn(Callback) -- Callback assíncrono para não travar UI
+                task.spawn(Callback)
             end)
         end
 
@@ -548,6 +604,7 @@ function Library:CreateWindow(options)
             Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
 
             local Arrow = Instance.new("ImageLabel")
+            Arrow.Name = "Arrow"
             Arrow.Parent = DropdownFrame
             Arrow.BackgroundTransparency = 1
             Arrow.Position = UDim2.new(1, -30, 0, 7)
@@ -555,6 +612,7 @@ function Library:CreateWindow(options)
             Arrow.Image = "rbxassetid://6034818372"
 
             local ListFrame = Instance.new("Frame")
+            ListFrame.Name = "ListFrame"
             ListFrame.Parent = DropdownFrame
             ListFrame.BackgroundTransparency = 1
             ListFrame.Position = UDim2.new(0, 0, 0, 34)
@@ -562,17 +620,45 @@ function Library:CreateWindow(options)
             local ListLayout = Instance.new("UIListLayout"); ListLayout.Parent = ListFrame
 
             local Opened = false
+            
+            local function Open()
+                if Opened then return end
+                Opened = true
+                
+                -- Fecha qualquer outro dropdown aberto
+                CloseCurrentDropdown()
+                
+                Library.CurrentDropdown = DropdownFrame
+                Library:Tween(DropdownFrame, {Size = UDim2.new(0, 194, 0, 34 + (#List * 30))})
+                Library:Tween(Arrow, {Rotation = 180})
+            end
+            
+            local function Close()
+                if not Opened then return end
+                Opened = false
+                Library.CurrentDropdown = nil
+                Library:Tween(DropdownFrame, {Size = UDim2.new(0, 194, 0, 34)})
+                Library:Tween(Arrow, {Rotation = 0})
+            end
+            
             local function Toggle()
                 if Library.IsDraggingWindow then return end
-                Opened = not Opened
-                local targetSize = Opened and UDim2.new(0, 194, 0, 34 + (#List * 30)) or UDim2.new(0, 194, 0, 34)
-                Library:Tween(DropdownFrame, {Size = targetSize})
-                Library:Tween(Arrow, {Rotation = Opened and 180 or 0})
+                if Opened then
+                    Close()
+                else
+                    Open()
+                end
             end
 
+            -- Clique no header do dropdown
             DropdownFrame.InputBegan:Connect(function(input)
                 if Library.IsDraggingWindow then return end
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then Toggle() end
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    local relativeY = input.Position.Y - DropdownFrame.AbsolutePosition.Y
+                    if relativeY <= 34 then -- Header area
+                        Toggle()
+                    end
+                end
             end)
 
             for _, v in pairs(List) do
@@ -585,20 +671,17 @@ function Library:CreateWindow(options)
                 Item.TextColor3 = Library.Theme.SecondaryText
                 Item.TextSize = 13
                 Item.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
-                Item.MouseButton1Click:Connect(function()
+                
+                local function SelectItem()
                     if Library.IsDraggingWindow then return end
                     Title.Text = Text .. ": " .. tostring(v)
                     Library.Flags[Flag] = v
                     task.spawn(function() Callback(v) end)
-                    Toggle()
-                end)
-                Item.TouchTap:Connect(function()
-                    if Library.IsDraggingWindow then return end
-                    Title.Text = Text .. ": " .. tostring(v)
-                    Library.Flags[Flag] = v
-                    task.spawn(function() Callback(v) end)
-                    Toggle()
-                end)
+                    Close() -- FECHA O DROPDOWN APÓS SELECIONAR
+                end
+                
+                Item.MouseButton1Click:Connect(SelectItem)
+                Item.TouchTap:Connect(SelectItem)
             end
         end
 
@@ -876,20 +959,16 @@ function Library:CreateWindow(options)
             local LastUpdate = 0
 
             local function UpdateColor()
-                -- Throttle para 60 FPS
                 local now = tick()
                 if now - LastUpdate < 1/60 then return end
                 LastUpdate = now
                 
                 local color = Color3.fromHSV(H, S, V)
-                
-                -- Só atualiza se a cor mudou
                 if color == LastColor then return end
                 LastColor = color
                 
                 ColorDisplay.BackgroundColor3 = color
                 
-                -- Só recria ColorSequence se H ou S mudaram
                 if H ~= LastH or S ~= LastS then
                     LastH = H
                     LastS = S
@@ -897,11 +976,7 @@ function Library:CreateWindow(options)
                 end
                 
                 Library.Flags[Flag] = color
-                
-                -- Callback assíncrono para não travar o drag
-                task.spawn(function()
-                    Callback(color)
-                end)
+                task.spawn(function() Callback(color) end)
             end
 
             local function Toggle()
@@ -950,11 +1025,10 @@ function Library:CreateWindow(options)
                 end
             end)
 
-            -- Conexão UNIFICADA para ColorPicker
             RegisterInputConnection(function(input)
                 if VDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                     local y = math.clamp((input.Position.Y - ValueBar.AbsolutePosition.Y) / ValueBar.AbsoluteSize.Y, 0, 1)
-                    if math.abs(V - (1 - y)) > 0.001 then -- Só atualiza se houve mudança significativa
+                    if math.abs(V - (1 - y)) > 0.001 then
                         V = 1 - y
                         VCursor.Position = UDim2.new(0, 0, y, -1)
                         UpdateColor()
@@ -1038,7 +1112,6 @@ function Library:CreateWindow(options)
             local SelectedColors = {}
             Library.Flags[Flag] = SelectedColors
             
-            -- Conexões reutilizáveis (criadas apenas UMA vez)
             local pickerEndedConn = nil
             local pickerChangedConn = nil
 
@@ -1078,7 +1151,6 @@ function Library:CreateWindow(options)
                         Library.IsDraggingColorPicker = true
                         SetAllScrollingEnabledFast(false)
                         
-                        -- Desconecta conexões anteriores se existirem
                         if pickerEndedConn then pickerEndedConn:Disconnect() end
                         if pickerChangedConn then pickerChangedConn:Disconnect() end
                         
@@ -1161,7 +1233,6 @@ function Library:CreateWindow(options)
                             end 
                         end)
 
-                        -- Reutiliza conexões
                         pickerEndedConn = UserInputService.InputEnded:Connect(function(pInp)
                             if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
                                 pHVDrag = false
