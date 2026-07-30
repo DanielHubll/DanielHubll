@@ -1,7 +1,7 @@
 -- FFh4x UI Library (Corrigido Mobile)
 -- Sistema de Mains dinâmicos + Auto-height + Sem efeito elástico + Bloqueio de Slider
 -- Correção: ColorPicker com Barra de Escuridão (Value) e Bloco de Cores (Hue/Sat)
--- BLOQUEIO DE SCROLL ADICIONADO PARA COLORPICKERS
+-- BLOQUEIO DE SCROLL ADICIONADO PARA COLORPICKERS E MULTI COLOR PICKER
 -- ARRASTAR PELA LOGO + BLOQUEIO DE INPUT MOBILE/PC
 -- FIX: Toggle e ColorPicker corrigidos para Mobile (Clique simples e Drag estável)
 
@@ -20,7 +20,7 @@ local Library = {
     CurrentTab = nil,
     IsDraggingSlider = false,
     IsDraggingColorPicker = false,
-    IsDraggingWindow = false -- NOVA FLAG
+    IsDraggingWindow = false
 }
 
 local TweenService = game:GetService("TweenService")
@@ -29,6 +29,15 @@ local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
+
+-- Função auxiliar para bloquear/desbloquear scroll de todos os ScrollingFrames
+local function SetAllScrollingEnabled(parent, enabled)
+    for _, obj in ipairs(parent:GetDescendants()) do
+        if obj:IsA("ScrollingFrame") then
+            obj.ScrollingEnabled = enabled
+        end
+    end
+end
 
 -- Utility Functions
 local function MakeDraggable(dragObject, mainObject)
@@ -47,14 +56,14 @@ local function MakeDraggable(dragObject, mainObject)
         if Library.IsDraggingSlider or Library.IsDraggingColorPicker then return end
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
-            Library.IsDraggingWindow = true -- BLOQUEIA INPUTS
+            Library.IsDraggingWindow = true
             dragStart = input.Position
             startPos = mainObject.Position
 
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
-                    Library.IsDraggingWindow = false -- DESBLOQUEIA INPUTS
+                    Library.IsDraggingWindow = false
                 end
             end)
         end
@@ -72,7 +81,6 @@ local function MakeDraggable(dragObject, mainObject)
         end
     end)
     
-    -- InputEnded global para garantir desbloqueio
     UserInputService.InputEnded:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
             dragging = false
@@ -129,9 +137,8 @@ function Library:CreateWindow(options)
     Logo.Position = UDim2.new(0, 6, 0, 4)
     Logo.Size = UDim2.new(0, 100, 0, 100)
     Logo.Image = "rbxassetid://114459453255031"
-    Logo.Active = true -- Permite input na Logo
+    Logo.Active = true
 
-    -- FAZ A LOGO ARRASTAR O PAINEL INTEIRO
     MakeDraggable(Logo, Painel)
 
     local TabsContainer = Instance.new("Frame")
@@ -179,7 +186,8 @@ function Library:CreateWindow(options)
 
     local Window = {
         Tabs = {},
-        Count = 0
+        Count = 0,
+        ScreenGui = ScreenGui -- Armazenar referência para uso nos pickers
     }
 
     function Window:CreateTab(tabOptions)
@@ -366,7 +374,7 @@ function Library:CreateWindow(options)
             ButtonFrame.Parent = targetMain
 
             TextButton.MouseButton1Click:Connect(function()
-                if Library.IsDraggingWindow then return end -- NÃO EXECUTA SE TIVER ARRASTANDO
+                if Library.IsDraggingWindow then return end
                 local Ripple = Instance.new("Frame")
                 Ripple.Parent = TextButton
                 Ripple.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -721,7 +729,6 @@ function Library:CreateWindow(options)
                 Update()
             end
             
-            -- FIX: Usa Activated para clique instantâneo e adiciona área de clique no frame todo
             local InvisibleButton = Instance.new("TextButton")
             InvisibleButton.Name = "ClickArea"
             InvisibleButton.Parent = ToggleFrame
@@ -803,7 +810,7 @@ function Library:CreateWindow(options)
             HueSatImg.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
             HueSatImg.Position = UDim2.new(0, 10, 0, 5)
             HueSatImg.Size = UDim2.new(0, 150, 0, 120)
-            HueSatImg.Image = "rbxassetid://73194550500215" -- Rainbow Square
+            HueSatImg.Image = "rbxassetid://73194550500215"
             local SCorner = Instance.new("UICorner"); SCorner.Parent = HueSatImg
 
             local SCursor = Instance.new("Frame")
@@ -849,7 +856,6 @@ function Library:CreateWindow(options)
                 Library:Tween(ColorPickerFrame, {Size = Opened and UDim2.new(0, 194, 0, 184) or UDim2.new(0, 194, 0, 34)})
             end
 
-            -- FIX: Usa um botão invisível no header para evitar que o InputBegan feche o picker ao arrastar
             local HeaderButton = Instance.new("TextButton")
             HeaderButton.Name = "HeaderButton"
             HeaderButton.Parent = ColorPickerFrame
@@ -866,8 +872,8 @@ function Library:CreateWindow(options)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
                     VDragging = true
                     Library.IsDraggingColorPicker = true
-                    targetMain.ScrollingEnabled = false
-                    self.ContentFrame.ScrollingEnabled = false
+                    -- BLOQUEIA TODOS OS SCROLLS
+                    SetAllScrollingEnabled(ScreenGui, false)
                 end 
             end)
             
@@ -876,8 +882,8 @@ function Library:CreateWindow(options)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
                     HSDragging = true
                     Library.IsDraggingColorPicker = true
-                    targetMain.ScrollingEnabled = false
-                    self.ContentFrame.ScrollingEnabled = false
+                    -- BLOQUEIA TODOS OS SCROLLS
+                    SetAllScrollingEnabled(ScreenGui, false)
                 end 
             end)
 
@@ -887,8 +893,8 @@ function Library:CreateWindow(options)
                         VDragging = false
                         HSDragging = false
                         Library.IsDraggingColorPicker = false
-                        targetMain.ScrollingEnabled = true
-                        self.ContentFrame.ScrollingEnabled = true
+                        -- DESBLOQUEIA TODOS OS SCROLLS
+                        SetAllScrollingEnabled(ScreenGui, true)
                     end
                 end
             end)
@@ -914,7 +920,7 @@ function Library:CreateWindow(options)
             UpdateColor()
         end
 
-        -- ========== MULTI COLOR PICKER FIX PARA MOBILE ==========
+        -- ========== MULTI COLOR PICKER FIX PARA MOBILE (COM BLOQUEIO DE SCROLL) ==========
         function Tab:AddMultiColorPicker(mcpOptions)
             local Text = mcpOptions.Text or "Multi Color Picker"
             local Colors = mcpOptions.Colors or {}
@@ -963,7 +969,6 @@ function Library:CreateWindow(options)
                 Library:Tween(Arrow, {Rotation = Opened and 180 or 0})
             end
 
-            -- FIX: HeaderButton dedicado para evitar conflitos de drag
             local HeaderButton = Instance.new("TextButton")
             HeaderButton.Name = "HeaderButton"
             HeaderButton.Parent = MultiCPFrame
@@ -1010,8 +1015,8 @@ function Library:CreateWindow(options)
                     if Library.IsDraggingWindow then return end
                     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                         Library.IsDraggingColorPicker = true
-                        targetMain.ScrollingEnabled = false
-                        self.ContentFrame.ScrollingEnabled = false
+                        -- BLOQUEIA TODOS OS SCROLLS
+                        SetAllScrollingEnabled(ScreenGui, false)
                         
                         local PickerWindow = Instance.new("Frame")
                         PickerWindow.Parent = ScreenGui
@@ -1026,7 +1031,7 @@ function Library:CreateWindow(options)
                         PWHueSat.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                         PWHueSat.Position = UDim2.new(0, 10, 0, 10)
                         PWHueSat.Size = UDim2.new(0, 140, 0, 130)
-                        PWHueSat.Image = "rbxassetid://73194550500215"
+                        PWHueSat.Image = "rbxassetid://4155801252"
                         PWHueSat.ZIndex = 11
                         local PWSCursor = Instance.new("Frame")
                         PWSCursor.Parent = PWHueSat
@@ -1059,14 +1064,19 @@ function Library:CreateWindow(options)
                         end
 
                         local pHVDrag, pHSatDrag = false, false
+                        
+                        -- BLOQUEIA SCROLL AO INTERAGIR COM O PICKER
                         PWValue.InputBegan:Connect(function(pInp) 
                             if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
-                                pHVDrag = true 
+                                pHVDrag = true
+                                SetAllScrollingEnabled(ScreenGui, false)
                             end 
                         end)
+                        
                         PWHueSat.InputBegan:Connect(function(pInp) 
                             if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
-                                pHSatDrag = true 
+                                pHSatDrag = true
+                                SetAllScrollingEnabled(ScreenGui, false)
                             end 
                         end)
 
@@ -1074,7 +1084,8 @@ function Library:CreateWindow(options)
                         conn1 = UserInputService.InputEnded:Connect(function(pInp)
                             if pInp.UserInputType == Enum.UserInputType.MouseButton1 or pInp.UserInputType == Enum.UserInputType.Touch then 
                                 pHVDrag = false
-                                pHSatDrag = false 
+                                pHSatDrag = false
+                                SetAllScrollingEnabled(ScreenGui, true)
                             end
                         end)
 
@@ -1107,8 +1118,7 @@ function Library:CreateWindow(options)
                             conn1:Disconnect()
                             conn2:Disconnect()
                             Library.IsDraggingColorPicker = false
-                            targetMain.ScrollingEnabled = true
-                            self.ContentFrame.ScrollingEnabled = true
+                            SetAllScrollingEnabled(ScreenGui, true)
                         end)
 
                         PWVCursor.Position = UDim2.new(0, 0, 1 - pV, -1)
