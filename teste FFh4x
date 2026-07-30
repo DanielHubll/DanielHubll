@@ -1031,7 +1031,7 @@ function Library:CreateWindow(options)
                         PWHueSat.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                         PWHueSat.Position = UDim2.new(0, 10, 0, 10)
                         PWHueSat.Size = UDim2.new(0, 140, 0, 130)
-                        PWHueSat.Image = "rbxassetid://4155801252"
+                        PWHueSat.Image = "rbxassetid://73194550500215"
                         PWHueSat.ZIndex = 11
                         local PWSCursor = Instance.new("Frame")
                         PWSCursor.Parent = PWHueSat
