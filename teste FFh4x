@@ -1007,6 +1007,7 @@ function Library:CreateWindow(options)
             Arrow.Position = UDim2.new(1, -30, 0, 7)
             Arrow.Size = UDim2.new(0, 20, 0, 20)
             Arrow.Image = "rbxassetid://6034818372"
+            local SCorner = Instance.new("UICorner"); SCorner.Parent = Arrow
 
             local ListFrame = Instance.new("Frame")
             ListFrame.Parent = MultiCPFrame
@@ -1097,8 +1098,9 @@ function Library:CreateWindow(options)
                         local PWSCursor = Instance.new("Frame")
                         PWSCursor.Parent = PWHueSat
                         PWSCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        PWSCursor.Size = UDim2.new(0, 4, 0, 4)
+                        PWSCursor.Size = UDim2.new(0, 6, 0, 6)
                         PWSCursor.ZIndex = 12
+                        local SCorner = Instance.new("UICorner"); SCorner.Parent = PWSCursor
 
                         local PWValue = Instance.new("Frame")
                         PWValue.Parent = PickerWindow
