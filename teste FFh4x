@@ -2,6 +2,7 @@
 -- Sistema de Mains dinâmicos + Auto-height + Sem efeito elástico + Bloqueio de Slider
 -- OITIMIZAÇÕES: Single InputChanged, Callback throttling, Reuso de objetos, Cache de ScrollFrames
 -- NOVO: Fechamento automático de dropdowns ao trocar aba ou selecionar opção
+-- REMOVIDO: Sistema "Both" para simplificação do layout
 
 local Library = {
     Flags = {},
@@ -301,13 +302,8 @@ function Library:CreateWindow(options)
 
         function Tab:GetMain(sideName)
             sideName = sideName or "Main1"
-            if sideName == "Both" then
-                local main = self:GetMain("Main1")
-                main.Size = UDim2.new(0, 410, 0, 350)
-                if self.Mains["Main2"] then self.Mains["Main2"].Visible = false end
-                self:UpdateLayout()
-                return main
-            end
+            
+            -- REMOVIDO: Bloco "Both" completamente
 
             if not self.Mains[sideName] then
                 local main = Instance.new("ScrollingFrame")
@@ -419,7 +415,7 @@ function Library:CreateWindow(options)
             local ButtonFrame = Instance.new("Frame")
             ButtonFrame.Name = "Button_" .. Text
             ButtonFrame.BackgroundTransparency = 1
-            ButtonFrame.Size = UDim2.new(0, 184, 0, 36)
+            ButtonFrame.Size = UDim2.new(0, 184, 0, 36) -- REMOVIDO: verificação "Both"
 
             local TextButton = Instance.new("TextButton")
             TextButton.Parent = ButtonFrame
@@ -434,7 +430,6 @@ function Library:CreateWindow(options)
             local Corner = Instance.new("UICorner")
             Corner.Parent = TextButton
 
-            if Side == "Both" then ButtonFrame.Size = UDim2.new(0, 390, 0, 36) end
             ButtonFrame.Parent = targetMain
 
             TextButton.MouseButton1Click:Connect(function()
