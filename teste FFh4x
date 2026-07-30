@@ -1,6 +1,7 @@
 -- FFh4x UI Library (Corrigido Mobile - Performance Otimizada)
 -- Sistema de Mains dinâmicos + Auto-height + Sem efeito elástico + Bloqueio de Slider
 -- OITIMIZAÇÕES: Single InputChanged, Callback throttling, Reuso de objetos, Cache de ScrollFrames
+-- NOVO: Fechamento automático de dropdowns ao trocar aba ou selecionar opção
 
 local Library = {
     Flags = {},
@@ -18,7 +19,8 @@ local Library = {
     IsDraggingSlider = false,
     IsDraggingColorPicker = false,
     IsDraggingWindow = false,
-    ScrollFrames = {} -- Cache de ScrollingFrames para performance
+    ScrollFrames = {}, -- Cache de ScrollingFrames para performance
+    OpenDropdowns = {} -- NOVO: Rastrea dropdowns abertos
 }
 
 local TweenService = game:GetService("TweenService")
@@ -48,6 +50,51 @@ end
 -- Registrar ScrollingFrame no cache
 local function RegisterScrollingFrame(scroll)
     table.insert(Library.ScrollFrames, scroll)
+end
+
+-- NOVO: Fecha todos os dropdowns abertos
+local function CloseAllDropdowns()
+    for _, dropdownData in ipairs(Library.OpenDropdowns) do
+        if dropdownData and dropdownData.Opened then
+            dropdownData.Opened = false
+            if dropdownData.Frame and dropdownData.Frame.Parent then
+                Library:Tween(dropdownData.Frame, {Size = dropdownData.ClosedSize})
+            end
+            if dropdownData.Arrow and dropdownData.Arrow.Parent then
+                Library:Tween(dropdownData.Arrow, {Rotation = 0})
+            end
+        end
+    end
+    Library.OpenDropdowns = {}
+end
+
+-- NOVO: Registra um dropdown como aberto e fecha os outros
+local function RegisterOpenDropdown(dropdownData)
+    -- Fecha outros dropdowns primeiro
+    for i = #Library.OpenDropdowns, 1, -1 do
+        local other = Library.OpenDropdowns[i]
+        if other ~= dropdownData and other.Opened then
+            other.Opened = false
+            if other.Frame and other.Frame.Parent then
+                Library:Tween(other.Frame, {Size = other.ClosedSize})
+            end
+            if other.Arrow and other.Arrow.Parent then
+                Library:Tween(other.Arrow, {Rotation = 0})
+            end
+            table.remove(Library.OpenDropdowns, i)
+        end
+    end
+    -- Adiciona o atual se ainda não estiver
+    local exists = false
+    for _, d in ipairs(Library.OpenDropdowns) do
+        if d == dropdownData then
+            exists = true
+            break
+        end
+    end
+    if not exists then
+        table.insert(Library.OpenDropdowns, dropdownData)
+    end
 end
 
 -- Utility Functions
@@ -348,6 +395,9 @@ function Library:CreateWindow(options)
         end
 
         function Tab:Select()
+            -- NOVO: Fecha todos os dropdowns ao trocar de aba
+            CloseAllDropdowns()
+            
             for _, v in pairs(Container:GetChildren()) do if v:IsA("Frame") or v:IsA("ScrollingFrame") then v.Visible = false end end
             for _, v in pairs(TabsContainer:GetChildren()) do if v:IsA("ImageButton") then Library:Tween(v, {BackgroundColor3 = Color3.fromRGB(36, 36, 36)}) end end
             for _, v in pairs(TabsScrolling:GetChildren()) do if v:IsA("ImageButton") then Library:Tween(v, {BackgroundColor3 = Color3.fromRGB(36, 36, 36)}) end end
@@ -561,13 +611,33 @@ function Library:CreateWindow(options)
             ListFrame.Size = UDim2.new(1, 0, 0, #List * 30)
             local ListLayout = Instance.new("UIListLayout"); ListLayout.Parent = ListFrame
 
-            local Opened = false
+            -- NOVO: Dados do dropdown para controle de abertura/fechamento
+            local DropdownData = {
+                Opened = false,
+                Frame = DropdownFrame,
+                Arrow = Arrow,
+                ClosedSize = UDim2.new(0, 194, 0, 34)
+            }
+
             local function Toggle()
                 if Library.IsDraggingWindow then return end
-                Opened = not Opened
-                local targetSize = Opened and UDim2.new(0, 194, 0, 34 + (#List * 30)) or UDim2.new(0, 194, 0, 34)
+                DropdownData.Opened = not DropdownData.Opened
+                
+                if DropdownData.Opened then
+                    RegisterOpenDropdown(DropdownData)
+                else
+                    -- Remove do rastreamento se fechou
+                    for i, d in ipairs(Library.OpenDropdowns) do
+                        if d == DropdownData then
+                            table.remove(Library.OpenDropdowns, i)
+                            break
+                        end
+                    end
+                end
+                
+                local targetSize = DropdownData.Opened and UDim2.new(0, 194, 0, 34 + (#List * 30)) or UDim2.new(0, 194, 0, 34)
                 Library:Tween(DropdownFrame, {Size = targetSize})
-                Library:Tween(Arrow, {Rotation = Opened and 180 or 0})
+                Library:Tween(Arrow, {Rotation = DropdownData.Opened and 180 or 0})
             end
 
             DropdownFrame.InputBegan:Connect(function(input)
@@ -590,14 +660,14 @@ function Library:CreateWindow(options)
                     Title.Text = Text .. ": " .. tostring(v)
                     Library.Flags[Flag] = v
                     task.spawn(function() Callback(v) end)
-                    Toggle()
+                    Toggle() -- Fecha automaticamente ao selecionar
                 end)
                 Item.TouchTap:Connect(function()
                     if Library.IsDraggingWindow then return end
                     Title.Text = Text .. ": " .. tostring(v)
                     Library.Flags[Flag] = v
                     task.spawn(function() Callback(v) end)
-                    Toggle()
+                    Toggle() -- Fecha automaticamente ao selecionar
                 end)
             end
         end
