@@ -1025,13 +1025,13 @@ function Tab:AddPlayerList(options)
     }
 end
         
-        -- Função para adicionar o componente BodyPartSelector à biblioteca FFh4x
+        -- Função para adicionar o componente BodyPartSelector ATUALIZADO à biblioteca FFh4x
 -- Adicione este código dentro da função Tab da sua biblioteca
 
 function Tab:AddBodyPartSelector(options)
     local Text = options.Text or "Selecionar Parte"
     local Side = options.Side or "Main1"
-    local Type = options.Type or "R15" -- "R6" ou "R15"
+    local CurrentType = options.Type or "R15" -- "R6" ou "R15" inicial
     local Callback = options.Callback or function() end
     local Flag = options.Flag or Text
     local targetMain = self:GetMain(Side)
@@ -1047,12 +1047,24 @@ function Tab:AddBodyPartSelector(options)
     Title.Parent = Container
     Title.BackgroundTransparency = 1
     Title.Position = UDim2.new(0, 10, 0, 5)
-    Title.Size = UDim2.new(1, -20, 0, 20)
+    Title.Size = UDim2.new(1, -70, 0, 20)
     Title.Text = Text
     Title.TextColor3 = Library.Theme.Accent
     Title.TextSize = 14
     Title.TextXAlignment = Enum.TextXAlignment.Left
     Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json", Enum.FontWeight.Bold)
+
+    -- Botão de Alternância R6/R15
+    local TypeBtn = Instance.new("TextButton")
+    TypeBtn.Parent = Container
+    TypeBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    TypeBtn.Position = UDim2.new(1, -55, 0, 5)
+    TypeBtn.Size = UDim2.new(0, 45, 0, 20)
+    TypeBtn.Text = CurrentType
+    TypeBtn.TextColor3 = Library.Theme.Text
+    TypeBtn.TextSize = 12
+    TypeBtn.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
+    local TBCorner = Instance.new("UICorner"); TBCorner.CornerRadius = UDim.new(0, 4); TBCorner.Parent = TypeBtn
 
     local CharFrame = Instance.new("Frame")
     CharFrame.Parent = Container
@@ -1064,8 +1076,7 @@ function Tab:AddBodyPartSelector(options)
     CharImage.Parent = CharFrame
     CharImage.BackgroundTransparency = 1
     CharImage.Size = UDim2.new(1, 0, 1, 0)
-    -- Imagem de silhueta de personagem Roblox
-    CharImage.Image = (Type == "R6") and "rbxassetid://12002344035" or "rbxassetid://12002344035" 
+    CharImage.Image = "rbxassetid://12002344035" 
     CharImage.ImageColor3 = Color3.fromRGB(60, 60, 60)
 
     local SelectedPart = nil
@@ -1073,29 +1084,24 @@ function Tab:AddBodyPartSelector(options)
 
     local function SelectPart(partName, button)
         if SelectedPart == partName then
-            -- Deselecionar se clicar no mesmo
             SelectedPart = nil
             Library:Tween(button, {BackgroundColor3 = Color3.fromRGB(45, 45, 45), BackgroundTransparency = 0.5})
             if button:FindFirstChild("Indicator") then
                 Library:Tween(button.Indicator, {BackgroundColor3 = Color3.fromRGB(200, 200, 200)})
             end
         else
-            -- Limpar seleção anterior
             for name, btn in pairs(PartButtons) do
                 Library:Tween(btn, {BackgroundColor3 = Color3.fromRGB(45, 45, 45), BackgroundTransparency = 0.5})
                 if btn:FindFirstChild("Indicator") then
                     Library:Tween(btn.Indicator, {BackgroundColor3 = Color3.fromRGB(200, 200, 200)})
                 end
             end
-
-            -- Selecionar novo
             SelectedPart = partName
             Library:Tween(button, {BackgroundColor3 = Library.Theme.Accent, BackgroundTransparency = 0.3})
             if button:FindFirstChild("Indicator") then
                 Library:Tween(button.Indicator, {BackgroundColor3 = Library.Theme.Accent})
             end
         end
-
         Library.Flags[Flag] = SelectedPart
         task.spawn(function() Callback(SelectedPart) end)
     end
@@ -1111,76 +1117,63 @@ function Tab:AddBodyPartSelector(options)
         Btn.Size = size
         Btn.Text = ""
         Btn.AutoButtonColor = false
-        
-        local Corner = Instance.new("UICorner")
-        Corner.CornerRadius = UDim.new(0, 4)
-        Corner.Parent = Btn
-
+        local Corner = Instance.new("UICorner"); Corner.CornerRadius = UDim.new(0, 4); Corner.Parent = Btn
         local Indicator = Instance.new("Frame")
-        Indicator.Name = "Indicator"
-        Indicator.Parent = Btn
-        Indicator.AnchorPoint = Vector2.new(0.5, 0.5)
-        Indicator.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-        Indicator.BorderSizePixel = 0
-        Indicator.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Indicator.Size = UDim2.new(0, 4, 0, 4)
-        local ICorner = Instance.new("UICorner")
-        ICorner.CornerRadius = UDim.new(1, 0)
-        ICorner.Parent = Indicator
-
-        Btn.MouseButton1Click:Connect(function()
-            SelectPart(name, Btn)
-        end)
-
+        Indicator.Name = "Indicator"; Indicator.Parent = Btn; Indicator.AnchorPoint = Vector2.new(0.5, 0.5)
+        Indicator.BackgroundColor3 = Color3.fromRGB(200, 200, 200); Indicator.Position = UDim2.new(0.5, 0, 0.5, 0); Indicator.Size = UDim2.new(0, 4, 0, 4)
+        local ICorner = Instance.new("UICorner"); ICorner.CornerRadius = UDim.new(1, 0); ICorner.Parent = Indicator
+        Btn.MouseButton1Click:Connect(function() SelectPart(name, Btn) end)
         PartButtons[name] = Btn
         return Btn
     end
 
-    -- Configuração de botões baseada no tipo (R6 ou R15)
-    if Type == "R6" then
-        -- Head
-        CreatePartButton("Head", UDim2.new(0.5, -15, 0, 5), UDim2.new(0, 30, 0, 30))
-        -- Torso
-        CreatePartButton("Torso", UDim2.new(0.5, -25, 0, 40), UDim2.new(0, 50, 0, 60))
-        -- Arms
-        CreatePartButton("Left Arm", UDim2.new(0.5, -55, 0, 40), UDim2.new(0, 25, 0, 60))
-        CreatePartButton("Right Arm", UDim2.new(0.5, 30, 0, 40), UDim2.new(0, 25, 0, 60))
-        -- Legs
-        CreatePartButton("Left Leg", UDim2.new(0.5, -25, 0, 105), UDim2.new(0, 23, 0, 60))
-        CreatePartButton("Right Leg", UDim2.new(0.5, 2, 0, 105), UDim2.new(0, 23, 0, 60))
-    else
-        -- R15 (Mais detalhado se quiser, mas vamos focar no pedido: Head, Torso, Mão, Pé)
-        -- Head
-        CreatePartButton("Head", UDim2.new(0.5, -12, 0, 5), UDim2.new(0, 24, 0, 24))
-        -- Torso
-        CreatePartButton("UpperTorso", UDim2.new(0.5, -20, 0, 35), UDim2.new(0, 40, 0, 35))
-        CreatePartButton("LowerTorso", UDim2.new(0.5, -20, 0, 72), UDim2.new(0, 40, 0, 20))
-        -- Hands (Mãos)
-        CreatePartButton("LeftHand", UDim2.new(0.5, -55, 0, 85), UDim2.new(0, 15, 0, 15))
-        CreatePartButton("RightHand", UDim2.new(0.5, 40, 0, 85), UDim2.new(0, 15, 0, 15))
-        -- Feet (Pés)
-        CreatePartButton("LeftFoot", UDim2.new(0.5, -22, 0, 155), UDim2.new(0, 18, 0, 12))
-        CreatePartButton("RightFoot", UDim2.new(0.5, 4, 0, 155), UDim2.new(0, 18, 0, 12))
+    local function RenderLayout(type)
+        -- Limpar botões antigos
+        for _, btn in pairs(PartButtons) do btn:Destroy() end
+        PartButtons = {}
+        SelectedPart = nil
         
-        -- Opcional: Braços e Pernas para preencher o visual
-        CreatePartButton("LeftArm", UDim2.new(0.5, -50, 0, 35), UDim2.new(0, 20, 0, 45))
-        CreatePartButton("RightArm", UDim2.new(0.5, 30, 0, 35), UDim2.new(0, 20, 0, 45))
-        CreatePartButton("LeftLeg", UDim2.new(0.5, -22, 0, 95), UDim2.new(0, 18, 0, 55))
-        CreatePartButton("RightLeg", UDim2.new(0.5, 4, 0, 95), UDim2.new(0, 18, 0, 55))
+        if type == "R6" then
+            CreatePartButton("Head", UDim2.new(0.5, -15, 0, 5), UDim2.new(0, 30, 0, 30))
+            CreatePartButton("Torso", UDim2.new(0.5, -25, 0, 40), UDim2.new(0, 50, 0, 60))
+            CreatePartButton("Left Arm", UDim2.new(0.5, -55, 0, 40), UDim2.new(0, 25, 0, 60))
+            CreatePartButton("Right Arm", UDim2.new(0.5, 30, 0, 40), UDim2.new(0, 25, 0, 60))
+            CreatePartButton("Left Leg", UDim2.new(0.5, -25, 0, 105), UDim2.new(0, 23, 0, 60))
+            CreatePartButton("Right Leg", UDim2.new(0.5, 2, 0, 105), UDim2.new(0, 23, 0, 60))
+        else
+            CreatePartButton("Head", UDim2.new(0.5, -12, 0, 5), UDim2.new(0, 24, 0, 24))
+            CreatePartButton("UpperTorso", UDim2.new(0.5, -20, 0, 35), UDim2.new(0, 40, 0, 35))
+            CreatePartButton("LowerTorso", UDim2.new(0.5, -20, 0, 72), UDim2.new(0, 40, 0, 20))
+            CreatePartButton("LeftHand", UDim2.new(0.5, -55, 0, 85), UDim2.new(0, 15, 0, 15))
+            CreatePartButton("RightHand", UDim2.new(0.5, 40, 0, 85), UDim2.new(0, 15, 0, 15))
+            CreatePartButton("LeftFoot", UDim2.new(0.5, -22, 0, 155), UDim2.new(0, 18, 0, 12))
+            CreatePartButton("RightFoot", UDim2.new(0.5, 4, 0, 155), UDim2.new(0, 18, 0, 12))
+            -- Extras R15 para preencher visual
+            CreatePartButton("LeftArm", UDim2.new(0.5, -50, 0, 35), UDim2.new(0, 20, 0, 45))
+            CreatePartButton("RightArm", UDim2.new(0.5, 30, 0, 35), UDim2.new(0, 20, 0, 45))
+            CreatePartButton("LeftLeg", UDim2.new(0.5, -22, 0, 95), UDim2.new(0, 18, 0, 55))
+            CreatePartButton("RightLeg", UDim2.new(0.5, 4, 0, 95), UDim2.new(0, 18, 0, 55))
+        end
     end
 
-    -- Atualizar tamanho do container se necessário
-    Container.Size = UDim2.new(0, 194, 0, 240)
-    
+    TypeBtn.MouseButton1Click:Connect(function()
+        CurrentType = (CurrentType == "R15") and "R6" or "R15"
+        TypeBtn.Text = CurrentType
+        RenderLayout(CurrentType)
+    end)
+
+    RenderLayout(CurrentType)
     return {
         SetPart = function(self, partName)
-            if PartButtons[partName] then
-                SelectPart(partName, PartButtons[partName])
-            end
+            if PartButtons[partName] then SelectPart(partName, PartButtons[partName]) end
+        end,
+        SetType = function(self, type)
+            CurrentType = type
+            TypeBtn.Text = CurrentType
+            RenderLayout(CurrentType)
         end
     }
 end
-
 
         -- ========== COLOR PICKER OTIMIZADO ==========
         function Tab:AddColorPicker(cpOptions)
