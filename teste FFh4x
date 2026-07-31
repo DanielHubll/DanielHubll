@@ -841,6 +841,83 @@ function Library:CreateWindow(options)
             ToggleFrame.Parent = targetMain
         end
 
+        function Tab:AddKeybind(kbOptions)
+            local Text = kbOptions.Text or "Keybind"
+            local Default = kbOptions.Default or Enum.KeyCode.F
+            local Side = kbOptions.Side or "Main1"
+            local Callback = kbOptions.Callback or function() end
+            local Flag = kbOptions.Flag or Text
+            local targetMain = self:GetMain(Side)
+
+            local KeybindFrame = Instance.new("Frame")
+            KeybindFrame.BackgroundTransparency = 1
+            KeybindFrame.Size = UDim2.new(0, 194, 0, 34)
+            KeybindFrame.Parent = targetMain
+
+            local Title = Instance.new("TextLabel")
+            Title.Parent = KeybindFrame
+            Title.BackgroundTransparency = 1
+            Title.Position = UDim2.new(0, 10, 0, 0)
+            Title.Size = UDim2.new(1, -80, 0, 34)
+            Title.Text = Text
+            Title.TextColor3 = Library.Theme.Text
+            Title.TextSize = 14
+            Title.TextXAlignment = Enum.TextXAlignment.Left
+            Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
+
+            local KeyBtn = Instance.new("TextButton")
+            KeyBtn.Parent = KeybindFrame
+            KeyBtn.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
+            KeyBtn.Position = UDim2.new(1, -70, 0, 4)
+            KeyBtn.Size = UDim2.new(0, 60, 0, 26)
+            KeyBtn.Text = Default and Default.Name or "None"
+            KeyBtn.TextColor3 = Library.Theme.Accent
+            KeyBtn.TextSize = 12
+            KeyBtn.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
+            
+            local KCorner = Instance.new("UICorner")
+            KCorner.CornerRadius = UDim.new(0, 4)
+            KCorner.Parent = KeyBtn
+
+            local Binding = false
+            local CurrentKey = Default
+            Library.Flags[Flag] = CurrentKey
+
+            KeyBtn.MouseButton1Click:Connect(function()
+                if Library.IsDraggingWindow then return end
+                Binding = true
+                KeyBtn.Text = "..."
+                KeyBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+            end)
+
+            UserInputService.InputBegan:Connect(function(input)
+                if Binding then
+                    if input.UserInputType == Enum.UserInputType.Keyboard then
+                        if input.KeyCode ~= Enum.KeyCode.Backspace then
+                            CurrentKey = input.KeyCode
+                            KeyBtn.Text = CurrentKey.Name
+                        else
+                            CurrentKey = nil
+                            KeyBtn.Text = "None"
+                        end
+                        
+                        Binding = false
+                        KeyBtn.TextColor3 = Library.Theme.Accent
+                        Library.Flags[Flag] = CurrentKey
+                        task.spawn(function() Callback(CurrentKey) end)
+                    elseif input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 or input.UserInputType == Enum.UserInputType.MouseButton3 then
+                        CurrentKey = input.UserInputType
+                        KeyBtn.Text = CurrentKey.Name:gsub("MouseButton", "MB")
+                        
+                        Binding = false
+                        KeyBtn.TextColor3 = Library.Theme.Accent
+                        Library.Flags[Flag] = CurrentKey
+                        task.spawn(function() Callback(CurrentKey) end)
+                    end
+                end
+            end)
+        end
+
         function Tab:AddLabel(lblOptions)
             local Text = lblOptions.Text or "Label"
             local Side = lblOptions.Side or "Main1"
