@@ -858,7 +858,7 @@ function Library:CreateWindow(options)
             Title.Parent = KeybindFrame
             Title.BackgroundTransparency = 1
             Title.Position = UDim2.new(0, 10, 0, 0)
-            Title.Size = UDim2.new(1, -80, 0, 34)
+            Title.Size = UDim2.new(1, -90, 0, 34)
             Title.Text = Text
             Title.TextColor3 = Library.Theme.Text
             Title.TextSize = 14
