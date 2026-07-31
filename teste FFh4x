@@ -859,6 +859,171 @@ function Library:CreateWindow(options)
             Title.TextXAlignment = Enum.TextXAlignment.Left
             Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
         end
+
+            -- Função para adicionar o componente PlayerList à biblioteca FFh4x
+-- Adicione este código dentro da função Tab da sua biblioteca
+
+function Tab:AddPlayerList(options)
+    local Text = options.Text or "Lista de Jogadores"
+    local Side = options.Side or "Main1"
+    local Callback = options.Callback or function() end
+    local Flag = options.Flag or Text
+    local targetMain = self:GetMain(Side)
+
+    local Players = game:GetService("Players")
+    
+    local Container = Instance.new("Frame")
+    Container.Name = "PlayerList_" .. Text
+    Container.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Container.Size = UDim2.new(0, 194, 0, 250)
+    Container.Parent = targetMain
+    local CCorner = Instance.new("UICorner"); CCorner.Parent = Container
+
+    local Title = Instance.new("TextLabel")
+    Title.Parent = Container
+    Title.BackgroundTransparency = 1
+    Title.Position = UDim2.new(0, 10, 0, 5)
+    Title.Size = UDim2.new(1, -20, 0, 20)
+    Title.Text = Text
+    Title.TextColor3 = Library.Theme.Accent
+    Title.TextSize = 14
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json", Enum.FontWeight.Bold)
+
+    local ListScrolling = Instance.new("ScrollingFrame")
+    ListScrolling.Name = "List"
+    ListScrolling.Parent = Container
+    ListScrolling.BackgroundTransparency = 1
+    ListScrolling.Position = UDim2.new(0, 5, 0, 30)
+    ListScrolling.Size = UDim2.new(1, -10, 1, -35)
+    ListScrolling.CanvasSize = UDim2.new(0, 0, 0, 0)
+    ListScrolling.ScrollBarThickness = 2
+    ListScrolling.ScrollBarImageColor3 = Library.Theme.Accent
+    ListScrolling.ElasticBehavior = Enum.ElasticBehavior.Never
+
+    local ListLayout = Instance.new("UIListLayout")
+    ListLayout.Parent = ListScrolling
+    ListLayout.SortOrder = Enum.SortOrder.Name
+    ListLayout.Padding = UDim.new(0, 5)
+
+    local SelectedPlayer = nil
+    local PlayerEntries = {}
+
+    local function UpdateCanvas()
+        ListScrolling.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y)
+    end
+    ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateCanvas)
+
+    local function SelectPlayer(player, entry)
+        if SelectedPlayer == player then
+            SelectedPlayer = nil
+            Library:Tween(entry, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)})
+        else
+            -- Limpar seleção anterior
+            for p, e in pairs(PlayerEntries) do
+                Library:Tween(e, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)})
+            end
+            
+            SelectedPlayer = player
+            Library:Tween(entry, {BackgroundColor3 = Library.Theme.Accent})
+        end
+        
+        Library.Flags[Flag] = SelectedPlayer
+        task.spawn(function() Callback(SelectedPlayer) end)
+    end
+
+    local function AddPlayerEntry(player)
+        if PlayerEntries[player] then return end
+
+        local Entry = Instance.new("TextButton")
+        Entry.Name = player.Name
+        Entry.Parent = ListScrolling
+        Entry.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        Entry.BorderSizePixel = 0
+        Entry.Size = UDim2.new(1, 0, 0, 40)
+        Entry.Text = ""
+        Entry.AutoButtonColor = false
+        
+        local ECorner = Instance.new("UICorner")
+        ECorner.CornerRadius = UDim.new(0, 6)
+        ECorner.Parent = Entry
+
+        local Avatar = Instance.new("ImageLabel")
+        Avatar.Name = "Avatar"
+        Avatar.Parent = Entry
+        Avatar.BackgroundTransparency = 1
+        Avatar.Position = UDim2.new(0, 5, 0, 5)
+        Avatar.Size = UDim2.new(0, 30, 0, 30)
+        
+        local ACorner = Instance.new("UICorner")
+        ACorner.CornerRadius = UDim.new(1, 0)
+        ACorner.Parent = Avatar
+
+        -- Carregar Thumbnail do Jogador
+        task.spawn(function()
+            local content, isReady = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+            if isReady then
+                Avatar.Image = content
+            end
+        end)
+
+        local NameLabel = Instance.new("TextLabel")
+        NameLabel.Parent = Entry
+        NameLabel.BackgroundTransparency = 1
+        NameLabel.Position = UDim2.new(0, 40, 0, 0)
+        NameLabel.Size = UDim2.new(1, -45, 1, 0)
+        NameLabel.Text = player.DisplayName or player.Name
+        NameLabel.TextColor3 = Library.Theme.Text
+        NameLabel.TextSize = 14
+        NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+        NameLabel.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")
+        NameLabel.ClipsDescendants = true
+
+        Entry.MouseButton1Click:Connect(function()
+            SelectPlayer(player, Entry)
+        end)
+
+        PlayerEntries[player] = Entry
+        UpdateCanvas()
+    end
+
+    local function RemovePlayerEntry(player)
+        if PlayerEntries[player] then
+            PlayerEntries[player]:Destroy()
+            PlayerEntries[player] = nil
+            if SelectedPlayer == player then
+                SelectedPlayer = nil
+                Library.Flags[Flag] = nil
+                task.spawn(function() Callback(nil) end)
+            end
+            UpdateCanvas()
+        end
+    end
+
+    -- Inicializar lista
+    for _, player in ipairs(Players:GetPlayers()) do
+        AddPlayerEntry(player)
+    end
+
+    -- Eventos de conexão
+    local AddedConn = Players.PlayerAdded:Connect(AddPlayerEntry)
+    local RemovedConn = Players.PlayerRemoving:Connect(RemovePlayerEntry)
+
+    -- Limpeza se o container for destruído
+    Container.Destroying:Connect(function()
+        AddedConn:Disconnect()
+        RemovedConn:Disconnect()
+    end)
+
+    return {
+        GetSelected = function() return SelectedPlayer end,
+        Refresh = function()
+            for p, e in pairs(PlayerEntries) do e:Destroy() end
+            PlayerEntries = {}
+            for _, player in ipairs(Players:GetPlayers()) do AddPlayerEntry(player) end
+        end
+    }
+end
         
         -- Função para adicionar o componente BodyPartSelector à biblioteca FFh4x
 -- Adicione este código dentro da função Tab da sua biblioteca
