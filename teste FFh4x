@@ -210,7 +210,7 @@ function Library:CreateWindow(options)
     TabsScrolling.Parent = Right  
     TabsScrolling.BackgroundTransparency = 1  
     TabsScrolling.Position = UDim2.new(0, 26, 0, 106)  
-    TabsScrolling.Size = UDim2.new(0, 60, 0, 240)  
+    TabsScrolling.Size = UDim2.new(0, 60, 0, 180)  
     TabsScrolling.ScrollBarThickness = 0  
     TabsScrolling.ElasticBehavior = Enum.ElasticBehavior.Never  
     TabsScrolling.Visible = false  
