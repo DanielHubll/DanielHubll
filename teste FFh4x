@@ -1149,10 +1149,10 @@ function Tab:AddBodyPartSelector(options)
             CreatePartButton("LeftFoot", UDim2.new(0.5, -22, 0, 155), UDim2.new(0, 18, 0, 12))
             CreatePartButton("RightFoot", UDim2.new(0.5, 4, 0, 155), UDim2.new(0, 18, 0, 12))
             -- Extras R15 para preencher visual
-            CreatePartButton("LeftArm", UDim2.new(0.5, -50, 0, 35), UDim2.new(0, 20, 0, 45))
-            CreatePartButton("RightArm", UDim2.new(0.5, 30, 0, 35), UDim2.new(0, 20, 0, 45))
-            CreatePartButton("LeftLeg", UDim2.new(0.5, -22, 0, 95), UDim2.new(0, 18, 0, 55))
-            CreatePartButton("RightLeg", UDim2.new(0.5, 4, 0, 95), UDim2.new(0, 18, 0, 55))
+            CreatePartButton("LeftUpperArm", UDim2.new(0.5, -50, 0, 35), UDim2.new(0, 20, 0, 45))
+            CreatePartButton("RightUpperArm", UDim2.new(0.5, 30, 0, 35), UDim2.new(0, 20, 0, 45))
+            CreatePartButton("LeftUpperLeg", UDim2.new(0.5, -22, 0, 95), UDim2.new(0, 18, 0, 55))
+            CreatePartButton("RightUpperLeg", UDim2.new(0.5, 4, 0, 95), UDim2.new(0, 18, 0, 55))
         end
     end
 
