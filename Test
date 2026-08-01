@@ -1013,16 +1013,20 @@ function Tab:AddSlider(config)
 	local SliderInner = Instance.new("ImageButton")
 	SliderInner.AutoButtonColor = false
 	SliderInner.BackgroundTransparency = 1
+	SliderInner.Selectable = false
 	SliderInner.ZIndex = 2
 	SliderInner.AnchorPoint = Vector2.new(1, 0.5)
 	SliderInner.Size = UDim2.new(0.6, 0, 0, 50)
+	SliderInner.Name = "Slider"
 	SliderInner.Position = UDim2.new(1, 0, 0.5, 0)
 	SliderInner.Parent = Frame
 
 	local LeftButton = Instance.new("ImageButton")
 	LeftButton.BackgroundTransparency = 1
+	LeftButton.Selectable = false
 	LeftButton.AnchorPoint = Vector2.new(0, 0.5)
 	LeftButton.Size = UDim2.new(0, 32, 0, 50)
+	LeftButton.Name = "LeftButton"
 	LeftButton.Position = UDim2.new(0, 0, 0.5, 0)
 	LeftButton.Parent = SliderInner
 
@@ -1031,13 +1035,16 @@ function Tab:AddSlider(config)
 	LeftIcon.Image = "rbxasset://textures/ui/Settings/Slider/Less.png"
 	LeftIcon.Size = UDim2.new(0, 30, 0, 30)
 	LeftIcon.BackgroundTransparency = 1
+	LeftIcon.Name = "LeftButton"
 	LeftIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 	LeftIcon.Parent = LeftButton
 
 	local RightButton = Instance.new("ImageButton")
 	RightButton.BackgroundTransparency = 1
+	RightButton.Selectable = false
 	RightButton.AnchorPoint = Vector2.new(1, 0.5)
 	RightButton.Size = UDim2.new(0, 32, 0, 50)
+	RightButton.Name = "RightButton"
 	RightButton.Position = UDim2.new(1, 0, 0.5, 0)
 	RightButton.Parent = SliderInner
 
@@ -1046,6 +1053,7 @@ function Tab:AddSlider(config)
 	RightIcon.Image = "rbxasset://textures/ui/Settings/Slider/More.png"
 	RightIcon.Size = UDim2.new(0, 30, 0, 30)
 	RightIcon.BackgroundTransparency = 1
+	RightIcon.Name = "RightButton"
 	RightIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 	RightIcon.Parent = RightButton
 
@@ -1053,6 +1061,7 @@ function Tab:AddSlider(config)
 	StepsContainer.AnchorPoint = Vector2.new(0.5, 0.5)
 	StepsContainer.Size = UDim2.new(1, -100, 1, 0)
 	StepsContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+	StepsContainer.Name = "StepsContainer"
 	StepsContainer.BackgroundTransparency = 1
 	StepsContainer.Parent = SliderInner
 
@@ -1069,8 +1078,10 @@ function Tab:AddSlider(config)
 		step.AutoButtonColor = false
 		step.ImageTransparency = 0.36
 		step.BackgroundColor3 = INACTIVE_COLOR
+		step.Selectable = false
 		step.AnchorPoint = Vector2.new(0, 0.5)
 		step.Size = UDim2.new(0.1, -4, 0, 24)
+		step.Name = "Step" .. i
 		step.Position = UDim2.new((i - 1) / STEP_COUNT, 2, 0.5, 0)
 		step.Parent = StepsContainer
 
@@ -1081,6 +1092,7 @@ function Tab:AddSlider(config)
 			filler.BackgroundColor3 = INACTIVE_COLOR
 			filler.Size = UDim2.new(0.25, 0, 1, 0)
 			filler.Position = (i == 1) and UDim2.new(0.75, 0, 0, 0) or UDim2.new(0, 0, 0, 0)
+			filler.Name = "Filler"
 			filler.Parent = step
 			fillers[i] = filler
 		end
@@ -1088,20 +1100,11 @@ function Tab:AddSlider(config)
 		steps[i] = step
 	end
 
-	local ValueLabel = Instance.new("TextLabel")
-	ValueLabel.BackgroundTransparency = 1
-	ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	ValueLabel.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-	ValueLabel.TextSize = 12
-	ValueLabel.Size = UDim2.new(1, 0, 0, 16)
-	ValueLabel.Position = UDim2.new(0, 0, 1, 2)
-	ValueLabel.TextXAlignment = Enum.TextXAlignment.Center
-	ValueLabel.TextTransparency = 0.3
-	ValueLabel.Parent = SliderInner
-
 	local function getLastActiveStep()
 		for i = #steps, 1, -1 do
-			if steps[i].BackgroundColor3 == ACTIVE_COLOR then return i end
+			if steps[i].BackgroundColor3 == ACTIVE_COLOR then
+				return i
+			end
 		end
 		return 0
 	end
@@ -1140,11 +1143,12 @@ function Tab:AddSlider(config)
 		updateButtonsVisibility()
 
 		currentValue = math.floor(Min + ((targetIndex / STEP_COUNT) * (Max - Min)))
-		ValueLabel.Text = tostring(currentValue)
-		
-		if not skipCallback then Callback(currentValue) end
+		if not skipCallback then
+			Callback(currentValue)
+		end
 	end
 
+	-- Define valor inicial (Default) sem disparar callback extra
 	local defaultIndex = math.round(((Default - Min) / math.max(Max - Min, 1)) * STEP_COUNT)
 	setSlider(defaultIndex, true)
 
@@ -1157,7 +1161,10 @@ function Tab:AddSlider(config)
 		local containerPos = StepsContainer.AbsolutePosition.X
 		local containerSize = StepsContainer.AbsoluteSize.X
 		local inputPos = input.Position.X
-		local percentage = math.clamp((inputPos - containerPos) / containerSize, 0, 1)
+
+		local relativePos = inputPos - containerPos
+		local percentage = math.clamp(relativePos / containerSize, 0, 1)
+
 		setSlider(math.round(percentage * STEP_COUNT))
 	end
 
@@ -1195,7 +1202,7 @@ function Tab:AddSlider(config)
 			local index = math.round(((value - Min) / math.max(Max - Min, 1)) * STEP_COUNT)
 			setSlider(index)
 		end,
-		Get = function() return currentValue end
+		Get = function() return currentValue end,
 	}
 end
 
