@@ -55,77 +55,113 @@ return setmetatable({}, Library)
 end
 
 -- ============================================================
--- SISTEMA DE AJUSTE AUTOMÁTICO DO HUBBAR
+-- SISTEMA DE AJUSTE AUTOMÁTICO DO HUBBAR (SEM FLASH VISUAL)
 -- ============================================================
 
 local HubBar = nil
 local BASE_WIDTH = 800
 local WIDTH_PER_BUTTON = 100
+local MIN_WIDTH = 300
+local hubBarConnections = {}
+
+local function disconnectHubBarConnections()
+	for _, connection in ipairs(hubBarConnections) do
+		connection:Disconnect()
+	end
+	table.clear(hubBarConnections)
+end
 
 local function countButtons()
-local count = 0
-for _, child in ipairs(HubBarContainer:GetChildren()) do
-if child:IsA("TextButton") then
-count = count + 1
-end
-end
-return count
+	local count = 0
+	for _, child in ipairs(HubBarContainer:GetChildren()) do
+		if child:IsA("TextButton") then
+			count = count + 1
+		end
+	end
+	return count
 end
 
-local function adjustHubBarWidth()
-if not (HubBar and HubBar:IsA("GuiObject")) then return end
-local buttonCount = countButtons()
-local newWidth = BASE_WIDTH
-if buttonCount > 5 then
-newWidth = math.max(300, BASE_WIDTH - (WIDTH_PER_BUTTON * (buttonCount - 5)))
+local function getHubBarWidth()
+	local extraButtons = math.max(0, countButtons() - 5)
+	return math.max(MIN_WIDTH, BASE_WIDTH - (WIDTH_PER_BUTTON * extraButtons))
 end
-local currentSize = HubBar.Size
-HubBar.Size = UDim2.new(0, newWidth, currentSize.Y.Scale, currentSize.Y.Offset)
+
+-- Na primeira configuração, a barra fica invisível até o próximo frame.
+-- Dessa forma, a primeira vez que ela aparece já está na largura final.
+local function adjustHubBarWidth(hideUntilNextFrame)
+	if not (HubBar and HubBar:IsA("GuiObject") and HubBar.Parent) then
+		return
+	end
+
+	local targetWidth = getHubBarWidth()
+	local currentSize = HubBar.Size
+
+	if currentSize.X.Scale == 0 and currentSize.X.Offset == targetWidth then
+		return
+	end
+
+	local barToResize = HubBar
+	local wasVisible = barToResize.Visible
+
+	if hideUntilNextFrame and wasVisible then
+		barToResize.Visible = false
+	end
+
+	barToResize.Size = UDim2.new(0, targetWidth, currentSize.Y.Scale, currentSize.Y.Offset)
+
+	if hideUntilNextFrame and wasVisible then
+		task.defer(function()
+			RunService.RenderStepped:Wait()
+			if HubBar == barToResize and barToResize.Parent then
+				barToResize.Visible = true
+			end
+		end)
+	end
 end
 
 local function setupHubBar()
-HubBar = findDescendant(CoreGui, "HubBar")
+	local foundHubBar = findDescendant(CoreGui, "HubBar")
+	if not (foundHubBar and foundHubBar:IsA("ImageLabel")) then
+		return
+	end
 
-if HubBar and HubBar:IsA("ImageLabel") then  
-	adjustHubBarWidth()  
+	if HubBar == foundHubBar then
+		return
+	end
 
-	HubBarContainer.ChildAdded:Connect(function(child)  
-		if child:IsA("TextButton") then  
-			task.wait(0.1)  
-			adjustHubBarWidth()  
-		end  
-	end)  
+	disconnectHubBarConnections()
+	HubBar = foundHubBar
 
-	HubBarContainer.ChildRemoved:Connect(function(child)  
-		if child:IsA("TextButton") then  
-			task.wait(0.1)  
-			adjustHubBarWidth()  
-		end  
-	end)  
+	-- Aplica a primeira largura antes da próxima renderização da interface.
+	adjustHubBarWidth(true)
 
-	task.spawn(function()  
-		while true do  
-			task.wait(2)  
-			if HubBar and HubBar.Parent then  
-				adjustHubBarWidth()  
-			else  
-				HubBar = nil  
-				setupHubBar()  
-				break  
-			end  
-		end  
-	end)  
-else  
-	task.delay(1, setupHubBar)  
+	table.insert(hubBarConnections, HubBarContainer.ChildAdded:Connect(function(child)
+		if child:IsA("TextButton") then
+			-- Sem task.wait: a largura é atualizada no mesmo frame da nova aba.
+			adjustHubBarWidth(false)
+		end
+	end))
+
+	table.insert(hubBarConnections, HubBarContainer.ChildRemoved:Connect(function(child)
+		if child:IsA("TextButton") then
+			adjustHubBarWidth(false)
+		end
+	end))
+
+	table.insert(hubBarConnections, HubBar.AncestryChanged:Connect(function(_, parent)
+		if not parent then
+			disconnectHubBarConnections()
+			HubBar = nil
+		end
+	end))
 end
 
-end
 setupHubBar()
 
 CoreGui.DescendantAdded:Connect(function(descendant)
-if descendant.Name == "HubBar" and descendant:IsA("ImageLabel") and not HubBar then
-setupHubBar()
-end
+	if descendant.Name == "HubBar" and descendant:IsA("ImageLabel") then
+		setupHubBar()
+	end
 end)
 
 -- ============================================================
