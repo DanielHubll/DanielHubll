@@ -18,6 +18,7 @@ Library._tabsByName = {}
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService") -- NOVO: Para transições suaves
 
 -- ================= UTIL =================
 local function findDescendant(parent, name)
@@ -55,12 +56,15 @@ if not HubBarContainer or not PageViewInnerFrame then
 end
 
 -- ============================================================
--- SISTEMA DE AJUSTE AUTOMÁTICO DO HUBBAR
+-- SISTEMA DE AJUSTE AUTOMÁTICO DO HUBBAR (MELHORADO)
 -- ============================================================
 
 local HubBar = nil
 local BASE_WIDTH = 800
 local WIDTH_PER_BUTTON = 100
+local isMenuOpen = false
+local pendingWidth = nil
+local hubBarTween = nil
 
 local function countButtons()
 	local count = 0
@@ -72,66 +76,87 @@ local function countButtons()
 	return count
 end
 
-local function getHubBarWidth()
+local function calculateTargetWidth()
 	local buttonCount = countButtons()
-
-	if buttonCount <= 5 then
-		return BASE_WIDTH
+	local newWidth = BASE_WIDTH
+	if buttonCount > 5 then
+		newWidth = math.max(300, BASE_WIDTH - (WIDTH_PER_BUTTON * (buttonCount - 5)))
 	end
-
-	return math.max(300, BASE_WIDTH - ((buttonCount - 5) * WIDTH_PER_BUTTON))
+	return newWidth
 end
 
-local function adjustHubBarWidth()
+-- NOVO: Aplica largura com opção de ser instantâneo ou tweenado
+local function applyHubBarWidth(targetWidth, instant)
 	if not (HubBar and HubBar:IsA("GuiObject")) then
+		pendingWidth = targetWidth
 		return
 	end
+	pendingWidth = nil
 
-	local newWidth = getHubBarWidth()
-
-	if HubBar.Size.X.Offset ~= newWidth then
-		HubBar.Visible = false
-
-		HubBar.Size = UDim2.fromOffset(
-			newWidth,
-			HubBar.Size.Y.Offset
-		)
-
-		RunService.RenderStepped:Wait()
-		HubBar.Visible = true
+	-- Cancela tween anterior se existir
+	if hubBarTween then
+		hubBarTween:Cancel()
+		hubBarTween = nil
 	end
+
+	local targetSize = UDim2.new(0, targetWidth, HubBar.Size.Y.Scale, HubBar.Size.Y.Offset)
+
+	if instant or not isMenuOpen then
+		-- Quando menu fechado: aplica direto, ninguém vê
+		-- Quando forçado instantâneo: sem animação
+		HubBar.Size = targetSize
+	else
+		-- Quando menu aberto: tween rápido e suave pra não dar flash
+		hubBarTween = TweenService:Create(HubBar, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Size = targetSize
+		})
+		hubBarTween:Play()
+	end
+end
+
+local function adjustHubBarWidth(instant)
+	local targetWidth = calculateTargetWidth()
+	applyHubBarWidth(targetWidth, instant)
 end
 
 local function setupHubBar()
 	HubBar = findDescendant(CoreGui, "HubBar")
 
 	if HubBar and HubBar:IsA("ImageLabel") then
-		HubBar.Visible = false
+		-- Aplica largura pendente se houver
+		if pendingWidth then
+			applyHubBarWidth(pendingWidth, true)
+		else
+			adjustHubBarWidth(true)
+		end
 
-		adjustHubBarWidth()
-
-		RunService.RenderStepped:Wait()
-		HubBar.Visible = true
-
+		-- Quando abas são adicionadas/removidas
 		HubBarContainer.ChildAdded:Connect(function(child)
 			if child:IsA("TextButton") then
-				RunService.Heartbeat:Wait()
-				adjustHubBarWidth()
+				task.wait(0.05)
+				-- Se menu aberto: tween suave. Se fechado: instantâneo
+				adjustHubBarWidth(not isMenuOpen)
 			end
 		end)
 
 		HubBarContainer.ChildRemoved:Connect(function(child)
 			if child:IsA("TextButton") then
-				RunService.Heartbeat:Wait()
-				adjustHubBarWidth()
+				task.wait(0.05)
+				adjustHubBarWidth(not isMenuOpen)
 			end
 		end)
 
+		-- Loop de monitoramento: se largura divergir, corrige silenciosamente
 		task.spawn(function()
 			while true do
-				task.wait(2)
+				task.wait(1)
 				if HubBar and HubBar.Parent then
-					adjustHubBarWidth()
+					local expectedWidth = calculateTargetWidth()
+					local currentWidth = HubBar.Size.X.Offset
+					-- Só corrige se divergiu mais de 2 pixels
+					if math.abs(currentWidth - expectedWidth) > 2 then
+						applyHubBarWidth(expectedWidth, not isMenuOpen)
+					end
 				else
 					HubBar = nil
 					setupHubBar()
@@ -232,13 +257,16 @@ HubBarContainer.ChildAdded:Connect(function(newChild)
 end)
 
 -- ============================================================
--- MONITORAMENTO DO SETTINGS SHIELD
+-- MONITORAMENTO DO SETTINGS SHIELD (MELHORADO)
 -- ============================================================
 
 local function monitorSettingsShield()
 	local SettingsShield = findDescendant(CoreGui, "SettingsShield")
 
 	if SettingsShield and SettingsShield:IsA("ImageButton") then
+		-- Estado inicial
+		isMenuOpen = SettingsShield.Visible == true
+
 		if SettingsShield.Visible == false then
 			deselectAllButtons()
 			hideAllPages()
@@ -246,7 +274,16 @@ local function monitorSettingsShield()
 
 		local connection
 		connection = SettingsShield:GetPropertyChangedSignal("Visible"):Connect(function()
-			if SettingsShield.Visible == false then
+			local nowOpen = SettingsShield.Visible == true
+
+			-- QUANDO O MENU ABRE: ajusta largura INSTANTANEAMENTE antes da animação
+			if nowOpen and not isMenuOpen then
+				adjustHubBarWidth(true) -- true = instantâneo, sem tween
+			end
+
+			isMenuOpen = nowOpen
+
+			if not isMenuOpen then
 				deselectAllButtons()
 				hideAllPages()
 			end
@@ -255,6 +292,7 @@ local function monitorSettingsShield()
 		SettingsShield.AncestryChanged:Connect(function(_, parent)
 			if not parent then
 				connection:Disconnect()
+				isMenuOpen = false
 				task.wait(0.5)
 				monitorSettingsShield()
 			end
@@ -285,6 +323,15 @@ function Library:CreateTab(config)
 	local Icon = config.Icon or "gear"
 
 	if Library._tabsByName[Name] then return Library._tabsByName[Name] end
+
+	-- MELHORIA: Pré-calcula e aplica largura antes de criar o botão
+	-- Isso garante que o HubBar já esteja no tamanho certo antes do botão aparecer
+	local futureButtonCount = countButtons() + 1
+	local futureWidth = BASE_WIDTH
+	if futureButtonCount > 5 then
+		futureWidth = math.max(300, BASE_WIDTH - (WIDTH_PER_BUTTON * (futureButtonCount - 5)))
+	end
+	applyHubBarWidth(futureWidth, true)
 
 	local TabButton = Instance.new("TextButton")
 	TabButton.Selectable = false
@@ -379,7 +426,11 @@ function Library:CreateTab(config)
 
 	Library.Tabs[#Library.Tabs + 1] = self
 	Library._tabsByName[Name] = self
-	adjustHubBarWidth()
+
+	-- Garante largura correta após criação (caso algo tenha mudado)
+	task.defer(function()
+		adjustHubBarWidth(not isMenuOpen)
+	end)
 
 	return self
 end
@@ -504,7 +555,7 @@ function Tab:AddSeparator()
 end
 
 -- ============================================================
--- TAB:ADDTEXTBOX
+-- TAB:ADDTEXTBOX (INTEGRADO!)
 -- ============================================================
 
 function Tab:AddTextBox(config)
@@ -514,6 +565,7 @@ function Tab:AddTextBox(config)
 	local Default = config.Default or ""
 	local Callback = config.Callback or function() end
 
+	-- Criar container base
 	local Frame = Instance.new("ImageButton")
 	Frame.Active = false
 	Frame.BorderSizePixel = 0
@@ -533,9 +585,11 @@ function Tab:AddTextBox(config)
 	Frame.Name = Name
 	Frame.Parent = self.Page
 
+	-- UICorner
 	local UICorner = Instance.new("UICorner")
 	UICorner.Parent = Frame
 
+	-- Title
 	local Title = Instance.new("TextLabel")
 	Title.TextWrapped = true
 	Title.ZIndex = 2
@@ -551,11 +605,13 @@ function Tab:AddTextBox(config)
 	Title.Position = UDim2.new(0, 10, 0, 0)
 	Title.Parent = Frame
 
+	-- Title Padding
 	local TitlePadding = Instance.new("UIPadding")
 	TitlePadding.PaddingTop = UDim.new(0, 10)
 	TitlePadding.PaddingBottom = UDim.new(0, 10)
 	TitlePadding.Parent = Title
 
+	-- TextBox Input
 	local TextBoxInput = Instance.new("TextBox")
 	TextBoxInput.BorderSizePixel = 0
 	TextBoxInput.TextWrapped = true
@@ -572,6 +628,7 @@ function Tab:AddTextBox(config)
 	TextBoxInput.Name = "Input"
 	TextBoxInput.Parent = Frame
 
+	-- TextBox Border
 	local Border = Instance.new("UIStroke")
 	Border.Transparency = 0.3
 	Border.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -579,9 +636,11 @@ function Tab:AddTextBox(config)
 	Border.Color = Color3.fromRGB(255, 255, 255)
 	Border.Parent = TextBoxInput
 
+	-- TextBox UICorner
 	local TextBoxCorner = Instance.new("UICorner")
 	TextBoxCorner.Parent = TextBoxInput
 
+	-- Eventos do TextBox
 	TextBoxInput.FocusLost:Connect(function(enterPressed)
 		if enterPressed then
 			Callback(TextBoxInput.Text)
@@ -589,6 +648,7 @@ function Tab:AddTextBox(config)
 	end)
 
 	TextBoxInput:GetPropertyChangedSignal("Text"):Connect(function()
+		-- Callback em tempo real (opcional)
 		if config.RealTime then
 			Callback(TextBoxInput.Text)
 		end
@@ -606,7 +666,7 @@ function Tab:AddTextBox(config)
 end
 
 -- ============================================================
--- TAB:ADDTOGGLE
+-- TAB:ADDTOGGLE (SUPORTE A MÚLTIPLAS OPÇÕES)
 -- ============================================================
 
 function Tab:AddToggle(config)
@@ -736,7 +796,7 @@ function Tab:AddToggle(config)
 end
 
 -- ============================================================
--- TAB:ADDSLIDER
+-- TAB:ADDSLIDER (MELHORADO)
 -- ============================================================
 
 function Tab:AddSlider(config)
@@ -749,26 +809,42 @@ function Tab:AddSlider(config)
 
 	local Frame = createBaseContainer(self.Page, Name, nextOrder(self))
 
+	-- Adicionar display de valor
+	local ValueDisplay = Instance.new("TextLabel")
+	ValueDisplay.TextWrapped = true
+	ValueDisplay.ZIndex = 3
+	ValueDisplay.TextSize = 14
+	ValueDisplay.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+	ValueDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ValueDisplay.BackgroundTransparency = 1
+	ValueDisplay.AnchorPoint = Vector2.new(1, 0)
+	ValueDisplay.Size = UDim2.new(0, 50, 0, 30)
+	ValueDisplay.Position = UDim2.new(1, -10, 0, 5)
+	ValueDisplay.Text = tostring(Default)
+	ValueDisplay.TextXAlignment = Enum.TextXAlignment.Right
+	ValueDisplay.Name = "ValueDisplay"
+	ValueDisplay.Parent = Frame
+
 	local SliderInner = Instance.new("ImageButton")
 	SliderInner.AutoButtonColor = false
 	SliderInner.BackgroundTransparency = 1
 	SliderInner.ZIndex = 2
 	SliderInner.AnchorPoint = Vector2.new(1, 0.5)
-	SliderInner.Size = UDim2.new(0.6, 0, 0, 50)
-	SliderInner.Position = UDim2.new(1, 0, 0.5, 0)
+	SliderInner.Size = UDim2.new(0.6, -10, 0, 40)
+	SliderInner.Position = UDim2.new(1, -5, 0.5, 5)
 	SliderInner.Parent = Frame
 
 	local LeftButton = Instance.new("ImageButton")
 	LeftButton.BackgroundTransparency = 1
 	LeftButton.AnchorPoint = Vector2.new(0, 0.5)
-	LeftButton.Size = UDim2.new(0, 32, 0, 50)
+	LeftButton.Size = UDim2.new(0, 32, 0, 40)
 	LeftButton.Position = UDim2.new(0, 0, 0.5, 0)
 	LeftButton.Parent = SliderInner
 
 	local LeftIcon = Instance.new("ImageLabel")
 	LeftIcon.AnchorPoint = Vector2.new(0.5, 0.5)
 	LeftIcon.Image = "rbxasset://textures/ui/Settings/Slider/Less.png"
-	LeftIcon.Size = UDim2.new(0, 30, 0, 30)
+	LeftIcon.Size = UDim2.new(0, 24, 0, 24)
 	LeftIcon.BackgroundTransparency = 1
 	LeftIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 	LeftIcon.Parent = LeftButton
@@ -776,14 +852,14 @@ function Tab:AddSlider(config)
 	local RightButton = Instance.new("ImageButton")
 	RightButton.BackgroundTransparency = 1
 	RightButton.AnchorPoint = Vector2.new(1, 0.5)
-	RightButton.Size = UDim2.new(0, 32, 0, 50)
+	RightButton.Size = UDim2.new(0, 32, 0, 40)
 	RightButton.Position = UDim2.new(1, 0, 0.5, 0)
 	RightButton.Parent = SliderInner
 
 	local RightIcon = Instance.new("ImageLabel")
 	RightIcon.AnchorPoint = Vector2.new(0.5, 0.5)
 	RightIcon.Image = "rbxasset://textures/ui/Settings/Slider/More.png"
-	RightIcon.Size = UDim2.new(0, 30, 0, 30)
+	RightIcon.Size = UDim2.new(0, 24, 0, 24)
 	RightIcon.BackgroundTransparency = 1
 	RightIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 	RightIcon.Parent = RightButton
@@ -827,17 +903,6 @@ function Tab:AddSlider(config)
 		steps[i] = step
 	end
 
-	local ValueLabel = Instance.new("TextLabel")
-	ValueLabel.BackgroundTransparency = 1
-	ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	ValueLabel.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-	ValueLabel.TextSize = 12
-	ValueLabel.Size = UDim2.new(1, 0, 0, 16)
-	ValueLabel.Position = UDim2.new(0, 0, 1, 2)
-	ValueLabel.TextXAlignment = Enum.TextXAlignment.Center
-	ValueLabel.TextTransparency = 0.3
-	ValueLabel.Parent = SliderInner
-
 	local function getLastActiveStep()
 		for i = #steps, 1, -1 do
 			if steps[i].BackgroundColor3 == ACTIVE_COLOR then return i end
@@ -879,8 +944,7 @@ function Tab:AddSlider(config)
 		updateButtonsVisibility()
 
 		currentValue = math.floor(Min + ((targetIndex / STEP_COUNT) * (Max - Min)))
-		ValueLabel.Text = tostring(currentValue)
-		
+		ValueDisplay.Text = tostring(currentValue)
 		if not skipCallback then Callback(currentValue) end
 	end
 
@@ -934,13 +998,9 @@ function Tab:AddSlider(config)
 			local index = math.round(((value - Min) / math.max(Max - Min, 1)) * STEP_COUNT)
 			setSlider(index)
 		end,
-		Get = function() return currentValue end
+		Get = function() return currentValue end,
 	}
 end
-
--- ============================================================
--- TAB:ADDBUTTON
--- ============================================================
 
 function Tab:AddButton(config)
 	config = config or {}
@@ -1349,7 +1409,7 @@ function Tab:AddMultiDropdown(config)
 end
 
 -- ============================================================
--- TAB:ADDCOLORPICKER
+-- TAB:ADDCOLORPICKER (NOVO!)
 -- ============================================================
 
 function Tab:AddColorPicker(config)
@@ -1371,12 +1431,13 @@ function Tab:AddColorPicker(config)
 
 	Instance.new("UICorner").Parent = ColorButton
 
+	-- Ícone de pincel dentro do ColorButton
 	local BrushIcon = Instance.new("ImageLabel")
 	BrushIcon.AnchorPoint = Vector2.new(0.5, 0.5)
 	BrushIcon.Size = UDim2.new(0.8, 0, 0.8, 0)
 	BrushIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 	BrushIcon.BackgroundTransparency = 1
-	BrushIcon.Image = "rbxassetid://105966009412456"
+	BrushIcon.Image = "rbxassetid://105966009412456" -- Ícone de pincel
 	BrushIcon.ImageTransparency = 0.3
 	BrushIcon.ZIndex = 3
 	BrushIcon.Parent = ColorButton
@@ -1481,6 +1542,7 @@ function Tab:AddColorPicker(config)
 		HueCursor.ZIndex = 13
 		HueCursor.AnchorPoint = Vector2.new(0.5, 0.5)
 		HueCursor.Size = UDim2.new(0, 8, 1, 6)
+		-- CORRIGIDO: Cursor agora usa 'h' diretamente em vez de '1 - h'
 		HueCursor.Position = UDim2.new(h, 0, 0.5, 0)
 		HueCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		HueCursor.BorderSizePixel = 0
@@ -1513,6 +1575,7 @@ function Tab:AddColorPicker(config)
 		local draggingMap = false
 		local draggingHue = false
 
+		-- CORRIGIDO: Adicionada atualização do cursor do Hue e do mapa para manter tudo sincronizado
 		local function updateColorVisuals()
 			currentColor = Color3.fromHSV(h, s, v)
 
@@ -1533,6 +1596,7 @@ function Tab:AddColorPicker(config)
 			updateColorVisuals()
 		end
 
+		-- CORRIGIDO: Função UpdateHueInput inteira substituída conforme instrução
 		local function UpdateHueInput(input)
 			local pos = HueFrame.AbsolutePosition
 			local size = HueFrame.AbsoluteSize
