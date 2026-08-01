@@ -899,12 +899,14 @@ function Tab:AddKeybind(config)
     KeybindButton.Parent = Frame
 
     Instance.new("UICorner", KeybindButton).CornerRadius = UDim.new(0, 4)
-    local Border = Instance.new("UIStroke", KeybindButton)
-    Border.Transparency = 0.8
-    Border.Color = Color3.fromRGB(255, 255, 255)
 
     local currentKey = Default
     local listening = false
+
+    -- Remove o efeito de seleção
+    KeybindButton.SelectionGained:Connect(function()
+        KeybindButton.TextColor3 = Color3.fromRGB(255, 255, 255) -- Mantém branco
+    end)
 
     KeybindButton.MouseButton1Click:Connect(function()
         listening = true
@@ -994,9 +996,8 @@ function Tab:AddClipboard(config)
     }
 end
 
-
 -- ============================================================
--- TAB:ADDSLIDER (MELHORADO)
+-- TAB:ADDSLIDER
 -- ============================================================
 
 function Tab:AddSlider(config)
@@ -1009,42 +1010,26 @@ function Tab:AddSlider(config)
 
 	local Frame = createBaseContainer(self.Page, Name, nextOrder(self))
 
-	-- Adicionar display de valor
-	local ValueDisplay = Instance.new("TextLabel")
-	ValueDisplay.TextWrapped = true
-	ValueDisplay.ZIndex = 3
-	ValueDisplay.TextSize = 14
-	ValueDisplay.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
-	ValueDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
-	ValueDisplay.BackgroundTransparency = 1
-	ValueDisplay.AnchorPoint = Vector2.new(1, 0)
-	ValueDisplay.Size = UDim2.new(0, 50, 0, 30)
-	ValueDisplay.Position = UDim2.new(1, -10, 0, 5)
-	ValueDisplay.Text = tostring(Default)
-	ValueDisplay.TextXAlignment = Enum.TextXAlignment.Right
-	ValueDisplay.Name = "ValueDisplay"
-	ValueDisplay.Parent = Frame
-
 	local SliderInner = Instance.new("ImageButton")
 	SliderInner.AutoButtonColor = false
 	SliderInner.BackgroundTransparency = 1
 	SliderInner.ZIndex = 2
 	SliderInner.AnchorPoint = Vector2.new(1, 0.5)
-	SliderInner.Size = UDim2.new(0.6, -10, 0, 40)
-	SliderInner.Position = UDim2.new(1, -5, 0.5, 5)
+	SliderInner.Size = UDim2.new(0.6, 0, 0, 50)
+	SliderInner.Position = UDim2.new(1, 0, 0.5, 0)
 	SliderInner.Parent = Frame
 
 	local LeftButton = Instance.new("ImageButton")
 	LeftButton.BackgroundTransparency = 1
 	LeftButton.AnchorPoint = Vector2.new(0, 0.5)
-	LeftButton.Size = UDim2.new(0, 32, 0, 40)
+	LeftButton.Size = UDim2.new(0, 32, 0, 50)
 	LeftButton.Position = UDim2.new(0, 0, 0.5, 0)
 	LeftButton.Parent = SliderInner
 
 	local LeftIcon = Instance.new("ImageLabel")
 	LeftIcon.AnchorPoint = Vector2.new(0.5, 0.5)
 	LeftIcon.Image = "rbxasset://textures/ui/Settings/Slider/Less.png"
-	LeftIcon.Size = UDim2.new(0, 24, 0, 24)
+	LeftIcon.Size = UDim2.new(0, 30, 0, 30)
 	LeftIcon.BackgroundTransparency = 1
 	LeftIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 	LeftIcon.Parent = LeftButton
@@ -1052,14 +1037,14 @@ function Tab:AddSlider(config)
 	local RightButton = Instance.new("ImageButton")
 	RightButton.BackgroundTransparency = 1
 	RightButton.AnchorPoint = Vector2.new(1, 0.5)
-	RightButton.Size = UDim2.new(0, 32, 0, 40)
+	RightButton.Size = UDim2.new(0, 32, 0, 50)
 	RightButton.Position = UDim2.new(1, 0, 0.5, 0)
 	RightButton.Parent = SliderInner
 
 	local RightIcon = Instance.new("ImageLabel")
 	RightIcon.AnchorPoint = Vector2.new(0.5, 0.5)
 	RightIcon.Image = "rbxasset://textures/ui/Settings/Slider/More.png"
-	RightIcon.Size = UDim2.new(0, 24, 0, 24)
+	RightIcon.Size = UDim2.new(0, 30, 0, 30)
 	RightIcon.BackgroundTransparency = 1
 	RightIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
 	RightIcon.Parent = RightButton
@@ -1103,6 +1088,17 @@ function Tab:AddSlider(config)
 		steps[i] = step
 	end
 
+	local ValueLabel = Instance.new("TextLabel")
+	ValueLabel.BackgroundTransparency = 1
+	ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ValueLabel.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+	ValueLabel.TextSize = 12
+	ValueLabel.Size = UDim2.new(1, 0, 0, 16)
+	ValueLabel.Position = UDim2.new(0, 0, 1, 2)
+	ValueLabel.TextXAlignment = Enum.TextXAlignment.Center
+	ValueLabel.TextTransparency = 0.3
+	ValueLabel.Parent = SliderInner
+
 	local function getLastActiveStep()
 		for i = #steps, 1, -1 do
 			if steps[i].BackgroundColor3 == ACTIVE_COLOR then return i end
@@ -1144,7 +1140,8 @@ function Tab:AddSlider(config)
 		updateButtonsVisibility()
 
 		currentValue = math.floor(Min + ((targetIndex / STEP_COUNT) * (Max - Min)))
-		ValueDisplay.Text = tostring(currentValue)
+		ValueLabel.Text = tostring(currentValue)
+		
 		if not skipCallback then Callback(currentValue) end
 	end
 
@@ -1198,7 +1195,7 @@ function Tab:AddSlider(config)
 			local index = math.round(((value - Min) / math.max(Max - Min, 1)) * STEP_COUNT)
 			setSlider(index)
 		end,
-		Get = function() return currentValue end,
+		Get = function() return currentValue end
 	}
 end
 
