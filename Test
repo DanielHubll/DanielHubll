@@ -796,6 +796,206 @@ function Tab:AddToggle(config)
 end
 
 -- ============================================================
+-- TAB:ADDPARAGRAPH
+-- ============================================================
+
+function Tab:AddParagraph(config)
+    config = config or {}
+    local TitleText = config.Title or "Paragraph"
+    local ContentText = config.Content or "Content goes here..."
+
+    local Frame = createBaseContainer(self.Page, TitleText, nextOrder(self))
+    Frame.AutomaticSize = Enum.AutomaticSize.Y
+    Frame.Size = UDim2.new(1, 0, 0, 0) -- Altura automática baseada no conteúdo
+
+    -- O título já é criado pelo createBaseContainer, vamos ajustar o conteúdo
+    local ContentLabel = Instance.new("TextLabel")
+    ContentLabel.Name = "Content"
+    ContentLabel.TextWrapped = true
+    ContentLabel.ZIndex = 2
+    ContentLabel.TextSize = 14
+    ContentLabel.TextXAlignment = Enum.TextXAlignment.Left
+    ContentLabel.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+    ContentLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ContentLabel.TextTransparency = 0.4
+    ContentLabel.BackgroundTransparency = 1
+    ContentLabel.Size = UDim2.new(1, -20, 0, 0)
+    ContentLabel.Position = UDim2.new(0, 10, 0, 35) -- Abaixo do título
+    ContentLabel.Text = ContentText
+    ContentLabel.AutomaticSize = Enum.AutomaticSize.Y
+    ContentLabel.Parent = Frame
+
+    local Padding = Instance.new("UIPadding")
+    Padding.PaddingBottom = UDim.new(0, 10)
+    Padding.Parent = Frame
+
+    return {
+        Frame = Frame,
+        Set = function(_, newTitle, newContent)
+            if newTitle then Frame.Title.Text = newTitle end
+            if newContent then ContentLabel.Text = newContent end
+        end
+    }
+end
+
+-- ============================================================
+-- TAB:ADDLABEL
+-- ============================================================
+
+function Tab:AddLabel(text)
+    text = text or "Label"
+    
+    local Frame = Instance.new("Frame")
+    Frame.BackgroundTransparency = 1
+    Frame.Size = UDim2.new(1, 0, 0, 25)
+    Frame.LayoutOrder = nextOrder(self)
+    Frame.Name = text
+    Frame.Parent = self.Page
+
+    local Label = Instance.new("TextLabel")
+    Label.BackgroundTransparency = 1
+    Label.Size = UDim2.new(1, -10, 1, 0)
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.Text = text
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.TextTransparency = 0.5
+    Label.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+    Label.TextSize = 15
+    Label.Parent = Frame
+
+    return {
+        Frame = Frame,
+        Set = function(_, newValue)
+            Label.Text = newValue
+        end
+    }
+end
+
+-- ============================================================
+-- TAB:ADDKEYBIND
+-- ============================================================
+
+function Tab:AddKeybind(config)
+    config = config or {}
+    local Name = config.Name or "Keybind"
+    local Default = config.Default or Enum.KeyCode.F
+    local Callback = config.Callback or function() end
+
+    local Frame = createBaseContainer(self.Page, Name, nextOrder(self))
+    
+    local KeybindButton = Instance.new("TextButton")
+    KeybindButton.Name = "KeybindButton"
+    KeybindButton.AutoButtonColor = false
+    KeybindButton.BackgroundColor3 = Color3.fromRGB(57, 58, 60)
+    KeybindButton.ZIndex = 2
+    KeybindButton.AnchorPoint = Vector2.new(1, 0.5)
+    KeybindButton.Size = UDim2.new(0, 80, 0, 30)
+    KeybindButton.Position = UDim2.new(1, -10, 0.5, 0)
+    KeybindButton.Text = Default.Name
+    KeybindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    KeybindButton.TextSize = 14
+    KeybindButton.FontFace = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+    KeybindButton.Parent = Frame
+
+    Instance.new("UICorner", KeybindButton).CornerRadius = UDim.new(0, 4)
+    local Border = Instance.new("UIStroke", KeybindButton)
+    Border.Transparency = 0.8
+    Border.Color = Color3.fromRGB(255, 255, 255)
+
+    local currentKey = Default
+    local listening = false
+
+    KeybindButton.MouseButton1Click:Connect(function()
+        listening = true
+        KeybindButton.Text = "..."
+        KeybindButton.TextColor3 = Color3.fromRGB(0, 200, 255)
+    end)
+
+    UserInputService.InputBegan:Connect(function(input)
+        if listening then
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                local key = input.KeyCode
+                if key ~= Enum.KeyCode.Unknown then
+                    currentKey = key
+                    KeybindButton.Text = key.Name
+                    KeybindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    listening = false
+                    Callback(key)
+                end
+            elseif input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 then
+                -- Opcional: permitir cliques fora para cancelar ou bindar mouse
+                listening = false
+                KeybindButton.Text = currentKey.Name
+                KeybindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            end
+        end
+    end)
+
+    return {
+        Frame = Frame,
+        Get = function() return currentKey end,
+        Set = function(_, key)
+            currentKey = key
+            KeybindButton.Text = key.Name
+        end
+    }
+end
+
+-- ============================================================
+-- TAB:ADDCLIPBOARD
+-- ============================================================
+
+function Tab:AddClipboard(config)
+    config = config or {}
+    local Name = config.Name or "Copy to Clipboard"
+    local Content = config.Content or ""
+    local Callback = config.Callback or function() end
+
+    local Frame = createBaseContainer(self.Page, Name, nextOrder(self))
+
+    local CopyButton = Instance.new("ImageButton")
+    CopyButton.Name = "CopyButton"
+    CopyButton.AutoButtonColor = false
+    CopyButton.BackgroundColor3 = Color3.fromRGB(57, 58, 60)
+    CopyButton.ZIndex = 2
+    CopyButton.AnchorPoint = Vector2.new(1, 0.5)
+    CopyButton.Size = UDim2.new(0, 40, 0, 40)
+    CopyButton.Position = UDim2.new(1, -10, 0.5, 0)
+    CopyButton.Image = "rbxassetid://105966009412456" -- Ícone de pincel/copy genérico, idealmente um de clipboard
+    CopyButton.ImageTransparency = 0.3
+    CopyButton.Parent = Frame
+
+    Instance.new("UICorner", CopyButton).CornerRadius = UDim.new(0, 4)
+    local Border = Instance.new("UIStroke", CopyButton)
+    Border.Transparency = 0.8
+    Border.Color = Color3.fromRGB(255, 255, 255)
+
+    CopyButton.MouseButton1Click:Connect(function()
+        if setclipboard then
+            setclipboard(tostring(Content))
+            
+            -- Feedback visual rápido
+            local originalColor = Border.Color
+            Border.Color = Color3.fromRGB(0, 255, 0)
+            Border.Transparency = 0.2
+            task.wait(0.5)
+            Border.Color = originalColor
+            Border.Transparency = 0.8
+        end
+        Callback(Content)
+    end)
+
+    return {
+        Frame = Frame,
+        Set = function(_, newContent)
+            Content = newContent
+        end
+    }
+end
+
+
+-- ============================================================
 -- TAB:ADDSLIDER (MELHORADO)
 -- ============================================================
 
