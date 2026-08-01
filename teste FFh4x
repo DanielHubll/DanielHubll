@@ -900,7 +900,8 @@ function Library:CreateWindow(options)
             KeyBtn.Size = UDim2.new(0, 60, 0, 26)  
             KeyBtn.Text = Default and Default.Name or "None"  
             KeyBtn.TextColor3 = Library.Theme.Accent  
-            KeyBtn.TextSize = 12  
+            KeyBtn.TextSize = 12
+            KeyBtn.TextScaled = true
             KeyBtn.FontFace = Font.new("rbxasset://fonts/families/Ubuntu.json")  
 
             local KCorner = Instance.new("UICorner")  
