@@ -72,7 +72,7 @@ function Library.new(titleText)
     -- Icon/Logo Section
     self.IconFrame = Instance.new("Frame")
     self.IconFrame.Name = "Icon"
-    self.IconFrame.Size = UDim2.new(0, 94, 0, 52)
+    self.IconFrame.Size = UDim2.new(0, 74, 0, 52)
     self.IconFrame.Position = UDim2.new(0, 4, 0, 4)
     self.IconFrame.BackgroundTransparency = 1
     self.IconFrame.Parent = self.Top
@@ -81,7 +81,7 @@ function Library.new(titleText)
     
     local IconImg = Instance.new("ImageLabel")
     IconImg.Name = "Icon"
-    IconImg.Size = UDim2.new(0, 94, 0, 52)
+    IconImg.Size = UDim2.new(0, 74, 0, 52)
     IconImg.Image = "rbxassetid://95684454888603"
     IconImg.BackgroundTransparency = 1
     IconImg.Parent = self.IconFrame
@@ -92,20 +92,30 @@ function Library.new(titleText)
     IconStroke.Transparency = 0.7
     IconStroke.Color = Color3.fromRGB(255, 255, 255)
 
-    -- Tabs Container (inicia como Frame, vira ScrollingFrame se necessário)
+    -- Tab Frame (container externo)
+    self.TabFrame = Instance.new("Frame")
+    self.TabFrame.Name = "Tab"
+    self.TabFrame.Size = UDim2.new(0, 448, 0, 52)
+    self.TabFrame.Position = UDim2.new(0, 82, 0, 4)
+    self.TabFrame.BackgroundTransparency = 1
+    self.TabFrame.ClipsDescendants = true
+    self.TabFrame.Parent = self.Top
+    
+    Instance.new("UICorner", self.TabFrame)
+    
+    local TabStroke = Instance.new("UIStroke", self.TabFrame)
+    TabStroke.Transparency = 0.7
+    TabStroke.Color = Color3.fromRGB(255, 255, 255)
+
+    -- Tabs Container (interno, pode virar ScrollingFrame)
     self.TabsFrame = Instance.new("Frame")
     self.TabsFrame.Name = "Tabs"
-    self.TabsFrame.Size = UDim2.new(0, 428, 0, 52)
-    self.TabsFrame.Position = UDim2.new(0, 102, 0, 4)
+    self.TabsFrame.Size = UDim2.new(0, 355, 0, 52)
     self.TabsFrame.BackgroundTransparency = 1
     self.TabsFrame.ClipsDescendants = true
-    self.TabsFrame.Parent = self.Top
+    self.TabsFrame.Parent = self.TabFrame
     
     Instance.new("UICorner", self.TabsFrame)
-    
-    local TabsStroke = Instance.new("UIStroke", self.TabsFrame)
-    TabsStroke.Transparency = 0.7
-    TabsStroke.Color = Color3.fromRGB(255, 255, 255)
     
     -- Container interno para os botões das tabs
     self.TabsContainer = Instance.new("Frame")
@@ -165,24 +175,22 @@ function Library:Tab(name)
         ScrollingTabs.ClipsDescendants = true
         ScrollingTabs.Parent = parent
         
-        -- Move UICorner e UIStroke
+        -- Move UICorner
         local corner = oldFrame:FindFirstChild("UICorner")
         if corner then
             corner.Parent = ScrollingTabs
-        end
-        
-        local stroke = oldFrame:FindFirstChild("UIStroke")
-        if stroke then
-            stroke.Parent = ScrollingTabs
         end
         
         -- Move o TabsContainer
         self.TabsContainer.Parent = ScrollingTabs
         
         -- Ajusta o CanvasSize baseado no conteúdo
-        self.TabsContainer:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+        local function updateCanvas()
             ScrollingTabs.CanvasSize = UDim2.new(0, self.TabsContainer.AbsoluteSize.X + 20, 0, 0)
-        end)
+        end
+        
+        self.TabsContainer:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateCanvas)
+        updateCanvas()
         
         -- Remove o frame antigo
         oldFrame:Destroy()
@@ -216,21 +224,36 @@ function Library:Tab(name)
     Page.Visible = false
     Page.Parent = self.Mains
     
+    -- Frame Main dentro da página
+    local Main = Instance.new("Frame")
+    Main.Name = "Main"
+    Main.Size = UDim2.new(0, 526, 0, 256)
+    Main.BackgroundTransparency = 1
+    Main.Parent = Page
+    
+    Instance.new("UICorner", Main)
+    
+    local MainStroke = Instance.new("UIStroke", Main)
+    MainStroke.Transparency = 0.7
+    MainStroke.Color = Color3.fromRGB(255, 255, 255)
+    
     -- Auto Layout System
-    local Layout = Instance.new("UIListLayout", Page)
+    local Layout = Instance.new("UIListLayout", Main)
     Layout.Padding = UDim.new(0, 8)
     Layout.SortOrder = Enum.SortOrder.LayoutOrder
     
-    local Padding = Instance.new("UIPadding", Page)
+    local Padding = Instance.new("UIPadding", Main)
     Padding.PaddingTop = UDim.new(0, 10)
-    Padding.PaddingLeft = UDim.new(0, 10)
+    Padding.PaddingLeft = UDim.new(0, 6)
     
     -- Update Canvas Size
     Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        Page.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y + 20)
+        Main.Size = UDim2.new(0, 526, 0, math.max(256, Layout.AbsoluteContentSize.Y + 20))
+        Page.CanvasSize = UDim2.new(0, 0, 0, Main.Size.Y.Offset)
     end)
 
     tab.Page = Page
+    tab.Main = Main
     tab.Button = TabButton
 
     TabButton.MouseButton1Click:Connect(function()
@@ -260,7 +283,7 @@ function Library:Tab(name)
         ToggleFrame.Name = "Toggle"
         ToggleFrame.Size = UDim2.new(0, 500, 0, 24)
         ToggleFrame.BackgroundTransparency = 1
-        ToggleFrame.Parent = Page
+        ToggleFrame.Parent = tab.Main
         
         local ToggleBt = Instance.new("ImageButton")
         ToggleBt.Name = "ToggleBt"
@@ -305,7 +328,7 @@ function Library:Tab(name)
         SliderFrame.Name = "Slider"
         SliderFrame.Size = UDim2.new(0, 512, 0, 24)
         SliderFrame.BackgroundTransparency = 1
-        SliderFrame.Parent = Page
+        SliderFrame.Parent = tab.Main
         
         local Title = Instance.new("TextLabel")
         Title.Name = "Title"
