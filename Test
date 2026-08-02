@@ -49,7 +49,7 @@ function Library.new(titleText)
     self.Painel.Name = "Painel"
     self.Painel.Size = UDim2.new(0, 534, 0, 320)
     self.Painel.Position = UDim2.new(0.5, -267, 0.5, -160)
-    self.Painel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    self.Painel.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
     self.Painel.BorderSizePixel = 0
     self.Painel.Parent = self.ScreenGui
     
@@ -110,7 +110,7 @@ function Library.new(titleText)
     -- Tabs ScrollingFrame (já começa como ScrollingFrame)
     self.TabsFrame = Instance.new("ScrollingFrame")
     self.TabsFrame.Name = "Tabs"
-    self.TabsFrame.Size = UDim2.new(0, 355, 0, 52)
+    self.TabsFrame.Size = UDim2.new(0, 350, 0, 52)
     self.TabsFrame.BackgroundTransparency = 1
     self.TabsFrame.BorderSizePixel = 0
     self.TabsFrame.ScrollBarThickness = 0
