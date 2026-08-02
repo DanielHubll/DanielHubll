@@ -107,11 +107,16 @@ function Library.new(titleText)
     TabStroke.Transparency = 0.7
     TabStroke.Color = Color3.fromRGB(255, 255, 255)
 
-    -- Tabs Container (interno, pode virar ScrollingFrame)
-    self.TabsFrame = Instance.new("Frame")
+    -- Tabs ScrollingFrame (já começa como ScrollingFrame)
+    self.TabsFrame = Instance.new("ScrollingFrame")
     self.TabsFrame.Name = "Tabs"
     self.TabsFrame.Size = UDim2.new(0, 355, 0, 52)
     self.TabsFrame.BackgroundTransparency = 1
+    self.TabsFrame.BorderSizePixel = 0
+    self.TabsFrame.ScrollBarThickness = 0
+    self.TabsFrame.ScrollingDirection = Enum.ScrollingDirection.X
+    self.TabsFrame.ElasticBehavior = Enum.ElasticBehavior.Never
+    self.TabsFrame.AutomaticCanvasSize = Enum.AutomaticSize.X
     self.TabsFrame.ClipsDescendants = true
     self.TabsFrame.Parent = self.TabFrame
     
@@ -120,7 +125,8 @@ function Library.new(titleText)
     -- Container interno para os botões das tabs
     self.TabsContainer = Instance.new("Frame")
     self.TabsContainer.Name = "TabsContainer"
-    self.TabsContainer.Size = UDim2.new(1, 0, 1, 0)
+    self.TabsContainer.AutomaticSize = Enum.AutomaticSize.X
+    self.TabsContainer.Size = UDim2.new(0, 0, 1, 0)
     self.TabsContainer.BackgroundTransparency = 1
     self.TabsContainer.Parent = self.TabsFrame
     
@@ -141,7 +147,6 @@ function Library.new(titleText)
     self.Mains.Parent = self.Painel
 
     self.Tabs = {}
-    self.TabCount = 0
     
     return self
 end
@@ -149,55 +154,6 @@ end
 function Library:Tab(name)
     local tab = {}
     tab.Library = self
-    self.TabCount = self.TabCount + 1
-    
-    -- Se tiver mais de 4 tabs, transforma TabsFrame em ScrollingFrame
-    if self.TabCount > 4 and not self.TabsIsScrolling then
-        self.TabsIsScrolling = true
-        
-        -- Recria o TabsFrame como ScrollingFrame mantendo as propriedades
-        local oldFrame = self.TabsFrame
-        local parent = oldFrame.Parent
-        local position = oldFrame.Position
-        local size = oldFrame.Size
-        
-        -- Cria novo ScrollingFrame
-        local ScrollingTabs = Instance.new("ScrollingFrame")
-        ScrollingTabs.Name = "Tabs"
-        ScrollingTabs.Size = size
-        ScrollingTabs.Position = position
-        ScrollingTabs.BackgroundTransparency = 1
-        ScrollingTabs.BorderSizePixel = 0
-        ScrollingTabs.ScrollBarThickness = 0
-        ScrollingTabs.CanvasSize = UDim2.new(0, 0, 0, 0)
-        ScrollingTabs.ScrollingDirection = Enum.ScrollingDirection.X
-        ScrollingTabs.ElasticBehavior = Enum.ElasticBehavior.Never
-        ScrollingTabs.ClipsDescendants = true
-        ScrollingTabs.Parent = parent
-        
-        -- Move UICorner
-        local corner = oldFrame:FindFirstChild("UICorner")
-        if corner then
-            corner.Parent = ScrollingTabs
-        end
-        
-        -- Move o TabsContainer
-        self.TabsContainer.Parent = ScrollingTabs
-        
-        -- Ajusta o CanvasSize baseado no conteúdo
-        local function updateCanvas()
-            ScrollingTabs.CanvasSize = UDim2.new(0, self.TabsContainer.AbsoluteSize.X + 20, 0, 0)
-        end
-        
-        self.TabsContainer:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateCanvas)
-        updateCanvas()
-        
-        -- Remove o frame antigo
-        oldFrame:Destroy()
-        
-        -- Atualiza referência
-        self.TabsFrame = ScrollingTabs
-    end
     
     -- Tab Button
     local TabButton = Instance.new("TextButton")
