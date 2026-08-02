@@ -92,12 +92,13 @@ function Library.new(titleText)
     IconStroke.Transparency = 0.7
     IconStroke.Color = Color3.fromRGB(255, 255, 255)
 
-    -- Tabs Container
+    -- Tabs Container (inicia como Frame, vira ScrollingFrame se necessário)
     self.TabsFrame = Instance.new("Frame")
     self.TabsFrame.Name = "Tabs"
     self.TabsFrame.Size = UDim2.new(0, 428, 0, 52)
     self.TabsFrame.Position = UDim2.new(0, 102, 0, 4)
     self.TabsFrame.BackgroundTransparency = 1
+    self.TabsFrame.ClipsDescendants = true
     self.TabsFrame.Parent = self.Top
     
     Instance.new("UICorner", self.TabsFrame)
@@ -106,12 +107,19 @@ function Library.new(titleText)
     TabsStroke.Transparency = 0.7
     TabsStroke.Color = Color3.fromRGB(255, 255, 255)
     
-    local TabsLayout = Instance.new("UIListLayout", self.TabsFrame)
+    -- Container interno para os botões das tabs
+    self.TabsContainer = Instance.new("Frame")
+    self.TabsContainer.Name = "TabsContainer"
+    self.TabsContainer.Size = UDim2.new(1, 0, 1, 0)
+    self.TabsContainer.BackgroundTransparency = 1
+    self.TabsContainer.Parent = self.TabsFrame
+    
+    local TabsLayout = Instance.new("UIListLayout", self.TabsContainer)
     TabsLayout.FillDirection = Enum.FillDirection.Horizontal
     TabsLayout.Padding = UDim.new(0, 10)
     TabsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
     
-    local TabsPadding = Instance.new("UIPadding", self.TabsFrame)
+    local TabsPadding = Instance.new("UIPadding", self.TabsContainer)
     TabsPadding.PaddingLeft = UDim.new(0, 10)
 
     -- Mains (Content Area)
@@ -123,6 +131,7 @@ function Library.new(titleText)
     self.Mains.Parent = self.Painel
 
     self.Tabs = {}
+    self.TabCount = 0
     
     return self
 end
@@ -130,6 +139,57 @@ end
 function Library:Tab(name)
     local tab = {}
     tab.Library = self
+    self.TabCount = self.TabCount + 1
+    
+    -- Se tiver mais de 4 tabs, transforma TabsFrame em ScrollingFrame
+    if self.TabCount > 4 and not self.TabsIsScrolling then
+        self.TabsIsScrolling = true
+        
+        -- Recria o TabsFrame como ScrollingFrame mantendo as propriedades
+        local oldFrame = self.TabsFrame
+        local parent = oldFrame.Parent
+        local position = oldFrame.Position
+        local size = oldFrame.Size
+        
+        -- Cria novo ScrollingFrame
+        local ScrollingTabs = Instance.new("ScrollingFrame")
+        ScrollingTabs.Name = "Tabs"
+        ScrollingTabs.Size = size
+        ScrollingTabs.Position = position
+        ScrollingTabs.BackgroundTransparency = 1
+        ScrollingTabs.BorderSizePixel = 0
+        ScrollingTabs.ScrollBarThickness = 0
+        ScrollingTabs.CanvasSize = UDim2.new(0, 0, 0, 0)
+        ScrollingTabs.ScrollingDirection = Enum.ScrollingDirection.X
+        ScrollingTabs.ElasticBehavior = Enum.ElasticBehavior.Never
+        ScrollingTabs.ClipsDescendants = true
+        ScrollingTabs.Parent = parent
+        
+        -- Move UICorner e UIStroke
+        local corner = oldFrame:FindFirstChild("UICorner")
+        if corner then
+            corner.Parent = ScrollingTabs
+        end
+        
+        local stroke = oldFrame:FindFirstChild("UIStroke")
+        if stroke then
+            stroke.Parent = ScrollingTabs
+        end
+        
+        -- Move o TabsContainer
+        self.TabsContainer.Parent = ScrollingTabs
+        
+        -- Ajusta o CanvasSize baseado no conteúdo
+        self.TabsContainer:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+            ScrollingTabs.CanvasSize = UDim2.new(0, self.TabsContainer.AbsoluteSize.X + 20, 0, 0)
+        end)
+        
+        -- Remove o frame antigo
+        oldFrame:Destroy()
+        
+        -- Atualiza referência
+        self.TabsFrame = ScrollingTabs
+    end
     
     -- Tab Button
     local TabButton = Instance.new("TextButton")
@@ -140,7 +200,7 @@ function Library:Tab(name)
     TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     TabButton.TextSize = 20
     TabButton.FontFace = Font.new("rbxasset://fonts/families/HighwayGothic.json")
-    TabButton.Parent = self.TabsFrame
+    TabButton.Parent = self.TabsContainer
     
     Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 5)
     
@@ -151,6 +211,8 @@ function Library:Tab(name)
     Page.BackgroundTransparency = 1
     Page.BorderSizePixel = 0
     Page.ScrollBarThickness = 2
+    Page.ScrollingDirection = Enum.ScrollingDirection.Y
+    Page.ElasticBehavior = Enum.ElasticBehavior.Never
     Page.Visible = false
     Page.Parent = self.Mains
     
