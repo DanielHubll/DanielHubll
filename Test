@@ -40,7 +40,7 @@ function Library.new(titleText)
     
     -- ScreenGui
     self.ScreenGui = Instance.new("ScreenGui")
-    self.ScreenGui.Name = "DripClient_Library"
+    self.ScreenGui.Name = "DripClient"
     self.ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     self.ScreenGui.Parent = (RunService:IsStudio() and game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui") or game:GetService("CoreGui"))
 
@@ -54,9 +54,9 @@ function Library.new(titleText)
     self.Painel.Parent = self.ScreenGui
     
     Instance.new("UICorner", self.Painel)
-    local Stroke = Instance.new("UIStroke", self.Painel)
-    Stroke.Transparency = 0.7
-    Stroke.Color = Color3.fromRGB(255, 255, 255)
+    local PainelStroke = Instance.new("UIStroke", self.Painel)
+    PainelStroke.Transparency = 0.7
+    PainelStroke.Color = Color3.fromRGB(255, 255, 255)
     
     MakeDraggable(self.Painel)
 
@@ -66,6 +66,7 @@ function Library.new(titleText)
     self.Top.Size = UDim2.new(0, 534, 0, 58)
     self.Top.BackgroundTransparency = 1
     self.Top.Parent = self.Painel
+    Instance.new("UICorner", self.Top)
 
     -- Icon/Logo Section
     self.IconFrame = Instance.new("Frame")
@@ -75,16 +76,18 @@ function Library.new(titleText)
     self.IconFrame.BackgroundTransparency = 1
     self.IconFrame.Parent = self.Top
     
+    Instance.new("UICorner", self.IconFrame)
+    local IconStroke = Instance.new("UIStroke", self.IconFrame)
+    IconStroke.Transparency = 0.7
+    IconStroke.Color = Color3.fromRGB(255, 255, 255)
+    
     local IconImg = Instance.new("ImageLabel")
     IconImg.Name = "Icon"
     IconImg.Size = UDim2.new(0, 94, 0, 52)
     IconImg.Image = "rbxassetid://95684454888603"
     IconImg.BackgroundTransparency = 1
     IconImg.Parent = self.IconFrame
-    
-    local IconStroke = Instance.new("UIStroke", self.IconFrame)
-    IconStroke.Transparency = 0.7
-    IconStroke.Color = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", IconImg)
 
     -- Tabs Container
     self.TabsFrame = Instance.new("Frame")
@@ -93,6 +96,11 @@ function Library.new(titleText)
     self.TabsFrame.Position = UDim2.new(0, 102, 0, 4)
     self.TabsFrame.BackgroundTransparency = 1
     self.TabsFrame.Parent = self.Top
+    
+    Instance.new("UICorner", self.TabsFrame)
+    local TabsStroke = Instance.new("UIStroke", self.TabsFrame)
+    TabsStroke.Transparency = 0.7
+    TabsStroke.Color = Color3.fromRGB(255, 255, 255)
     
     local TabsLayout = Instance.new("UIListLayout", self.TabsFrame)
     TabsLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -132,15 +140,29 @@ function Library:Tab(name)
     
     Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 5)
     
-    -- Tab Page
+    -- Main Page Container (with stroke and corner as requested)
+    local MainContainer = Instance.new("Frame")
+    MainContainer.Name = name .. "_Main"
+    MainContainer.Size = UDim2.new(0, 526, 0, 256)
+    MainContainer.BackgroundTransparency = 1
+    MainContainer.Visible = false
+    MainContainer.Parent = self.Mains
+    
+    Instance.new("UICorner", MainContainer)
+    local MainStroke = Instance.new("UIStroke", MainContainer)
+    MainStroke.Transparency = 0.7
+    MainStroke.Color = Color3.fromRGB(255, 255, 255)
+    
+    -- Scrolling Page
     local Page = Instance.new("ScrollingFrame")
-    Page.Name = name .. "_Page"
-    Page.Size = UDim2.new(1, 0, 1, 0)
+    Page.Name = "ScrollingPage"
+    Page.Size = UDim2.new(1, -10, 1, -10)
+    Page.Position = UDim2.new(0, 5, 0, 5)
     Page.BackgroundTransparency = 1
     Page.BorderSizePixel = 0
     Page.ScrollBarThickness = 2
-    Page.Visible = false
-    Page.Parent = self.Mains
+    Page.ScrollBarImageColor3 = Color3.fromRGB(172, 51, 255)
+    Page.Parent = MainContainer
     
     -- Auto Layout System
     local Layout = Instance.new("UIListLayout", Page)
@@ -148,29 +170,30 @@ function Library:Tab(name)
     Layout.SortOrder = Enum.SortOrder.LayoutOrder
     
     local Padding = Instance.new("UIPadding", Page)
-    Padding.PaddingTop = UDim.new(0, 10)
-    Padding.PaddingLeft = UDim.new(0, 10)
+    Padding.PaddingTop = UDim.new(0, 5)
+    Padding.PaddingLeft = UDim.new(0, 5)
     
     -- Update Canvas Size
     Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        Page.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y + 20)
+        Page.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y + 10)
     end)
 
+    tab.MainContainer = MainContainer
     tab.Page = Page
     tab.Button = TabButton
 
     TabButton.MouseButton1Click:Connect(function()
         for _, t in pairs(self.Tabs) do
-            t.Page.Visible = false
+            t.MainContainer.Visible = false
             t.Button.BackgroundColor3 = Color3.fromRGB(44, 44, 44)
         end
-        Page.Visible = true
+        MainContainer.Visible = true
         TabButton.BackgroundColor3 = Color3.fromRGB(172, 51, 255)
     end)
 
     -- Default to first tab
     if #self.Tabs == 0 then
-        Page.Visible = true
+        MainContainer.Visible = true
         TabButton.BackgroundColor3 = Color3.fromRGB(172, 51, 255)
     end
 
@@ -184,7 +207,7 @@ function Library:Tab(name)
         
         local ToggleFrame = Instance.new("Frame")
         ToggleFrame.Name = "Toggle"
-        ToggleFrame.Size = UDim2.new(0, 500, 0, 24)
+        ToggleFrame.Size = UDim2.new(0, 142, 0, 24)
         ToggleFrame.BackgroundTransparency = 1
         ToggleFrame.Parent = Page
         
@@ -192,18 +215,20 @@ function Library:Tab(name)
         ToggleBt.Name = "ToggleBt"
         ToggleBt.Size = UDim2.new(0, 24, 0, 24)
         ToggleBt.BackgroundColor3 = default and Color3.fromRGB(172, 51, 255) or Color3.fromRGB(44, 44, 44)
+        ToggleBt.Image = "rbxassetid://0"
         ToggleBt.Parent = ToggleFrame
         
         Instance.new("UICorner", ToggleBt).CornerRadius = UDim.new(0, 5)
         
         local Title = Instance.new("TextLabel")
         Title.Name = "Title"
-        Title.Size = UDim2.new(0, 400, 0, 24)
+        Title.Size = UDim2.new(0, 134, 0, 24)
         Title.Position = UDim2.new(0, 32, 0, 0)
         Title.Text = text
         Title.TextColor3 = Color3.fromRGB(255, 255, 255)
         Title.TextSize = 16
         Title.TextXAlignment = Enum.TextXAlignment.Left
+        Title.TextScaled = true
         Title.BackgroundTransparency = 1
         Title.FontFace = Font.new("rbxasset://fonts/families/HighwayGothic.json")
         Title.Parent = ToggleFrame
@@ -224,7 +249,7 @@ function Library:Tab(name)
         local slider = {}
         min = min or 0
         max = max or 100
-        default = default or min
+        default = math.clamp(default or min, min, max)
         callback = callback or function() end
         
         local SliderFrame = Instance.new("Frame")
@@ -240,15 +265,17 @@ function Library:Tab(name)
         Title.TextColor3 = Color3.fromRGB(255, 255, 255)
         Title.TextSize = 16
         Title.TextXAlignment = Enum.TextXAlignment.Left
+        Title.TextScaled = true
         Title.BackgroundTransparency = 1
         Title.FontFace = Font.new("rbxasset://fonts/families/HighwayGothic.json")
         Title.Parent = SliderFrame
         
         local SliderBar = Instance.new("Frame")
         SliderBar.Name = "SliderBar"
-        SliderBar.Size = UDim2.new(0, 400, 0, 16)
+        SliderBar.Size = UDim2.new(0, 416, 0, 16)
         SliderBar.Position = UDim2.new(0, 92, 0, 4)
         SliderBar.BackgroundColor3 = Color3.fromRGB(44, 44, 44)
+        SliderBar.BorderSizePixel = 0
         SliderBar.Parent = SliderFrame
         
         Instance.new("UICorner", SliderBar).CornerRadius = UDim.new(0, 5)
@@ -257,43 +284,39 @@ function Library:Tab(name)
         Bar.Name = "Bar"
         Bar.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
         Bar.BackgroundColor3 = Color3.fromRGB(172, 51, 255)
+        Bar.BorderSizePixel = 0
         Bar.Parent = SliderBar
         
         Instance.new("UICorner", Bar).CornerRadius = UDim.new(0, 5)
         
-        local ValueLabel = Instance.new("TextLabel")
-        ValueLabel.Size = UDim2.new(1, 0, 1, 0)
-        ValueLabel.BackgroundTransparency = 1
-        ValueLabel.Text = tostring(default)
-        ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        ValueLabel.TextSize = 12
-        ValueLabel.Parent = SliderBar
-
+        local dragging = false
+        
         local function Update(input)
-            local pos = math.clamp((input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
+            local inputPos = input.Position.X
+            local barAbsPos = SliderBar.AbsolutePosition.X
+            local barAbsSize = SliderBar.AbsoluteSize.X
+            local pos = math.clamp((inputPos - barAbsPos) / barAbsSize, 0, 1)
             local val = math.floor(min + (max - min) * pos)
             
             Bar.Size = UDim2.new(pos, 0, 1, 0)
-            ValueLabel.Text = tostring(val)
             callback(val)
         end
         
-        local dragging = false
         SliderBar.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 dragging = true
                 Update(input)
             end
         end)
         
         UserInputService.InputChanged:Connect(function(input)
-            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                 Update(input)
             end
         end)
         
         UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 dragging = false
             end
         end)
